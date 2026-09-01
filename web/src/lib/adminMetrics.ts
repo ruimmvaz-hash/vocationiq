@@ -7,6 +7,7 @@ export interface DashboardMetrics {
   pendentes: number;
   entregues: number;
   receitaTotalEur: number;
+  receitaMesActualEur: number;
   pedidosHoje: number;
 }
 
@@ -18,20 +19,31 @@ export async function obterMetricasDashboard(): Promise<DashboardMetrics> {
   const rows = (data ?? []) as { report_status: string; amount_cents: number | null; paid_at: string | null }[];
   const inicioHoje = new Date();
   inicioHoje.setHours(0, 0, 0, 0);
+  const inicioMes = new Date(inicioHoje.getFullYear(), inicioHoje.getMonth(), 1);
 
   let pendentes = 0;
   let entregues = 0;
   let receitaCents = 0;
+  let receitaMesCents = 0;
   let pedidosHoje = 0;
 
   for (const r of rows) {
     if (r.report_status === "delivered") entregues++;
     else pendentes++;
-    receitaCents += r.amount_cents ?? 9900;
+    const cents = r.amount_cents ?? 9900;
+    receitaCents += cents;
     if (r.paid_at && new Date(r.paid_at) >= inicioHoje) pedidosHoje++;
+    if (r.paid_at && new Date(r.paid_at) >= inicioMes) receitaMesCents += cents;
   }
 
-  return { totalPedidos: rows.length, pendentes, entregues, receitaTotalEur: receitaCents / 100, pedidosHoje };
+  return {
+    totalPedidos: rows.length,
+    pendentes,
+    entregues,
+    receitaTotalEur: receitaCents / 100,
+    receitaMesActualEur: receitaMesCents / 100,
+    pedidosHoje,
+  };
 }
 
 export interface FunnelStepMetric {

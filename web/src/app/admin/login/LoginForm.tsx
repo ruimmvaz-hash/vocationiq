@@ -24,7 +24,7 @@ export default function LoginForm() {
       setError(body.error ?? "erro de autenticação");
       return;
     }
-    router.push("/admin/intakes");
+    router.push("/admin");
     router.refresh();
   }
 

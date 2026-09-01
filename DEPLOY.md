@@ -8,8 +8,9 @@ Abre o dashboard do projecto Supabase da Naveya → **SQL Editor** → **New que
 
 1. [`web/supabase/migrations/0001_vocationiq_intakes.sql`](web/supabase/migrations/0001_vocationiq_intakes.sql) — tabela dos pedidos.
 2. [`web/supabase/migrations/0002_viq_comercial_analytics.sql`](web/supabase/migrations/0002_viq_comercial_analytics.sql) — comerciais, comissões, eventos de funil, relatórios entregues, e o bucket de storage `viq-relatorios` para os PDFs.
+3. [`web/supabase/migrations/0003_viq_backoffice_extra.sql`](web/supabase/migrations/0003_viq_backoffice_extra.sql) — testemunhos e influencers.
 
-Todas as tabelas novas usam prefixo próprio (`vocationiq_`, `viq_`) — nenhuma colide com nada existente da Naveya. Ambas as migrações são seguras para correr num projecto partilhado: usam `CREATE TABLE IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`, não alteram nem apagam nada que já existe.
+Todas as tabelas novas usam prefixo próprio (`vocationiq_`, `viq_`) — nenhuma colide com nada existente da Naveya. Todas as migrações são seguras para correr num projecto partilhado: usam `CREATE TABLE IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`, não alteram nem apagam nada que já existe. "Clientes" (`/admin/clientes`) não tem tabela própria — é agregado a partir de `vocationiq_intakes`.
 
 ## 2. Stripe — criar o produto
 
@@ -49,6 +50,12 @@ Variáveis a configurar (Project → Settings → Environment Variables):
 | `RESEND_API_KEY` | a chave Resend da Naveya | Naveya → Vercel → Environment Variables |
 | `ADMIN_PASSWORD` | a tua escolha | protege `/admin` — pode ser igual ou diferente da password da Naveya, são cookies de sessão separados |
 | `COMERCIAL_TOKEN_SECRET` | uma string longa e aleatória (ex.: `openssl rand -hex 32`) | assina os tokens de magic link/sessão do painel de comerciais em `/comercial` |
+| `NEXT_PUBLIC_CLARITY_PROJECT_ID` | id do projecto Clarity | pode ser o mesmo da Naveya ou um novo — dashboard.clarity.microsoft.com |
+| `VERCEL_API_TOKEN` | opcional — token gerado em vercel.com/account/tokens | só para as "métricas básicas" em `/admin/trafego`; sem isto a página só mostra o link da Clarity |
+| `VERCEL_PROJECT_ID` | opcional — Project Settings → General, no Vercel | idem |
+| `VERCEL_TEAM_ID` | opcional | só se o projecto Vercel pertencer a uma equipa |
+
+Nota sobre `/admin/trafego`: a integração com a API de Web Analytics da Vercel não foi testada de ponta a ponta nesta sessão (não tenho um `VERCEL_API_TOKEN` aqui) — o parsing é defensivo e nunca deve rebentar a página, mas confirma que os números batem certo assim que configurares as variáveis.
 
 Nota sobre `STRIPE_WEBHOOK_SECRET`: só existe depois de criares o endpoint no passo 2, que só podes criar depois do domínio estar a responder — por isso a sequência é: deploy inicial sem essa variável (o site funciona à mesma, só a rota do webhook fica inactiva até lá) → cria o endpoint na Stripe → adiciona a variável → faz **redeploy** (variáveis de ambiente só entram em vigor depois de um novo deploy).
 

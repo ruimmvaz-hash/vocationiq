@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 import { ReferralCapture } from "@/components/ReferralCapture";
+import { ClarityInit } from "@/components/ClarityInit";
 import "./globals.css";
 
 const inter = Inter({
@@ -21,7 +23,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt">
       <body className={`${inter.variable} antialiased`}>
         <ReferralCapture />
+        <ClarityInit />
         {children}
+        <Analytics />
       </body>
     </html>
   );

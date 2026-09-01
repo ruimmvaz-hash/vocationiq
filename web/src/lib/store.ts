@@ -58,9 +58,10 @@ export interface IntakeRow {
 export interface FiltrosIntakes {
   estado?: "pendente" | "entregue";
   situacao?: string;
+  email?: string;
 }
 
-/** Lista para /admin/intakes — só pedidos pagos, mais recentes primeiro. */
+/** Lista para /admin/relatorios — só pedidos pagos, mais recentes primeiro. */
 export async function listarIntakes(filtros: FiltrosIntakes = {}): Promise<IntakeRow[]> {
   const supabase = await getSupabaseAdmin();
   let query = supabase.from("vocationiq_intakes").select("*").eq("payment_status", "paid");
@@ -68,10 +69,58 @@ export async function listarIntakes(filtros: FiltrosIntakes = {}): Promise<Intak
   if (filtros.estado === "pendente") query = query.neq("report_status", "delivered");
   if (filtros.estado === "entregue") query = query.eq("report_status", "delivered");
   if (filtros.situacao) query = query.eq("situacao", filtros.situacao);
+  if (filtros.email) query = query.eq("email", filtros.email);
 
   const { data, error } = await query.order("paid_at", { ascending: false });
   if (error) throw new Error(`Falha ao listar pedidos: ${error.message}`);
   return (data ?? []) as IntakeRow[];
+}
+
+/** Últimos N pedidos pagos ainda não entregues — para os alertas do dashboard. */
+export async function obterUltimosPendentes(limite: number): Promise<IntakeRow[]> {
+  const supabase = await getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("vocationiq_intakes")
+    .select("*")
+    .eq("payment_status", "paid")
+    .neq("report_status", "delivered")
+    .order("paid_at", { ascending: false })
+    .limit(limite);
+  if (error) throw new Error(`Falha ao listar pedidos pendentes: ${error.message}`);
+  return (data ?? []) as IntakeRow[];
+}
+
+export interface ClienteRow {
+  email: string;
+  nome: string;
+  situacao: string;
+  primeiraCompra: string;
+  totalRelatorios: number;
+}
+
+/** /admin/clientes — agregado por email a partir de vocationiq_intakes (sem tabela própria, ver migração 0003). */
+export async function listarClientes(): Promise<ClienteRow[]> {
+  const supabase = await getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("vocationiq_intakes")
+    .select("email, nome, situacao, paid_at")
+    .eq("payment_status", "paid")
+    .not("email", "is", null)
+    .order("paid_at", { ascending: true });
+  if (error) throw new Error(`Falha ao listar clientes: ${error.message}`);
+
+  const porEmail = new Map<string, ClienteRow>();
+  for (const row of (data ?? []) as { email: string; nome: string; situacao: string; paid_at: string }[]) {
+    const existente = porEmail.get(row.email);
+    if (existente) {
+      existente.totalRelatorios += 1;
+      existente.nome = row.nome;
+      existente.situacao = row.situacao;
+    } else {
+      porEmail.set(row.email, { email: row.email, nome: row.nome, situacao: row.situacao, primeiraCompra: row.paid_at, totalRelatorios: 1 });
+    }
+  }
+  return Array.from(porEmail.values()).sort((a, b) => new Date(b.primeiraCompra).getTime() - new Date(a.primeiraCompra).getTime());
 }
 
 export async function obterIntake(intakeId: string): Promise<IntakeRow | null> {

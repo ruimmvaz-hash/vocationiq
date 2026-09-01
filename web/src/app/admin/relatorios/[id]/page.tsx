@@ -37,8 +37,8 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
   if (erro) {
     return (
       <main className="mx-auto max-w-2xl px-6 py-10">
-        <AdminNav active="intakes" />
-        <Link href="/admin/intakes" className="text-sm font-semibold text-navy hover:underline">
+        <AdminNav active="relatorios" />
+        <Link href="/admin/relatorios" className="text-sm font-semibold text-navy hover:underline">
           ← Todos os pedidos
         </Link>
         <p className="mt-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">Não consegui carregar este pedido: {erro}</p>
@@ -51,8 +51,8 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-10">
-      <AdminNav active="intakes" />
-      <Link href="/admin/intakes" className="text-sm font-semibold text-navy hover:underline">
+      <AdminNav active="relatorios" />
+      <Link href="/admin/relatorios" className="text-sm font-semibold text-navy hover:underline">
         ← Todos os pedidos
       </Link>
 

@@ -23,7 +23,7 @@ function construirLink(base: URLSearchParams, chave: string, valor: string): str
   if (valor) params.set(chave, valor);
   else params.delete(chave);
   const qs = params.toString();
-  return qs ? `/admin/intakes?${qs}` : "/admin/intakes";
+  return qs ? `/admin/relatorios?${qs}` : "/admin/relatorios";
 }
 
 export default async function AdminIntakesPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
@@ -32,7 +32,8 @@ export default async function AdminIntakesPage({ searchParams }: { searchParams:
   const sp = await searchParams;
   const estado = sp.estado === "pendente" || sp.estado === "entregue" ? sp.estado : undefined;
   const situacao = sp.situacao || undefined;
-  const filtros: FiltrosIntakes = { estado, situacao };
+  const email = sp.email || undefined;
+  const filtros: FiltrosIntakes = { estado, situacao, email };
 
   let intakes: Awaited<ReturnType<typeof listarIntakes>> = [];
   let erro: string | null = null;
@@ -45,12 +46,22 @@ export default async function AdminIntakesPage({ searchParams }: { searchParams:
   const currentParams = new URLSearchParams();
   if (estado) currentParams.set("estado", estado);
   if (situacao) currentParams.set("situacao", situacao);
+  if (email) currentParams.set("email", email);
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
-      <AdminNav active="intakes" />
-      <h1 className="text-2xl font-extrabold text-navy">Pedidos — VocationIQ</h1>
-      <p className="mt-1 text-sm text-ink/60">{intakes.length} pedido(s) pago(s).</p>
+      <AdminNav active="relatorios" />
+      <h1 className="text-2xl font-extrabold text-navy">Relatórios — VocationIQ</h1>
+      <p className="mt-1 text-sm text-ink/60">{intakes.length} relatório(s) pago(s).</p>
+
+      {email && (
+        <p className="mt-3 text-sm text-ink/70">
+          A filtrar por cliente: <strong>{email}</strong> ·{" "}
+          <Link href={construirLink(currentParams, "email", "")} className="text-navy underline">
+            limpar
+          </Link>
+        </p>
+      )}
 
       <div className="mt-6 flex flex-wrap gap-6">
         <FiltroGrupo titulo="Estado">
@@ -113,7 +124,7 @@ export default async function AdminIntakesPage({ searchParams }: { searchParams:
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Link href={`/admin/intakes/${i.id}`} className="font-semibold text-navy underline hover:text-navy-dark">
+                    <Link href={`/admin/relatorios/${i.id}`} className="font-semibold text-navy underline hover:text-navy-dark">
                       Ver detalhes
                     </Link>
                   </td>

@@ -3,6 +3,15 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { TrackedCtaLink } from "@/components/TrackedCtaLink";
 import { HomepageViewTracker } from "@/components/HomepageViewTracker";
+import { listarTestemunhosAprovados } from "@/lib/testemunhosStore";
+import { SITUACOES } from "@/lib/validation";
+
+const SITUACAO_LABEL = Object.fromEntries(SITUACOES.map((s) => [s.valor, s.label]));
+
+// Sem isto, a homepage ficava estática do build — testemunhos aprovados
+// no admin só apareceriam no deploy seguinte. 5 min é fresco que chegue
+// sem bater no Supabase em cada visita.
+export const revalidate = 300;
 
 // Imagens Unsplash (licença gratuita, hotlink directo ao CDN — ver commit).
 const HERO_IMG = "https://images.unsplash.com/photo-1620355402809-5bc3f630b2ac?auto=format&fit=crop&w=1920&q=75";
@@ -70,7 +79,9 @@ const FAQ = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const testemunhos = await listarTestemunhosAprovados();
+
   return (
     <>
       <Header />
@@ -180,6 +191,24 @@ export default function HomePage() {
             </TrackedCtaLink>
           </div>
         </section>
+
+        {/* TESTEMUNHOS — só aparece quando há testemunhos aprovados */}
+        {testemunhos.length > 0 && (
+          <section className="bg-paper">
+            <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+              <h2 className="text-2xl font-extrabold tracking-tight text-navy sm:text-3xl">O que dizem</h2>
+              <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {testemunhos.map((t) => (
+                  <div key={t.id} className="rounded-lg border border-border p-6">
+                    <p className="text-sm leading-relaxed text-ink/85">&ldquo;{t.texto}&rdquo;</p>
+                    <p className="mt-4 text-sm font-bold text-navy">{t.nome}</p>
+                    <p className="text-xs text-ink/50">{SITUACAO_LABEL[t.situacao] ?? t.situacao}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* 6. FAQ */}
         <section id="faq" className="border-t border-border bg-fog">
