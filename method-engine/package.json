@@ -1,0 +1,28 @@
+{
+  "name": "@naveya/method-engine",
+  "version": "0.1.0",
+  "description": "Naveya Method — numerology, sun sign, and archetype assignment engine (spec: docs/M-002-Matriz-Arquetipos-Naveya.md)",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./chiron-lilith": "./src/lifeReport/western/chironLilith.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "simulate": "tsx src/simulation/run.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  },
+  "dependencies": {
+    "astronomy-engine": "^2.1.19",
+    "sweph": "^2.10.3-7"
+  }
+}

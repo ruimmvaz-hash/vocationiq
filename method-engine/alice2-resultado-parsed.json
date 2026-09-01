@@ -1,0 +1,465 @@
+{
+  "relatorio": {
+    "abertura": {
+      "nomeCliente": "Alice Amorim",
+      "quadroDados": {
+        "dataNascimento": "10 de Janeiro de 1983",
+        "horaNascimento": "15:02",
+        "localNascimento": "Luanda, Angola",
+        "residenciaActual": "Palmela, Portugal",
+        "sistemasUsados": "Sideral, ayanamsa Lahiri, casas de signo inteiro — o que é e quando. Tropical, Placidus — como se sente. Nunca misturados; quando divergem, o relatório diz.",
+        "profissao": "Farmacêutica de formação; passou por terapia; empresária durante 15 anos",
+        "perguntaDeclarada": "Qual é a minha área de vocação e propósito? Em que área devo investir a minha vida profissional?",
+        "situacaoDeclarada": "Transição de carreira / decisão importante."
+      },
+      "perguntaEnquadrada": "A pergunta que nos trouxeste a este relatório foi: «Qual é a minha área de vocação e propósito? Em que área devo investir a minha vida profissional?»",
+      "notaLeitura": {
+        "oSigno": "O teu signo solar é Capricórnio — e continua a ser. Este relatório não o substitui: olha para outras partes da tua carta, que o signo solar sozinho não alcança. Onde vires um ascendente, ou uma posição que parece outro signo, é isso mesmo — outra camada de leitura, nunca uma contradição ao que já sabias de ti.",
+        "aMedida": "Este relatório usa uma medida chamada apoio — quanto cada área da tua vida tem a favor dela, de 0 a 56, com uma média à volta de 28. Apoio alto: as coisas fluem com menos esforço. Apoio baixo: o mesmo esforço rende menos, e pede alavanca, não mais esforço.",
+        "ondeParar": "O plano está na secção «O Plano». Se só leres uma coisa deste relatório, lê essa."
+      }
+    },
+    "retrato60s": {
+      "linhas": [
+        {
+          "texto": "O que é por dentro decide também o que reparte e o que perde quando algo acaba: Sol — a necessidade de ser reconhecida como fonte, de que o que faz leve o seu nome e de não desaparecer dentro de uma estrutura maior do que ela — atravessa também casa 8 — o que se partilha, o que se perde e o que se transforma quando algo acaba.",
+          "seccaoReferencia": "Secção 4 — Quem és"
+        },
+        {
+          "texto": "Avança sem esperar autorização e decide primeiro: Marte — a capacidade de arrancar, de decidir e de agir sem esperar por permissão — aqui não hesita, resolve e só depois explica o que fez.",
+          "seccaoReferencia": "Secção 4 — Quem és"
+        },
+        {
+          "texto": "A capacidade de comunicar e aprender depressa já está lá; falta-lhe alavanca perto de quem a rodeia: casa 3 — como comunica, aprende e se relaciona com quem está próximo dela — pronta, mas sem quem a impulsione.",
+          "seccaoReferencia": "Secção 6 — O que te tem travado"
+        },
+        {
+          "texto": "O dinheiro que ganha nasce em dois lugares distintos: casa 2 — o que possui, o que vale e como fala de si mesma — e casa 11 — os ganhos, a rede e a quem pertence — o valor que se atribui raramente coincide com o que a rede lhe devolve.",
+          "seccaoReferencia": "Secção 8 — De onde vem o dinheiro"
+        },
+        {
+          "texto": "O nome que o mercado reconhece vem de casa 10 — o lugar público, a carreira e o nome pelo qual é conhecida — mas quem está do outro lado decide o preço em casa 7 — os acordos, as parcerias e quem está do outro lado da mesa.",
+          "seccaoReferencia": "Secção 9 — Como és vista e pelo que pagam"
+        },
+        {
+          "texto": "Vive agora o tempo pedido por Vénus — este período exige que viva por dentro o que acha bonito, o que valoriza e por quem se deixa atrair, e, na mesma medida, o que está disposta a pagar e a receber em troca.",
+          "seccaoReferencia": "Secção 7 — O trânsito actual"
+        },
+        {
+          "texto": "Há uma direcção onde o esforço rende mais do que custa: Júpiter — a direcção de crescimento e a confiança de que vale a pena continuar — onde aponta, cresce-se por convicção, não por teimosia.",
+          "seccaoReferencia": "Secção 12 — O Plano"
+        },
+        {
+          "texto": "Se ninguém lhe der uso, a mesma fome continua por trás: Sol — a necessidade de ser reconhecida como fonte, de que o que faz leve o seu nome e de não desaparecer dentro de uma estrutura maior do que ela — sem saída, transforma-se em ressentimento silencioso.",
+          "seccaoReferencia": "Secção 13 — O que te custa não fazer nada"
+        },
+        {
+          "texto": "Uma rede está pronta a dar-lhe crédito antes de ela pedir: casa 11 — os ganhos, a rede e a quem pertence — só falta deixar entrar quem já a apoia.",
+          "seccaoReferencia": "Secção 14 — Uma última coisa"
+        }
+      ]
+    },
+    "cincoDescobertas": [
+      {
+        "texto": "É um sinal forte, o mais nítido desta carta: esta pessoa aprende sobre si mesma exactamente naquilo que se perde, se partilha e se transforma quando algo termina. O Sol — a necessidade de ser reconhecida como fonte, de que o que faz leve o seu nome e de não desaparecer dentro de uma estrutura maior do que ela — instala-se precisamente na casa 8 — o que se partilha, o que se perde e o que se transforma quando algo acaba. Na prática, é nos momentos de ruptura, herança, fusão ou fecho de ciclo que essa necessidade de autoria se torna mais aguda: ela pode entrar numa parceria ou num processo de transformação disposta a dar tudo, mas raramente aceita fazê-lo de forma apagada dentro do percurso de outra pessoa. O lado que agrada é a intensidade genuína com que se compromete nesses limiares; o lado que dói é que qualquer atalho que a torne invisível no processo — mesmo que acelere as coisas — nunca lhe traz a satisfação completa que procura.",
+        "confianca": "sinal-forte",
+        "camadas": [
+          "espinha (consequência directa)"
+        ]
+      },
+      {
+        "texto": "Esta leitura aponta a casa 5 — o que cria por gosto próprio, e onde arrisca por prazer, não por dever — como a área com mais apoio de todas as doze nesta carta. Isto quer dizer que esta pessoa provavelmente já reparou que, quando o esforço nasce de um projecto pessoal ou de uma expressão criativa escolhida por vontade própria, os resultados chegam com menos resistência do que em qualquer outra frente da vida. É a mais forte de todas as doze zonas de apoio — não porque o talento aí seja maior do que noutro lado, mas porque o terreno cede com mais facilidade àquilo que ela decide construir por gosto. O lado que agrada é a fluidez quase natural desse investimento; o lado que pede atenção é que, precisamente por ser fácil, ela pode subestimar o valor real do que aí produz.",
+        "confianca": "leitura",
+        "camadas": [
+          "SAV mais alto (casa 5, 35)"
+        ]
+      },
+      {
+        "texto": "A capacidade desta pessoa para comunicar, aprender e estar perto de quem lhe é próximo não está em causa — o que falta aqui é alavanca, não competência. A casa 3 — como comunica, aprende e se relaciona com quem está próximo dela — é uma das áreas com menos apoio de toda a carta, o que significa que o mesmo esforço que noutro sítio rende com facilidade, aqui exige mais repetição e mais tempo antes de ser reconhecido pelos outros. Isto não diz que ela comunique mal; diz que o retorno desse esforço demora a aparecer e raramente vem por acaso. O lado que dói é a sensação de ter de se explicar duas vezes; o lado que compensa é que, quando a mensagem finalmente passa, tende a ficar — porque custou trabalho a chegar lá, dos dois lados.",
+        "confianca": "leitura",
+        "camadas": [
+          "SAV baixo (casa 3, 24)"
+        ]
+      },
+      {
+        "texto": "Há uma tensão que esta pessoa provavelmente sente em mais do que uma área da vida ao mesmo tempo, como se puxassem por ela em direcções diferentes sempre que tenta avançar. O Saturno — o que exige tempo, estrutura e disciplina antes de dar fruto, onde não há atalho e o que se ganha não se perde depois — atravessa vários pontos da carta em simultâneo, o que faz com que essa exigência de paciência reapareça repetidamente, em contextos que à primeira vista não parecem ter ligação entre si. O lado difícil é o cansaço de sentir que quase tudo o que importa pede disciplina ao mesmo tempo; o lado que fica é que aquilo que ela constrói sob essa pressão tende a durar, precisamente por não ter sido apressado.",
+        "confianca": "leitura",
+        "camadas": [
+          "figura fechada mais forte (Grande Trigono, Saturn-Rahu-MC)"
+        ]
+      },
+      {
+        "texto": "Há um traço nesta pessoa que funciona de forma quase oposta ao habitual, e que se separa claramente do fio central desta carta. A Lua — o que sente antes de pensar, a sua leitura mais rápida e mais fiável de uma situação, mesmo quando não consegue justificá-la em palavras — está debilitada — trabalha contra a corrente, e o que produz exige mais confirmação e mais tempo do que o normal. Na prática, a primeira reacção emocional dela a algo pode não ser aquela em que deve confiar de imediato: provavelmente já reparou que precisa de mais tempo do que gostaria para confirmar se o que sentiu à primeira estava certo. O lado que custa é essa hesitação instintiva; o lado que ajuda é que, ao pedir confirmação extra, ela acaba por evitar decisões tomadas só pelo impulso do momento.",
+        "confianca": "leitura",
+        "camadas": [
+          "dignidade extrema (Moon, Debilitated)"
+        ]
+      }
+    ],
+    "veredicto": {
+      "resposta": "A pergunta que nos trouxeste a este relatório foi: «Qual é a minha área de vocação e propósito? Em que área devo investir a minha vida profissional?» A resposta é concreta: a tua vocação está em qualquer trabalho que aconteça no ponto onde algo termina, se transforma ou se reparte entre pessoas — heranças, dívidas, lutos, reestruturações, processos que exigem que alguém entre no que os outros preferem não olhar de frente — desde que esse trabalho saia com o teu nome atado a ele. Não é uma questão de escolher entre sectores; é uma questão de nunca aceitares fazer esse tipo de trabalho a coberto de uma marca, de uma equipa ou de uma instituição que apague de onde ele veio.\n\nAs razões seguem-se sem intervalo. Tens o Sol — a necessidade de seres reconhecida como fonte, de que o que fazes leve o teu nome e não desapareça dentro de algo maior do que tu, a ponto de qualquer atalho que te poupe a esse reconhecimento nunca te satisfazer de facto — instalado na casa 8 — o território do que se partilha, do que se perde e do que se transforma quando algo acaba. É essa combinação, e não uma coincidência de talento, que te coloca precisamente onde a pergunta pede resposta: a tua área não é a mais confortável nem a mais visível à partida, é a que envolve fim, transição e partilha, e é aí que precisas de assinatura própria. E porque esse Sol está em adhi-mitra — em casa de um grande aliado, com apoio a dobrar e quase sem atrito — o que constróis nesse território específico tende a ganhar terreno sem a resistência que costuma acompanhar trabalhos deste tipo; a dificuldade real nunca foi a área, foi sempre aceitares fazê-la sem que o teu nome ficasse visível nela.\n\nIsto ganha peso porque a fase de vida que atravessas agora activa exactamente este tema — processos de fecho, de reorganização, de coisas que estão a mudar de mãos ou de forma à tua volta —, o que torna esta pergunta mais urgente agora do que seria noutro momento. Não é o único caminho profissional que este desenho permite, mas é o único que este desenho não deixa por resolver: qualquer investimento de vida que ignore a necessidade de seres fonte reconhecida, sobretudo num território de transformação e partilha, vai deixar-te com trabalho a render sem te render a ti.",
+      "razoes": [
+        {
+          "texto": "Esta descoberta é sobre onde o esforço rende mais — nunca sobre talento, sobre apoio do terreno.",
+          "confianca": "leitura",
+          "camadas": [
+            "SAV mais alto (casa 5, 35)"
+          ]
+        },
+        {
+          "texto": "Esta descoberta tem de separar capacidade de retorno (regra 7 do v2): diga sempre que a competência aqui está intacta, e que o que falta é alavanca — nunca sugira que a pessoa não serve para isto.",
+          "confianca": "leitura",
+          "camadas": [
+            "SAV baixo (casa 3, 24)"
+          ]
+        },
+        {
+          "texto": "Esta descoberta é sobre uma tensão que aparece em vários pontos da carta ao mesmo tempo — nunca nomeie o padrão geométrico (nada de T-quadrado, Yod, cruz), descreva só o que essa tensão FAZ na vida da pessoa.",
+          "confianca": "leitura",
+          "camadas": [
+            "figura fechada mais forte (Grande Trigono, Saturn-Rahu-MC)"
+          ]
+        }
+      ]
+    },
+    "quemEs": "Há um facto que precede todos os outros: o que fazes precisa de ter o teu nome escrito por baixo, mesmo quando ninguém pergunta de quem foi a ideia. Sol — a necessidade de ser reconhecida como fonte, de que o que faz leve o seu nome e de não desaparecer dentro de uma estrutura maior do que ela — é o ponto de entrada desta identidade, e é a partir daqui que tudo o resto se organiza: não é vaidade, é a condição mínima para que algo pareça teu de verdade. Quando essa condição falta, mesmo o trabalho bem feito sabe a emprestado.\n\nEssa exigência entra no mundo através de casa 1 — como a pessoa se apresenta e o que faz com o próprio corpo e presença — o que significa que a fonte não fica escondida em bastidores: mostra-se, ocupa espaço físico, decide-se pela sua própria cara antes de decidir por argumentos. Provavelmente já reparaste que entrares numa sala muda o tom dela antes de dizeres uma palavra — não por estratégia, mas porque é aí que o Sol tem porta de saída.\n\nIsto não é carácter, é identidade — não muda consoante o contexto exige delicadeza ou exige força. Em qualquer situação, a pergunta de fundo mantém-se a mesma: isto continua a ser meu, ou estou a desaparecer dentro de outra coisa?\n\nNo dia a dia, isso aparece primeiro como sensação, não como raciocínio: Lua — o que a pessoa sente antes de pensar, a sua leitura mais rápida e mais fiável da situação, mesmo quando não a consegue justificar em palavras — avisa-te antes de qualquer análise se um lugar, uma pessoa ou um acordo te vai deixar visível ou vai engolir-te. E quando chega a hora de pôr isso em palavras, é Mercúrio — a forma como processa, fala e negocia o mundo, o que entra por linguagem e sai por argumento — quem traduz essa sensação em posição clara: raramente concordas por educação quando o instinto já disse não.\n\nO que decide como te apresentas aos outros — o gosto, o charme, aquilo por que te deixas atrair e aquilo que estás disposta a pagar — é comandado por Vénus — o que a pessoa acha bonito, o que valoriza e por quem se deixa atrair, e, na mesma medida, o que está disposta a pagar e a receber em troca. E essa força foi morar em casa 9 — o sentido, o estudo e aquilo em que acredita sem precisar de prova — o que significa que aquilo que te atrai raramente é decorativo: é uma crença, uma direcção de sentido, algo em que investes como quem investe numa convicção, não como quem compra um objecto.\n\nO que isto significa agora é simples e concreto: qualquer parceria, fusão ou colaboração só se sustenta enquanto o teu nome continuar legível dentro dela — no momento em que uma estrutura pede que abdiques disso \"só por agora\", é essa identidade, não o cansaço nem a falta de vontade, que começa a puxar-te para fora.",
+    "formaDeVida": "A roda das doze áreas que acompanhas nesta secção não mostra o que vais viver — mostra onde o esforço que já pões todos os dias encontra vento a favor, e onde encontra resistência. Quando lês apoio alto numa área, sabes que ali o mesmo esforço rende mais do que rende noutro lado; quando lês apoio baixo, sabes que esse mesmo esforço rende menos, e o que resolve não é insistires com mais força, é mudares de alavanca. Não estás a olhar para um destino fechado — estás a olhar para um aviso prático: onde vale a pena começares, e onde vale a pena parares de empurrar sozinha.\n\nHá duas áreas onde isto já acontece sem precisares de forçar: o que crias por gosto próprio, e o teu trabalho do dia a dia. No que crias por prazer, arriscas porque queres, não porque deves — e é precisamente por não haver obrigação a pesar que o esforço ali se transforma em resultado com menos atrito. No trabalho diário, a rotina que tens de resolver sozinha corre com uma naturalidade que outras áreas não têm: o que fazes ali, fazes bem, e o retorno chega sem precisares de forçar a régua. Não é por acaso que estas são as duas áreas onde o apoio é mais alto — é aqui que vale a pena colocares o esforço extra que tens disponível, porque é aqui que ele rende mais.\n\nDepois há um grupo mais amplo, onde o apoio é médio — nem fácil, nem difícil, mas a pedir atenção. Como te apresentas e o que fazes com a tua presença; o que possuis, o que vales e como falas do teu próprio valor; a base de onde partes e o que te sustenta por dentro; os acordos e as parcerias que fazes, e quem está do outro lado da mesa; a tua carreira, o lugar público e o nome pelo qual és conhecida; os ganhos, a rede e a quem pertences — todas estas áreas funcionam, mas pedem que não as deixes em piloto automático. É uma leitura que se confirma pelo padrão, não um facto fechado: nestas áreas o resultado acompanha o cuidado que lhes dás, nem mais nem menos. Dentro deste grupo, há uma área que merece nota à parte: o que se partilha, o que se perde e o que se transforma quando algo acaba. O apoio aqui, médio como o resto do grupo, confirma outra vez algo que já se via ao longo deste relatório — que quem és por dentro e o que partilhas ou perdes numa transformação não são dois assuntos separados, mas a mesma questão a repetir-se: a de precisares que o que fazes leve o teu nome, e de não desapareceres dentro de algo maior do que tu.\n\nHá, por fim, três áreas onde o esforço custa mais para o mesmo resultado — e a primeira coisa a dizer sobre elas é que a tua capacidade aí está intacta: não é que não saibas comunicar, estudar ou descansar, é que estas áreas, neste momento, não têm o vento a favor que as outras têm. Como comunicas, aprendes e te relacionas com quem está perto de ti; o sentido, o estudo e aquilo em que acreditas sem precisar de prova; o trabalho invisível, o descanso, e o que se perde sem ser contado — nestas três áreas, o mesmo esforço que noutro lado rende facilmente, aqui pede alavanca: apoio de outra pessoa, um método diferente, um prazo mais largo. O que não resolve é insistires sozinha, a direito, com mais força.\n\nUsa esta roda como ferramenta de decisão, não como sentença: quando tiveres de escolher onde gastar a energia que tens hoje, começa pelo que crias por prazer e pelo teu trabalho diário — é aí que o retorno vem mais depressa. Nas áreas do meio, dá atenção sem exagero, porque é o cuidado que faz a diferença, não o esforço extra. E nas três áreas onde o esforço custa mais, não te cobres de fazeres sozinha o que pede ajuda de fora — procura quem te complemente, ou espera pelo momento certo, em vez de empurrares contra a maré.",
+    "dinheiro": "O que rende mais nesta carta começa no Sol — a necessidade de ser reconhecida como fonte, de que o que faz leve o seu nome, e de não desaparecer dentro de uma estrutura maior do que ela. Depois de quinze anos a gerir um negócio que era seu no papel mas nem sempre no reconhecimento público, e depois de ter passado pela farmácia e pela terapia — dois territórios onde se serve alguém mas raramente se fica com o nome associado ao resultado —, o que paga mais a esta pessoa não é repetir esse padrão numa nova estrutura, mas o inverso: um contexto onde o resultado visível seja identificável como sendo dela. Isto aparece também em casa 2 — o que possui, o que vale e como fala de si mesma — e em casa 10 — o lugar público, a carreira e o nome pelo qual é conhecida: o preço que cobra e o nome que a carreira lhe dá tendem a subir juntos, nunca um sem o outro. E porque este Sol está em adhi-mitra — em casa de um grande aliado, onde o que se constrói tem apoio a dobrar e quase sem atrito —, esta necessidade de assinar o próprio trabalho não encontra resistência estrutural: o que tem faltado até aqui não foi capacidade, foi o contexto certo para a exercer.\n\nEste dom vende-se melhor onde há um acordo concreto e um interlocutor identificável do outro lado — casa 7 — os acordos, as parcerias e quem está do outro lado da mesa —, não num mercado difuso de massas. O contexto que melhor paga por aquilo que ela sabe é o de relações de proximidade: pessoas ou instituições que a procuram precisamente pela bagagem que atravessa a farmácia, a terapia e quinze anos a gerir um negócio, e que pagam pela pessoa, não só pelo serviço. Como isto volta a tocar casa 10 — o lugar público, a carreira e o nome pelo qual é conhecida —, o dinheiro tende a render mais onde o nome dela circula como referência, não apenas como mão de obra qualificada.\n\nHá, contudo, uma tensão estrutural a trabalhar neste terreno: o desejo de expandir entra em atrito directo com a forma como ela se apresenta publicamente, e é precisamente no ponto da carreira visível — na decisão que está a tomar agora — que essa tensão pede resolução, não como obstáculo a evitar mas como o lugar exacto onde há trabalho a fazer. Ao mesmo tempo, a forma como comunica e o valor que atribui ao que oferece já fluem com naturalidade quando ligados a essa vontade de crescer — mas esse fluxo aponta sempre para um caminho pouco convencional, que pede um ajuste fora do padrão testado, e não a rota mais óbvia.\n\nO que trava a conversão neste momento não é falta de capacidade — é que uma segunda competência sua entra debilitada — trabalha contra a corrente, e o que produz por essa via exige mais confirmação e mais tempo do que o normal —, o que significa que os resultados desse lado específico do trabalho demoram a aparecer e pedem prova repetida antes de serem aceites pelo mercado; a peça a trabalhar não é a que assina com o nome dela, é a que ainda precisa de tempo e validação externa para acompanhar o ritmo das outras.\n\nQuando o nome dela fica visivelmente ligado ao resultado, o acordo é feito com quem já reconhece essa bagagem, e a peça mais lenta recebe o tempo e a confirmação de que precisa, o que já produz deixa de ficar disperso por estruturas que nunca o assinaram em seu nome.",
+    "comoEsVista": "Antes de dizer uma palavra, esta pessoa já entrega uma primeira leitura de si através de casa 1 — como a pessoa se apresenta e o que faz com o próprio corpo e presença. Quem comanda essa entrega é Vénus — o que a pessoa acha bonito, o que valoriza e por quem se deixa atrair, e pela mesma medida o que está disposta a pagar e a receber em troca — que nesta carta mora em casa 9 — o sentido, o estudo e aquilo em que acredita sem precisar de prova. A impressão que chega antes da conversa, portanto, não é de superfície: é de alguém que parece já ter pensado longe, que carrega convicção antes de argumento — e que se apresenta como quem sabe alguma coisa antes de ser perguntada.\n\nEssa impressão abre a porta, mas não é o que decide o preço. Esta pessoa carrega Sol — a necessidade de ser reconhecida como fonte, de que o que faz leve o seu nome, e de não desaparecer dentro de uma estrutura maior do que ela — a operar directamente sobre casa 10 — o lugar público, a carreira e o nome pelo qual é conhecida. É isto que decide, sem rodeio, o valor que lhe atribuem: pagam-lhe mais quando o trabalho sai assinado com o seu nome e não absorvido por uma marca, uma equipa ou um projecto colectivo que o engula. O mercado genérico oferece competência anónima, substituível, sem rosto identificável por trás; esta pessoa vale mais precisamente porque recusa — por constituição, não por vaidade — ser essa peça anónima. Quem a contrata paga por saber, com nome e rosto, de quem está a comprar.\n\nNenhuma figura fechada nesta carta aponta aqui um bloqueio nítido — não há um mecanismo de sabotagem para nomear nesta frente. O que esta pessoa ainda pode trabalhar é mais simples do que desfazer um nó: é a disciplina de nunca deixar o nome diluir-se em trabalho colectivo sem crédito visível — recusar contratos, colaborações ou plataformas onde a autoria fica escondida atrás de uma marca maior do que ela. Cada vez que o seu nome aparece junto ao trabalho, de forma legível e recorrente, o preço sobe; cada vez que esse nome desaparece dentro de uma estrutura, mesmo que o trabalho em si seja bom, o preço estagna.",
+    "oRelogio": "Há um andamento mais lento do que qualquer ano, e é nele que este relatório começa. Plutão — o que está agora a activar-se é isto: a transformação que não pede licença, o que precisa de morrer para que outra coisa, mais verdadeira, possa nascer no seu lugar; não se negocia, só se atravessa — está a atravessar a casa 9 — o sentido, o estudo e aquilo em que a pessoa acredita sem precisar de prova. É uma leitura de longo alcance, não um relógio de precisão: o contacto mantém-se activo pelo menos até por volta de Março de 2039, uma fronteira aproximada, não o fim exacto do processo, que pediria um cálculo mais fino do que este. O que este pano de fundo activa nela é Mercúrio — a forma como processa, fala e negocia o mundo, o que entra por linguagem e sai por argumento, incluindo a distância entre o que pensa e o que diz. Não são as crenças que ela tem de largar; é a forma como as diz que está a ser posta à prova, para deixarem de soar a herança e passarem a soar a ela.\n\nDescendo para o horizonte de alguns anos, há vários movimentos lentos a decorrer em simultâneo, e cada um pede a sua própria confiança de leitura. Saturno — o que está agora a activar-se é isto: o que exige tempo, estrutura e disciplina antes de dar fruto, onde não há atalho e o que se ganha aqui não se perde depois — atravessa a casa 11 — os ganhos, a rede e a quem a pessoa pertence —, activo pelo menos até por volta de Junho de 2027 (leitura, fronteira aproximada). É tempo de construir pertença que aguenta peso, não a que se ganha depressa. Ao mesmo tempo, Urano — o que está agora a activar-se é isto: a ruptura súbita que liberta, o que quebra um molde antigo sem aviso, porque esse molde já não cabia em quem ela é agora — atravessa a casa 1 — como se apresenta e o que faz com o próprio corpo e presença —, activo pelo menos até por volta de Julho de 2031 (leitura). E Neptuno — o que está agora a activar-se é isto: a dissolução do que parecia sólido, onde os limites ficam menos nítidos, por bem ou por mal, consoante o que já ali estava — atravessa de novo a casa 11 — os ganhos, a rede e a quem pertence —, pelo menos até por volta de Junho de 2035 (leitura): a mesma área de pertença a dissolver-se por um lado enquanto Saturno a tenta estruturar pelo outro.\n\nMas é Plutão — outra vez o que está agora a activar-se: a transformação que não pede licença, o que precisa de morrer para que outra coisa, mais verdadeira, possa nascer no seu lugar — que aqui pede o nível de confiança mais alto desta camada: sinal-forte, porque este trânsito faz um contacto exacto com um ponto do desenho de nascimento, não apenas uma leitura de fronteira. Continua a atravessar a casa 9 — o sentido, o estudo e aquilo em que acredita sem precisar de prova —, pelo menos até por volta de Março de 2039. É aqui que o fio que atravessa este relatório fica palpável: quando o que ela acredita está a ser remexido por dentro com esta precisão, o que está realmente em causa é se essa crença continua a levar o nome de outra pessoa ou passa, finalmente, a levar o dela.\n\nRahu — o que está agora a activar-se é isto: o apetite que nunca se sente satisfeito, a direcção para onde é empurrada mesmo sem experiência prévia, que cresce quanto mais se persegue — atravessa a casa 10 — o lugar público, a carreira e o nome pelo qual é conhecida —, activo pelo menos até por volta de Dezembro de 2026 (leitura). No mesmo horizonte, Ketu — o que está agora a activar-se é isto: o que já foi dominado em capítulos anteriores e por isso já não dá gosto, a competência que sobra sem vontade de a usar — atravessa a casa 4 — a base de onde parte, casa, raiz, aquilo que a sustenta por dentro.\n\nTrazendo isto para a escala de um só ano, o tema muda de registo. Júpiter — o que está agora a activar-se é isto: a direcção de crescimento e a confiança de que vale a pena continuar, onde aponta o esforço rende mais do que o investido — activa este ano a casa 3 — como comunica, aprende e se relaciona com quem está próximo dela. Este signo mantém-se activo até por volta de Novembro de 2026, uma fronteira aproximada. Falar, aprender e estar perto de quem está por perto pedem, neste ano, mais espaço do que noutros — não por obrigação, mas porque é aí que o esforço parece render mais agora.\n\nPor fim, o período mais pessoal, aquele que tem timing mais apertado do que qualquer trânsito — e é por isso que aqui a confiança sobe para sinal-forte. A década de fundo é regida por Vénus — este período pede que a pessoa viva por dentro isto: o que acha bonito, o que valoriza e por quem se deixa atrair, e, pela mesma medida, o que está disposta a pagar e a receber em troca. Dentro dela, o período mais próximo — activo até por volta de Outubro de 2026 — é regido por Ketu — este período pede que a pessoa viva por dentro isto: o que já foi dominado em capítulos anteriores e por isso já não dá gosto, a competência que sobra sem vontade de a usar. Medida de forma independente das camadas anteriores, esta combinação confirma algo que já se via: o que ela valoriza e o que já não lhe dá gosto usar tendem a coincidir precisamente onde algo foi feito bem mas nunca levou o seu nome — e é aí que a competência antiga começa a pesar como sobra, não como conquista.",
+    "oPlano": "# O Plano\n\nEste plano não inventa um caminho novo nem decide entre farmácia, terapia ou empresa — organiza, em 90 dias, o primeiro movimento concreto que testa se o trabalho que fazes começa a sair com o teu nome atado a ele, ou continua escondido dentro de outra coisa. O que não faz: não te diz qual profissão escolher para sempre; diz-te o que fazer esta semana, e depois a seguir, para descobrires isso na prática.\n\n## A tabela de 90 dias\n\n| QUANDO | O QUE FAZER | COM QUE DEPENDE |\n|---|---|---|\n| Esta semana | Fazer o inventário de tudo o que já fizeste nos três capítulos — farmácia, terapia, empresa — que envolveu fim, dívida, luto ou reestruturação. Marcar, caso a caso, onde o teu nome ficou visível e onde desapareceu dentro de uma marca, clínica ou empresa. | Só de honestidade — não exige nenhuma decisão ainda, só ver o que já existe. |\n| Semanas 2-4 | Escolher, do menu abaixo, UMA proposta para testar em pequena escala — um caso, um cliente, uma sessão — sempre dentro de casa 5 — o que cria por gosto próprio, e onde arrisca por prazer, não por dever — nunca a que exige aprender tudo de raiz. | Depende do inventário da semana 1: escolhe-se pela pergunta \"isto já fiz bem, e fi-lo com gosto\". |\n| Dias 31-45 | Assinar publicamente esse primeiro caso — nome próprio, não iniciais, não \"a equipa\" — mesmo que o formato seja pequeno: um texto, um post, uma proposta escrita. | Depende de ter um caso real tratado nos últimos 15 anos para transformar em prova assinada — já existe, só falta ser mostrado. |\n| Dias 46-60 | Cobrar por essa mesma competência de forma directa, sem estrutura a intermediar o pagamento nem o crédito. | Depende da reacção ao dia 31-45: se alguém respondeu ao caso assinado, esse é o primeiro sinal de mercado. |\n| Dias 61-90 | Testar uma segunda proposta do menu, cruzando desta vez com casa 11 — os ganhos, a rede e a quem pertence — ou seja, através de alguém da rede já construída em 15 anos de empresária, não a partir do zero. | Depende de já ter um primeiro caso assinado e cobrado — não se abre a segunda frente sem fechar o ciclo da primeira. |\n| Ao longo dos 90 dias | Notar sempre que uma tarefa pede a competência antiga sem vontade de a repetir — isso é Ketu — este período pede que vivas por dentro o que já foi dominado em capítulos anteriores e por isso já não dá gosto, a competência que sobra sem vontade de a usar — e usar isso como sinal para não construir o plano à volta dela, mesmo que seja a mais fácil de vender. | Depende de perceber a diferença entre \"sei fazer isto\" e \"quero que isto leve o meu nome\". |\n\nVale a pena dizer, antes de fechar a tabela: este trimestre corre dentro de um andamento muito mais lento do que ele. Plutão — o que está agora a activar-se é isto: a transformação que não pede licença, o que precisa de morrer para que outra coisa, mais verdadeira, possa nascer no seu lugar; não se negocia, só se atravessa — continua a remexer a forma como falas daquilo em que acreditas, e é isso que torna urgente agora, mais do que seria noutra fase, que o teu nome fique colado ao trabalho. Nenhuma linha da tabela precisa de esperar por ele — mas todas acontecem dentro dele.\n\n## O menu de propostas\n\nNão são para fazer todas — é o menu de onde a escolha sai.\n\n1. **Consultoria de acompanhamento farmacológico em cuidados paliativos, assinada em nome próprio.** Usa a formação de farmacêutica exactamente no ponto em que a medicação deixa de curar e passa a acompanhar o fim — encaixa directamente no território que a espinha já identificou, e só rende de verdade com Sol — a necessidade de ser reconhecida como fonte, de que o que faz leve o seu nome e não desapareça dentro de uma estrutura maior — a operar sem esconderijo institucional.\n\n2. **Terapia especializada em luto e transições de vida, em atendimento próprio.** Usa a formação em terapia sem a filtrar por clínica ou plataforma; Lua — o que a pessoa sente antes de pensar, a leitura mais rápida e mais fiável da situação — dá-te o instinto certo para saber quando intervir num processo de luto, e isso só se paga com o teu nome ligado ao acompanhamento.\n\n3. **Mediação em processos de reestruturação e fecho de empresas.** Usa directamente os 15 anos como empresária, entrando exactamente onde outras empresas estão a fechar, fundir ou mudar de mãos; cruza Sol com casa 7 — os acordos, as parcerias e quem está do outro lado da mesa — porque este trabalho vive de negociação assinada, nunca de consultoria anónima.\n\n4. **Consultoria de sucessão para farmácias familiares.** Um nicho muito concreto: farmácias que passam de geração em geração, com toda a carga técnica e emocional que isso implica. Junta as três profissões — farmacêutica, terapeuta, empresária — num serviço que ninguém mais oferece com esta combinação exacta.\n\n5. **Mentoria individual paga, um-para-um, para farmacêuticas ou terapeutas em mudança de carreira.** Usa Sol e casa 10 — o lugar público, a carreira e o nome pelo qual é conhecida — porque o valor está em já teres atravessado essa transição três vezes e poderes dizê-lo com o teu próprio nome, não com o de uma escola de coaching.\n\n6. **Autoria de um livro ou série de casos assinados sobre os três capítulos da tua vida profissional.** Usa casa 2 — o que possui, o que vale e como fala de si mesma — para transformar a experiência acumulada em activo com nome próprio, em vez de currículo disperso por três sectores.\n\n7. **Facilitação de processos de reestruturação de dívida pessoal ou familiar**, combinando o rigor técnico da farmácia com o acompanhamento emocional da terapia. Serve exactamente o ponto que a espinha aponta — entrar no que os outros preferem não olhar de frente — e paga-se pela dupla competência, não por uma sozinha.\n\n8. **Palestras e formação para associações de farmácia ou saúde sobre sucessão, fecho e transição de negócios.** Constrói casa 10 a prazo: cada intervenção assinada é autoridade que fica, mesmo quando o cachet inicial é modesto.\n\n9. **Assessoria em fusões e aquisições de pequenas clínicas ou farmácias.** Usa casa 11 — os ganhos, a rede e a quem pertence — porque a rede de 15 anos como empresária já dá acesso a quem compra e vende este tipo de negócio; entra-se como assessora nomeada, nunca como funcionária de uma consultora maior.\n\n**Ordem prática:** a mentoria individual (5) e a mediação em reestruturação empresarial (3) são as que rendem mais depressa — já há rede e prova de 15 anos, só falta cobrar com nome. A terapia de luto (2) e a consultoria farmacológica em paliativos (1) são as mais estáveis a médio prazo — assentam em duas formações já concluídas. O livro (6), as palestras (8) e a consultoria de sucessão em farmácias (4) são as que constroem autoridade a prazo — rendem menos nos primeiros meses, mas são as que tornam o teu nome reconhecível exactamente no território que esta carta aponta.\n\n## O teste de filtro\n\nPara esta ou para qualquer oportunidade futura, faz sempre estas três perguntas, por esta ordem:\n\n1. **Sol — a necessidade de ser reconhecida como fonte, de que o que faz leve o seu nome e não desapareça dentro de uma estrutura maior do que ela** — isto sai com o meu nome, visível e atado a mim, ou desaparece dentro de uma marca, equipa ou instituição?\n2. **casa 5 — o que cria por gosto próprio, e onde arrisca por prazer, não por dever** — isto nasce de gosto e risco escolhidos por mim, ou só de obrigação e dever?\n3. **Vénus — o que a pessoa acha bonito, o que valoriza e por quem se deixa atrair, e, pela mesma medida, o que está disposta a pagar e a receber em troca** — isto pede que eu apareça sozinha a executar, ou pode passar por outra pessoa ou por uma estrutura — e, de qualquer forma, sei já o que estou disposta a pagar e a receber em troca?\n\nSó avança o que responder sim, sim e claro às três. Uma oportunidade que só responde bem a duas ainda pode ser tentadora — mas é precisamente aí que o trabalho volta a render sem te render a ti.\n\n## O que não fazer\n\n- Não apostar agora em construir autoridade a ensinar ou certificar crenças e filosofias abstractas ligadas a casa 9 — o sentido, o estudo e aquilo em que acredita sem precisar de prova. Não é que te falte capacidade de pensar ou argumentar sobre isso — essa continua intacta —, é que o mesmo esforço aí rende menos agora do que dentro do território de fim e transformação que a espinha já identificou.\n- Não aceitar nenhum papel, por mais estável ou bem pago, em que o trabalho de transformação, fecho ou partilha fique assinado por uma clínica, empresa ou marca sem o teu nome visível — mesmo quando parecer a opção mais segura a curto prazo.\n- Não construir a oferta central à volta da competência sinalizada por Ketu — este período pede que vivas por dentro o que já foi dominado em capítulos anteriores e por isso já não dá gosto, a competência que sobra sem vontade de a usar. Só porque é a mais fácil de vender agora não significa que deva ficar no centro do plano; usa-a como apoio pontual, nunca como motor.",
+    "custoDeNaoFazerNada": "Se nada mudar, o que continua é o mesmo padrão de sempre: o trabalho a ser feito com competência total e a sair sem nome atado a ele, escondido dentro de uma marca, de uma clínica, de uma equipa ou de uma instituição que não é tua. A casa 3 — como comunicas, aprendes e te relacionas com quem está próximo de ti — não é onde falta capacidade; é onde falta o gesto simples de dizer, a quem está ao teu lado, \"isto fiz eu, com o meu nome\". Sem essa alavanca, continuarás a fazer o que já fazes bem — em farmácia, em terapia, em empresa — e a sentir o mesmo vazio de sempre quando o crédito se dilui num \"a equipa\" ou num \"a clínica\", porque o problema nunca foi a competência, foi sempre o silêncio à volta dela.\n\nEsta janela, que vai até Outubro de 2026, pede algo muito concreto: Ketu — o que já foi dominado em capítulos anteriores e por isso já não dá gosto, a competência que sobra sem vontade de a usar — está a mostrar-te, com clareza rara, o que não é para levar contigo. Se esta janela fechar sem uso, não perdes a oportunidade de assinar o teu trabalho — essa continua disponível depois —, mas perdes esta versão específica dela, em que o cansaço da competência antiga já se tornou visível e pode servir de bússola em vez de peso. É essa clareza, e não outra, que não volta a repetir-se exactamente assim; e é por isso que o primeiro passo do Plano — o inventário desta semana — não pede decisão nenhuma, só pede que comeces a ver o que já lá está.",
+    "oQueTeTemTravado": "É preciso nomear a força primeiro para depois falar do que a trava. Ela tem o Sol — a necessidade de ser reconhecida como fonte, de que o que faz leve o seu nome, e de não desaparecer dentro de uma estrutura maior do que ela — e esse motor já encontrou dois territórios onde não precisa de pedir licença para existir. Na casa 5 — o que cria por gosto próprio, e onde arrisca por prazer, não por dever — essa assinatura aparece sem esforço: o que faz ali já nasce com o seu nome colado. E na casa 6 — o trabalho do dia a dia, a rotina, e o que tem de resolver sozinha — essa mesma fonte sustenta-se em disciplina real, não em teoria: ela entrega, e entrega bem, sem que ninguém tenha de lhe puxar pela mão.\n\nMas essa mesma necessidade de assinar o que faz esbarra numa tensão estrutural, não numa falta de capacidade. A casa 3 — como comunica, aprende e se relaciona com quem está próximo dela —, a casa 9 — o sentido, o estudo e aquilo em que acredita sem precisar de prova — e a casa 12 — o que fica escondido, o trabalho invisível, o descanso, e o que se perde sem ser contado — têm pouco apoio estrutural para sustentar essa fonte quando ela precisa de se explicar, de defender um sentido, ou de descansar sem se sentir apagada. E é aí que o Mercúrio — a forma como processa, fala e negocia o mundo, o que entra por linguagem e sai por argumento, incluindo a distância entre o que pensa e o que diz — e o Vénus — o que acha bonito, o que valoriza e por quem se deixa atrair, e por essa mesma medida o que está disposta a pagar e a receber em troca — ficam sem chão firme: falta-lhes terreno de casa, não falta-lhes força.\n\nQuando essa tensão cede, o que ela partilha, o que perde e o que se transforma quando algo termina deixam de ser três frentes separadas a defender ao mesmo tempo — tornam-se uma só corrente, com uma única assinatura por baixo. Ela deixa de precisar de justificar em palavras o que já é evidente em resultado, e o que antes se perdia sem ser contado — na quietude da casa 12, ou na distância de uma crença da casa 9 — passa a ser reconhecido como parte do mesmo gesto que assina tudo o resto. Não é mais um lugar a conquistar; é o mesmo nome, dito em mais línguas.\n\nO primeiro passo apoia-se no que este momento já pede, sem esperar por nenhuma data adiante: Ketu — o que já foi dominado em vidas ou capítulos anteriores e por isso já não dá gosto, a competência que sobra sem vontade de a usar — está a apontar exactamente para essa comunicação e essa crença que ela domina tecnicamente mas evita por tédio. A instrução é concreta: da próxima vez que tiver de explicar por palavras algo que já sabe fazer, não recorra ao argumento habitual e já gasto — escreva ou diga a versão mais curta e mais crua da ideia, sem rodeio, e entregue essa versão a alguém próximo antes de a polir. É nesse pequeno acto, feito agora, que a fonte começa a encontrar chão fora de onde já sabia que o tinha.",
+    "transitoActual": "# O Trânsito Actual\n\nHá algo a mexer agora, de forma que não pede a sua opinião — e toca precisamente na parte de si que decide o que acredita e onde encontra sentido sem precisar de prova a ninguém.\n\nO que está activo neste momento pede uma transformação que não se negocia, só se atravessa: algo precisa de morrer para que outra coisa, mais verdadeira, possa nascer no seu lugar. E isto está a acontecer dentro da casa 9 — o sentido, o estudo e aquilo em que acredita sem precisar de prova. Pode ser uma crença que já não sustenta o que costumava sustentar, uma direcção de estudo ou de fé que se revela pequena demais para quem se tornou, ou uma verdade que precisa de ser reconstruída a partir do zero, já não emprestada de fora. Nos próximos meses, o que favorece é deixar cair o que já não é seu por convicção própria — mesmo que tenha sido útil, mesmo que tenha um nome respeitável. O que evitar é agarrar-se à forma antiga só porque é conhecida, ou fingir que ainda acredita nela para não enfrentar o vazio que fica antes de uma crença nova assentar. Este processo mantém-se activo pelos próximos meses pelo menos, sem uma saída rápida à vista.\n\nNos próximos três a seis meses, o que pode ganhar relevância não é decidir tudo de imediato, mas notar onde uma crença emprestada está a ceder — e resistir ao impulso de a substituir por outra igualmente emprestada. O que está em causa, no fundo, é o mesmo que sempre esteve: precisar que o que pensa e defende leve verdadeiramente o seu nome, e não o nome de uma estrutura maior que a si própria.",
+    "sobreOQueEEmQueForma": "# Sobre o Quê e Em Que Forma\n\nHá um território onde esta carta rende mais do que em qualquer outro, e é aquele em que o teu nome fica colado ao que fazes. O teu Sol — a necessidade de ser reconhecida como fonte, de que o que faz leve o seu nome, e de não desaparecer dentro de uma estrutura maior do que ela — não se satisfaz a executar tarefas que se dissolvem num colectivo sem rosto. Isto pode viver em três territórios diferentes, e provavelmente vive nos três ao mesmo tempo: na casa 5 — o que crias por gosto próprio, e onde arriscas por prazer, não por dever —, que te dá o espaço onde inventas sem pedir licença; na casa 9 — o sentido, o estudo e aquilo em que acreditas sem precisar de prova —, que te dá a direcção que dá peso ao que fazes; e na casa 10 — o lugar público, a carreira e o nome pelo qual és conhecida —, onde tudo isto se torna visível para fora. Saturno — o que exige tempo, estrutura e disciplina antes de dar fruto, onde está, não há atalho, e o que se ganha aqui não se perde depois — comanda precisamente este último território: o que constróis à vista de todos não é rápido, mas é sólido, e é o único que não se desfaz quando a moda muda.\n\nQuanto ao formato, a carta é igualmente concreta: o dia a dia pede-te a casa 6 — o trabalho do dia a dia, a rotina, e o que tens de resolver sozinha —, o que significa que a parte operacional, repetitiva, de manutenção, rende melhor quando é tua a decidir, sem outra pessoa a interferir no ritmo. Ao mesmo tempo, Mercúrio — a forma como processas, falas e negoceias o mundo, o que entra por linguagem e sai por argumento, incluindo a distância entre o que pensas e o que dizes — está ligado por trígono a Saturno e a um eixo de destino público, o que aponta para um pensamento que se organiza melhor quando tem uma estrutura de longo prazo a segurá-lo, não uma inspiração solta. E há ainda uma linha que junta o teu modo de pensar (Mercúrio) a uma fonte de expansão e sorte (Júpiter) num ponto que exige integração — um formato onde processas, expandes, e depois precisas de encontrar o encaixe exacto onde tudo isso serve a alguma coisa maior, não apenas o exercício mental por si.\n\nQuando o território — o que constróis com o teu nome, dentro do prazo lento de Saturno — encontra o formato — trabalho autónomo na rotina, pensamento estruturado ao longo do tempo — o que sai não é rápido nem ruidoso, mas é inconfundivelmente teu, e é o único tipo de resultado que esta carta não deixa apagar.",
+    "umaUltimaCoisa": "Uma última coisa: há em ti um Mercúrio — a forma como processas, falas e negoceias o mundo, o que entra por linguagem e sai por argumento — que não busca provas para acreditar, porque encontra em casa 9 — o sentido, o estudo e aquilo em que acreditas sem precisar de prova — o chão que outros pedem emprestado à razão. Essa combinação, quando tem espaço para respirar, tende a esticar-se longe de mais — a ideia cresce antes de ter forma, a convicção chega antes da palavra que a devia conter. Por isso talvez valha a pena teres por perto não um par, nem alguém a validar o que já pensas, mas um mentor — alguém mais adiante no mesmo caminho, que já converteu convicção em obra reconhecível e sabe o preço de cada atalho que tu ainda não pagaste. Não para te ensinar a acreditar — isso já sabes fazer sozinha — mas para te mostrar onde a tua voz, se não for ancorada a tempo, se perde dentro de algo maior do que ela antes de chegar a levar o teu nome.",
+    "anexoA": "Antes de qualquer ideia chegar a palavras, há um crivo que a atravessa primeiro: Mercúrio — a forma como processa, fala e negocia o mundo, o que entra por linguagem e sai por argumento, incluindo a distância entre o que pensa e o que diz — funciona como esse intervalo entre o pensamento em bruto e a frase que o representa cá fora. Não é hesitação: é a recusa de deixar sair algo que ainda não está à altura do que quer defender, e por isso o silêncio, nestes momentos, pesa mais do que parece.\n\nEsse mesmo cuidado explica por que motivo o que aprende a sério nunca chega depressa: a vitória que não se perde — a conquista construída devagar, sem atalhos, o tipo de vitória que, por ter demorado, não se desfaz facilmente depois — descreve o ritmo com que uma ideia se torna verdadeiramente sua. Testa-a, deixa-a resistir a objecções, revê-a outra vez antes de a aceitar como facto, e só confia numa conclusão depois de a ter visto sobreviver ao tempo. Esse ritmo instala-se primeiro onde procura sentido e não apenas dados: casa 9 — o sentido, o estudo e aquilo em que acredita sem precisar de prova — é o território onde aprender deixa de ser um exercício neutro e passa a ser uma escolha de em que convicção vale a pena investir.\n\nEsse mesmo cuidado lento no pensar contrasta com a velocidade de como sente: muito antes de qualquer argumento estar pronto, Lua — o que sente antes de pensar, a leitura mais rápida e mais fiável da situação, mesmo quando não a consegue justificar em palavras — já registou um aperto no peito ou um alívio nos ombros que decide tudo o resto. Não é uma opinião que se debate; é uma sensação que chega primeiro e raramente se engana.\n\nQuando essa leitura aponta perigo, a resposta raramente é pedir ajuda: a mais velha que protege o que é seu — a autoridade que vem de proteger, não de pedir licença, o instinto de liderar e de cuidar de quem está a seu cargo mesmo sem título formal para isso — assume o comando sem esperar que lho peçam, e carrega o peso disso sem se queixar em voz alta. Sente-se segura não quando alguém a protege, mas quando é ela quem decide o que precisa de ser protegido. Este padrão instala-se com mais força onde há acordos a fazer: casa 7 — os acordos, as parcerias e quem está do outro lado da mesa — raramente a encontra como uma parte igual entre iguais; tende a tornar-se, sem que ninguém lho tenha atribuído, quem vigia o que está em jogo para os dois lados.\n\nNo agir, essa mesma vigilância transforma-se em impulso de arrancar antes de pensar duas vezes: Marte — a capacidade de arrancar, de decidir e de agir sem esperar por permissão, que onde está forte não hesita e onde está fraca adia até a decisão se tomar sozinha — vive ligado a como se apresenta fisicamente ao mundo, casa 1 — como se apresenta e o que faz com o próprio corpo e presença. Começa por aparecer, não por planear a entrada; a acção nasce primeiro no corpo, só depois ganha discurso. Mas essa força ainda não tem o histórico todo atrás de si: Bala — ainda em formação, uma capacidade que existe mas ainda não acumulou experiência, e que cresce com uso, não com espera — descreve exactamente isto: o impulso de arrancar está ali, pronto, mas ainda aprende, tentativa a tentativa, quando persistir e quando é hora de largar.\n\nEstes três ritmos nem sempre remam a favor uns dos outros. A paciência de deixar uma convicção amadurecer devagar entra em tensão com a urgência de aparecer já, de decidir com o corpo antes de ter a certeza toda reunida — e essa tensão converge exactamente no ponto onde mostra ao mundo o que veio fazer, como se tivesse sempre de escolher entre estar pronta e estar visível. Por outro lado, o pensar e o acreditar fluem naturalmente um para o outro, sem grande esforço — mas esse fluxo é puxado por uma fome que não descansa, um apetite que raramente a deixa dizer \"chega\" mesmo quando a lógica e a convicção já bateram certo entre si. É nesse cruzamento — entre o corpo que quer aparecer, a mente que quer esperar, e a fome que não se sacia — que esta identidade se testa todos os dias.",
+    "anexoB": {
+      "rodaCasas": "<svg viewBox=\"0 0 620 640\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect width=\"620\" height=\"640\" fill=\"#faf8f4\"/>\n<path d=\"M373.67,72.38 A246,246 0 0 0 246.33,72.38 L259.27,120.68 A196,196 0 0 1 360.73,120.68 Z\" fill=\"#a89b7f\"/><path d=\"M346.23,174.77 A140,140 0 0 0 273.77,174.77 L279.46,196.02 A118,118 0 0 1 340.54,196.02 Z\" fill=\"#ded9cc\"/><text x=\"310.0\" y=\"185.0\" text-anchor=\"middle\" font-family=\"Georgia,serif\" font-size=\"11\" opacity=\"0.85\" fill=\"#4a534e\">1</text><text text-anchor=\"start\" font-family=\"Georgia,serif\" font-size=\"12.5\" fill=\"#4a534e\"><tspan x=\"310.0\" dy=\"-7\">como te</tspan><tspan x=\"310.0\" dy=\"14\">apresentas</tspan></text>\n<path d=\"M483.95,136.05 A246,246 0 0 0 373.67,72.38 L360.73,120.68 A196,196 0 0 1 448.59,171.41 Z\" fill=\"#a89b7f\"/><path d=\"M411.82,208.18 A144,144 0 0 0 347.27,170.91 L340.54,196.02 A118,118 0 0 1 393.44,226.56 Z\" fill=\"#2c3a33\"/><text x=\"375.5\" y=\"200.6\" text-anchor=\"middle\" font-family=\"Georgia,serif\" font-size=\"11\" opacity=\"0.85\" fill=\"#fff\">2</text><text text-anchor=\"start\" font-family=\"Georgia,serif\" font-size=\"12.5\" fill=\"#4a534e\"><tspan x=\"446.0\" dy=\"-7\">o que possuis</tspan><tspan x=\"446.0\" dy=\"14\">e vales</tspan></text>\n<path d=\"M547.62,246.33 A246,246 0 0 0 483.95,136.05 L448.59,171.41 A196,196 0 0 1 499.32,259.27 Z\" fill=\"#b4634a\"/><path d=\"M445.23,273.77 A140,140 0 0 0 408.99,211.01 L393.44,226.56 A118,118 0 0 1 423.98,279.46 Z\" fill=\"#ded9cc\"/><text x=\"421.7\" y=\"249.5\" text-anchor=\"middle\" font-family=\"Georgia,serif\" font-size=\"11\" opacity=\"0.85\" fill=\"#4a534e\">3</text><text text-anchor=\"start\" font-family=\"Georgia,serif\" font-size=\"12.5\" fill=\"#4a534e\"><tspan x=\"545.6\" dy=\"0\">como comunicas</tspan></text>\n<path d=\"M547.62,373.67 A246,246 0 0 0 547.62,246.33 L499.32,259.27 A196,196 0 0 1 499.32,360.73 Z\" fill=\"#a89b7f\"/><path d=\"M445.23,346.23 A140,140 0 0 0 445.23,273.77 L423.98,279.46 A118,118 0 0 1 423.98,340.54 Z\" fill=\"#ded9cc\"/><text x=\"439.0\" y=\"314.0\" text-anchor=\"middle\" font-family=\"Georgia,serif\" font-size=\"11\" opacity=\"0.85\" fill=\"#4a534e\">4</text><text text-anchor=\"middle\" font-family=\"Georgia,serif\" font-size=\"12.5\" fill=\"#4a534e\"><tspan x=\"582.0\" dy=\"-7\">as raízes</tspan><tspan x=\"582.0\" dy=\"14\">e o privado</tspan></text>\n<path d=\"M483.95,483.95 A246,246 0 0 0 547.62,373.67 L499.32,360.73 A196,196 0 0 1 448.59,448.59 Z\" fill=\"#4f7a5c\"/><path d=\"M408.99,408.99 A140,140 0 0 0 445.23,346.23 L423.98,340.54 A118,118 0 0 1 393.44,393.44 Z\" fill=\"#ded9cc\"/><text x=\"421.7\" y=\"378.5\" text-anchor=\"middle\" font-family=\"Georgia,serif\" font-size=\"11\" opacity=\"0.85\" fill=\"#4a534e\">5</text><text text-anchor=\"end\" font-family=\"Georgia,serif\" font-size=\"12.5\" fill=\"#4a534e\"><tspan x=\"545.6\" dy=\"-7\">o que crias</tspan><tspan x=\"545.6\" dy=\"14\">por prazer</tspan></text>\n<path d=\"M373.67,547.62 A246,246 0 0 0 483.95,483.95 L448.59,448.59 A196,196 0 0 1 360.73,499.32 Z\" fill=\"#4f7a5c\"/><path d=\"M347.27,449.09 A144,144 0 0 0 411.82,411.82 L393.44,393.44 A118,118 0 0 1 340.54,423.98 Z\" fill=\"#2c3a33\"/><text x=\"375.5\" y=\"427.4\" text-anchor=\"middle\" font-family=\"Georgia,serif\" font-size=\"11\" opacity=\"0.85\" fill=\"#fff\">6</text><text text-anchor=\"end\" font-family=\"Georgia,serif\" font-size=\"12.5\" fill=\"#4a534e\"><tspan x=\"446.0\" dy=\"-7\">o trabalho</tspan><tspan x=\"446.0\" dy=\"14\">diário</tspan></text>\n<path d=\"M246.33,547.62 A246,246 0 0 0 373.67,547.62 L360.73,499.32 A196,196 0 0 1 259.27,499.32 Z\" fill=\"#a89b7f\"/><path d=\"M266.00,474.21 A170,170 0 0 0 354.00,474.21 L340.54,423.98 A118,118 0 0 1 279.46,423.98 Z\" fill=\"#2c3a33\"/><text x=\"310.0\" y=\"458.0\" text-anchor=\"middle\" font-family=\"Georgia,serif\" font-size=\"11\" opacity=\"0.85\" fill=\"#fff\">7</text><text text-anchor=\"end\" font-family=\"Georgia,serif\" font-size=\"12.5\" fill=\"#4a534e\"><tspan x=\"310.0\" dy=\"-7\">os acordos</tspan><tspan x=\"310.0\" dy=\"14\">e parcerias</tspan></text>\n<path d=\"M136.05,483.95 A246,246 0 0 0 246.33,547.62 L259.27,499.32 A196,196 0 0 1 171.41,448.59 Z\" fill=\"#a89b7f\"/><path d=\"M189.79,430.21 A170,170 0 0 0 266.00,474.21 L279.46,423.98 A118,118 0 0 1 226.56,393.44 Z\" fill=\"#2c3a33\"/><circle cx=\"199.5\" cy=\"501.4\" r=\"6\" fill=\"#B88A52\"/><text x=\"238.0\" y=\"438.7\" text-anchor=\"middle\" font-family=\"Georgia,serif\" font-size=\"11\" opacity=\"0.85\" fill=\"#fff\">8</text><text text-anchor=\"end\" font-family=\"Georgia,serif\" font-size=\"12.5\" fill=\"#4a534e\"><tspan x=\"174.0\" dy=\"-7\">as</tspan><tspan x=\"174.0\" dy=\"14\">transformações</tspan></text>\n<path d=\"M72.38,373.67 A246,246 0 0 0 136.05,483.95 L171.41,448.59 A196,196 0 0 1 120.68,360.73 Z\" fill=\"#b4634a\"/><path d=\"M145.79,354.00 A170,170 0 0 0 189.79,430.21 L226.56,393.44 A118,118 0 0 1 196.02,340.54 Z\" fill=\"#2c3a33\"/><text x=\"185.3\" y=\"386.0\" text-anchor=\"middle\" font-family=\"Georgia,serif\" font-size=\"11\" opacity=\"0.85\" fill=\"#fff\">9</text><text text-anchor=\"end\" font-family=\"Georgia,serif\" font-size=\"12.5\" fill=\"#4a534e\"><tspan x=\"74.4\" dy=\"-7\">o que te</tspan><tspan x=\"74.4\" dy=\"14\">expande</tspan></text>\n<path d=\"M72.38,246.33 A246,246 0 0 0 72.38,373.67 L120.68,360.73 A196,196 0 0 1 120.68,259.27 Z\" fill=\"#a89b7f\"/><path d=\"M170.91,272.73 A144,144 0 0 0 170.91,347.27 L196.02,340.54 A118,118 0 0 1 196.02,279.46 Z\" fill=\"#2c3a33\"/><text x=\"179.0\" y=\"314.0\" text-anchor=\"middle\" font-family=\"Georgia,serif\" font-size=\"11\" opacity=\"0.85\" fill=\"#fff\">10</text><text text-anchor=\"middle\" font-family=\"Georgia,serif\" font-size=\"12.5\" fill=\"#4a534e\"><tspan x=\"38.0\" dy=\"-7\">a carreira</tspan><tspan x=\"38.0\" dy=\"14\">e o nome</tspan></text>\n<path d=\"M136.05,136.05 A246,246 0 0 0 72.38,246.33 L120.68,259.27 A196,196 0 0 1 171.41,171.41 Z\" fill=\"#a89b7f\"/><path d=\"M211.01,211.01 A140,140 0 0 0 174.77,273.77 L196.02,279.46 A118,118 0 0 1 226.56,226.56 Z\" fill=\"#ded9cc\"/><text x=\"198.3\" y=\"249.5\" text-anchor=\"middle\" font-family=\"Georgia,serif\" font-size=\"11\" opacity=\"0.85\" fill=\"#4a534e\">11</text><text text-anchor=\"start\" font-family=\"Georgia,serif\" font-size=\"12.5\" fill=\"#4a534e\"><tspan x=\"74.4\" dy=\"-7\">a rede e</tspan><tspan x=\"74.4\" dy=\"14\">os ganhos</tspan></text>\n<path d=\"M246.33,72.38 A246,246 0 0 0 136.05,136.05 L171.41,171.41 A196,196 0 0 1 259.27,120.68 Z\" fill=\"#b4634a\"/><path d=\"M273.77,174.77 A140,140 0 0 0 211.01,211.01 L226.56,226.56 A118,118 0 0 1 279.46,196.02 Z\" fill=\"#ded9cc\"/><text x=\"245.5\" y=\"202.3\" text-anchor=\"middle\" font-family=\"Georgia,serif\" font-size=\"11\" opacity=\"0.85\" fill=\"#4a534e\">12</text><text text-anchor=\"start\" font-family=\"Georgia,serif\" font-size=\"12.5\" fill=\"#4a534e\"><tspan x=\"174.0\" dy=\"-7\">o que trabalhas</tspan><tspan x=\"174.0\" dy=\"14\">por dentro</tspan></text>\n<text x=\"310\" y=\"15\" text-anchor=\"middle\" font-family=\"system-ui,sans-serif\" font-size=\"10.5\" letter-spacing=\"2\" fill=\"#4a534e\">A FORMA DA VIDA — APOIO POR ÁREA, E O QUE JÁ LÁ ESTÁ</text>\n<g font-family=\"Georgia,serif\" font-size=\"13.5\" fill=\"#4a534e\">\n  <rect x=\"60\" y=\"605\" width=\"13\" height=\"13\" fill=\"#4f7a5c\"/><text x=\"78\" y=\"616\">mais apoio</text>\n  <rect x=\"190\" y=\"605\" width=\"13\" height=\"13\" fill=\"#a89b7f\"/><text x=\"208\" y=\"616\">apoio médio</text>\n  <rect x=\"330\" y=\"605\" width=\"13\" height=\"13\" fill=\"#b4634a\"/><text x=\"348\" y=\"616\">menos apoio</text>\n  <rect x=\"460\" y=\"605\" width=\"13\" height=\"13\" fill=\"#2c3a33\"/><text x=\"478\" y=\"616\">ocupada</text>\n  <circle cx=\"576\" cy=\"611.5\" r=\"6.5\" fill=\"#B88A52\"/><text x=\"588\" y=\"616\">tema central</text>\n</g>\n</svg>",
+      "convergenciaEspinha": "<svg viewBox=\"0 0 660 240\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect width=\"660\" height=\"240\" fill=\"#faf8f4\"/>\n<text x=\"20\" y=\"16\" font-family=\"system-ui,sans-serif\" font-size=\"10.5\" letter-spacing=\"2\" fill=\"#4a534e\">3 MEDIÇÕES INDEPENDENTES, O MESMO TEMA</text>\n<path d=\"M28,30 C320,30 380,115 470,115\" stroke=\"#7f9c8b\" stroke-width=\"1.4\" fill=\"none\"/><text x=\"20\" y=\"24\" font-family=\"Georgia,serif\" font-size=\"12.5\" fill=\"#4a534e\">a peça que representa o centro de tudo o resto na carta, e a área da vida o…</text>\n<path d=\"M28,76 C320,76 380,115 470,115\" stroke=\"#7f9c8b\" stroke-width=\"1.4\" fill=\"none\"/><text x=\"20\" y=\"70\" font-family=\"Georgia,serif\" font-size=\"12.5\" fill=\"#4a534e\">o período de vida que a pessoa está a atravessar agora, e o que ele activa.</text>\n<path d=\"M28,122 C320,122 380,115 470,115\" stroke=\"#7f9c8b\" stroke-width=\"1.4\" fill=\"none\"/><text x=\"20\" y=\"116\" font-family=\"Georgia,serif\" font-size=\"12.5\" fill=\"#4a534e\">o estado em que essa peça central se encontra — instalada com força, ou a l…</text>\n<circle cx=\"470\" cy=\"115\" r=\"7\" fill=\"#1f4a3d\"/>\n<text x=\"488\" y=\"111\" font-family=\"Georgia,serif\" font-size=\"15\" fill=\"#1f4a3d\">o que se partilha, o que se perde e o que se transforma q…</text>\n<text x=\"488\" y=\"131\" font-family=\"Georgia,serif\" font-size=\"12\" font-style=\"italic\" fill=\"#4a534e\">— a espinha deste relatório</text>\n</svg>",
+      "sarvashtakavarga": [
+        {
+          "casa": 1,
+          "pontuacao": 30,
+          "interpretacao": "medio — 30/56"
+        },
+        {
+          "casa": 2,
+          "pontuacao": 30,
+          "interpretacao": "medio — 30/56"
+        },
+        {
+          "casa": 3,
+          "pontuacao": 24,
+          "interpretacao": "fraco — 24/56"
+        },
+        {
+          "casa": 4,
+          "pontuacao": 30,
+          "interpretacao": "medio — 30/56"
+        },
+        {
+          "casa": 5,
+          "pontuacao": 35,
+          "interpretacao": "forte — 35/56"
+        },
+        {
+          "casa": 6,
+          "pontuacao": 33,
+          "interpretacao": "forte — 33/56"
+        },
+        {
+          "casa": 7,
+          "pontuacao": 28,
+          "interpretacao": "medio — 28/56"
+        },
+        {
+          "casa": 8,
+          "pontuacao": 26,
+          "interpretacao": "medio — 26/56"
+        },
+        {
+          "casa": 9,
+          "pontuacao": 22,
+          "interpretacao": "fraco — 22/56"
+        },
+        {
+          "casa": 10,
+          "pontuacao": 25,
+          "interpretacao": "medio — 25/56"
+        },
+        {
+          "casa": 11,
+          "pontuacao": 31,
+          "interpretacao": "medio — 31/56"
+        },
+        {
+          "casa": 12,
+          "pontuacao": 23,
+          "interpretacao": "fraco — 23/56"
+        }
+      ],
+      "calculado": [
+        "Ascendente (sideral, Lahiri)",
+        "Posições D-1 dos 9 grahas (sideral, Lahiri, casas de signo inteiro)",
+        "Nakshatra + pada dos 9 grahas e do Ascendente",
+        "Karakas (Atmakaraka/Amatyakaraka), Karakamsha, Vargottama",
+        "Dashas Vimshottari (mahadasha/antardasha actuais + sequência completa)",
+        "Dignidade clássica (exaltação/queda/domicílio/Moolatrikona) + Panchadha Maitri dos 7 grahas clássicos",
+        "Baladi Avastha dos 7 grahas clássicos",
+        "Drishti védico (7ª universal + especiais de Marte/Júpiter/Saturno + 5ª/9ª de Rahu/Ketu)",
+        "Sarvashtakavarga (SAV) por casa, verificado contra o Prokerala — ver AUDITORIA-CALCULOS-23Ago.md",
+        "Stelliums védicos (D-1, 7 grahas clássicos, signo ou casa)",
+        "Figuras fechadas (Grande Trígono, T-Quadrado, Yod, Grande Cruz, Kite) sobre 7 clássicos + Rahu + Ascendente/MC, carta ocidental tropical",
+        "Trânsitos lentos (Saturno, Urano, Neptuno, Plutão, Rahu, Ketu) — sinal, casa a partir do Ascendente e da Lua, retrogradação, entrada/saída de signo, contactos ao natal (3°)",
+        "Trânsito anual de Júpiter + casa que Saturno atravessa este ano"
+      ],
+      "naoCalculado": [
+        "Dignidade de Rahu/Ketu por Panchadha Maitri — os nós não entram em NAISARGIKA_MAITRI (definida só para os 7 clássicos); usam convenção de dispositor (ver dignidadeV3.dignidadeNodo), não incluída neste agregador por não ter tipo próprio em CamadaA ainda.",
+        "Jagradadi Avastha — não implementada no method-engine (âmbito futuro).",
+        "Lajjitadi Avastha — não implementada no method-engine (âmbito futuro).",
+        "Stelliums incluindo Rahu/Ketu e ângulos (Ascendente/MC) na leitura védica — só a versão ocidental (figurasFechadas) cobre nós/ângulos; stellium.ts fica limitado aos 7 clássicos.",
+        "D-2, D-3, D-4, D-24 (vargas usadas em CODE-4/CODE-2 além de D-9/D-10) — não implementadas no method-engine.",
+        "Datas de estação exactas (direct/retrógrado) dos trânsitos lentos — calculado aqui é entrada/saída de SIGNO, não a data de estação; ver limitação documentada em transitsV3.encontrarFronteiraSigno."
+      ],
+      "figurasFechadas": [
+        {
+          "tipo": "Grande Trigono",
+          "pontos": [
+            {
+              "termo": "Saturno",
+              "definicao": "o que exige tempo, estrutura e disciplina antes de dar fruto — onde está, não há atalho; o que se ganha aqui não se perde depois."
+            },
+            {
+              "termo": "Rahu",
+              "definicao": "o apetite que nunca se sente satisfeito — a direcção para onde a pessoa é empurrada mesmo sem experiência prévia, e que cresce quanto mais se persegue."
+            },
+            {
+              "termo": "MC",
+              "definicao": "o ponto mais alto do céu no mapa tropical — o topo do reconhecimento e da carreira pública, medido pelo sistema ocidental; o equivalente temático, nesse sistema, ao que a casa 10 mede no sistema sideral."
+            }
+          ],
+          "detalhe": "Saturn, Rahu e MC em trígono mútuo.",
+          "orbe": 2.2753754970922273
+        },
+        {
+          "tipo": "T-Quadrado",
+          "pontos": [
+            {
+              "termo": "Júpiter",
+              "definicao": "a direcção de crescimento e a confiança de que vale a pena continuar — onde aponta, o esforço rende mais do que o investido; onde falta, cresce-se por teimosia, não por convicção."
+            },
+            {
+              "termo": "Ascendente",
+              "definicao": "como a pessoa se apresenta e o que faz com o próprio corpo e presença."
+            },
+            {
+              "termo": "MC",
+              "definicao": "o ponto mais alto do céu no mapa tropical — o topo do reconhecimento e da carreira pública, medido pelo sistema ocidental; o equivalente temático, nesse sistema, ao que a casa 10 mede no sistema sideral."
+            }
+          ],
+          "detalhe": "Oposição Jupiter–Ascendente, com MC em quadratura a ambos (ponto foco).",
+          "orbe": 1.7658946181604733
+        },
+        {
+          "tipo": "Yod",
+          "pontos": [
+            {
+              "termo": "Mercúrio",
+              "definicao": "a forma como processa, fala e negocia o mundo — o que entra por linguagem e sai por argumento, incluindo a distância entre o que pensa e o que diz."
+            },
+            {
+              "termo": "Júpiter",
+              "definicao": "a direcção de crescimento e a confiança de que vale a pena continuar — onde aponta, o esforço rende mais do que o investido; onde falta, cresce-se por teimosia, não por convicção."
+            },
+            {
+              "termo": "Rahu",
+              "definicao": "o apetite que nunca se sente satisfeito — a direcção para onde a pessoa é empurrada mesmo sem experiência prévia, e que cresce quanto mais se persegue."
+            }
+          ],
+          "detalhe": "Sextil Mercury–Jupiter, com Rahu em quincúncio a ambos (ápice).",
+          "orbe": 1.9446277438440234
+        },
+        {
+          "tipo": "Yod",
+          "pontos": [
+            {
+              "termo": "Vénus",
+              "definicao": "o que a pessoa acha bonito, o que valoriza e por quem se deixa atrair — e, pela mesma medida, o que está disposta a pagar e a receber em troca."
+            },
+            {
+              "termo": "Júpiter",
+              "definicao": "a direcção de crescimento e a confiança de que vale a pena continuar — onde aponta, o esforço rende mais do que o investido; onde falta, cresce-se por teimosia, não por convicção."
+            },
+            {
+              "termo": "Rahu",
+              "definicao": "o apetite que nunca se sente satisfeito — a direcção para onde a pessoa é empurrada mesmo sem experiência prévia, e que cresce quanto mais se persegue."
+            }
+          ],
+          "detalhe": "Sextil Venus–Jupiter, com Rahu em quincúncio a ambos (ápice).",
+          "orbe": 3.0674805368515194
+        }
+      ],
+      "tabelaRastreio": [
+        {
+          "afirmacao": "Quem esta pessoa é, por dentro, e o que se partilha, o que se perde e o que se transforma quando algo acaba não são dois assuntos — são o mesmo. A força que decide os dois: a necessidade de ser reconhecida como fonte — de que o que faz leve o seu nome, e de não desaparecer dentro de uma estrutura maior do que ela.",
+          "base": "Atmakaraka (Sun) na casa 8; camadas confirmantes: Atmakaraka e a casa onde está, Dasha actual, Força do Atmakaraka (dignidade / Panchadha Maitri)",
+          "seccao": "Secção 3 — O Veredicto (espinha)"
+        },
+        {
+          "afirmacao": "Áreas de apoio mais alto: casas 5, 6. Áreas de apoio mais baixo: casas 3, 9, 12.",
+          "base": "Sarvashtakavarga por casa, banda absoluta (forte ≥32, fraco <25): 1:30 2:30 3:24 4:30 5:35 6:33 7:28 8:26 9:22 10:25 11:31 12:23",
+          "seccao": "Secção 5 — A Forma de Vida"
+        },
+        {
+          "afirmacao": "Figura fechada: Grande Trigono (Saturn–Rahu–MC)",
+          "base": "Saturn, Rahu e MC em trígono mútuo. Orbe real (maior elo): 2.28°.",
+          "seccao": "Anexo B — Figuras Fechadas"
+        },
+        {
+          "afirmacao": "Figura fechada: T-Quadrado (Jupiter–Ascendente–MC)",
+          "base": "Oposição Jupiter–Ascendente, com MC em quadratura a ambos (ponto foco). Orbe real (maior elo): 1.77°.",
+          "seccao": "Anexo B — Figuras Fechadas"
+        },
+        {
+          "afirmacao": "Figura fechada: Yod (Mercury–Jupiter–Rahu)",
+          "base": "Sextil Mercury–Jupiter, com Rahu em quincúncio a ambos (ápice). Orbe real (maior elo): 1.94°.",
+          "seccao": "Anexo B — Figuras Fechadas"
+        },
+        {
+          "afirmacao": "Figura fechada: Yod (Venus–Jupiter–Rahu)",
+          "base": "Sextil Venus–Jupiter, com Rahu em quincúncio a ambos (ápice). Orbe real (maior elo): 3.07°.",
+          "seccao": "Anexo B — Figuras Fechadas"
+        }
+      ]
+    },
+    "espinha": {
+      "tipo": "convergencia",
+      "afirmacao": "Quem esta pessoa é, por dentro, e o que se partilha, o que se perde e o que se transforma quando algo acaba não são dois assuntos — são o mesmo. A força que decide os dois: a necessidade de ser reconhecida como fonte — de que o que faz leve o seu nome, e de não desaparecer dentro de uma estrutura maior do que ela.",
+      "camadas": [
+        "Atmakaraka e a casa onde está",
+        "Dasha actual",
+        "Força do Atmakaraka (dignidade / Panchadha Maitri)"
+      ],
+      "nivel": "sinal-forte"
+    },
+    "seccoesCondicionaisActivas": [
+      "Secção 6 — O Que Te Tem Travado",
+      "Secção 7 — O Trânsito Actual",
+      "Secção 10 — Sobre o Quê e Em Que Forma",
+      "Secção 14 — Uma Última Coisa"
+    ],
+    "guardIssues": []
+  },
+  "warnings": [
+    "Verificação final — critério E reprovou: [sobreOQueEEmQueForma] \"Júpiter\" sem definição a seguir (contexto: \" e sorte (Júpiter) num ponto que exige integração \")",
+    "Verificação final — critério vocabularioProibido reprovou: [sobreOQueEEmQueForma] \"Júpiter\" sem definição a seguir (contexto: \" e sorte (Júpiter) num ponto que exige integração \")",
+    "Repetição candidata entre secções: quemEs ↔ dinheiro — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: quemEs ↔ comoEsVista — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: quemEs ↔ oRelogio — \"se apresenta que faz com\"",
+    "Repetição candidata entre secções: quemEs ↔ oPlano — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: quemEs ↔ oQueTeTemTravado — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: quemEs ↔ transitoActual — \"casa sentido estudo aquilo em\"",
+    "Repetição candidata entre secções: quemEs ↔ sobreOQueEEmQueForma — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: quemEs ↔ umaUltimaCoisa — \"mundo que entra por linguagem\"",
+    "Repetição candidata entre secções: quemEs ↔ anexoA — \"se apresenta que faz com\"",
+    "Repetição candidata entre secções: quemEs ↔ descoberta1 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: quemEs ↔ descoberta5 — \"sente antes de pensar sua\"",
+    "Repetição candidata entre secções: quemEs ↔ retrato60s_linha1 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: quemEs ↔ retrato60s_linha6 — \"acha bonito que valoriza por\"",
+    "Repetição candidata entre secções: quemEs ↔ retrato60s_linha8 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: quemEs ↔ anexoB_rastreio1 — \"necessidade de ser reconhecida como\"",
+    "Repetição candidata entre secções: formaDeVida ↔ veredictoResposta — \"que se transforma quando algo\"",
+    "Repetição candidata entre secções: formaDeVida ↔ oQueTeTemTravado — \"perde que se transforma quando\"",
+    "Repetição candidata entre secções: formaDeVida ↔ sobreOQueEEmQueForma — \"que crias por gosto próprio\"",
+    "Repetição candidata entre secções: formaDeVida ↔ umaUltimaCoisa — \"dentro de algo maior do\"",
+    "Repetição candidata entre secções: formaDeVida ↔ descoberta1 — \"que se partilha que se\"",
+    "Repetição candidata entre secções: formaDeVida ↔ retrato60s_linha1 — \"que se partilha que se\"",
+    "Repetição candidata entre secções: formaDeVida ↔ anexoB_rastreio1 — \"que se partilha que se\"",
+    "Repetição candidata entre secções: dinheiro ↔ comoEsVista — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: dinheiro ↔ oPlano — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: dinheiro ↔ veredictoResposta — \"reconhecida como fonte de que\"",
+    "Repetição candidata entre secções: dinheiro ↔ oQueTeTemTravado — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: dinheiro ↔ sobreOQueEEmQueForma — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: dinheiro ↔ anexoA — \"casa os acordos as parcerias\"",
+    "Repetição candidata entre secções: dinheiro ↔ descoberta1 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: dinheiro ↔ retrato60s_linha1 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: dinheiro ↔ retrato60s_linha5 — \"casa 10 lugar público carreira\"",
+    "Repetição candidata entre secções: dinheiro ↔ retrato60s_linha8 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: dinheiro ↔ anexoB_rastreio1 — \"necessidade de ser reconhecida como\"",
+    "Repetição candidata entre secções: comoEsVista ↔ oRelogio — \"se apresenta que faz com\"",
+    "Repetição candidata entre secções: comoEsVista ↔ oPlano — \"vénus que pessoa acha bonito\"",
+    "Repetição candidata entre secções: comoEsVista ↔ oQueTeTemTravado — \"acha bonito que valoriza por\"",
+    "Repetição candidata entre secções: comoEsVista ↔ transitoActual — \"casa sentido estudo aquilo em\"",
+    "Repetição candidata entre secções: comoEsVista ↔ sobreOQueEEmQueForma — \"casa sentido estudo aquilo em\"",
+    "Repetição candidata entre secções: comoEsVista ↔ anexoA — \"se apresenta que faz com\"",
+    "Repetição candidata entre secções: comoEsVista ↔ descoberta1 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: comoEsVista ↔ retrato60s_linha1 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: comoEsVista ↔ retrato60s_linha6 — \"acha bonito que valoriza por\"",
+    "Repetição candidata entre secções: comoEsVista ↔ retrato60s_linha8 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: comoEsVista ↔ anexoB_rastreio1 — \"necessidade de ser reconhecida como\"",
+    "Repetição candidata entre secções: oRelogio ↔ oPlano — \"plutão que está agora activar\"",
+    "Repetição candidata entre secções: oRelogio ↔ custoDeNaoFazerNada — \"que já foi dominado em\"",
+    "Repetição candidata entre secções: oRelogio ↔ oQueTeTemTravado — \"casa sentido estudo aquilo em\"",
+    "Repetição candidata entre secções: oRelogio ↔ transitoActual — \"precisa de morrer para que\"",
+    "Repetição candidata entre secções: oRelogio ↔ sobreOQueEEmQueForma — \"casa sentido estudo aquilo em\"",
+    "Repetição candidata entre secções: oRelogio ↔ anexoA — \"casa sentido estudo aquilo em\"",
+    "Repetição candidata entre secções: oRelogio ↔ descoberta3 — \"casa como comunica aprende se\"",
+    "Repetição candidata entre secções: oRelogio ↔ descoberta4 — \"que exige tempo estrutura disciplina\"",
+    "Repetição candidata entre secções: oRelogio ↔ retrato60s_linha3 — \"casa como comunica aprende se\"",
+    "Repetição candidata entre secções: oRelogio ↔ retrato60s_linha6 — \"que acha bonito que valoriza\"",
+    "Repetição candidata entre secções: oRelogio ↔ retrato60s_linha7 — \"direcção de crescimento confiança de\"",
+    "Repetição candidata entre secções: oPlano ↔ custoDeNaoFazerNada — \"que já foi dominado em\"",
+    "Repetição candidata entre secções: oPlano ↔ veredictoResposta — \"com teu nome atado ele\"",
+    "Repetição candidata entre secções: oPlano ↔ oQueTeTemTravado — \"casa que cria por gosto\"",
+    "Repetição candidata entre secções: oPlano ↔ transitoActual — \"precisa de morrer para que\"",
+    "Repetição candidata entre secções: oPlano ↔ sobreOQueEEmQueForma — \"por prazer não por dever\"",
+    "Repetição candidata entre secções: oPlano ↔ anexoA — \"sente antes de pensar leitura\"",
+    "Repetição candidata entre secções: oPlano ↔ descoberta1 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: oPlano ↔ descoberta2 — \"casa que cria por gosto\"",
+    "Repetição candidata entre secções: oPlano ↔ retrato60s_linha1 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: oPlano ↔ retrato60s_linha4 — \"casa 11 os ganhos rede\"",
+    "Repetição candidata entre secções: oPlano ↔ retrato60s_linha5 — \"casa os acordos as parcerias\"",
+    "Repetição candidata entre secções: oPlano ↔ retrato60s_linha6 — \"acha bonito que valoriza por\"",
+    "Repetição candidata entre secções: oPlano ↔ retrato60s_linha8 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: oPlano ↔ anexoB_rastreio1 — \"necessidade de ser reconhecida como\"",
+    "Repetição candidata entre secções: custoDeNaoFazerNada ↔ oQueTeTemTravado — \"ketu que já foi dominado\"",
+    "Repetição candidata entre secções: oQueTeTemTravado ↔ transitoActual — \"casa sentido estudo aquilo em\"",
+    "Repetição candidata entre secções: oQueTeTemTravado ↔ sobreOQueEEmQueForma — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: oQueTeTemTravado ↔ anexoA — \"casa sentido estudo aquilo em\"",
+    "Repetição candidata entre secções: oQueTeTemTravado ↔ descoberta1 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: oQueTeTemTravado ↔ descoberta2 — \"casa que cria por gosto\"",
+    "Repetição candidata entre secções: oQueTeTemTravado ↔ descoberta3 — \"casa como comunica aprende se\"",
+    "Repetição candidata entre secções: oQueTeTemTravado ↔ retrato60s_linha1 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: oQueTeTemTravado ↔ retrato60s_linha3 — \"casa como comunica aprende se\"",
+    "Repetição candidata entre secções: oQueTeTemTravado ↔ retrato60s_linha6 — \"que acha bonito que valoriza\"",
+    "Repetição candidata entre secções: oQueTeTemTravado ↔ retrato60s_linha8 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: oQueTeTemTravado ↔ anexoB_rastreio1 — \"necessidade de ser reconhecida como\"",
+    "Repetição candidata entre secções: transitoActual ↔ anexoA — \"casa sentido estudo aquilo em\"",
+    "Repetição candidata entre secções: sobreOQueEEmQueForma ↔ umaUltimaCoisa — \"casa sentido estudo aquilo em\"",
+    "Repetição candidata entre secções: sobreOQueEEmQueForma ↔ anexoA — \"casa sentido estudo aquilo em\"",
+    "Repetição candidata entre secções: sobreOQueEEmQueForma ↔ descoberta1 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: sobreOQueEEmQueForma ↔ descoberta4 — \"saturno que exige tempo estrutura\"",
+    "Repetição candidata entre secções: sobreOQueEEmQueForma ↔ retrato60s_linha1 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: sobreOQueEEmQueForma ↔ retrato60s_linha8 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: sobreOQueEEmQueForma ↔ anexoB_rastreio1 — \"necessidade de ser reconhecida como\"",
+    "Repetição candidata entre secções: anexoA ↔ retrato60s_linha2 — \"marte capacidade de arrancar de\"",
+    "Repetição candidata entre secções: anexoA ↔ retrato60s_linha5 — \"casa os acordos as parcerias\"",
+    "Repetição candidata entre secções: descoberta1 ↔ retrato60s_linha1 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: descoberta1 ↔ retrato60s_linha8 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: descoberta1 ↔ anexoB_rastreio1 — \"necessidade de ser reconhecida como\"",
+    "Repetição candidata entre secções: descoberta3 ↔ retrato60s_linha3 — \"casa como comunica aprende se\"",
+    "Repetição candidata entre secções: retrato60s_linha1 ↔ retrato60s_linha8 — \"sol necessidade de ser reconhecida\"",
+    "Repetição candidata entre secções: retrato60s_linha1 ↔ anexoB_rastreio1 — \"necessidade de ser reconhecida como\"",
+    "Repetição candidata entre secções: retrato60s_linha8 ↔ anexoB_rastreio1 — \"necessidade de ser reconhecida como\"",
+    "Repetição candidata entre secções: anexoB_rastreio5 ↔ anexoB_rastreio6 — \"jupiter com rahu em quincúncio\"",
+    "Critério D_semantico: não verificado — sem callback de LLM disponível",
+    "Critério F_semantico: não verificado — sem callback de LLM disponível",
+    "Critério G_semantico: não verificado — sem callback de LLM disponível",
+    "Critério H_semantico: não verificado — sem callback de LLM disponível",
+    "Critério I: não verificado — sem callback de LLM disponível",
+    "Critério K_semantico: não verificado — sem callback de LLM disponível"
+  ],
+  "guardIssues": [],
+  "tempoGeracao": 660823
+}

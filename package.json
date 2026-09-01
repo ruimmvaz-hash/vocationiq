@@ -1,0 +1,8 @@
+{
+  "name": "vocationiq",
+  "private": true,
+  "workspaces": [
+    "method-engine",
+    "web"
+  ]
+}
