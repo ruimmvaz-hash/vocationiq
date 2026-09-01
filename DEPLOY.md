@@ -44,6 +44,7 @@ Variáveis a configurar (Project → Settings → Environment Variables):
 | `SUPABASE_URL` | a URL do projecto Supabase da Naveya | Naveya → Vercel → Environment Variables (já lá está, com este nome ou `NEXT_PUBLIC_SUPABASE_URL`) |
 | `SUPABASE_SERVICE_ROLE_KEY` | a service role key do projecto Supabase da Naveya | idem |
 | `RESEND_API_KEY` | a chave Resend da Naveya | Naveya → Vercel → Environment Variables |
+| `ADMIN_PASSWORD` | a tua escolha | protege `/admin` — pode ser igual ou diferente da password da Naveya, são cookies de sessão separados |
 
 Nota sobre `STRIPE_WEBHOOK_SECRET`: só existe depois de criares o endpoint no passo 2, que só podes criar depois do domínio estar a responder — por isso a sequência é: deploy inicial sem essa variável (o site funciona à mesma, só a rota do webhook fica inactiva até lá) → cria o endpoint na Stripe → adiciona a variável → faz **redeploy** (variáveis de ambiente só entram em vigor depois de um novo deploy).
 

@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "VocationIQ — Descobre onde realmente rendes",
-  description: "Uma análise personalizada que te ajuda a perceber os teus talentos naturais, a tua forma de aprender e as áreas onde podes crescer mais. €99 · Entrega em 48h.",
+  title: "VocationIQ — Descobre a tua área. Antes de escolheres.",
+  description: "Uma análise personalizada que descobre os teus talentos naturais, como aprendes e as áreas onde podes crescer mais — para adolescentes, jovens e adultos em transição de carreira. €99 · Entrega em 48h.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://vocationiq.app"),
 };
 

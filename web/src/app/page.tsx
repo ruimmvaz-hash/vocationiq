@@ -81,11 +81,11 @@ export default function HomePage() {
           <div className="relative mx-auto max-w-5xl px-6 py-20">
             <div className="max-w-2xl">
               <h1 className="text-[56px] font-extrabold leading-[1.05] tracking-tight text-white text-balance md:text-[72px]">
-                Descobre onde realmente rendes.
+                Ainda não sabes que curso escolher?
               </h1>
               <p className="mt-6 max-w-lg text-[20px] font-normal leading-relaxed text-white/85">
-                Uma análise personalizada que te ajuda a perceber os teus talentos naturais, a tua forma de aprender e as
-                áreas onde podes crescer mais.
+                Uma análise personalizada que descobre os teus talentos naturais, como aprendes e as áreas onde podes
+                crescer mais — para adolescentes, jovens e adultos em transição de carreira.
               </p>
               <div className="mt-9 flex flex-wrap items-center gap-5">
                 <Link
