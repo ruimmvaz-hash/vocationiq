@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SITUACOES } from "@/lib/validation";
+import { logFunnelEvent } from "@/lib/eventLog";
 
 export function IntakeForm() {
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => {
+    logFunnelEvent("intake_started");
+  }, []);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -34,6 +39,7 @@ export function IntakeForm() {
         setLoading(false);
         return;
       }
+      logFunnelEvent("intake_completed");
       window.location.href = data.url;
     } catch {
       setErro("Não foi possível ligar ao servidor. Tenta novamente.");

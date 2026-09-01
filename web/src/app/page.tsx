@@ -1,7 +1,8 @@
-import Link from "next/link";
 import Image from "next/image";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { TrackedCtaLink } from "@/components/TrackedCtaLink";
+import { HomepageViewTracker } from "@/components/HomepageViewTracker";
 
 // Imagens Unsplash (licença gratuita, hotlink directo ao CDN — ver commit).
 const HERO_IMG = "https://images.unsplash.com/photo-1620355402809-5bc3f630b2ac?auto=format&fit=crop&w=1920&q=75";
@@ -73,6 +74,7 @@ export default function HomePage() {
   return (
     <>
       <Header />
+      <HomepageViewTracker />
       <main>
         {/* 1. HERO */}
         <section className="relative flex min-h-[560px] items-center overflow-hidden bg-navy-dark sm:min-h-[680px]">
@@ -88,12 +90,13 @@ export default function HomePage() {
                 crescer mais — para adolescentes, jovens e adultos em transição de carreira.
               </p>
               <div className="mt-9 flex flex-wrap items-center gap-5">
-                <Link
+                <TrackedCtaLink
                   href="/intake"
+                  location="hero"
                   className="rounded-md bg-amber px-7 py-3.5 text-base font-bold text-navy-dark shadow-lg shadow-black/20 transition hover:bg-amber-dark"
                 >
                   Começar a minha análise
-                </Link>
+                </TrackedCtaLink>
               </div>
               <p className="mt-4 text-sm font-semibold text-white/70">€99 · Entrega em 48h</p>
             </div>
@@ -168,12 +171,13 @@ export default function HomePage() {
           <div className="mx-auto max-w-5xl px-6 py-16 text-center sm:py-24">
             <p className="text-5xl font-extrabold tracking-tight text-amber">€99</p>
             <p className="mt-3 text-white/80">Análise personalizada · 48h</p>
-            <Link
+            <TrackedCtaLink
               href="/intake"
+              location="price"
               className="mt-8 inline-block rounded-md bg-amber px-7 py-3.5 text-base font-bold text-navy-dark shadow-sm transition hover:bg-amber-dark"
             >
               Começar a minha análise
-            </Link>
+            </TrackedCtaLink>
           </div>
         </section>
 

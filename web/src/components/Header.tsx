@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TrackedCtaLink } from "./TrackedCtaLink";
 
 export function Header() {
   return (
@@ -12,12 +13,13 @@ export function Header() {
             Descobre a tua área. Antes de escolheres.
           </span>
         </Link>
-        <Link
+        <TrackedCtaLink
           href="/intake"
+          location="header"
           className="rounded-md bg-navy px-4 py-2 text-sm font-bold text-white transition hover:bg-navy-dark"
         >
           Começar
-        </Link>
+        </TrackedCtaLink>
       </div>
     </header>
   );

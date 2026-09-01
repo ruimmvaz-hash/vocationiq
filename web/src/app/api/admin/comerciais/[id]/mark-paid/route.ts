@@ -1,18 +1,14 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
-import { marcarIntakeEntregue } from "@/lib/store";
-import { registarEventoServidor } from "@/lib/eventLogServer";
+import { marcarComissaoPaga } from "@/lib/comercialStore";
 
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "não autenticado" }, { status: 401 });
-
   const { id } = await params;
   try {
-    await marcarIntakeEntregue(id);
-    await registarEventoServidor("report_delivered", { intakeId: id });
+    await marcarComissaoPaga(id);
     return NextResponse.json({ ok: true });
   } catch (err) {
-    const detail = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: detail }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }
 }

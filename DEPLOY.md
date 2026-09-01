@@ -1,12 +1,15 @@
 # Deploy — vocationiq.app
 
-Decisões já tomadas: mesmo projecto Supabase da Naveya, mesma conta Stripe da Naveya, backoffice da Naveya serve para já (não há admin próprio do VocationIQ). Este ficheiro é o guião passo a passo — nenhum destes passos foi executado por mim, porque todos envolvem dinheiro real ou infra-estrutura partilhada.
+Decisões já tomadas: mesmo projecto Supabase da Naveya, mesma conta Stripe da Naveya. O VocationIQ tem agora o seu próprio backoffice completo em `/admin` (dashboard, pedidos, analytics, comerciais) — já não depende do admin da Naveya. Este ficheiro é o guião passo a passo — nenhum destes passos foi executado por mim, porque todos envolvem dinheiro real ou infra-estrutura partilhada.
 
-## 1. Supabase — correr a migração
+## 1. Supabase — correr as migrações
 
-Abre o dashboard do projecto Supabase da Naveya → **SQL Editor** → **New query** → cola o conteúdo de [`web/supabase/migrations/0001_vocationiq_intakes.sql`](web/supabase/migrations/0001_vocationiq_intakes.sql) → **Run**.
+Abre o dashboard do projecto Supabase da Naveya → **SQL Editor** → **New query** → cola o conteúdo de cada ficheiro, por ordem, e corre um de cada vez:
 
-A tabela chama-se `vocationiq_intakes`, prefixo próprio — não colide com nenhuma tabela existente da Naveya. É segura para correr num projecto partilhado: usa `CREATE TABLE IF NOT EXISTS`, não altera nem apaga nada que já existe.
+1. [`web/supabase/migrations/0001_vocationiq_intakes.sql`](web/supabase/migrations/0001_vocationiq_intakes.sql) — tabela dos pedidos.
+2. [`web/supabase/migrations/0002_viq_comercial_analytics.sql`](web/supabase/migrations/0002_viq_comercial_analytics.sql) — comerciais, comissões, eventos de funil, relatórios entregues, e o bucket de storage `viq-relatorios` para os PDFs.
+
+Todas as tabelas novas usam prefixo próprio (`vocationiq_`, `viq_`) — nenhuma colide com nada existente da Naveya. Ambas as migrações são seguras para correr num projecto partilhado: usam `CREATE TABLE IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`, não alteram nem apagam nada que já existe.
 
 ## 2. Stripe — criar o produto
 
@@ -45,6 +48,7 @@ Variáveis a configurar (Project → Settings → Environment Variables):
 | `SUPABASE_SERVICE_ROLE_KEY` | a service role key do projecto Supabase da Naveya | idem |
 | `RESEND_API_KEY` | a chave Resend da Naveya | Naveya → Vercel → Environment Variables |
 | `ADMIN_PASSWORD` | a tua escolha | protege `/admin` — pode ser igual ou diferente da password da Naveya, são cookies de sessão separados |
+| `COMERCIAL_TOKEN_SECRET` | uma string longa e aleatória (ex.: `openssl rand -hex 32`) | assina os tokens de magic link/sessão do painel de comerciais em `/comercial` |
 
 Nota sobre `STRIPE_WEBHOOK_SECRET`: só existe depois de criares o endpoint no passo 2, que só podes criar depois do domínio estar a responder — por isso a sequência é: deploy inicial sem essa variável (o site funciona à mesma, só a rota do webhook fica inactiva até lá) → cria o endpoint na Stripe → adiciona a variável → faz **redeploy** (variáveis de ambiente só entram em vigor depois de um novo deploy).
 

@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
-import { marcarIntakePago } from "@/lib/store";
+import { marcarIntakePago, obterIntake } from "@/lib/store";
 import { sendConfirmationEmail } from "@/lib/email";
+import { validarCodigoComercial, registarComissao } from "@/lib/comercialStore";
+import { registarEventoServidor } from "@/lib/eventLogServer";
 import type Stripe from "stripe";
 
 // A assinatura tem de ser verificada sobre o corpo em bruto — por isso
@@ -31,12 +33,27 @@ export async function POST(request: Request) {
     const session = event.data.object as Stripe.Checkout.Session;
     const intakeId = session.metadata?.vocationiq_intake_id;
     const email = session.customer_details?.email;
+    const amountCents = session.amount_total ?? 0;
 
     if (intakeId && email) {
       try {
-        await marcarIntakePago(intakeId, { email, stripeSessionId: session.id });
+        const intakeAntesDoPagamento = await obterIntake(intakeId);
+
+        await marcarIntakePago(intakeId, { email, stripeSessionId: session.id, amountCents });
         const nome = session.customer_details?.name || "";
         await sendConfirmationEmail({ to: email, nome: nome.split(" ")[0] || nome || "" });
+        await registarEventoServidor("payment_completed", { intakeId, amountCents });
+
+        // Comissão de comercial, se o pedido tiver sido feito através do link dele.
+        const referralCode = intakeAntesDoPagamento?.referral_code;
+        if (referralCode) {
+          const comercial = await validarCodigoComercial(referralCode);
+          if (comercial) {
+            await registarComissao({ comercial, intakeId, orderValueEur: amountCents / 100 });
+          } else {
+            console.warn(`[webhook] código de comercial "${referralCode}" não é válido/activo — sem comissão registada.`);
+          }
+        }
       } catch (err) {
         console.error("[webhook] falha ao processar checkout.session.completed:", err);
         // Devolve 500 para o Stripe repetir o evento — nunca falha silenciosamente um pagamento já cobrado.

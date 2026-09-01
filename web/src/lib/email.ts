@@ -50,6 +50,38 @@ export async function sendConfirmationEmail(params: { to: string; nome: string }
   }
 }
 
+/** Envio do relatório final, em PDF anexo, pelo fundador via /admin. */
+export async function sendReportEmail(params: { to: string; nome: string; pdfBytes: Buffer; pdfFilename: string }): Promise<DeliveryResult> {
+  if (!RESEND_API_KEY) {
+    console.warn("[vocationiq email] RESEND_API_KEY não configurada — relatório não enviado.");
+    return { ok: false, detail: "RESEND_API_KEY não configurada" };
+  }
+
+  const bodyHtml = `
+    <p style="font-size:16px;line-height:1.7;">Olá ${escapeHtml(params.nome)},</p>
+    <p style="font-size:16px;line-height:1.7;">A tua análise VocationIQ está pronta — vai em anexo, em PDF.</p>
+    <p style="font-size:16px;line-height:1.7;">Se tiveres alguma dúvida, responde a este email.</p>
+    <p style="font-size:16px;line-height:1.7;margin-top:24px;">VocationIQ</p>
+  `;
+
+  const resend = new Resend(RESEND_API_KEY);
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: params.to,
+      subject: "A tua análise VocationIQ",
+      html: wrapper(bodyHtml),
+      attachments: [{ filename: params.pdfFilename, content: params.pdfBytes.toString("base64") }],
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[vocationiq email] falha ao enviar relatório:", detail);
+    return { ok: false, detail };
+  }
+}
+
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getStripe, PRECO_CENTIMOS, MOEDA } from "@/lib/stripe";
 import { hasSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { criarIntake } from "@/lib/store";
@@ -22,9 +23,12 @@ export async function POST(request: Request) {
   const validacao = validarIntake(body);
   if (!validacao.ok) return NextResponse.json({ error: validacao.erro }, { status: 400 });
 
+  const jar = await cookies();
+  const referralCode = jar.get("viq_ref")?.value;
+
   let intakeId: string;
   try {
-    intakeId = await criarIntake(validacao.dados);
+    intakeId = await criarIntake(validacao.dados, referralCode);
   } catch (err) {
     console.error("[checkout] falha ao guardar o pedido:", err);
     return NextResponse.json({ error: "Não foi possível registar o teu pedido." }, { status: 500 });
