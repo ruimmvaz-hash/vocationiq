@@ -12,8 +12,25 @@ export async function criarIntake(dados: IntakePayload, referralCode?: string): 
       hora_nascimento: dados.horaNascimento ?? null,
       local_nascimento: dados.localNascimento,
       situacao: dados.situacao,
-      contexto: dados.contexto ?? null,
       referral_code: referralCode ?? null,
+
+      clareza_ideia: dados.clarezaIdeia ?? null,
+      areas_consideradas: dados.areasConsideradas ?? null,
+      areas_consideradas_outra: dados.areasConsideradasOutra ?? null,
+      preferencia_familia: dados.preferenciaFamilia ?? null,
+
+      curso_actual: dados.cursoActual ?? null,
+      satisfacao_curso: dados.satisfacaoCurso ?? null,
+
+      area_trabalho_actual: dados.areaTrabalhoActual ?? null,
+      anos_experiencia: dados.anosExperiencia ?? null,
+      o_que_nao_funciona: dados.oQueNaoFunciona ?? null,
+
+      para_onde_quer_ir: dados.paraOndeQuerIr ?? null,
+      descricao_situacao: dados.descricaoSituacao ?? null,
+
+      contexto_adicional: dados.contextoAdicional ?? null,
+      pergunta_especifica: dados.perguntaEspecifica ?? null,
     })
     .select("id")
     .single();
@@ -53,6 +70,24 @@ export interface IntakeRow {
   paid_at: string | null;
   report_status: "not_started" | "in_progress" | "delivered";
   delivered_at: string | null;
+
+  clareza_ideia: string | null;
+  areas_consideradas: string[] | null;
+  areas_consideradas_outra: string | null;
+  preferencia_familia: string | null;
+
+  curso_actual: string | null;
+  satisfacao_curso: string | null;
+
+  area_trabalho_actual: string | null;
+  anos_experiencia: string | null;
+  o_que_nao_funciona: string | null;
+
+  para_onde_quer_ir: string | null;
+  descricao_situacao: string | null;
+
+  contexto_adicional: string | null;
+  pergunta_especifica: string | null;
 }
 
 export interface FiltrosIntakes {

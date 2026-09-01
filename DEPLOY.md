@@ -9,6 +9,7 @@ Abre o dashboard do projecto Supabase da Naveya → **SQL Editor** → **New que
 1. [`web/supabase/migrations/0001_vocationiq_intakes.sql`](web/supabase/migrations/0001_vocationiq_intakes.sql) — tabela dos pedidos.
 2. [`web/supabase/migrations/0002_viq_comercial_analytics.sql`](web/supabase/migrations/0002_viq_comercial_analytics.sql) — comerciais, comissões, eventos de funil, relatórios entregues, e o bucket de storage `viq-relatorios` para os PDFs.
 3. [`web/supabase/migrations/0003_viq_backoffice_extra.sql`](web/supabase/migrations/0003_viq_backoffice_extra.sql) — testemunhos e influencers.
+4. [`web/supabase/migrations/0004_vocationiq_intakes_expandir.sql`](web/supabase/migrations/0004_vocationiq_intakes_expandir.sql) — colunas novas do formulário de intake multi-passo. **Nota**: acrescenta colunas a `vocationiq_intakes`, não a "viq_intakes" — essa tabela nunca existiu, "viq_" só é o prefixo das tabelas criadas a partir da migração 0002.
 
 Todas as tabelas novas usam prefixo próprio (`vocationiq_`, `viq_`) — nenhuma colide com nada existente da Naveya. Todas as migrações são seguras para correr num projecto partilhado: usam `CREATE TABLE IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`, não alteram nem apagam nada que já existe. "Clientes" (`/admin/clientes`) não tem tabela própria — é agregado a partir de `vocationiq_intakes`.
 
