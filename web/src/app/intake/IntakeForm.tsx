@@ -201,7 +201,7 @@ export function IntakeForm() {
       <p className="mb-6 text-xs font-semibold uppercase tracking-wide text-ink/50">Passo {passo} de 3</p>
 
       {passo === 1 && (
-        <div className="space-y-6 pb-48 sm:pb-0">
+        <div className="space-y-6 pb-80 sm:pb-0">
           <Campo label="Nome completo" required>
             <input type="text" value={f.nome} onChange={(e) => set("nome", e.target.value)} className={inputClass} />
           </Campo>
