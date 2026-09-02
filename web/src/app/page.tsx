@@ -48,7 +48,7 @@ const RECEBES = [
 
 const PASSOS = [
   { numero: "1", titulo: "Preenches os teus dados", texto: "Um formulário curto — 2 minutos." },
-  { numero: "2", titulo: "Analisamos o teu perfil", texto: "Cruzamos os teus dados com o nosso método." },
+  { numero: "2", titulo: "Analisamos o teu perfil", texto: "Cruzamos os teus dados com astrologia psicológica." },
   { numero: "3", titulo: "Recebes o teu relatório", texto: "Por email, pronto a ler, em 48 horas." },
 ];
 
@@ -265,22 +265,9 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* 9. COMERCIAIS */}
-        <section className="bg-paper">
-          <div className="mx-auto max-w-3xl px-6 py-16 text-center sm:py-20">
-            <h2 className="text-2xl font-extrabold tracking-tight text-navy sm:text-3xl">Conheces alguém que precisava disto?</h2>
-            <p className="mt-4 text-ink/70">Partilha o teu link e ganha por cada análise vendida. 20% de comissão · Registo gratuito</p>
-            <TrackedCtaLink
-              href="/comercial"
-              location="comerciais-teaser"
-              className="mt-8 inline-block rounded-md bg-navy px-7 py-3.5 text-base font-bold text-white shadow-sm transition hover:bg-navy-dark"
-            >
-              Saber mais →
-            </TrackedCtaLink>
-          </div>
-        </section>
-
-        {/* 10. FAQ */}
+        {/* 9. FAQ — a secção de comerciais autónoma foi removida (pedido
+             explícito, "desalinhada"); a informação fica só na resposta
+             "Como funciona o programa de comerciais?" abaixo. */}
         <section id="faq" className="border-t border-border bg-fog">
           <div className="mx-auto max-w-3xl px-6 py-16 sm:py-20">
             <h2 className="text-2xl font-extrabold tracking-tight text-navy sm:text-3xl">Perguntas frequentes</h2>

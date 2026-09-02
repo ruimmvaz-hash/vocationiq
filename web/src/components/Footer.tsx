@@ -9,9 +9,18 @@ export function Footer() {
             Vocation<span className="text-amber-dark">IQ</span>
           </p>
           <p className="mt-2 text-ink/60">Descobre a tua área. Antes de escolheres.</p>
-          {/* Instagram/TikTok: sem contas próprias ainda — ícones entram aqui
-              assim que existirem. Um ícone sem link real fica pior do que
-              nenhum ícone, por isso não se mostra nada por agora. */}
+          {/* Sem contas Instagram/TikTok próprias ainda — por isso os
+              ícones não têm link real (nenhum href), só o glifo com
+              title="Em breve". Assim que as contas existirem, troca o
+              <span> por <a href="https://instagram.com/..."> etc. */}
+          <div className="mt-4 flex gap-3">
+            <span title="Instagram — em breve" className="text-ink/30">
+              <IconInstagram className="h-5 w-5" />
+            </span>
+            <span title="TikTok — em breve" className="text-ink/30">
+              <IconTikTok className="h-5 w-5" />
+            </span>
+          </div>
         </div>
 
         <div>
@@ -57,5 +66,24 @@ export function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+
+function IconInstagram({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <circle cx="12" cy="12" r="4.2" />
+      <circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function IconTikTok({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 3v10.5a3.2 3.2 0 1 1-3.2-3.2c.4 0 .8.06 1.2.18" />
+      <path d="M14 3c.3 2.4 2 4.2 4.4 4.4" />
+    </svg>
   );
 }
