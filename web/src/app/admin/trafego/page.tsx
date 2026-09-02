@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
-import { hasVercelAnalytics, obterTrafegoBasico } from "@/lib/vercelAnalytics";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { TrafegoClient } from "./TrafegoClient";
 
 export const dynamic = "force-dynamic";
 
@@ -9,16 +9,6 @@ export default async function AdminTrafegoPage() {
   if (!(await isAdminAuthenticated())) redirect("/admin/login");
 
   const clarityId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
-  let trafego: Awaited<ReturnType<typeof obterTrafegoBasico>> | null = null;
-  let erro: string | null = null;
-
-  if (hasVercelAnalytics) {
-    try {
-      trafego = await obterTrafegoBasico();
-    } catch (err) {
-      erro = err instanceof Error ? err.message : String(err);
-    }
-  }
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
@@ -46,39 +36,14 @@ export default async function AdminTrafegoPage() {
       </section>
 
       <section className="mt-6 rounded-lg border border-border p-5">
-        <p className="text-sm font-semibold text-navy">Métricas básicas (Vercel Web Analytics)</p>
-        {!hasVercelAnalytics ? (
-          <p className="mt-2 text-sm text-ink/60">VERCEL_API_TOKEN/VERCEL_PROJECT_ID não configurados — sem métricas para mostrar.</p>
-        ) : erro ? (
-          <p className="mt-2 text-sm text-red-700">Não consegui carregar o tráfego: {erro}</p>
-        ) : trafego ? (
-          <>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div>
-                <p className="text-sm text-ink/60">Visitantes hoje</p>
-                <p className="mt-1 text-2xl font-extrabold text-navy">{trafego.visitantesHoje}</p>
-              </div>
-              <div>
-                <p className="text-sm text-ink/60">Visitantes esta semana</p>
-                <p className="mt-1 text-2xl font-extrabold text-navy">{trafego.visitantesSemana}</p>
-              </div>
-            </div>
-            <p className="mt-5 text-sm font-semibold text-navy">Páginas mais visitadas</p>
-            {trafego.paginasMaisVisitadas.length === 0 ? (
-              <p className="mt-1 text-sm text-ink/60">Ainda sem dados suficientes.</p>
-            ) : (
-              <ul className="mt-2 space-y-1">
-                {trafego.paginasMaisVisitadas.map((p) => (
-                  <li key={p.rota} className="flex justify-between text-sm">
-                    <span className="text-ink/80">{p.rota}</span>
-                    <span className="text-ink/60">{p.visitas}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </>
-        ) : null}
+        <p className="mb-4 text-sm font-semibold text-navy">Vercel Web Analytics</p>
+        <TrafegoClient />
       </section>
+
+      <p className="mt-4 text-xs text-ink/45">
+        Dados actualizados a cada 24h pela Vercel — os primeiros números aparecem até 48h após activar o Web Analytics. Origem &ldquo;Direct&rdquo; = sem UTM
+        (acesso directo ao URL).
+      </p>
     </main>
   );
 }

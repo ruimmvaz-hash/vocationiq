@@ -1,68 +1,80 @@
 import "server-only";
 
-// Leitura mínima do Vercel Web Analytics (api.vercel.com) — replica só o
-// essencial do que a Naveya faz em lib/vercelAnalytics.ts (que tem muito
-// mais dimensões: referrers, dispositivos, países). Aqui só o que foi
-// pedido: visitantes hoje/semana e páginas mais visitadas.
+// Cliente para a Web Analytics REST API real da Vercel
+// (api.vercel.com/v1/query/web-analytics/...) — replicado do
+// lib/vercelAnalytics.ts da Naveya, que já tem este contrato confirmado
+// contra a documentação oficial: https://vercel.com/docs/analytics/web-analytics-api
 //
-// NOTA HONESTA: não foi possível testar esta integração de ponta a ponta
-// nesta sessão — não há um VERCEL_API_TOKEN disponível aqui. O parsing é
-// defensivo (nunca lança, cai para "sem dados" em vez de rebentar) mas o
-// fundador deve confirmar que os números batem certo assim que configurar
-// as variáveis de ambiente.
+// Nomes das variáveis com prefixo "VOCATIONIQ_": o Vercel injecta
+// automaticamente um conjunto de variáveis "VERCEL_*" no ambiente de build
+// e runtime (VERCEL_ENV, VERCEL_URL, VERCEL_REGION, etc. — ver
+// https://vercel.com/docs/environment-variables/system-environment-variables).
+// Com VERCEL_API_TOKEN/VERCEL_PROJECT_ID configurados no dashboard mas a
+// página continuando a acusar "não configurado", a explicação mais
+// provável é esse mecanismo automático a interferir com nomes que
+// começam por "VERCEL_" — por isso as variáveis próprias desta app usam
+// o prefixo "VOCATIONIQ_", que nunca colide com nada que o Vercel injecte.
 
-const VERCEL_API_TOKEN = process.env.VERCEL_API_TOKEN;
-const VERCEL_PROJECT_ID = process.env.VERCEL_PROJECT_ID;
-const VERCEL_TEAM_ID = process.env.VERCEL_TEAM_ID;
+const API_BASE = "https://api.vercel.com/v1/query/web-analytics";
+
+const VERCEL_API_TOKEN = process.env.VOCATIONIQ_VERCEL_API_TOKEN;
+const VERCEL_PROJECT_ID = process.env.VOCATIONIQ_VERCEL_PROJECT_ID;
+const VERCEL_TEAM_ID = process.env.VOCATIONIQ_VERCEL_TEAM_ID;
 
 export const hasVercelAnalytics = Boolean(VERCEL_API_TOKEN && VERCEL_PROJECT_ID);
 
-export interface TrafegoBasico {
-  visitantesHoje: number;
-  visitantesSemana: number;
-  paginasMaisVisitadas: { rota: string; visitas: number }[];
+/** Diagnóstico exacto do que falta configurar, para o indicador de estado do painel. */
+export function vercelAnalyticsMissingEnvVars(): string[] {
+  const missing: string[] = [];
+  if (!VERCEL_API_TOKEN) missing.push("VOCATIONIQ_VERCEL_API_TOKEN");
+  if (!VERCEL_PROJECT_ID) missing.push("VOCATIONIQ_VERCEL_PROJECT_ID");
+  return missing;
 }
 
-async function query(endpoint: string, params: Record<string, string>): Promise<unknown> {
-  const url = new URL(`https://api.vercel.com/v1/query/web-analytics/${endpoint}`);
-  url.searchParams.set("projectId", VERCEL_PROJECT_ID!);
-  if (VERCEL_TEAM_ID) url.searchParams.set("teamId", VERCEL_TEAM_ID);
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+export class VercelAnalyticsError extends Error {}
 
-  const res = await fetch(url.toString(), { headers: { Authorization: `Bearer ${VERCEL_API_TOKEN}` }, cache: "no-store" });
-  if (!res.ok) throw new Error(`Vercel Analytics respondeu ${res.status}`);
-  return res.json();
+function buildParams(extra: Record<string, string | number | undefined>): URLSearchParams {
+  if (!VERCEL_PROJECT_ID) throw new VercelAnalyticsError("VOCATIONIQ_VERCEL_PROJECT_ID em falta.");
+  const params = new URLSearchParams({ projectId: VERCEL_PROJECT_ID });
+  if (VERCEL_TEAM_ID) params.set("teamId", VERCEL_TEAM_ID);
+  for (const [key, value] of Object.entries(extra)) {
+    if (value !== undefined) params.set(key, String(value));
+  }
+  return params;
 }
 
-function numeroSeguro(valor: unknown): number {
-  const n = Number(valor);
-  return Number.isFinite(n) ? n : 0;
+async function callVercelAnalytics<T>(path: string, params: URLSearchParams): Promise<T> {
+  if (!VERCEL_API_TOKEN) throw new VercelAnalyticsError("VOCATIONIQ_VERCEL_API_TOKEN em falta.");
+  const res = await fetch(`${API_BASE}/${path}?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${VERCEL_API_TOKEN}` },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new VercelAnalyticsError(`Vercel Web Analytics API (${path}) devolveu ${res.status}: ${body}`);
+  }
+  return res.json() as Promise<T>;
 }
 
-export async function obterTrafegoBasico(): Promise<TrafegoBasico> {
-  if (!hasVercelAnalytics) throw new Error("Vercel Analytics não configurado (VERCEL_API_TOKEN/VERCEL_PROJECT_ID em falta).");
+export interface VisitsCount {
+  pageviews: number;
+  visitors: number;
+}
 
-  const agora = new Date();
-  const inicioHoje = new Date(agora);
-  inicioHoje.setHours(0, 0, 0, 0);
-  const inicioSemana = new Date(agora.getTime() - 7 * 24 * 60 * 60 * 1000);
+/** Total de pageviews/visitors, opcionalmente filtrado por intervalo de datas ("since"/"until" aceitam ISO string). */
+export async function queryVisitsCount(opts: { since?: string; until?: string; filter?: string } = {}): Promise<VisitsCount> {
+  const params = buildParams({ since: opts.since, until: opts.until, filter: opts.filter });
+  const json = await callVercelAnalytics<{ data: VisitsCount }>("visits/count", params);
+  return json.data;
+}
 
-  const [hoje, semana, paginas] = await Promise.all([
-    query("visits/count", { since: inicioHoje.toISOString(), until: agora.toISOString() }),
-    query("visits/count", { since: inicioSemana.toISOString(), until: agora.toISOString() }),
-    query("visits/aggregate", { since: inicioSemana.toISOString(), until: agora.toISOString(), dimension: "route", limit: "5" }),
-  ]);
+export interface VisitsAggregateRow {
+  [dimension: string]: string | number;
+}
 
-  // Formato exacto da resposta não confirmado nesta sessão — parsing tolerante a variações.
-  const visitantesHoje = numeroSeguro((hoje as Record<string, unknown>)?.visitors ?? (hoje as Record<string, unknown>)?.total);
-  const visitantesSemana = numeroSeguro((semana as Record<string, unknown>)?.visitors ?? (semana as Record<string, unknown>)?.total);
-
-  const dadosPaginas = (paginas as Record<string, unknown>)?.data;
-  const linhasPaginas: Record<string, unknown>[] = Array.isArray(dadosPaginas) ? (dadosPaginas as Record<string, unknown>[]) : [];
-  const paginasMaisVisitadas = linhasPaginas.slice(0, 5).map((p) => ({
-    rota: String(p.route ?? p.path ?? "—"),
-    visitas: numeroSeguro(p.visitors ?? p.total),
-  }));
-
-  return { visitantesHoje, visitantesSemana, paginasMaisVisitadas };
+/** Linhas agrupadas por uma dimensão (route, country, deviceType, referrerHostname, ...) dentro de um intervalo de datas. */
+export async function queryVisitsAggregate(opts: { since: string; until: string; by: string; limit?: number; filter?: string }): Promise<VisitsAggregateRow[]> {
+  const params = buildParams({ since: opts.since, until: opts.until, by: opts.by, limit: opts.limit, filter: opts.filter });
+  const json = await callVercelAnalytics<{ data: VisitsAggregateRow[] }>("visits/aggregate", params);
+  return json.data;
 }

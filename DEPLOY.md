@@ -70,12 +70,12 @@ Variáveis a configurar (Project → Settings → Environment Variables):
 | `ADMIN_PASSWORD` | a tua escolha | protege `/admin` — pode ser igual ou diferente da password da Naveya, são cookies de sessão separados |
 | `COMERCIAL_TOKEN_SECRET` | uma string longa e aleatória (ex.: `openssl rand -hex 32`) | assina os tokens de magic link/sessão do painel de comerciais em `/comercial` |
 | `NEXT_PUBLIC_CLARITY_PROJECT_ID` | id do projecto Clarity | pode ser o mesmo da Naveya ou um novo — dashboard.clarity.microsoft.com |
-| `VERCEL_API_TOKEN` | opcional — token gerado em vercel.com/account/tokens | só para as "métricas básicas" em `/admin/trafego`; sem isto a página só mostra o link da Clarity |
-| `VERCEL_PROJECT_ID` | opcional — Project Settings → General, no Vercel | idem |
-| `VERCEL_TEAM_ID` | opcional | só se o projecto Vercel pertencer a uma equipa |
+| `VOCATIONIQ_VERCEL_API_TOKEN` | opcional — token gerado em vercel.com/account/tokens | só para as "métricas básicas" em `/admin/trafego`; sem isto a página só mostra o link da Clarity |
+| `VOCATIONIQ_VERCEL_PROJECT_ID` | opcional — Project Settings → General, no Vercel | idem |
+| `VOCATIONIQ_VERCEL_TEAM_ID` | opcional | só se o projecto Vercel pertencer a uma equipa |
 | `CRON_SECRET` | uma string longa e aleatória (ex.: `openssl rand -hex 32`) | protege `/api/cron/revisao-emails` — o Vercel envia-a automaticamente como `Authorization: Bearer` quando o cron corre, sem mais nada a configurar |
 
-Nota sobre `/admin/trafego`: a integração com a API de Web Analytics da Vercel não foi testada de ponta a ponta nesta sessão (não tenho um `VERCEL_API_TOKEN` aqui) — o parsing é defensivo e nunca deve rebentar a página, mas confirma que os números batem certo assim que configurares as variáveis.
+**Nomes renomeados (antes eram `VERCEL_API_TOKEN` / `VERCEL_PROJECT_ID` / `VERCEL_TEAM_ID`)**: se já tinhas estas variáveis configuradas no Vercel com os nomes antigos, **apaga-as e recria com o prefixo `VOCATIONIQ_`** — o Vercel injecta automaticamente um conjunto de variáveis próprias de sistema que começam por `VERCEL_` (`VERCEL_ENV`, `VERCEL_URL`, `VERCEL_REGION`, etc. — [documentação oficial](https://vercel.com/docs/environment-variables/system-environment-variables)), e é isso que mais provavelmente estava a fazer `/admin/trafego` continuar a acusar "não configurado" mesmo com os valores certos preenchidos. O código em `lib/vercelAnalytics.ts` já foi actualizado para ler só os nomes novos.
 
 Nota sobre `STRIPE_WEBHOOK_SECRET`: só existe depois de criares o endpoint no passo 2, que só podes criar depois do domínio estar a responder — por isso a sequência é: deploy inicial sem essa variável (o site funciona à mesma, só a rota do webhook fica inactiva até lá) → cria o endpoint na Stripe → adiciona a variável → faz **redeploy** (variáveis de ambiente só entram em vigor depois de um novo deploy).
 
@@ -100,11 +100,12 @@ O código já está preparado para estas três variáveis — só faltam os valo
 3. Depois de criado, o **Project ID** aparece em **Settings → Overview** (ou no snippet de instalação — é a string alfanumérica no meio do URL do script).
 4. No Vercel: Project → Settings → Environment Variables → adiciona `NEXT_PUBLIC_CLARITY_PROJECT_ID` com esse valor.
 
-**`VERCEL_API_TOKEN`** e **`VERCEL_PROJECT_ID`** (métricas básicas de visitas na própria página `/admin/trafego`):
+**`VOCATIONIQ_VERCEL_API_TOKEN`** e **`VOCATIONIQ_VERCEL_PROJECT_ID`** (dashboard completo de tráfego em `/admin/trafego` — visitantes hoje/semana/mês, páginas mais visitadas, origem do tráfego, dispositivos, top países):
 1. No Vercel: avatar (canto superior direito) → **Settings** → **Tokens** → **Create Token** → dá-lhe um nome (ex.: "vocationiq-analytics") e cria. Copia o valor — só é mostrado uma vez.
 2. Vai ao projecto `vocationiq` no Vercel → **Settings** → **General** → copia o **Project ID** (secção "Project ID", perto do topo).
-3. Volta a Project → Settings → Environment Variables e adiciona as duas: `VERCEL_API_TOKEN` (o token do passo 1) e `VERCEL_PROJECT_ID` (o id do passo 2).
-4. Se o projecto pertencer a uma equipa Vercel (não à tua conta pessoal), adiciona também `VERCEL_TEAM_ID` — Settings → General da equipa, "Team ID".
+3. Volta a Project → Settings → Environment Variables e adiciona as duas: `VOCATIONIQ_VERCEL_API_TOKEN` (o token do passo 1) e `VOCATIONIQ_VERCEL_PROJECT_ID` (o id do passo 2). **Não uses os nomes `VERCEL_API_TOKEN`/`VERCEL_PROJECT_ID`** — o Vercel reserva esse prefixo para variáveis de sistema próprias e o código já só lê os nomes com `VOCATIONIQ_`.
+4. Se o projecto pertencer a uma equipa Vercel (não à tua conta pessoal), adiciona também `VOCATIONIQ_VERCEL_TEAM_ID` — Settings → General da equipa, "Team ID".
+5. Também precisas de ter o **Web Analytics** activado no projecto Vercel: Project → **Analytics** tab → **Enable**. Sem isto, a API não tem dados para devolver mesmo com as variáveis certas.
 
 Depois de adicionar qualquer uma destas variáveis, é preciso um **redeploy** para entrarem em vigor (variáveis de ambiente só se aplicam a partir do próximo build).
 
