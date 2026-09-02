@@ -11,6 +11,7 @@ Abre o dashboard do projecto Supabase da Naveya → **SQL Editor** → **New que
 3. [`web/supabase/migrations/0003_viq_backoffice_extra.sql`](web/supabase/migrations/0003_viq_backoffice_extra.sql) — testemunhos e influencers.
 4. [`web/supabase/migrations/0004_vocationiq_intakes_expandir.sql`](web/supabase/migrations/0004_vocationiq_intakes_expandir.sql) — colunas novas do formulário de intake multi-passo. **Nota**: acrescenta colunas a `vocationiq_intakes`, não a "viq_intakes" — essa tabela nunca existiu, "viq_" só é o prefixo das tabelas criadas a partir da migração 0002.
 5. [`web/supabase/migrations/0005_viq_leads.sql`](web/supabase/migrations/0005_viq_leads.sql) — leads do lead magnet da homepage.
+6. [`web/supabase/migrations/0006_viq_revisoes.sql`](web/supabase/migrations/0006_viq_revisoes.sql) — produto VocationIQ Revisão (€49): tabela `viq_revisoes` + duas colunas novas em `vocationiq_intakes` (`revisao_email_enviado`, `revisao_email_180_enviado`).
 
 Todas as tabelas novas usam prefixo próprio (`vocationiq_`, `viq_`) — nenhuma colide com nada existente da Naveya. Todas as migrações são seguras para correr num projecto partilhado: usam `CREATE TABLE IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`, não alteram nem apagam nada que já existe. "Clientes" (`/admin/clientes`) não tem tabela própria — é agregado a partir de `vocationiq_intakes`.
 
@@ -35,6 +36,14 @@ Depois, no dashboard da Stripe → **Webhooks** → **Add endpoint**:
 
 (Só consegues adicionar o endpoint depois do domínio estar a responder no Vercel — passo 3 primeiro, isto depois.)
 
+Repete para o segundo produto:
+
+```powershell
+npx tsx scripts/create-stripe-revisao-product.ts
+```
+
+Cria **"VocationIQ Revisão"** (€49) e imprime um `STRIPE_REVISAO_PRICE_ID`. Mesmo webhook — não precisas de criar outro endpoint na Stripe, o `/api/stripe/webhook` já trata os dois produtos (distingue pelo metadata da sessão).
+
 ## 3. Vercel — variáveis de ambiente
 
 No projecto Vercel do vocationiq, **Root Directory = `web`** (o repositório é um monorepo `method-engine/` + `web/`, tal como o da Naveya).
@@ -46,6 +55,7 @@ Variáveis a configurar (Project → Settings → Environment Variables):
 | `NEXT_PUBLIC_SITE_URL` | `https://vocationiq.app` | fixo |
 | `STRIPE_SECRET_KEY` | a chave secreta da Naveya | a mesma que usaste no passo 2 |
 | `STRIPE_PRICE_ID` | `price_...` | output do passo 2 |
+| `STRIPE_REVISAO_PRICE_ID` | `price_...` | output do passo 2 (produto Revisão) |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_...` | do endpoint criado no passo 2 (depois do deploy) |
 | `SUPABASE_URL` | a URL do projecto Supabase da Naveya | Naveya → Vercel → Environment Variables (já lá está, com este nome ou `NEXT_PUBLIC_SUPABASE_URL`) |
 | `SUPABASE_SERVICE_ROLE_KEY` | a service role key do projecto Supabase da Naveya | idem |
@@ -56,6 +66,7 @@ Variáveis a configurar (Project → Settings → Environment Variables):
 | `VERCEL_API_TOKEN` | opcional — token gerado em vercel.com/account/tokens | só para as "métricas básicas" em `/admin/trafego`; sem isto a página só mostra o link da Clarity |
 | `VERCEL_PROJECT_ID` | opcional — Project Settings → General, no Vercel | idem |
 | `VERCEL_TEAM_ID` | opcional | só se o projecto Vercel pertencer a uma equipa |
+| `CRON_SECRET` | uma string longa e aleatória (ex.: `openssl rand -hex 32`) | protege `/api/cron/revisao-emails` — o Vercel envia-a automaticamente como `Authorization: Bearer` quando o cron corre, sem mais nada a configurar |
 
 Nota sobre `/admin/trafego`: a integração com a API de Web Analytics da Vercel não foi testada de ponta a ponta nesta sessão (não tenho um `VERCEL_API_TOKEN` aqui) — o parsing é defensivo e nunca deve rebentar a página, mas confirma que os números batem certo assim que configurares as variáveis.
 
@@ -83,3 +94,11 @@ Depois do deploy no Vercel:
 ## Confirmação
 
 Depois de tudo: `https://vocationiq.app` mostra a homepage, `/intake` leva a um pagamento Stripe real, e o webhook marca o pedido como pago e envia o email de confirmação. Diz-me quando chegares aqui e eu verifico o fluxo ponta-a-ponta (sem tocar em dinheiro real — só a olhar para o código e, se quiseres, para um pagamento de teste).
+
+## VocationIQ Revisão — cron diário
+
+`web/vercel.json` já regista o cron (`/api/cron/revisao-emails`, todos os dias às 9h) — o Vercel lê este ficheiro automaticamente no deploy, não precisas de configurar nada à parte no dashboard, só garantir que `CRON_SECRET` está definido (passo 3). Podes testar manualmente com:
+
+```bash
+curl -H "Authorization: Bearer O_TEU_CRON_SECRET" https://vocationiq.app/api/cron/revisao-emails
+```

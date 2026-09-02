@@ -112,6 +112,80 @@ export async function sendLeadMagnetEmail(params: { to: string }): Promise<Deliv
   }
 }
 
+function ctaButton(href: string, label: string): string {
+  return `<a href="${href}" style="display:inline-block;background:#F5A623;color:#142C52;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:700;">${label}</a>`;
+}
+
+/** Email de follow-up aos 90 dias — copy exacta pedida. */
+export async function sendRevisao90Email(params: { to: string; nome: string; intakeId: string }): Promise<DeliveryResult> {
+  if (!RESEND_API_KEY) {
+    console.warn("[vocationiq email] RESEND_API_KEY não configurada — email de revisão (90d) não enviado.");
+    return { ok: false, detail: "RESEND_API_KEY não configurada" };
+  }
+
+  const link = `${SITE_URL}/revisao?id=${params.intakeId}`;
+  const bodyHtml = `
+    <p style="font-size:16px;line-height:1.7;">Olá ${escapeHtml(params.nome)},</p>
+    <p style="font-size:16px;line-height:1.7;">Há 3 meses recebeste a tua análise VocationIQ.</p>
+    <p style="font-size:16px;line-height:1.7;">Muito pode ter mudado desde então — e é exactamente aí que uma revisão faz sentido.</p>
+    <p style="font-size:16px;line-height:1.7;">A VocationIQ Revisão cruza o que já sabemos sobre o teu perfil com o que está a acontecer agora. Responde à tua dúvida actual com o contexto de quem já te conhece.</p>
+    <p style="font-size:16px;line-height:1.7;font-weight:700;">€49 · Entrega em 48h</p>
+    <p style="margin-top:24px;">${ctaButton(link, "Ver a minha revisão →")}</p>
+    <p style="margin-top:16px;font-size:13px;color:#1A1A1A99;">${link.replace(/^https?:\/\//, "")}</p>
+    <p style="font-size:16px;line-height:1.7;margin-top:24px;">Se não precisas agora, guarda este email — podes usar quando precisares.</p>
+    <p style="font-size:16px;line-height:1.7;margin-top:24px;">VocationIQ</p>
+  `;
+
+  const resend = new Resend(RESEND_API_KEY);
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: params.to,
+      subject: `Já passaram 3 meses — como está a correr, ${params.nome}?`,
+      html: wrapper(bodyHtml),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[vocationiq email] falha ao enviar revisão (90d):", detail);
+    return { ok: false, detail };
+  }
+}
+
+/** Email de follow-up aos 180 dias — só enviado se ainda não comprou revisão. Copy exacta pedida. */
+export async function sendRevisao180Email(params: { to: string; nome: string; intakeId: string }): Promise<DeliveryResult> {
+  if (!RESEND_API_KEY) {
+    console.warn("[vocationiq email] RESEND_API_KEY não configurada — email de revisão (180d) não enviado.");
+    return { ok: false, detail: "RESEND_API_KEY não configurada" };
+  }
+
+  const link = `${SITE_URL}/revisao?id=${params.intakeId}`;
+  const bodyHtml = `
+    <p style="font-size:16px;line-height:1.7;">Olá ${escapeHtml(params.nome)},</p>
+    <p style="font-size:16px;line-height:1.7;">6 meses é muito tempo.</p>
+    <p style="font-size:16px;line-height:1.7;">Se ainda tens dúvidas sobre o teu caminho, a revisão continua disponível por €49.</p>
+    <p style="margin-top:24px;">${ctaButton(link, "Ver a minha revisão →")}</p>
+    <p style="font-size:16px;line-height:1.7;margin-top:24px;">VocationIQ</p>
+  `;
+
+  const resend = new Resend(RESEND_API_KEY);
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: params.to,
+      subject: "Já passaram 6 meses desde a tua análise VocationIQ",
+      html: wrapper(bodyHtml),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[vocationiq email] falha ao enviar revisão (180d):", detail);
+    return { ok: false, detail };
+  }
+}
+
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }

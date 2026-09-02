@@ -70,6 +70,8 @@ export interface IntakeRow {
   paid_at: string | null;
   report_status: "not_started" | "in_progress" | "delivered";
   delivered_at: string | null;
+  revisao_email_enviado: boolean;
+  revisao_email_180_enviado: boolean;
 
   clareza_ideia: string | null;
   areas_consideradas: string[] | null;
@@ -172,4 +174,53 @@ export async function marcarIntakeEntregue(intakeId: string): Promise<void> {
     .update({ report_status: "delivered", delivered_at: new Date().toISOString() })
     .eq("id", intakeId);
   if (error) throw new Error(`Falha ao marcar pedido como entregue: ${error.message}`);
+}
+
+function janelaDias(diasAtras: number, folgaDias: number): { desde: string; ate: string } {
+  const agora = Date.now();
+  const umDia = 24 * 60 * 60 * 1000;
+  return {
+    desde: new Date(agora - (diasAtras + folgaDias) * umDia).toISOString(),
+    ate: new Date(agora - (diasAtras - folgaDias) * umDia).toISOString(),
+  };
+}
+
+/** Pedidos entregues há ~90 dias (±1) que ainda não receberam o email de revisão. */
+export async function listarElegiveisRevisao90(): Promise<IntakeRow[]> {
+  const supabase = await getSupabaseAdmin();
+  const { desde, ate } = janelaDias(90, 1);
+  const { data, error } = await supabase
+    .from("vocationiq_intakes")
+    .select("*")
+    .eq("report_status", "delivered")
+    .eq("revisao_email_enviado", false)
+    .gte("delivered_at", desde)
+    .lte("delivered_at", ate);
+  if (error) throw new Error(`Falha ao listar elegíveis para email de revisão (90d): ${error.message}`);
+  return (data ?? []) as IntakeRow[];
+}
+
+/** Pedidos entregues há ~180 dias (±1) que ainda não receberam o segundo email. */
+export async function listarElegiveisRevisao180(): Promise<IntakeRow[]> {
+  const supabase = await getSupabaseAdmin();
+  const { desde, ate } = janelaDias(180, 1);
+  const { data, error } = await supabase
+    .from("vocationiq_intakes")
+    .select("*")
+    .eq("report_status", "delivered")
+    .eq("revisao_email_180_enviado", false)
+    .gte("delivered_at", desde)
+    .lte("delivered_at", ate);
+  if (error) throw new Error(`Falha ao listar elegíveis para email de revisão (180d): ${error.message}`);
+  return (data ?? []) as IntakeRow[];
+}
+
+export async function marcarRevisaoEmailEnviado(intakeId: string, marco: "90" | "180"): Promise<void> {
+  const supabase = await getSupabaseAdmin();
+  const coluna = marco === "90" ? "revisao_email_enviado" : "revisao_email_180_enviado";
+  const { error } = await supabase
+    .from("vocationiq_intakes")
+    .update({ [coluna]: true })
+    .eq("id", intakeId);
+  if (error) throw new Error(`Falha ao marcar email de revisão (${marco}d) como enviado: ${error.message}`);
 }

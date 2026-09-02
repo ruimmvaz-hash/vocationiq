@@ -11,4 +11,5 @@ export function getStripe(): Stripe {
 }
 
 export const PRECO_CENTIMOS = 9900; // €99
+export const PRECO_REVISAO_CENTIMOS = 4900; // €49
 export const MOEDA = "eur";

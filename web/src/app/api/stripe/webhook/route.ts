@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { marcarIntakePago, obterIntake } from "@/lib/store";
+import { marcarRevisaoPaga } from "@/lib/revisaoStore";
 import { sendConfirmationEmail } from "@/lib/email";
 import { validarCodigoComercial, registarComissao } from "@/lib/comercialStore";
 import { registarEventoServidor } from "@/lib/eventLogServer";
@@ -32,10 +33,18 @@ export async function POST(request: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const intakeId = session.metadata?.vocationiq_intake_id;
+    const revisaoId = session.metadata?.vocationiq_revisao_id;
     const email = session.customer_details?.email;
     const amountCents = session.amount_total ?? 0;
 
-    if (intakeId && email) {
+    if (revisaoId && email) {
+      try {
+        await marcarRevisaoPaga(revisaoId, { email, stripeSessionId: session.id, amountCents });
+      } catch (err) {
+        console.error("[webhook] falha ao processar checkout.session.completed (revisão):", err);
+        return NextResponse.json({ error: "falha ao processar" }, { status: 500 });
+      }
+    } else if (intakeId && email) {
       try {
         const intakeAntesDoPagamento = await obterIntake(intakeId);
 
