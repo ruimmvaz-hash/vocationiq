@@ -3,7 +3,9 @@ import Link from "next/link";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { obterMetricasDashboard, obterVendasPorDia } from "@/lib/adminMetrics";
 import { obterUltimosPendentes } from "@/lib/store";
+import { listarAvaliacoesPendentes } from "@/lib/testemunhosStore";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { Estrelas } from "@/components/Estrelas";
 
 export const dynamic = "force-dynamic";
 
@@ -26,9 +28,15 @@ export default async function AdminDashboardPage() {
   let metricas = VAZIO_METRICAS;
   let pendentes: Awaited<ReturnType<typeof obterUltimosPendentes>> = [];
   let vendasPorDia: Awaited<ReturnType<typeof obterVendasPorDia>> = [];
+  let avaliacoesPendentes: Awaited<ReturnType<typeof listarAvaliacoesPendentes>> = [];
 
   try {
-    [metricas, pendentes, vendasPorDia] = await Promise.all([obterMetricasDashboard(), obterUltimosPendentes(5), obterVendasPorDia(30)]);
+    [metricas, pendentes, vendasPorDia, avaliacoesPendentes] = await Promise.all([
+      obterMetricasDashboard(),
+      obterUltimosPendentes(5),
+      obterVendasPorDia(30),
+      listarAvaliacoesPendentes(5),
+    ]);
   } catch (err) {
     erro = err instanceof Error ? err.message : String(err);
   }
@@ -63,6 +71,22 @@ export default async function AdminDashboardPage() {
                     <Link href={`/admin/relatorios/${p.id}`} className="text-red-800 underline">
                       {p.nome} — pago em {formatarData(p.paid_at)}
                     </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {avaliacoesPendentes.length > 0 && (
+            <div className="mt-6 rounded-md border border-amber/50 bg-amber/10 px-4 py-3">
+              <p className="text-sm font-bold text-amber-dark">★ {avaliacoesPendentes.length} nova(s) avaliação(ões) recebida(s)</p>
+              <ul className="mt-1.5 space-y-1">
+                {avaliacoesPendentes.map((a) => (
+                  <li key={a.id} className="flex items-center gap-2 text-sm">
+                    <Link href={`/admin/testemunhos#${a.id}`} className="text-navy underline">
+                      {a.nome} deixou {a.nota} estrela{a.nota !== 1 ? "s" : ""}
+                    </Link>
+                    <Estrelas nota={a.nota} className="text-xs" />
                   </li>
                 ))}
               </ul>

@@ -118,15 +118,20 @@ export async function sendConfirmationEmail(params: { to: string; nome: string }
   }
 }
 
+function linksEstrelas(intakeId: string): string {
+  const estrela = (n: number) =>
+    `<a href="${SITE_URL}/avaliacao?nota=${n}&id=${intakeId}" style="text-decoration:none;font-size:32px;line-height:1;padding:0 4px;">⭐</a>`;
+  return `<div style="margin:16px 0;">${[1, 2, 3, 4, 5].map(estrela).join("")}</div>`;
+}
+
 /** Email 2 — entrega do relatório, com PDF anexo. Enviado a partir do modal "Marcar como entregue" em /admin. */
-export async function sendReportEmail(params: { to: string; nome: string; pdfBytes?: Buffer; pdfFilename?: string }): Promise<DeliveryResult> {
+export async function sendReportEmail(params: { to: string; nome: string; intakeId: string; pdfBytes?: Buffer; pdfFilename?: string }): Promise<DeliveryResult> {
   if (!RESEND_API_KEY) {
     console.warn("[vocationiq email] RESEND_API_KEY não configurada — relatório não enviado.");
     return { ok: false, detail: "RESEND_API_KEY não configurada" };
   }
 
   const nome = escapeHtml(params.nome);
-  const avaliacaoHref = `mailto:hello@vocationiq.app?subject=${encodeURIComponent("A minha avaliação VocationIQ")}`;
 
   const bodyHtml = `
     ${p(`Olá ${nome},`)}
@@ -134,11 +139,10 @@ export async function sendReportEmail(params: { to: string; nome: string; pdfByt
     ${p("Encontras-o em anexo a este email.")}
     ${p("Lê com calma — foi escrito especificamente para ti.")}
 
-    ${seccaoTitulo("Partilha a tua experiência")}
-    ${p("A tua opinião é muito importante para nós e para quem está a pensar fazer a análise.")}
-    ${p("Se o relatório te ajudou, partilha a tua experiência connosco:")}
-    ${botao(avaliacaoHref, "Deixar a minha avaliação", "ambar")}
-    ${p("Podes enviar um texto simples — o que sentiste, o que te surpreendeu, o que mudou depois de leres. Publicamos no site (com a tua autorização) para ajudar outros a tomar a decisão.")}
+    ${seccaoTitulo("Como foi a tua experiência?")}
+    ${p("A tua opinião ajuda outros jovens e adultos a tomar a mesma decisão que tu tomaste.")}
+    ${p("Clica na tua avaliação:")}
+    ${linksEstrelas(params.intakeId)}
 
     ${seccaoTitulo("Conheces alguém que precisava disto?")}
     ${p("Se conheces um adolescente, jovem ou adulto com dúvidas sobre o seu caminho, podes ganhar por cada pessoa que trouxeres.")}

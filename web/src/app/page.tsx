@@ -5,10 +5,10 @@ import { Footer } from "@/components/Footer";
 import { TrackedCtaLink } from "@/components/TrackedCtaLink";
 import { HomepageViewTracker } from "@/components/HomepageViewTracker";
 import { LeadMagnetForm } from "@/components/LeadMagnetForm";
-import { listarTestemunhosAprovados } from "@/lib/testemunhosStore";
-import { SITUACOES } from "@/lib/validation";
+import { Estrelas } from "@/components/Estrelas";
+import { listarTestemunhosPublicaveis, SITUACAO_TESTEMUNHO } from "@/lib/testemunhosStore";
 
-const SITUACAO_LABEL = Object.fromEntries(SITUACOES.map((s) => [s.valor, s.label]));
+const SITUACAO_LABEL = Object.fromEntries(SITUACAO_TESTEMUNHO.map((s) => [s.valor, s.label]));
 
 // Sem isto, a homepage ficava estática do build — testemunhos aprovados
 // no admin só apareceriam no deploy seguinte. 5 min é fresco que chegue
@@ -109,7 +109,7 @@ const FAQ = [
 ];
 
 export default async function HomePage() {
-  const testemunhos = await listarTestemunhosAprovados();
+  const testemunhos = await listarTestemunhosPublicaveis();
 
   return (
     <>
@@ -229,7 +229,8 @@ export default async function HomePage() {
               <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {testemunhos.map((t) => (
                   <div key={t.id} className="rounded-lg border border-border p-6">
-                    <p className="text-sm leading-relaxed text-ink/85">&ldquo;{t.texto}&rdquo;</p>
+                    <Estrelas nota={t.nota} className="text-sm" />
+                    <p className="mt-3 text-sm leading-relaxed text-ink/85">&ldquo;{t.texto}&rdquo;</p>
                     <p className="mt-4 text-sm font-bold text-navy">{t.nome}</p>
                     <p className="text-xs text-ink/50">{SITUACAO_LABEL[t.situacao] ?? t.situacao}</p>
                   </div>

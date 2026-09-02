@@ -37,7 +37,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   try {
     const bytes = Buffer.from(await file.arrayBuffer());
 
-    const resultado = await sendReportEmail({ to: intake.email, nome: intake.nome, pdfBytes: bytes, pdfFilename: file.name });
+    const resultado = await sendReportEmail({ to: intake.email, nome: intake.nome, intakeId: id, pdfBytes: bytes, pdfFilename: file.name });
     if (!resultado.ok) return NextResponse.json({ error: resultado.detail ?? "falha ao enviar o email" }, { status: 500 });
 
     const relatorio = await guardarRelatorioPdf({ intakeId: id, filename: file.name, bytes, contentType: file.type });

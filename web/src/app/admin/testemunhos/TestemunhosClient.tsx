@@ -2,19 +2,22 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { SITUACOES } from "@/lib/validation";
-import type { Testemunho } from "@/lib/testemunhosStore";
+import { SITUACAO_TESTEMUNHO, type Testemunho } from "@/lib/testemunhoTypes";
+import { Estrelas } from "@/components/Estrelas";
+import { CardModal } from "./CardModal";
 
-const SITUACAO_LABEL = Object.fromEntries(SITUACOES.map((s) => [s.valor, s.label]));
+const SITUACAO_LABEL = Object.fromEntries(SITUACAO_TESTEMUNHO.map((s) => [s.valor, s.label]));
 
 export function TestemunhosClient({ testemunhosIniciais }: { testemunhosIniciais: Testemunho[] }) {
   const router = useRouter();
   const [nome, setNome] = useState("");
   const [situacao, setSituacao] = useState("");
   const [texto, setTexto] = useState("");
+  const [nota, setNota] = useState(5);
   const [aprovado, setAprovado] = useState(true);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [cardAberto, setCardAberto] = useState<Testemunho | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -23,7 +26,7 @@ export function TestemunhosClient({ testemunhosIniciais }: { testemunhosIniciais
     const res = await fetch("/api/admin/testemunhos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome, situacao, texto, aprovado }),
+      body: JSON.stringify({ nome, situacao, texto, nota, aprovado }),
     });
     setLoading(false);
     if (!res.ok) {
@@ -34,6 +37,7 @@ export function TestemunhosClient({ testemunhosIniciais }: { testemunhosIniciais
     setNome("");
     setSituacao("");
     setTexto("");
+    setNota(5);
     setAprovado(true);
     router.refresh();
   }
@@ -73,7 +77,7 @@ export function TestemunhosClient({ testemunhosIniciais }: { testemunhosIniciais
           <option value="" disabled>
             Situação
           </option>
-          {SITUACOES.map((s) => (
+          {SITUACAO_TESTEMUNHO.map((s) => (
             <option key={s.valor} value={s.valor}>
               {s.label}
             </option>
@@ -87,6 +91,20 @@ export function TestemunhosClient({ testemunhosIniciais }: { testemunhosIniciais
           rows={3}
           className="rounded-md border border-border px-3 py-2 text-sm focus:border-navy focus:outline-none"
         />
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold text-ink/60">Nota</span>
+          <select
+            value={nota}
+            onChange={(e) => setNota(Number(e.target.value))}
+            className="rounded-md border border-border px-3 py-2 text-sm focus:border-navy focus:outline-none"
+          >
+            {[5, 4, 3, 2, 1].map((n) => (
+              <option key={n} value={n}>
+                {n} estrela{n > 1 ? "s" : ""}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="flex items-center gap-2 text-sm text-ink/75">
           <input type="checkbox" checked={aprovado} onChange={(e) => setAprovado(e.target.checked)} />
           Aprovado (aparece já na homepage)
@@ -106,23 +124,35 @@ export function TestemunhosClient({ testemunhosIniciais }: { testemunhosIniciais
           <p className="text-sm text-ink/60">Ainda não há testemunhos.</p>
         ) : (
           testemunhosIniciais.map((t) => (
-            <div key={t.id} className="rounded-lg border border-border p-4">
-              <div className="flex items-start justify-between gap-3">
+            <div key={t.id} id={t.id} className="scroll-mt-24 rounded-lg border border-border p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="font-semibold text-navy">{t.nome}</p>
                   <p className="text-xs text-ink/50">{SITUACAO_LABEL[t.situacao] ?? t.situacao}</p>
+                  <Estrelas nota={t.nota} className="mt-1 block text-sm" />
                 </div>
-                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${t.aprovado ? "bg-emerald-100 text-emerald-800" : "bg-fog text-ink/60"}`}>
-                  {t.aprovado ? "Aprovado" : "Por aprovar"}
-                </span>
+                <div className="flex flex-col items-end gap-1.5">
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${t.aprovado ? "bg-emerald-100 text-emerald-800" : "bg-fog text-ink/60"}`}>
+                    {t.aprovado ? "Aprovado" : "Por aprovar"}
+                  </span>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${t.autoriza_publicacao ? "bg-emerald-100 text-emerald-800" : "bg-fog text-ink/50"}`}>
+                    {t.autoriza_publicacao ? "Pode publicar" : "Não autorizado"}
+                  </span>
+                </div>
               </div>
               <p className="mt-2 text-sm text-ink/80">{t.texto}</p>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   onClick={() => toggleAprovado(t.id, !t.aprovado)}
                   className="rounded-md border border-navy px-2.5 py-1 text-xs font-semibold text-navy transition hover:bg-navy hover:text-white"
                 >
-                  {t.aprovado ? "Reprovar" : "Aprovar"}
+                  {t.aprovado ? "Reprovar" : "Aprovar para o site"}
+                </button>
+                <button
+                  onClick={() => setCardAberto(t)}
+                  className="rounded-md border border-amber px-2.5 py-1 text-xs font-semibold text-amber-dark transition hover:bg-amber hover:text-navy-dark"
+                >
+                  Gerar card para redes sociais
                 </button>
                 <button onClick={() => apagar(t.id)} className="rounded-md border border-red-300 px-2.5 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50">
                   Apagar
@@ -132,6 +162,8 @@ export function TestemunhosClient({ testemunhosIniciais }: { testemunhosIniciais
           ))
         )}
       </div>
+
+      {cardAberto && <CardModal testemunho={cardAberto} onClose={() => setCardAberto(null)} />}
     </div>
   );
 }

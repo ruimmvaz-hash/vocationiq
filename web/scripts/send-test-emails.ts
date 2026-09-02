@@ -83,6 +83,12 @@ function p(texto: string): string {
   return `<p style="margin:0 0 16px;">${texto}</p>`;
 }
 
+function linksEstrelas(intakeId: string): string {
+  const estrela = (n: number) =>
+    `<a href="${SITE_URL}/avaliacao?nota=${n}&id=${intakeId}" style="text-decoration:none;font-size:32px;line-height:1;padding:0 4px;">⭐</a>`;
+  return `<div style="margin:16px 0;">${[1, 2, 3, 4, 5].map(estrela).join("")}</div>`;
+}
+
 async function main() {
   const resend = new Resend(key);
 
@@ -111,18 +117,17 @@ async function main() {
   console.log("Email 1 (confirmação):", resultado1.error ? `FALHOU — ${resultado1.error.message}` : `enviado, id ${resultado1.data?.id}`);
 
   // Email 2 — entrega do relatório (sem PDF, só teste de design)
-  const avaliacaoHref = `mailto:hello@vocationiq.app?subject=${encodeURIComponent("A minha avaliação VocationIQ")}`;
+  const idTeste = "00000000-0000-0000-0000-000000000000"; // id fictício — só para o link ter a forma certa, não resolve a um pedido real
   const bodyEmail2 = `
     ${p(`Olá ${NOME},`)}
     ${p("O teu relatório VocationIQ está pronto.")}
     ${p("Encontras-o em anexo a este email.")}
     ${p("Lê com calma — foi escrito especificamente para ti.")}
 
-    ${seccaoTitulo("Partilha a tua experiência")}
-    ${p("A tua opinião é muito importante para nós e para quem está a pensar fazer a análise.")}
-    ${p("Se o relatório te ajudou, partilha a tua experiência connosco:")}
-    ${botao(avaliacaoHref, "Deixar a minha avaliação", "ambar")}
-    ${p("Podes enviar um texto simples — o que sentiste, o que te surpreendeu, o que mudou depois de leres. Publicamos no site (com a tua autorização) para ajudar outros a tomar a decisão.")}
+    ${seccaoTitulo("Como foi a tua experiência?")}
+    ${p("A tua opinião ajuda outros jovens e adultos a tomar a mesma decisão que tu tomaste.")}
+    ${p("Clica na tua avaliação:")}
+    ${linksEstrelas(idTeste)}
 
     ${seccaoTitulo("Conheces alguém que precisava disto?")}
     ${p("Se conheces um adolescente, jovem ou adulto com dúvidas sobre o seu caminho, podes ganhar por cada pessoa que trouxeres.")}
