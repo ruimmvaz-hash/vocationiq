@@ -46,6 +46,7 @@ interface FormState {
 
   contextoAdicional: string;
   perguntaEspecifica: string;
+  referralCodeManual: string;
 }
 
 const ESTADO_INICIAL: FormState = {
@@ -71,6 +72,7 @@ const ESTADO_INICIAL: FormState = {
   descricaoSituacao: "",
   contextoAdicional: "",
   perguntaEspecifica: "",
+  referralCodeManual: "",
 };
 
 function passo2Valido(f: FormState): boolean {
@@ -98,6 +100,12 @@ export function IntakeForm() {
 
   function set<K extends keyof FormState>(campo: K, valor: FormState[K]) {
     setF((prev) => ({ ...prev, [campo]: valor }));
+  }
+
+  const [horaSelecionada, minutoSelecionado] = f.horaNascimento ? f.horaNascimento.split(":") : ["", ""];
+
+  function definirHoraMinuto(hora: string, minuto: string) {
+    set("horaNascimento", !hora && !minuto ? "" : `${hora || "00"}:${minuto || "00"}`);
   }
 
   function toggleArea(area: AreaConsiderada) {
@@ -174,6 +182,7 @@ export function IntakeForm() {
       descricaoSituacao: f.descricaoSituacao,
       contextoAdicional: f.contextoAdicional,
       perguntaEspecifica: f.perguntaEspecifica,
+      referralCodeManual: f.referralCodeManual,
     };
 
     try {
@@ -201,7 +210,7 @@ export function IntakeForm() {
       <p className="mb-6 text-xs font-semibold uppercase tracking-wide text-ink/50">Passo {passo} de 3</p>
 
       {passo === 1 && (
-        <div className="space-y-6 pb-80 sm:pb-0">
+        <div className="space-y-6">
           <Campo label="Nome completo" required>
             <input type="text" value={f.nome} onChange={(e) => set("nome", e.target.value)} className={inputClass} />
           </Campo>
@@ -209,21 +218,36 @@ export function IntakeForm() {
             <Campo label="Data de nascimento" required>
               <input type="date" value={f.dataNascimento} onChange={(e) => set("dataNascimento", e.target.value)} className={inputClass} />
             </Campo>
-            <Campo label="Hora de nascimento" hint="Se não sabes a hora exacta, deixa em branco. A análise fica mais precisa com a hora.">
+            <Campo label="Hora de nascimento" hint="Aproximada — se não souberes, deixa em branco.">
+              {/* Em mobile o picker nativo de <input type="time"> é desenhado
+                  pelo sistema operativo, fora da página — nenhum CSS consegue
+                  garantir que os seus botões ficam dentro do ecrã. Dois
+                  <select> simples eliminam esse picker por completo em
+                  mobile; o desktop mantém o input nativo, que aí funciona bem. */}
+              <div className="flex items-center gap-2 md:hidden">
+                <select value={horaSelecionada} onChange={(e) => definirHoraMinuto(e.target.value, minutoSelecionado)} className={selectHoraClass}>
+                  <option value="">--</option>
+                  {HORAS.map((h) => (
+                    <option key={h} value={h}>
+                      {h}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-ink/50">:</span>
+                <select value={minutoSelecionado} onChange={(e) => definirHoraMinuto(horaSelecionada, e.target.value)} className={selectHoraClass}>
+                  <option value="">--</option>
+                  {MINUTOS.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <input
                 type="time"
                 value={f.horaNascimento}
                 onChange={(e) => set("horaNascimento", e.target.value)}
-                onFocus={(e) => {
-                  // No mobile, o picker nativo de hora (iOS/Android) sobe a
-                  // partir do fundo do ecrã e pode tapar o campo se este
-                  // estiver demasiado em baixo na página — o setTimeout dá
-                  // tempo ao picker de abrir antes de calcular a posição a
-                  // centrar.
-                  const target = e.target;
-                  setTimeout(() => target.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
-                }}
-                className={inputClass}
+                className={`${inputClass} hidden md:block`}
               />
             </Campo>
           </div>
@@ -454,6 +478,15 @@ export function IntakeForm() {
               className={inputClass}
             />
           </Campo>
+          <Campo label="Tens um código de referral?" hint="Opcional.">
+            <input
+              type="text"
+              placeholder="Código de referral (opcional)"
+              value={f.referralCodeManual}
+              onChange={(e) => set("referralCodeManual", e.target.value)}
+              className={inputClass}
+            />
+          </Campo>
 
           {erro && <ErroMsg>{erro}</ErroMsg>}
           <div className="flex items-center gap-4">
@@ -478,6 +511,12 @@ export function IntakeForm() {
 
 const inputClass =
   "w-full rounded-md border border-border bg-paper px-4 py-2.5 text-ink placeholder:text-ink/40 focus:border-navy focus:outline-none focus:ring-1 focus:ring-navy";
+
+const selectHoraClass =
+  "w-full rounded-md border border-border bg-paper px-4 py-2.5 text-navy focus:border-navy focus:outline-none focus:ring-1 focus:ring-navy";
+
+const HORAS = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, "0"));
+const MINUTOS = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0"));
 
 function Campo({ label, hint, required, children }: { label: string; hint?: string; required?: boolean; children: React.ReactNode }) {
   return (

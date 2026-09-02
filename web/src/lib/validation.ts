@@ -160,6 +160,7 @@ export interface IntakePayload {
   // Passo 3 — todos os públicos
   contextoAdicional?: string;
   perguntaEspecifica?: string;
+  referralCodeManual?: string;
 }
 
 // Limite defensivo de infra-estrutura em cada campo de texto livre — não é
@@ -260,6 +261,8 @@ export function validarIntake(body: unknown): { ok: true; dados: IntakePayload }
   // Passo 3
   dados.contextoAdicional = textoOpcional(b.contextoAdicional);
   dados.perguntaEspecifica = textoOpcional(b.perguntaEspecifica);
+  const referralCodeManual = typeof b.referralCodeManual === "string" ? b.referralCodeManual.trim().slice(0, 50) : "";
+  if (referralCodeManual) dados.referralCodeManual = referralCodeManual;
 
   return { ok: true, dados };
 }

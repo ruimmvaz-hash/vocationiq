@@ -24,7 +24,11 @@ export async function POST(request: Request) {
   if (!validacao.ok) return NextResponse.json({ error: validacao.erro }, { status: 400 });
 
   const jar = await cookies();
-  const referralCode = jar.get("viq_ref")?.value;
+  // O código escrito à mão no Passo 3 tem prioridade sobre o cookie
+  // capturado automaticamente de um link ?ref= (ReferralCapture) — é o
+  // sinal mais explícito e recente do cliente, útil sobretudo quando não
+  // veio de um link de comercial ou o cookie de 30 dias já expirou.
+  const referralCode = validacao.dados.referralCodeManual || jar.get("viq_ref")?.value;
 
   let intakeId: string;
   try {
@@ -55,6 +59,7 @@ export async function POST(request: Request) {
       success_url: `${SITE_URL}/obrigado?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${SITE_URL}/intake?cancelado=1`,
       metadata: { vocationiq_intake_id: intakeId },
+      allow_promotion_codes: true,
     });
 
     if (!session.url) throw new Error("Stripe não devolveu um URL de checkout.");
