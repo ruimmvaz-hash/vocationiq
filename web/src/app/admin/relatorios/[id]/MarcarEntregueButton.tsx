@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function MarcarEntregueButton({ intakeId, jaEntregue }: { intakeId: string; jaEntregue: boolean }) {
+export function MarcarEntregueButton({ intakeId, jaEntregue, label }: { intakeId: string; jaEntregue: boolean; label?: string }) {
   const [aberto, setAberto] = useState(false);
   const router = useRouter();
 
@@ -17,7 +17,7 @@ export function MarcarEntregueButton({ intakeId, jaEntregue }: { intakeId: strin
         onClick={() => setAberto(true)}
         className="rounded-md bg-navy px-4 py-2 text-sm font-bold text-white transition hover:bg-navy-dark"
       >
-        Marcar como entregue
+        {label ?? "Marcar como entregue"}
       </button>
       {aberto && <EntregarModal intakeId={intakeId} onClose={() => setAberto(false)} onDelivered={() => router.refresh()} />}
     </>

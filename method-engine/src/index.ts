@@ -96,3 +96,7 @@ export { computeVocationIQAxes, type VocationIQAxes, type MissionAxis, type Earn
 export { computeEliminatoryKuta, type EliminatoryKutaResult } from "./lifeReport/kuta";
 export { detectBlessingPainHouses, type BlessingPainHit } from "./lifeReport/blessingPainHouses";
 export { computeAshtaKuta, type AshtaKutaResult, type AshtaKutaScore } from "./lifeReport/ashtaKuta";
+
+// VOCATIONIQ-ADULTO-metodologia.md — motor de geração do relatório VocationIQ Adulto (ramo "trabalho-quero-mudar").
+export { computePesosPlanetas, ESTADO_PESO, type PesoPlaneta } from "./vocationiq/pesosPlanetas";
+export { construirPromptAdulto, SECCAO_TITULOS, type VocationiqIntakeAdulto, type DadosDatas } from "./vocationiq/promptAdulto";

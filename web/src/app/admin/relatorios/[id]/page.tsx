@@ -2,6 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { obterIntake, type IntakeRow } from "@/lib/store";
+import { obterRascunho } from "@/lib/storage";
 import {
   SITUACOES,
   CLAREZA_IDEIA,
@@ -14,6 +15,7 @@ import {
 } from "@/lib/validation";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { MarcarEntregueButton } from "./MarcarEntregueButton";
+import { RascunhoRelatorio } from "./RascunhoRelatorio";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +62,12 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
     );
   }
   if (!intake) notFound();
+
+  // Motor de geração (VOCATIONIQ-ADULTO-metodologia.md) só cobre o ramo
+  // "trabalho-quero-mudar" — noutras situações não faz sentido mostrar o
+  // bloco de rascunho.
+  const mostrarRascunho = intake.situacao === "trabalho-quero-mudar" && intake.report_status !== "delivered";
+  const rascunho = mostrarRascunho ? await obterRascunho(intake.id).catch(() => null) : null;
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-10">
@@ -117,8 +125,10 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
         {intake.report_status === "delivered" && <Campo label="Data de entrega" valor={formatarDataHora(intake.delivered_at)} />}
       </Seccao>
 
+      {mostrarRascunho && <RascunhoRelatorio intakeId={intake.id} rascunhoInicial={rascunho?.texto ?? null} />}
+
       <div className="mt-6 flex flex-wrap items-start gap-4">
-        <MarcarEntregueButton intakeId={intake.id} jaEntregue={intake.report_status === "delivered"} />
+        <MarcarEntregueButton intakeId={intake.id} jaEntregue={intake.report_status === "delivered"} label={mostrarRascunho ? "Aprovar e enviar" : undefined} />
       </div>
     </main>
   );
