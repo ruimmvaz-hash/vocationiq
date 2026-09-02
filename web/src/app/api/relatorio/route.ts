@@ -130,14 +130,22 @@ export async function POST(request: Request) {
     const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, !horaAproximada);
 
     const client = new Anthropic({ apiKey });
-    const response = await client.messages.create({ model: MODEL, max_tokens: MAX_TOKENS, messages: [{ role: "user", content: prompt }] });
+    // Confirmado em produção (ver commit anterior): sem `thinking`
+    // explícito, este modelo usa "adaptive" thinking por omissão e pode
+    // gastar TODO o max_tokens em blocos de "thinking" sem nunca chegar
+    // a escrever texto (stop_reason "max_tokens", blocos=[thinking]).
+    // "disabled" força a resposta directa, sem essa camada.
+    const response = await client.messages.create({
+      model: MODEL,
+      max_tokens: MAX_TOKENS,
+      thinking: { type: "disabled" },
+      messages: [{ role: "user", content: prompt }],
+    });
     const textBlock = response.content.find((b) => b.type === "text");
     if (!textBlock || textBlock.type !== "text") {
       // Diagnóstico em vez de um erro genérico — sem isto, "sem bloco de
       // texto" não diz se a causa foi truncagem (stop_reason
-      // "max_tokens"), um bloco de tipo diferente (não há "thinking"
-      // activo neste pedido — nenhum parâmetro `thinking` é passado
-      // acima — mas fica coberto na mesma), ou content mesmo vazio.
+      // "max_tokens") ou outro tipo de bloco.
       const tiposDeBloco = response.content.map((b) => b.type).join(", ") || "(nenhum bloco)";
       const detalhe = `stop_reason=${response.stop_reason}, blocos=[${tiposDeBloco}]`;
       console.error(`[api/relatorio] resposta sem bloco de texto — ${detalhe}`);
