@@ -25,6 +25,10 @@ export async function criarIntake(dados: IntakePayload, referralCode?: string): 
       area_trabalho_actual: dados.areaTrabalhoActual ?? null,
       anos_experiencia: dados.anosExperiencia ?? null,
       o_que_nao_funciona: dados.oQueNaoFunciona ?? null,
+      tipo_mudanca: dados.tipoMudanca ?? null,
+      areas_destino: dados.areasDestino ?? null,
+      areas_destino_outra: dados.areasDestinoOutra ?? null,
+      ideia_concreta: dados.ideiaConcreta ?? null,
 
       para_onde_quer_ir: dados.paraOndeQuerIr ?? null,
       descricao_situacao: dados.descricaoSituacao ?? null,
@@ -84,6 +88,10 @@ export interface IntakeRow {
   area_trabalho_actual: string | null;
   anos_experiencia: string | null;
   o_que_nao_funciona: string | null;
+  tipo_mudanca: string[] | null;
+  areas_destino: string[] | null;
+  areas_destino_outra: string | null;
+  ideia_concreta: string | null;
 
   para_onde_quer_ir: string | null;
   descricao_situacao: string | null;

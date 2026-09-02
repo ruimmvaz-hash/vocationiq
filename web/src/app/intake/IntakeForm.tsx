@@ -1,7 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SITUACOES, CLAREZA_IDEIA, AREAS_CONSIDERADAS, SATISFACAO_CURSO, ANOS_EXPERIENCIA, type Situacao, type AreaConsiderada } from "@/lib/validation";
+import {
+  SITUACOES,
+  CLAREZA_IDEIA,
+  AREAS_CONSIDERADAS,
+  SATISFACAO_CURSO,
+  ANOS_EXPERIENCIA,
+  TIPO_MUDANCA,
+  AREAS_DESTINO,
+  CATEGORIAS_AREAS_DESTINO,
+  type Situacao,
+  type AreaConsiderada,
+  type TipoMudanca,
+  type AreaDestino,
+} from "@/lib/validation";
 import { logFunnelEvent } from "@/lib/eventLog";
 
 interface FormState {
@@ -23,6 +36,10 @@ interface FormState {
   areaTrabalhoActual: string;
   anosExperiencia: string;
   oQueNaoFunciona: string;
+  tipoMudanca: TipoMudanca[];
+  areasDestino: AreaDestino[];
+  areasDestinoOutra: string;
+  ideiaConcreta: string;
 
   paraOndeQuerIr: string;
   descricaoSituacao: string;
@@ -46,6 +63,10 @@ const ESTADO_INICIAL: FormState = {
   areaTrabalhoActual: "",
   anosExperiencia: "",
   oQueNaoFunciona: "",
+  tipoMudanca: [],
+  areasDestino: [],
+  areasDestinoOutra: "",
+  ideiaConcreta: "",
   paraOndeQuerIr: "",
   descricaoSituacao: "",
   contextoAdicional: "",
@@ -56,7 +77,11 @@ function passo2Valido(f: FormState): boolean {
   if (!f.situacao) return false;
   if (f.situacao === "9-ou-menos" || f.situacao === "10-11-12") return !!f.clarezaIdeia;
   if (f.situacao === "universidade") return !!f.cursoActual.trim() && !!f.satisfacaoCurso;
-  if (f.situacao === "trabalho-quero-mudar") return !!f.areaTrabalhoActual.trim() && !!f.anosExperiencia;
+  if (f.situacao === "trabalho-quero-mudar") {
+    if (!f.areaTrabalhoActual.trim() || !f.anosExperiencia) return false;
+    if (f.areasDestino.includes("outra") && !f.areasDestinoOutra.trim()) return false;
+    return true;
+  }
   if (f.situacao === "outra") return !!f.descricaoSituacao.trim();
   return false;
 }
@@ -79,6 +104,20 @@ export function IntakeForm() {
     setF((prev) => ({
       ...prev,
       areasConsideradas: prev.areasConsideradas.includes(area) ? prev.areasConsideradas.filter((a) => a !== area) : [...prev.areasConsideradas, area],
+    }));
+  }
+
+  function toggleTipoMudanca(tipo: TipoMudanca) {
+    setF((prev) => ({
+      ...prev,
+      tipoMudanca: prev.tipoMudanca.includes(tipo) ? prev.tipoMudanca.filter((t) => t !== tipo) : [...prev.tipoMudanca, tipo],
+    }));
+  }
+
+  function toggleAreaDestino(area: AreaDestino) {
+    setF((prev) => ({
+      ...prev,
+      areasDestino: prev.areasDestino.includes(area) ? prev.areasDestino.filter((a) => a !== area) : [...prev.areasDestino, area],
     }));
   }
 
@@ -127,6 +166,10 @@ export function IntakeForm() {
       areaTrabalhoActual: f.areaTrabalhoActual,
       anosExperiencia: f.anosExperiencia,
       oQueNaoFunciona: f.oQueNaoFunciona,
+      tipoMudanca: f.tipoMudanca,
+      areasDestino: f.areasDestino,
+      areasDestinoOutra: f.areasDestinoOutra,
+      ideiaConcreta: f.ideiaConcreta,
       paraOndeQuerIr: f.paraOndeQuerIr,
       descricaoSituacao: f.descricaoSituacao,
       contextoAdicional: f.contextoAdicional,
@@ -304,6 +347,59 @@ export function IntakeForm() {
                   onChange={(e) => set("paraOndeQuerIr", e.target.value)}
                   className={inputClass}
                 />
+              </Campo>
+
+              <Campo label="Que tipo de mudança estás a pensar?" hint="Opcional. Podes escolher mais que uma.">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {TIPO_MUDANCA.map((t) => (
+                    <label key={t.valor} className="flex items-center gap-2 text-sm text-ink/85">
+                      <input type="checkbox" checked={f.tipoMudanca.includes(t.valor)} onChange={() => toggleTipoMudanca(t.valor)} />
+                      {t.label}
+                    </label>
+                  ))}
+                </div>
+              </Campo>
+
+              <Campo label="Para que área te estás a orientar?" hint="Opcional. Podes escolher mais que uma.">
+                <div className="space-y-4">
+                  {CATEGORIAS_AREAS_DESTINO.map((categoria) => (
+                    <div key={categoria}>
+                      <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-ink/45">{categoria}</p>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {AREAS_DESTINO.filter((a) => a.categoria === categoria).map((a) => (
+                          <label key={a.valor} className="flex items-center gap-2 text-sm text-ink/85">
+                            <input type="checkbox" checked={f.areasDestino.includes(a.valor)} onChange={() => toggleAreaDestino(a.valor)} />
+                            {a.label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {AREAS_DESTINO.filter((a) => a.categoria === null).map((a) => (
+                      <label key={a.valor} className="flex items-center gap-2 text-sm text-ink/85">
+                        <input type="checkbox" checked={f.areasDestino.includes(a.valor)} onChange={() => toggleAreaDestino(a.valor)} />
+                        {a.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                {f.areasDestino.includes("outra") && (
+                  <input
+                    type="text"
+                    placeholder="Qual?"
+                    value={f.areasDestinoOutra}
+                    onChange={(e) => set("areasDestinoOutra", e.target.value)}
+                    className={`${inputClass} mt-2`}
+                  />
+                )}
+              </Campo>
+
+              <Campo
+                label="Se já tens alguma ideia concreta, partilha"
+                hint="Opcional. Ex: 'Estou a pensar em consultoria SAP' · 'Quero abrir um negócio de estética' · 'Gostava de trabalhar em RH' · 'Não sei — só sei que quero sair da área actual'."
+              >
+                <input type="text" value={f.ideiaConcreta} onChange={(e) => set("ideiaConcreta", e.target.value)} className={inputClass} />
               </Campo>
             </>
           )}

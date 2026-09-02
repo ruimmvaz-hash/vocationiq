@@ -2,7 +2,16 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { obterIntake, type IntakeRow } from "@/lib/store";
-import { SITUACOES, CLAREZA_IDEIA, AREAS_CONSIDERADAS, SATISFACAO_CURSO, ANOS_EXPERIENCIA } from "@/lib/validation";
+import {
+  SITUACOES,
+  CLAREZA_IDEIA,
+  AREAS_CONSIDERADAS,
+  SATISFACAO_CURSO,
+  ANOS_EXPERIENCIA,
+  TIPO_MUDANCA,
+  AREAS_DESTINO,
+  CATEGORIAS_AREAS_DESTINO,
+} from "@/lib/validation";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { MarcarEntregueButton } from "./MarcarEntregueButton";
 
@@ -13,6 +22,9 @@ const CLAREZA_LABEL = Object.fromEntries(CLAREZA_IDEIA.map((c) => [c.valor, c.la
 const AREA_LABEL = Object.fromEntries(AREAS_CONSIDERADAS.map((a) => [a.valor, a.label]));
 const SATISFACAO_LABEL = Object.fromEntries(SATISFACAO_CURSO.map((s) => [s.valor, s.label]));
 const ANOS_LABEL = Object.fromEntries(ANOS_EXPERIENCIA.map((a) => [a.valor, a.label]));
+const TIPO_MUDANCA_LABEL = Object.fromEntries(TIPO_MUDANCA.map((t) => [t.valor, t.label]));
+const AREA_DESTINO_LABEL = Object.fromEntries(AREAS_DESTINO.map((a) => [a.valor, a.label]));
+const AREA_DESTINO_CATEGORIA = Object.fromEntries(AREAS_DESTINO.map((a) => [a.valor, a.categoria]));
 
 function formatarDataHora(iso: string | null): string {
   if (!iso) return "—";
@@ -71,6 +83,13 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
       </Seccao>
 
       <RespostasSituacao intake={intake} />
+
+      {intake.ideia_concreta?.trim() && (
+        <section className="mt-6 rounded-lg border-2 border-amber/50 bg-amber/10 p-5">
+          <p className="text-sm font-bold text-navy">Ideia concreta</p>
+          <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-ink">{intake.ideia_concreta}</p>
+        </section>
+      )}
 
       {intake.contexto_adicional?.trim() && (
         <section className="mt-6 rounded-lg border-2 border-amber/50 bg-amber/10 p-5">
@@ -149,6 +168,25 @@ function RespostasSituacao({ intake }: { intake: IntakeRow }) {
         <Campo label="Há quanto tempo" valor={(intake.anos_experiencia && ANOS_LABEL[intake.anos_experiencia]) ?? "—"} />
         {intake.o_que_nao_funciona?.trim() && <Campo label="O que não está a funcionar" valor={intake.o_que_nao_funciona} multilinha />}
         {intake.para_onde_quer_ir?.trim() && <Campo label="Para onde quer ir" valor={intake.para_onde_quer_ir} multilinha />}
+        {intake.tipo_mudanca && intake.tipo_mudanca.length > 0 && (
+          <div className="px-4 py-3">
+            <p className="text-sm font-semibold text-ink/60">Tipo de mudança</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {intake.tipo_mudanca.map((t) => (
+                <span key={t} className="rounded-full bg-navy px-2.5 py-1 text-xs font-semibold text-white">
+                  {TIPO_MUDANCA_LABEL[t] ?? t}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        {intake.areas_destino && intake.areas_destino.length > 0 && (
+          <div className="px-4 py-3">
+            <p className="text-sm font-semibold text-ink/60">Áreas de destino</p>
+            <AreasDestinoChips areas={intake.areas_destino} />
+            {intake.areas_destino_outra?.trim() && <p className="mt-2 text-sm text-navy">Outra: {intake.areas_destino_outra}</p>}
+          </div>
+        )}
       </Seccao>
     );
   }
@@ -158,6 +196,40 @@ function RespostasSituacao({ intake }: { intake: IntakeRow }) {
       <Campo label="Opção escolhida" valor={SITUACAO_LABEL[intake.situacao] ?? intake.situacao} />
       {intake.descricao_situacao?.trim() && <Campo label="Descrição da situação" valor={intake.descricao_situacao} multilinha />}
     </Seccao>
+  );
+}
+
+/** Chips de áreas de destino agrupadas pela mesma categoria usada no formulário; as duas sem categoria (outra/ainda não sei) ficam soltas no fim. */
+function AreasDestinoChips({ areas }: { areas: string[] }) {
+  const semCategoria = areas.filter((a) => !AREA_DESTINO_CATEGORIA[a]);
+  return (
+    <div className="mt-2 space-y-2">
+      {CATEGORIAS_AREAS_DESTINO.map((categoria) => {
+        const itens = areas.filter((a) => AREA_DESTINO_CATEGORIA[a] === categoria);
+        if (itens.length === 0) return null;
+        return (
+          <div key={categoria}>
+            <p className="text-xs font-semibold uppercase tracking-wide text-ink/45">{categoria}</p>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {itens.map((a) => (
+                <span key={a} className="rounded-full bg-amber px-2.5 py-1 text-xs font-semibold text-navy-dark">
+                  {AREA_DESTINO_LABEL[a] ?? a}
+                </span>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+      {semCategoria.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {semCategoria.map((a) => (
+            <span key={a} className="rounded-full bg-fog px-2.5 py-1 text-xs font-semibold text-ink/70">
+              {AREA_DESTINO_LABEL[a] ?? a}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

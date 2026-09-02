@@ -47,6 +47,80 @@ export const ANOS_EXPERIENCIA = [
 
 export type AnosExperiencia = (typeof ANOS_EXPERIENCIA)[number]["valor"];
 
+export const TIPO_MUDANCA = [
+  { valor: "mudar-area", label: "Mudar completamente de área" },
+  { valor: "evoluir-mesma-area", label: "Evoluir dentro da mesma área" },
+  { valor: "trabalhar-conta-propria", label: "Passar a trabalhar por conta própria" },
+  { valor: "abrir-negocio", label: "Abrir o meu próprio negócio" },
+  { valor: "voltar-estudar", label: "Voltar a estudar / fazer formação" },
+  { valor: "reduzir-horas", label: "Reduzir horas / trabalhar menos" },
+  { valor: "ganhar-mais-mesma-area", label: "Ganhar mais na mesma área" },
+  { valor: "mais-impacto-significado", label: "Ter mais impacto / significado" },
+  { valor: "sair-ambiente-toxico", label: "Sair de um ambiente tóxico" },
+  { valor: "conciliar-trabalho-vida", label: "Conciliar melhor trabalho e vida" },
+  { valor: "ainda-nao-sei-mudanca", label: "Ainda não sei o que quero mudar" },
+] as const;
+
+export type TipoMudanca = (typeof TIPO_MUDANCA)[number]["valor"];
+
+export const CATEGORIAS_AREAS_DESTINO = [
+  "Negócios e gestão",
+  "Tecnologia e digital",
+  "Saúde e bem-estar",
+  "Educação e social",
+  "Criativo e cultural",
+  "Jurídico e financeiro",
+  "Indústria e técnico",
+] as const;
+
+export type CategoriaAreaDestino = (typeof CATEGORIAS_AREAS_DESTINO)[number];
+
+export const AREAS_DESTINO = [
+  { valor: "consultoria", label: "Consultoria (SAP, RH, gestão, etc.)", categoria: "Negócios e gestão" },
+  { valor: "empreendedorismo", label: "Empreendedorismo / negócio próprio", categoria: "Negócios e gestão" },
+  { valor: "vendas-comercial", label: "Vendas e comercial", categoria: "Negócios e gestão" },
+  { valor: "marketing-comunicacao", label: "Marketing e comunicação", categoria: "Negócios e gestão" },
+  { valor: "gestao-administracao", label: "Gestão e administração", categoria: "Negócios e gestão" },
+
+  { valor: "programacao", label: "Programação / desenvolvimento", categoria: "Tecnologia e digital" },
+  { valor: "design-digital-ux", label: "Design digital / UX", categoria: "Tecnologia e digital" },
+  { valor: "data-analise", label: "Data / análise de dados", categoria: "Tecnologia e digital" },
+  { valor: "ciberseguranca", label: "Cibersegurança", categoria: "Tecnologia e digital" },
+  { valor: "inteligencia-artificial", label: "Inteligência artificial", categoria: "Tecnologia e digital" },
+
+  { valor: "saude", label: "Saúde (medicina, enfermagem, etc.)", categoria: "Saúde e bem-estar" },
+  { valor: "psicologia-terapia", label: "Psicologia / terapia", categoria: "Saúde e bem-estar" },
+  { valor: "nutricao-coaching-saude", label: "Nutrição / coaching de saúde", categoria: "Saúde e bem-estar" },
+  { valor: "estetica-beleza", label: "Estética / beleza", categoria: "Saúde e bem-estar" },
+  { valor: "desporto-fitness", label: "Desporto / fitness", categoria: "Saúde e bem-estar" },
+
+  { valor: "ensino-formacao", label: "Ensino / formação", categoria: "Educação e social" },
+  { valor: "trabalho-social-ong", label: "Trabalho social / ONG", categoria: "Educação e social" },
+  { valor: "coaching-mentoria", label: "Coaching / mentoria", categoria: "Educação e social" },
+  { valor: "recursos-humanos", label: "Recursos humanos", categoria: "Educação e social" },
+
+  { valor: "design-artes-visuais", label: "Design / artes visuais", categoria: "Criativo e cultural" },
+  { valor: "escrita-conteudo-jornalismo", label: "Escrita / conteúdo / jornalismo", categoria: "Criativo e cultural" },
+  { valor: "fotografia-video", label: "Fotografia / vídeo", categoria: "Criativo e cultural" },
+  { valor: "musica-artes-performativas", label: "Música / artes performativas", categoria: "Criativo e cultural" },
+  { valor: "moda-lifestyle", label: "Moda / lifestyle", categoria: "Criativo e cultural" },
+
+  { valor: "direito-advocacia", label: "Direito / advocacia", categoria: "Jurídico e financeiro" },
+  { valor: "financas-contabilidade", label: "Finanças / contabilidade", categoria: "Jurídico e financeiro" },
+  { valor: "imobiliario", label: "Imobiliário", categoria: "Jurídico e financeiro" },
+  { valor: "seguros", label: "Seguros", categoria: "Jurídico e financeiro" },
+
+  { valor: "engenharia", label: "Engenharia", categoria: "Indústria e técnico" },
+  { valor: "construcao-arquitectura", label: "Construção / arquitectura", categoria: "Indústria e técnico" },
+  { valor: "logistica-operacoes", label: "Logística / operações", categoria: "Indústria e técnico" },
+  { valor: "agricultura-ambiente", label: "Agricultura / ambiente", categoria: "Indústria e técnico" },
+
+  { valor: "outra", label: "Outra área", categoria: null },
+  { valor: "ainda-nao-sei", label: "Ainda não sei", categoria: null },
+] as const;
+
+export type AreaDestino = (typeof AREAS_DESTINO)[number]["valor"];
+
 export interface IntakePayload {
   // Passo 1 — todos os públicos
   nome: string;
@@ -71,6 +145,10 @@ export interface IntakePayload {
   areaTrabalhoActual?: string;
   anosExperiencia?: AnosExperiencia;
   oQueNaoFunciona?: string;
+  tipoMudanca?: TipoMudanca[];
+  areasDestino?: AreaDestino[];
+  areasDestinoOutra?: string;
+  ideiaConcreta?: string;
 
   // Partilhado entre "universidade" (se pensa mudar, para onde) e
   // "já trabalho" (para onde quer ir)
@@ -156,6 +234,23 @@ export function validarIntake(body: unknown): { ok: true; dados: IntakePayload }
 
     dados.oQueNaoFunciona = textoOpcional(b.oQueNaoFunciona);
     dados.paraOndeQuerIr = textoOpcional(b.paraOndeQuerIr);
+
+    const tipoMudancaBrutos = Array.isArray(b.tipoMudanca) ? b.tipoMudanca : [];
+    const tipoMudancaValidos = TIPO_MUDANCA.map((t) => t.valor);
+    const tipoMudanca = tipoMudancaBrutos.filter((t): t is TipoMudanca => typeof t === "string" && tipoMudancaValidos.includes(t as TipoMudanca));
+    if (tipoMudanca.length > 0) dados.tipoMudanca = tipoMudanca;
+
+    const areasDestinoBrutas = Array.isArray(b.areasDestino) ? b.areasDestino : [];
+    const areasDestinoValidas = AREAS_DESTINO.map((a) => a.valor);
+    const areasDestino = areasDestinoBrutas.filter((a): a is AreaDestino => typeof a === "string" && areasDestinoValidas.includes(a as AreaDestino));
+    if (areasDestino.length > 0) dados.areasDestino = areasDestino;
+    if (areasDestino.includes("outra")) {
+      const areasDestinoOutra = textoOpcional(b.areasDestinoOutra);
+      if (!areasDestinoOutra) return { ok: false, erro: "Falta indicar qual é a outra área de destino." };
+      dados.areasDestinoOutra = areasDestinoOutra;
+    }
+
+    dados.ideiaConcreta = textoOpcional(b.ideiaConcreta);
   } else if (situacao === "outra") {
     const descricaoSituacao = typeof b.descricaoSituacao === "string" ? b.descricaoSituacao.trim() : "";
     if (!descricaoSituacao) return { ok: false, erro: "Falta descrever a tua situação." };
