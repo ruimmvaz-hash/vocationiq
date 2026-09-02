@@ -2,11 +2,9 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { obterIntake, type IntakeRow } from "@/lib/store";
-import { obterUltimoRelatorio } from "@/lib/storage";
 import { SITUACOES, CLAREZA_IDEIA, AREAS_CONSIDERADAS, SATISFACAO_CURSO, ANOS_EXPERIENCIA } from "@/lib/validation";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { MarcarEntregueButton } from "./MarcarEntregueButton";
-import { RelatorioActions } from "./RelatorioActions";
 
 export const dynamic = "force-dynamic";
 
@@ -50,8 +48,6 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
     );
   }
   if (!intake) notFound();
-
-  const relatorio = await obterUltimoRelatorio(id).catch(() => null);
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-10">
@@ -104,10 +100,6 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
 
       <div className="mt-6 flex flex-wrap items-start gap-4">
         <MarcarEntregueButton intakeId={intake.id} jaEntregue={intake.report_status === "delivered"} />
-      </div>
-
-      <div className="mt-6">
-        <RelatorioActions intakeId={intake.id} temRelatorio={!!relatorio} jaEnviado={!!relatorio?.enviado_em} />
       </div>
     </main>
   );
