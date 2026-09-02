@@ -45,12 +45,9 @@ export function AvaliacaoForm({ intakeId, notaInicial }: { intakeId: string; not
 
         <div className="mt-10 rounded-lg border border-border bg-fog p-6">
           <p className="font-semibold text-navy">Conheces alguém que precisava disto?</p>
-          <p className="mt-1 text-sm text-ink/70">Partilha o VocationIQ.</p>
-          <a
-            href="https://vocationiq.app"
-            className="mt-4 inline-block rounded-md bg-navy px-6 py-3 text-sm font-bold text-white transition hover:bg-navy-dark"
-          >
-            vocationiq.app
+          <p className="mt-1 text-sm text-ink/70">Partilha o VocationIQ — e ganha comissão por cada pessoa que trouxeres.</p>
+          <a href="/comercial" className="mt-4 inline-block rounded-md bg-navy px-6 py-3 text-sm font-bold text-white transition hover:bg-navy-dark">
+            Saber mais sobre o programa de comerciais
           </a>
         </div>
       </div>
