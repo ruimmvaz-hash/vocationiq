@@ -14,8 +14,13 @@ Abre o dashboard do projecto Supabase da Naveya → **SQL Editor** → **New que
 6. [`web/supabase/migrations/0006_viq_revisoes.sql`](web/supabase/migrations/0006_viq_revisoes.sql) — produto VocationIQ Revisão (€49): tabela `viq_revisoes` + duas colunas novas em `vocationiq_intakes` (`revisao_email_enviado`, `revisao_email_180_enviado`).
 7. [`web/supabase/migrations/0007_viq_testemunhos_avaliacoes.sql`](web/supabase/migrations/0007_viq_testemunhos_avaliacoes.sql) — sistema de avaliações com estrelas: acrescenta `intake_id`, `nota`, `autoriza_publicacao`, `publicavel` a `viq_testemunhos` (já criada na migração 0003), e substitui o CHECK de `situacao` pela taxonomia pública nova (estudante/jovem-adulto/adulto-transicao/prefiro-nao-dizer), diferente da taxonomia do formulário de intake.
 8. [`web/supabase/migrations/0008_vocationiq_intakes_adultos.sql`](web/supabase/migrations/0008_vocationiq_intakes_adultos.sql) — perguntas novas do ramo "Já trabalho e quero mudar": `tipo_mudanca` (array), `areas_destino` (array), `areas_destino_outra`, `ideia_concreta`, todas opcionais em `vocationiq_intakes`.
+9. [`web/supabase/migrations/0009_viq_events.sql`](web/supabase/migrations/0009_viq_events.sql) — **rede de segurança**: recria `viq_events` (event_type/metadata) caso a migração 2 nunca tenha sido corrida — é a causa mais provável de "a tabela não existe" no analytics, já que essa tabela foi desenhada logo na migração 2.
+10. [`web/supabase/migrations/0010_viq_amount_cents.sql`](web/supabase/migrations/0010_viq_amount_cents.sql) — mesma rede de segurança para `amount_cents` e `referral_code` em `vocationiq_intakes` (também da migração 2), com backfill de `amount_cents = 9900` só nos pedidos já pagos.
+11. [`web/supabase/migrations/0011_viq_comerciais.sql`](web/supabase/migrations/0011_viq_comerciais.sql) — mesma rede de segurança para `viq_comerciais`, `viq_comercial_referrals` (comissões), `viq_leads`, `viq_relatorios` e o bucket `viq-relatorios` — as restantes peças da migração 2.
 
 Todas as tabelas novas usam prefixo próprio (`vocationiq_`, `viq_`) — nenhuma colide com nada existente da Naveya. Todas as migrações são seguras para correr num projecto partilhado: usam `CREATE TABLE IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`, não alteram nem apagam nada que já existe. "Clientes" (`/admin/clientes`) não tem tabela própria — é agregado a partir de `vocationiq_intakes`.
+
+**Nota importante sobre as migrações 9–11**: se `viq_events`, `amount_cents` ou `viq_comerciais` estão a dar erro de "não existe", o mais provável é que a **migração 2** (`0002_viq_comercial_analytics.sql`) nunca tenha corrido — é lá que estas peças foram desenhadas originalmente, com estes nomes exactos de tabela/coluna, e é isso que o código em produção já usa (`lib/eventLogServer.ts`, `lib/adminMetrics.ts`, `lib/comercialStore.ts`, `lib/storage.ts`). As migrações 9–11 são só uma cópia idempotente dessas peças (`IF NOT EXISTS`) para garantir que ficam lá, mesmo que a 2 tenha sido saltada — correr as três é seguro mesmo que a 2 já tenha corrido (não fazem nada nesse caso). Se depois de correr a 9, 10 e 11 os erros persistirem, o problema é outro (ex.: variáveis de ambiente do Supabase erradas no Vercel) e preciso de ver a mensagem de erro exacta.
 
 ## 2. Stripe — criar o produto
 
@@ -84,6 +89,24 @@ Depois do deploy no Vercel:
    - Para `www` (se quiseres `www.vocationiq.app` a funcionar também): registo **CNAME**, nome `www`, valor `cname.vercel-dns.com`.
 3. **Importante**: em ambos os registos, o **Proxy status** tem de ficar em **"DNS only"** (nuvem cinzenta, não laranja). Se ficar "Proxied" (laranja), o Cloudflare tenta fazer SSL/proxy por cima do Vercel e o domínio não valida correctamente.
 4. Espera a propagação (normalmente minutos, pode ir a algumas horas) e confirma que `https://vocationiq.app` mostra o site.
+
+## 5. Clarity e métricas de tráfego (`/admin/trafego`) — opcional
+
+O código já está preparado para estas três variáveis — só faltam os valores reais. Sem elas, `/admin/trafego` continua a funcionar, só mostra menos informação (sem gráfico de sessões/cliques, sem "métricas básicas" da Vercel).
+
+**`NEXT_PUBLIC_CLARITY_PROJECT_ID`** (heatmaps e gravações de sessão):
+1. Vai a [clarity.microsoft.com](https://clarity.microsoft.com) e entra com a conta Microsoft/Google que preferires.
+2. **Add new project** → nome "VocationIQ" → domínio `vocationiq.app`.
+3. Depois de criado, o **Project ID** aparece em **Settings → Overview** (ou no snippet de instalação — é a string alfanumérica no meio do URL do script).
+4. No Vercel: Project → Settings → Environment Variables → adiciona `NEXT_PUBLIC_CLARITY_PROJECT_ID` com esse valor.
+
+**`VERCEL_API_TOKEN`** e **`VERCEL_PROJECT_ID`** (métricas básicas de visitas na própria página `/admin/trafego`):
+1. No Vercel: avatar (canto superior direito) → **Settings** → **Tokens** → **Create Token** → dá-lhe um nome (ex.: "vocationiq-analytics") e cria. Copia o valor — só é mostrado uma vez.
+2. Vai ao projecto `vocationiq` no Vercel → **Settings** → **General** → copia o **Project ID** (secção "Project ID", perto do topo).
+3. Volta a Project → Settings → Environment Variables e adiciona as duas: `VERCEL_API_TOKEN` (o token do passo 1) e `VERCEL_PROJECT_ID` (o id do passo 2).
+4. Se o projecto pertencer a uma equipa Vercel (não à tua conta pessoal), adiciona também `VERCEL_TEAM_ID` — Settings → General da equipa, "Team ID".
+
+Depois de adicionar qualquer uma destas variáveis, é preciso um **redeploy** para entrarem em vigor (variáveis de ambiente só se aplicam a partir do próximo build).
 
 ## Ordem recomendada
 
