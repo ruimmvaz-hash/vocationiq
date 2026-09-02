@@ -70,3 +70,10 @@ export async function obterRascunho(intakeId: string): Promise<RascunhoRelatorio
   if (error || !data || !data.rascunho_texto) return null;
   return { id: data.id as string, texto: data.rascunho_texto as string, criadoEm: data.rascunho_criado_em as string };
 }
+
+/** "Descartar" — apaga a linha de rascunho (pdf_path ainda nulo) deste intake. Nunca toca em linhas já entregues (com PDF). */
+export async function apagarRascunho(intakeId: string): Promise<void> {
+  const sb = await getSupabaseAdmin();
+  const { error } = await sb.from("viq_relatorios").delete().eq("intake_id", intakeId).is("pdf_path", null);
+  if (error) throw new Error(`Falha ao apagar rascunho: ${error.message}`);
+}

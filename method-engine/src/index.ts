@@ -99,4 +99,4 @@ export { computeAshtaKuta, type AshtaKutaResult, type AshtaKutaScore } from "./l
 
 // VOCATIONIQ-ADULTO-metodologia.md — motor de geração do relatório VocationIQ Adulto (ramo "trabalho-quero-mudar").
 export { computePesosPlanetas, ESTADO_PESO, type PesoPlaneta } from "./vocationiq/pesosPlanetas";
-export { construirPromptAdulto, SECCAO_TITULOS, type VocationiqIntakeAdulto, type DadosDatas } from "./vocationiq/promptAdulto";
+export { construirPromptAdulto, SECCAO_TITULOS, MARCADORES, FORCA_VALORES, type VocationiqIntakeAdulto, type DadosDatas, type ForcaValor } from "./vocationiq/promptAdulto";

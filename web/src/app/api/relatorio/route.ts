@@ -3,9 +3,10 @@ import Anthropic from "@anthropic-ai/sdk";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { hasSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { obterIntake } from "@/lib/store";
-import { guardarRascunho } from "@/lib/storage";
+import { guardarRascunho, apagarRascunho } from "@/lib/storage";
 import { geocodeCityCountry } from "@/lib/reportGeo";
 import { localBirthTimeToUtc } from "@/lib/localBirthTime";
+import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTemplate";
 import { SITUACOES, ANOS_EXPERIENCIA, TIPO_MUDANCA, AREAS_DESTINO } from "@/lib/validation";
 import {
   computeD1Table,
@@ -153,11 +154,71 @@ export async function POST(request: Request) {
     }
 
     const rascunho = await guardarRascunho(intakeId, textBlock.text);
-    return NextResponse.json({ ok: true, rascunhoId: rascunho.id, texto: textBlock.text });
+
+    // Passa os dados técnicos já calculados ao template — os gráficos
+    // (SVG) são sempre gerados a partir destes, nunca do texto do LLM.
+    const dadosTemplate: DadosParaTemplate = {
+      nome: intake.nome,
+      dataNascimento: intake.data_nascimento,
+      horaNascimento: horaAproximada ? null : intake.hora_nascimento,
+      localNascimento: intake.local_nascimento,
+      situacaoDeclarada: intakeAdulto.situacaoDeclarada,
+      areaActual: intakeAdulto.areaActual,
+      anosExperiencia: intakeAdulto.anosExperiencia,
+      oQueNaoFunciona: intakeAdulto.oQueNaoFunciona,
+      opcoesConsideradas: intakeAdulto.areasDestino.concat(intakeAdulto.areasDestinoOutra ? [intakeAdulto.areasDestinoOutra] : []),
+      ideiaConcreta: intakeAdulto.ideiaConcreta,
+      perguntaEspecifica: intakeAdulto.perguntaEspecifica,
+    };
+    const html = gerarHTMLRelatorio(dadosTemplate, textBlock.text, axes, pesosPlanetas, axes.earningModeAll, datas);
+
+    return NextResponse.json({ ok: true, rascunhoId: rascunho.id, texto: textBlock.text, html });
   } catch (err) {
     if (err instanceof GeocodeError) return NextResponse.json({ error: err.message }, { status: 422 });
     const message = err instanceof Error ? err.message : String(err);
     console.error("[api/relatorio] falha ao gerar rascunho:", message);
     return NextResponse.json({ error: `Não foi possível gerar o rascunho: ${message}` }, { status: 500 });
+  }
+}
+
+/** "Guardar rascunho" — actualiza o texto (editado à mão pelo admin) sem chamar a Anthropic outra vez. */
+export async function PUT(request: Request) {
+  if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "não autenticado" }, { status: 401 });
+  if (!hasSupabaseAdmin) return NextResponse.json({ error: "Serviço indisponível de momento." }, { status: 503 });
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Pedido inválido." }, { status: 400 });
+  }
+  const { intakeId, texto } = body as { intakeId?: unknown; texto?: unknown };
+  if (typeof intakeId !== "string" || !intakeId) return NextResponse.json({ error: "Falta intakeId." }, { status: 400 });
+  if (typeof texto !== "string" || !texto.trim()) return NextResponse.json({ error: "O rascunho não pode ficar vazio." }, { status: 400 });
+
+  try {
+    const criadoEm = new Date().toISOString();
+    await guardarRascunho(intakeId, texto);
+    return NextResponse.json({ ok: true, criadoEm });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: `Não foi possível guardar o rascunho: ${message}` }, { status: 500 });
+  }
+}
+
+/** "Descartar" — apaga o rascunho (nunca uma linha já entregue) e volta ao Estado 1. */
+export async function DELETE(request: Request) {
+  if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "não autenticado" }, { status: 401 });
+  if (!hasSupabaseAdmin) return NextResponse.json({ error: "Serviço indisponível de momento." }, { status: 503 });
+
+  const intakeId = new URL(request.url).searchParams.get("intakeId");
+  if (!intakeId) return NextResponse.json({ error: "Falta intakeId." }, { status: 400 });
+
+  try {
+    await apagarRascunho(intakeId);
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: `Não foi possível apagar o rascunho: ${message}` }, { status: 500 });
   }
 }

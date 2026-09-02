@@ -125,11 +125,14 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
         {intake.report_status === "delivered" && <Campo label="Data de entrega" valor={formatarDataHora(intake.delivered_at)} />}
       </Seccao>
 
-      {mostrarRascunho && <RascunhoRelatorio intakeId={intake.id} rascunhoInicial={rascunho?.texto ?? null} />}
+      {mostrarRascunho && <RascunhoRelatorio intakeId={intake.id} rascunhoInicial={rascunho?.texto ?? null} criadoEmInicial={rascunho?.criadoEm ?? null} />}
 
-      <div className="mt-6 flex flex-wrap items-start gap-4">
-        <MarcarEntregueButton intakeId={intake.id} jaEntregue={intake.report_status === "delivered"} label={mostrarRascunho ? "Aprovar e enviar" : undefined} />
-      </div>
+      {/* Quando há bloco de rascunho, "Aprovar e enviar" já vem embutido nele — só um botão de entrega no ecrã. */}
+      {!(mostrarRascunho && rascunho?.texto) && (
+        <div className="mt-6 flex flex-wrap items-start gap-4">
+          <MarcarEntregueButton intakeId={intake.id} jaEntregue={intake.report_status === "delivered"} />
+        </div>
+      )}
     </main>
   );
 }

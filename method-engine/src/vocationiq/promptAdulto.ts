@@ -70,6 +70,25 @@ export const SECCAO_TITULOS = {
   oPlano: "O plano",
 } as const;
 
+/**
+ * Marcadores máquina-legíveis exigidos ao LLM dentro do texto (rótulos
+ * ASCII fixos, nunca traduzidos) — necessários para o template HTML
+ * (Passo 4, ronda seguinte) conseguir desenhar cards por opção com
+ * indicador de força, decidir se há candidata fora da lista sem
+ * heurísticas frágeis, e destacar o primeiro passo do plano. O conteúdo
+ * a seguir a cada marcador continua a ser escrito pelo LLM — só a
+ * etiqueta em si é fixa, para as duas pontas (prompt e parser) nunca
+ * divergirem.
+ */
+export const MARCADORES = {
+  forca: "FORÇA:",
+  candidata: "CANDIDATA:",
+  primeiroPasso: "PRIMEIRO PASSO:",
+} as const;
+
+export const FORCA_VALORES = ["forte", "moderada", "fraca"] as const;
+export type ForcaValor = (typeof FORCA_VALORES)[number];
+
 const GLOSA_TECNICA: Record<string, string> = {
   Sun: "Sol",
   Moon: "Lua",
@@ -290,16 +309,21 @@ Quadro de dados (nome, situação, área actual) e o enquadramento da pergunta q
 Traduz o Eixo da Missão e o Modo de Ganho dominante para linguagem humana, sem ainda nomear nenhuma das opções declaradas.
 
 ## ${SECCAO_TITULOS.leituraPorOpcao}
-Para CADA opção candidata (declarada ou derivada), exactamente estas 4 partes, por esta ordem:
-1. O que a carta sustenta nesta opção. Para dizer que a carta sustenta uma opção, cita pelo menos duas fontes independentes (Eixo da Missão, Modo de Ganho, peso de planeta, Montra de Mercado). Uma opção sustentada por um único sinal fraco não é sustentada — diz isso.
+Para CADA opção candidata (declarada ou derivada), este formato EXACTO, por esta ordem — o cabeçalho "### " e a linha "${MARCADORES.forca}" são obrigatórios e machine-readable, não os omitas nem os traduzas:
+
+### <nome exacto da opção, tal como foi declarada ou derivada>
+${MARCADORES.forca} <forte, moderada ou fraca — forte se ≥2 fontes independentes fortes convergem, moderada se há suporte real mas não forte, fraca se só um sinal fraco isolado sustenta a opção>
+1. O que a carta sustenta nesta opção. Para dizer que a carta sustenta uma opção, cita pelo menos duas fontes independentes (Eixo da Missão, Modo de Ganho, peso de planeta, Montra de Mercado). Uma opção sustentada por um único sinal fraco não é sustentada — diz isso, e usa "${MARCADORES.forca} fraca" nesse caso.
 2. O que esta opção lhe vai custar (o custo específico DESTA carta nesta escolha, nunca o risco genérico da profissão).
 3. O que esta opção pede e que falta actualmente — e se é algo que se aprende ou algo que não muda.
 4. Onde entra a matéria desta pessoa nesta opção — nunca o sector como resposta, sempre a forma/função (usa o Modo de Ganho para decidir se entra pela voz, pela resolução directa, ou pela liderança/execução pública).
 
+Repete o bloco "### <nome> / ${MARCADORES.forca} / 1. / 2. / 3. / 4." para cada opção candidata, uma a seguir à outra.
+
 ## ${SECCAO_TITULOS.candidataForaDaLista}
-No máximo uma opção que a pessoa não declarou, e só se pelo menos 4 camadas independentes convergirem (Eixo da Missão, Modo de Ganho, Montra de Mercado, peso por planeta/casa, regência funcional, ou outra camada dos dados acima). Se não houver 4 a convergir, escreve isso explicitamente — "a tua carta não aponta a nada fora do que já pensaste" é uma resposta válida e completa, não a evites.
+A primeira linha é sempre "${MARCADORES.candidata} <nome da opção>" ou "${MARCADORES.candidata} nenhuma" — obrigatória e machine-readable, não a omitas. No máximo uma opção que a pessoa não declarou, e só se pelo menos 4 camadas independentes convergirem (Eixo da Missão, Modo de Ganho, Montra de Mercado, peso por planeta/casa, regência funcional, ou outra camada dos dados acima). Depois da primeira linha, o texto explicativo: se houver candidata, porque é que as 4 camadas convergem; se não houver ("${MARCADORES.candidata} nenhuma"), escreve isso explicitamente — "a tua carta não aponta a nada fora do que já pensaste" é uma resposta válida e completa, não a evites.
 
 ## ${SECCAO_TITULOS.oPlano}
-Usa as datas reais da secção "Datas reais" acima (nunca datas inventadas). Um primeiro passo accionável para esta semana especificamente. Nunca um plano genérico de 90 dias sem ligação às datas calculadas.
+Usa as datas reais da secção "Datas reais" acima (nunca datas inventadas). Escreve o corpo do plano livremente, e destaca o primeiro passo accionável para esta semana numa linha própria, prefixada exactamente por "${MARCADORES.primeiroPasso} " (obrigatório, machine-readable, não o omitas) — ex.: "${MARCADORES.primeiroPasso} Contacta duas pessoas que já fazem consultoria a solo e pergunta-lhes o que ninguém conta sobre o primeiro ano." Nunca um plano genérico de 90 dias sem ligação às datas calculadas.
 `.trim();
 }

@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relatório VocationIQ — Rui (teste)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --azul: #1B3A6B; --ambar: #F5A623; --cinza-claro: #F5F5F5; }
+  * { box-sizing: border-box; }
+  body { font-family: "Inter", Arial, Helvetica, sans-serif; color: #1A1A1A; background: #FFFFFF; margin: 0; padding: 0; }
+  .capa { background: var(--azul); padding: 90px 60px; text-align: center; page-break-after: always; }
+  .capa-logo { font-size: 36px; font-weight: 800; letter-spacing: 0.5px; color: #FFFFFF; }
+  .capa-logo .iq { color: var(--ambar); }
+  .capa-tagline { color: var(--ambar); font-size: 15px; margin-top: 10px; font-weight: 500; }
+  .capa-divisor { width: 64px; height: 3px; background: var(--ambar); margin: 40px auto; border: none; }
+  .capa-nome { color: #FFFFFF; font-size: 24px; font-weight: 700; margin: 0; }
+  .capa-data { color: #FFFFFF; opacity: 0.7; font-size: 14px; margin-top: 10px; }
+
+  .container { max-width: 760px; margin: 0 auto; padding: 50px 40px 20px; }
+  section.seccao { margin-top: 52px; page-break-inside: avoid; }
+  h2.titulo-seccao { color: var(--azul); font-size: 13px; text-transform: uppercase; letter-spacing: 1.6px; font-weight: 700; border-bottom: 2px solid var(--ambar); padding-bottom: 10px; margin: 0 0 22px; }
+
+  .quadro-dados { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 8px; }
+  @media (max-width: 700px) { .quadro-dados { grid-template-columns: 1fr; } }
+  .bloco-dados { background: var(--cinza-claro); border-radius: 10px; padding: 20px; }
+  .bloco-titulo { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--azul); margin: 0 0 14px; }
+  .tabela-dados { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tabela-dados th { text-align: left; font-weight: 600; color: #6B6B6B; padding: 6px 8px 6px 0; vertical-align: top; width: 42%; }
+  .tabela-dados td { padding: 6px 0; color: #1A1A1A; }
+  .rotulo-pequeno { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #6B6B6B; margin: 14px 0 6px; }
+  .rotulo-pequeno:first-child { margin-top: 0; }
+  .citacao { background: rgba(245,166,35,0.14); border-left: 3px solid var(--ambar); border-radius: 6px; padding: 12px 14px; }
+  .citacao p { font-style: italic; margin: 0; font-size: 14px; line-height: 1.6; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { background: var(--azul); color: #FFFFFF; font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 999px; }
+  .destaque-ambar { background: rgba(245,166,35,0.14); border-radius: 8px; padding: 12px 14px; margin-top: 12px; }
+  .destaque-navy { background: rgba(27,58,107,0.08); border-radius: 8px; padding: 12px 14px; margin-top: 12px; }
+  .destaque-ambar p:last-child, .destaque-navy p:last-child { margin: 0; font-size: 14px; line-height: 1.6; }
+  .lista-promessa { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.8; }
+  .lista-promessa li { margin-bottom: 6px; }
+
+  p { line-height: 1.8; font-size: 16px; margin: 0 0 16px; }
+  ol { padding-left: 20px; margin: 0 0 16px; }
+  li { margin-bottom: 8px; line-height: 1.7; }
+  strong { color: var(--azul); }
+
+  .grafico-legenda { font-size: 12px; color: #6B6B6B; margin-top: 10px; }
+  .grafico-wrap { overflow-x: auto; }
+  .grafico-3barras { display: flex; justify-content: center; }
+
+  .card-opcao { border: 1px solid #E6E6E6; border-radius: 10px; overflow: hidden; margin-bottom: 24px; page-break-inside: avoid; }
+  .card-opcao-header { background: var(--azul); color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-weight: 700; font-size: 16px; }
+  .badge-forca { font-size: 11px; font-weight: 700; color: #FFFFFF; padding: 5px 11px; border-radius: 999px; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.4px; }
+  .parte-opcao { padding: 18px 20px; background: #FFFFFF; }
+  .parte-alt { background: var(--cinza-claro); }
+  .parte-titulo { font-size: 13px; font-weight: 700; color: var(--azul); margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+  .parte-icone { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: var(--azul); color: #FFFFFF; font-size: 12px; flex-shrink: 0; }
+  .parte-opcao p { font-size: 14px; margin: 0; }
+
+  .card-candidata { border: 2px solid var(--ambar); border-radius: 10px; padding: 20px; }
+  .card-candidata-header { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--ambar); margin: 0 0 6px; }
+  .card-candidata-nome { font-size: 18px; font-weight: 700; color: var(--azul); margin: 0 0 12px; }
+  .caixa-neutra { background: var(--cinza-claro); border-radius: 10px; padding: 20px; }
+
+  .timeline-wrap { overflow-x: auto; margin-bottom: 8px; }
+  .destaque-passo { margin-top: 24px; }
+  .destaque-passo p:last-child { font-size: 16px; font-weight: 600; color: var(--azul); }
+
+  footer.rodape { text-align: center; padding: 40px 20px 60px; color: #6B6B6B; font-size: 12px; border-top: 1px solid #E6E6E6; margin-top: 50px; }
+  footer.rodape .rodape-logo { font-weight: 800; color: var(--azul); font-size: 14px; margin-bottom: 8px; }
+  footer.rodape .rodape-logo .iq { color: var(--ambar); }
+  footer.rodape p { font-size: 12px; margin: 2px 0; line-height: 1.5; }
+
+  @media print {
+    .capa { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .chip, .badge-forca, .parte-icone { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="capa">
+    <div class="capa-logo">Vocation<span class="iq">IQ</span></div>
+    <div class="capa-tagline">Descobre a tua área. Antes de escolheres.</div>
+    <hr class="capa-divisor" />
+    <p class="capa-nome">Rui (teste)</p>
+    <p class="capa-data">02 de setembro de 2026</p>
+  </div>
+
+  <div class="container">
+
+    <section class="seccao">
+      <h2 class="titulo-seccao">Quem és, e o que trouxeste</h2>
+      <div class="quadro-dados">
+        
+    <div class="bloco-dados">
+      <p class="bloco-titulo">Quem é</p>
+      <table class="tabela-dados">
+        <tr><th>Nome</th><td>Rui (teste)</td></tr><tr><th>Data de nascimento</th><td>12 de abril de 1988</td></tr><tr><th>Hora</th><td>07:35</td></tr><tr><th>Local de nascimento</th><td>Porto, Portugal</td></tr><tr><th>Situação declarada</th><td>Já trabalho e quero mudar</td></tr><tr><th>Área actual</th><td>Contabilidade</td></tr><tr><th>Anos de experiência</th><td>5 a 10 anos</td></tr>
+      </table>
+    </div>
+        
+    <div class="bloco-dados">
+      <p class="bloco-titulo">O que trouxe</p>
+      <div class="citacao"><p>&ldquo;Sinto que estou só a processar números para outras pessoas decidirem — quero estar mais perto da decisão em si.&rdquo;</p></div>
+      <p class="rotulo-pequeno">Opções consideradas</p><div class="chips"><span class="chip">Consultoria (SAP, RH, gestão, etc.)</span><span class="chip">Finanças / contabilidade</span></div>
+      <div class="destaque-ambar"><p class="rotulo-pequeno">Ideia concreta</p><p>Estou a pensar em consultoria financeira para pequenas empresas.</p></div>
+      <div class="destaque-navy"><p class="rotulo-pequeno">Pergunta a que este relatório responde</p><p>Faz sentido tentar consultoria a solo ou é melhor procurar um cargo de gestão numa empresa maior?</p></div>
+    </div>
+        
+    <div class="bloco-dados">
+      <p class="bloco-titulo">O que este relatório responde</p>
+      <ul class="lista-promessa"><li>A tua missão de fundo, e onde ela já aparece na tua vida profissional.</li><li>O modo como ganhas melhor dinheiro — a tua Artha Trikona dominante.</li><li>Uma leitura honesta de cada opção que estás a considerar: o que a sustenta, o que custa, o que falta.</li><li>Se há alguma opção fora da tua lista que a tua carta sustenta com força.</li><li>Um primeiro passo concreto para esta semana, ligado às tuas datas reais.</li></ul>
+    </div>
+      </div>
+    </section>
+
+    <section class="seccao">
+      <h2 class="titulo-seccao">Abertura</h2>
+      <p>Rui trabalha em Contabilidade há entre 5 e 10 anos e chega a este relatório com uma pergunta concreta: faz mais sentido avançar para consultoria a solo, ou procurar um lugar de gestão dentro de uma estrutura maior? Diz sentir-se apenas a processar números para outras pessoas decidirem, e quer estar mais perto da decisão em si.</p>
+    </section>
+
+    <section class="seccao">
+      <h2 class="titulo-seccao">O que a carta sustenta</h2>
+      <p>A tua carta aponta para uma missão de fundo ligada a compreender o que se passa nos bastidores antes de outros o veem — e a tua forma natural de ganhar dinheiro passa pela voz: explicar, aconselhar, dizer a alguém o que fazer com clareza. Não é por acaso que a parte do teu trabalho que menos te preenche é exactamente a que te tira essa voz — processar números sem opinar sobre eles.</p>
+    </section>
+
+    <section class="seccao">
+      <h2 class="titulo-seccao">O peso de cada característica</h2>
+      <div class="grafico-wrap"><svg viewBox="0 0 620 306" width="100%" style="max-width:620px;height:auto" xmlns="http://www.w3.org/2000/svg">
+      <text x="236" y="29" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="14" fill="#1A1A1A">A tua capacidade de agir</text>
+      <rect x="250" y="13" width="315" height="20" fill="#F5F5F5" rx="4" />
+      <rect x="250" y="13" width="294.3675" height="20" fill="#4f7a5c" rx="4" />
+      <text x="554.3675000000001" y="28" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#1B3A6B">1.87</text>
+      <text x="236" y="71" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="14" fill="#1A1A1A">O que sentes antes de pensar</text>
+      <rect x="250" y="55" width="315" height="20" fill="#F5F5F5" rx="4" />
+      <rect x="250" y="55" width="185.0625" height="20" fill="#F5A623" rx="4" />
+      <text x="445.0625" y="70" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#1B3A6B">1.18</text>
+      <text x="236" y="113" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="14" fill="#1A1A1A">A tua missão de fundo</text>
+      <rect x="250" y="97" width="315" height="20" fill="#F5F5F5" rx="4" />
+      <rect x="250" y="97" width="166.63500000000002" height="20" fill="#F5A623" rx="4" />
+      <text x="426.635" y="112" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#1B3A6B">1.06</text>
+      <text x="236" y="155" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="14" fill="#1A1A1A">Para onde queres crescer</text>
+      <rect x="250" y="139" width="315" height="20" fill="#F5F5F5" rx="4" />
+      <rect x="250" y="139" width="166.63500000000002" height="20" fill="#F5A623" rx="4" />
+      <text x="426.635" y="154" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#1B3A6B">1.06</text>
+      <text x="236" y="197" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="14" fill="#1A1A1A">O que te exige mais</text>
+      <rect x="250" y="181" width="315" height="20" fill="#F5F5F5" rx="4" />
+      <rect x="250" y="181" width="162.6975" height="20" fill="#F5A623" rx="4" />
+      <text x="422.6975" y="196" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#1B3A6B">1.03</text>
+      <text x="236" y="239" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="14" fill="#1A1A1A">O que valorizas</text>
+      <rect x="250" y="223" width="315" height="20" fill="#F5F5F5" rx="4" />
+      <rect x="250" y="223" width="154.1925" height="20" fill="#F5A623" rx="4" />
+      <text x="414.1925" y="238" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#1B3A6B">0.98</text>
+      <text x="236" y="281" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="14" fill="#1A1A1A">Como comunicas e decides</text>
+      <rect x="250" y="265" width="315" height="20" fill="#F5F5F5" rx="4" />
+      <rect x="250" y="265" width="90.8775" height="20" fill="#b4634a" rx="4" />
+      <text x="350.8775" y="280" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#1B3A6B">0.58</text></svg></div>
+      <p class="grafico-legenda">Verde = a carta apoia com força · Âmbar = suporte moderado · Vermelho = suporte fraco</p>
+    </section>
+
+    <section class="seccao">
+      <h2 class="titulo-seccao">Como ganhas melhor</h2>
+      <div class="grafico-wrap grafico-3barras"><svg viewBox="0 0 460 250" width="100%" style="max-width:460px;height:auto" xmlns="http://www.w3.org/2000/svg">
+    <line x1="38" y1="172" x2="422" y2="172" stroke="#E6E6E6" stroke-width="1" />
+    
+      <rect x="48" y="22" width="96" height="150" fill="#1B3A6B" rx="6" />
+      <text x="96" y="194" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#1B3A6B">Pela voz e</text>
+      <text x="96" y="211" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#1B3A6B">consultoria</text>
+      <text x="96" y="12" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#1B3A6B">4.5</text>
+      <rect x="188" y="122" width="96" height="50" fill="#F5F5F5" rx="6" />
+      <text x="236" y="194" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#6B6B6B">Resolvendo</text>
+      <text x="236" y="211" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#6B6B6B">problemas</text>
+      <text x="236" y="112" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#6B6B6B">1.5</text>
+      <rect x="328" y="88.66666666666666" width="96" height="83.33333333333334" fill="#F5F5F5" rx="6" />
+      <text x="376" y="194" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#6B6B6B">Liderando</text>
+      <text x="376" y="211" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="400" fill="#6B6B6B">publicamente</text>
+      <text x="376" y="78.66666666666666" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#6B6B6B">2.5</text>
+  </svg></div>
+    </section>
+
+    <section class="seccao">
+      <h2 class="titulo-seccao">Leitura por opção</h2>
+      
+    <div class="card-opcao">
+      <div class="card-opcao-header">
+        <span>Consultoria (SAP, RH, gestão, etc.)</span>
+        <span class="badge-forca" style="background:#4f7a5c">Carta apoia com força</span>
+      </div>
+      
+      <div class="parte-opcao ">
+        <p class="parte-titulo"><span class="parte-icone">&#10003;</span>O que a carta sustenta</p>
+        <p>Duas camadas independentes convergem aqui: a tua forma de ganhar dinheiro mais forte é pela voz e pelo conselho directo, e o que o mercado já reconhece em ti aponta para a mesma direcção — seres tu a dizer o caminho, não só a registá-lo.</p>
+      </div>
+      <div class="parte-opcao parte-alt">
+        <p class="parte-titulo"><span class="parte-icone">&#9888;</span>O que vai custar</p>
+        <p>Vai custar-te instabilidade nos primeiros tempos — sem uma estrutura a pagar-te ao fim do mês, a tua exigência interna de segurança vai testar-te mais do que a parte técnica do trabalho.</p>
+      </div>
+      <div class="parte-opcao ">
+        <p class="parte-titulo"><span class="parte-icone">?</span>O que pede que falta</p>
+        <p>Falta-te ainda uma rede de clientes que te procure directamente, não através de uma empresa — isso aprende-se, mas não se compra, e é o que mais separa quem tenta consultoria de quem consegue viver dela.</p>
+      </div>
+      <div class="parte-opcao parte-alt">
+        <p class="parte-titulo"><span class="parte-icone">&#8594;</span>Onde entra a tua matéria</p>
+        <p>A tua matéria entra pela forma de comunicar decisões difíceis com clareza — não pelo sector financeiro em si, mas por seres capaz de dizer a alguém, com segurança, o que fazer a seguir.</p>
+      </div>
+    </div>
+    <div class="card-opcao">
+      <div class="card-opcao-header">
+        <span>Finanças / contabilidade</span>
+        <span class="badge-forca" style="background:#F5A623">Suporte moderado</span>
+      </div>
+      
+      <div class="parte-opcao ">
+        <p class="parte-titulo"><span class="parte-icone">&#10003;</span>O que a carta sustenta</p>
+        <p>Há suporte real aqui, mas menos directo — continuares na mesma área aproveita a tua experiência já construída, mas não resolve por si só a falta de voz que descreves.</p>
+      </div>
+      <div class="parte-opcao parte-alt">
+        <p class="parte-titulo"><span class="parte-icone">&#9888;</span>O que vai custar</p>
+        <p>O custo é continuares a pagar o mesmo preço que já pagas hoje: ficares perto da decisão sem seres tu a tomá-la, mesmo que o cargo mude de nome.</p>
+      </div>
+      <div class="parte-opcao ">
+        <p class="parte-titulo"><span class="parte-icone">?</span>O que pede que falta</p>
+        <p>O que falta é menos técnico e mais de posição — precisas de um lugar onde a tua opinião conte antes da execução, não depois dela.</p>
+      </div>
+      <div class="parte-opcao parte-alt">
+        <p class="parte-titulo"><span class="parte-icone">&#8594;</span>Onde entra a tua matéria</p>
+        <p>A tua matéria entra melhor aqui através de um papel de análise sénior ou consultoria interna, nunca puramente executante.</p>
+      </div>
+    </div>
+    </section>
+
+    <section class="seccao">
+      <h2 class="titulo-seccao">Candidata fora da lista</h2>
+      <div class="caixa-neutra"><p>As quatro camadas não convergem com força suficiente para apontar a nenhuma outra área fora das duas que já trazes — a tua carta não aponta a nada fora do que já pensaste. Isso não é uma limitação: é sinal de que a pergunta certa já está na tua lista, falta é decidir a forma (a solo ou dentro de estrutura), não o destino.</p></div>
+    </section>
+
+    <section class="seccao">
+      <h2 class="titulo-seccao">O teu calendário</h2>
+      
+    <div class="timeline-wrap"><svg viewBox="0 0 620 130" width="100%" style="max-width:620px;height:auto" xmlns="http://www.w3.org/2000/svg">
+    <line x1="60" y1="46" x2="560" y2="46" stroke="#1B3A6B" stroke-width="2" />
+    
+      <circle cx="60" cy="46" r="10" fill="#F5A623" stroke="#1B3A6B" stroke-width="2" />
+      <text x="60" y="78" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#1B3A6B">Saturno</text>
+      <text x="60" y="95" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6B6B6B">12/2024 – 12/2027</text>
+      <circle cx="310" cy="46" r="10" fill="#c9d6e8" stroke="#1B3A6B" stroke-width="2" />
+      <text x="310" y="78" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#1B3A6B">Mercúrio</text>
+      <text x="310" y="95" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6B6B6B">12/2027 – 08/2030</text>
+      <circle cx="560" cy="46" r="10" fill="#c9d6e8" stroke="#1B3A6B" stroke-width="2" />
+      <text x="560" y="78" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#1B3A6B">Ketu</text>
+      <text x="560" y="95" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6B6B6B">08/2030 – 10/2031</text>
+  </svg></div>
+    <p>O período que atravessas agora pede paciência antes de acção visível — é uma fase mais de consolidar bases do que de anunciar mudanças. A janela que se segue tende a abrir mais espaço para decisões práticas relacionadas com dinheiro e recursos.</p>
+    <div class="destaque-ambar destaque-passo"><p class="rotulo-pequeno">O teu primeiro passo esta semana</p><p>Esta semana, contacta duas pessoas que já fazem consultoria a solo na tua área e pergunta-lhes directamente o que ninguém conta sobre o primeiro ano — não para decidir já, só para teres dados reais em vez de medo abstracto.</p></div>
+    </section>
+
+  </div>
+
+  <footer class="rodape">
+    <div class="rodape-logo">Vocation<span class="iq">IQ</span></div>
+    <p>Este relatório foi preparado especificamente para Rui (teste)</p>
+    <p>02 de setembro de 2026 · vocationiq.app</p>
+    <p><strong>Confidencial</strong></p>
+  </footer>
+
+</body>
+</html>
