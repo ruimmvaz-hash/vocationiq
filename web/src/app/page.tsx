@@ -1,8 +1,10 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { TrackedCtaLink } from "@/components/TrackedCtaLink";
 import { HomepageViewTracker } from "@/components/HomepageViewTracker";
+import { LeadMagnetForm } from "@/components/LeadMagnetForm";
 import { listarTestemunhosAprovados } from "@/lib/testemunhosStore";
 import { SITUACOES } from "@/lib/validation";
 
@@ -76,6 +78,33 @@ const FAQ = [
   {
     pergunta: "Posso oferecer a outra pessoa?",
     resposta: "Sim — preenche o formulário com os dados da pessoa a quem queres oferecer o relatório.",
+  },
+  {
+    pergunta: "Que método é usado na análise?",
+    resposta:
+      "A análise VocationIQ usa astrologia psicológica — uma abordagem que cruza os dados de nascimento com padrões de comportamento, forma de aprender e áreas de potencial. Não é um horóscopo nem uma previsão — é uma leitura do teu perfil.",
+  },
+  {
+    pergunta: "O relatório é automático?",
+    resposta: "Não. Cada relatório é revisto por uma pessoa antes de ser entregue. É por isso que demora 48 horas e não 48 segundos.",
+  },
+  {
+    pergunta: "Posso fazer perguntas depois de receber o relatório?",
+    resposta: "Sim — podes responder directamente ao email de entrega com dúvidas sobre o teu relatório.",
+  },
+  {
+    pergunta: "Isto substitui um psicólogo de orientação vocacional?",
+    resposta:
+      "Não. O VocationIQ é uma ferramenta de autoconhecimento que complementa — não substitui — o acompanhamento profissional. Se precisares de apoio psicológico, recomendamos que procures um profissional.",
+  },
+  {
+    pergunta: "Como funciona o programa de comerciais?",
+    resposta: "comerciais-link",
+  },
+  {
+    pergunta: "Posso pedir reembolso?",
+    resposta:
+      "Se o relatório não for entregue em 48 horas, reembolsamos na totalidade. Após a entrega, não há reembolsos — o trabalho de análise e revisão já foi feito.",
   },
 ];
 
@@ -159,7 +188,7 @@ export default async function HomePage() {
         </section>
 
         {/* 4. COMO FUNCIONA */}
-        <section className="bg-paper">
+        <section id="como-funciona" className="bg-paper">
           <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
             <h2 className="text-2xl font-extrabold tracking-tight text-navy sm:text-3xl">Como funciona</h2>
             <div className="relative mt-12 grid gap-10 sm:grid-cols-3">
@@ -192,7 +221,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* TESTEMUNHOS — só aparece quando há testemunhos aprovados */}
+        {/* 6. TESTEMUNHOS — só aparece quando há testemunhos aprovados */}
         {testemunhos.length > 0 && (
           <section className="bg-paper">
             <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
@@ -210,7 +239,48 @@ export default async function HomePage() {
           </section>
         )}
 
-        {/* 6. FAQ */}
+        {/* 7. VER UM EXEMPLO */}
+        <section className="bg-navy">
+          <div className="mx-auto max-w-3xl px-6 py-16 text-center sm:py-20">
+            <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Vê como é uma análise real</h2>
+            <p className="mt-4 text-white/80">Antes de decidires, podes ver páginas reais de um relatório VocationIQ — com os dados pessoais protegidos.</p>
+            <TrackedCtaLink
+              href="/exemplo"
+              location="ver-exemplo"
+              className="mt-8 inline-block rounded-md bg-amber px-7 py-3.5 text-base font-bold text-navy-dark shadow-sm transition hover:bg-amber-dark"
+            >
+              Ver exemplo →
+            </TrackedCtaLink>
+          </div>
+        </section>
+
+        {/* 8. AINDA TENS DÚVIDAS — LEAD MAGNET */}
+        <section className="bg-fog">
+          <div className="mx-auto max-w-3xl px-6 py-16 text-center sm:py-20">
+            <h2 className="text-2xl font-extrabold tracking-tight text-navy sm:text-3xl">Ainda tens dúvidas?</h2>
+            <p className="mt-4 text-ink/70">Deixa o teu email e recebe um exemplo real de relatório — para veres o que estás a comprar antes de decidir.</p>
+            <div className="mt-8">
+              <LeadMagnetForm />
+            </div>
+          </div>
+        </section>
+
+        {/* 9. COMERCIAIS */}
+        <section className="bg-paper">
+          <div className="mx-auto max-w-3xl px-6 py-16 text-center sm:py-20">
+            <h2 className="text-2xl font-extrabold tracking-tight text-navy sm:text-3xl">Conheces alguém que precisava disto?</h2>
+            <p className="mt-4 text-ink/70">Partilha o teu link e ganha por cada análise vendida. 20% de comissão · Registo gratuito</p>
+            <TrackedCtaLink
+              href="/comercial"
+              location="comerciais-teaser"
+              className="mt-8 inline-block rounded-md bg-navy px-7 py-3.5 text-base font-bold text-white shadow-sm transition hover:bg-navy-dark"
+            >
+              Saber mais →
+            </TrackedCtaLink>
+          </div>
+        </section>
+
+        {/* 10. FAQ */}
         <section id="faq" className="border-t border-border bg-fog">
           <div className="mx-auto max-w-3xl px-6 py-16 sm:py-20">
             <h2 className="text-2xl font-extrabold tracking-tight text-navy sm:text-3xl">Perguntas frequentes</h2>
@@ -221,7 +291,20 @@ export default async function HomePage() {
                     {f.pergunta}
                     <span className="ml-4 shrink-0 text-amber-dark transition group-open:rotate-45">+</span>
                   </summary>
-                  <p className="mt-3 text-sm leading-relaxed text-ink/75">{f.resposta}</p>
+                  <p className="mt-3 text-sm leading-relaxed text-ink/75">
+                    {f.resposta === "comerciais-link" ? (
+                      <>
+                        Podes partilhar o teu link pessoal e ganhar 20% de comissão por cada análise vendida — 25% a partir da 5ª venda.
+                        Registo gratuito em{" "}
+                        <Link href="/comercial" className="font-semibold text-navy underline">
+                          vocationiq.app/comercial
+                        </Link>
+                        .
+                      </>
+                    ) : (
+                      f.resposta
+                    )}
+                  </p>
                 </details>
               ))}
             </div>

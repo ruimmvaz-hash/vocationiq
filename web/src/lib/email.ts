@@ -3,6 +3,7 @@ import { Resend } from "resend";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_EMAIL = "VocationIQ <hello@vocationiq.app>";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://vocationiq.app";
 
 export interface DeliveryResult {
   ok: boolean;
@@ -78,6 +79,35 @@ export async function sendReportEmail(params: { to: string; nome: string; pdfByt
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
     console.error("[vocationiq email] falha ao enviar relatório:", detail);
+    return { ok: false, detail };
+  }
+}
+
+/** Lead magnet da homepage ("Ainda tens dúvidas?") — copy exacta pedida. */
+export async function sendLeadMagnetEmail(params: { to: string }): Promise<DeliveryResult> {
+  if (!RESEND_API_KEY) {
+    console.warn("[vocationiq email] RESEND_API_KEY não configurada — exemplo não enviado.");
+    return { ok: false, detail: "RESEND_API_KEY não configurada" };
+  }
+
+  const bodyHtml = `
+    <p style="font-size:16px;line-height:1.7;">Olá, aqui está um exemplo de análise VocationIQ. [PDF em breve]</p>
+    <p style="font-size:16px;line-height:1.7;">Quando quiseres a tua análise completa: <a href="${SITE_URL}/intake">${SITE_URL.replace(/^https?:\/\//, "")}/intake</a></p>
+  `;
+
+  const resend = new Resend(RESEND_API_KEY);
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: params.to,
+      subject: "O teu exemplo VocationIQ",
+      html: wrapper(bodyHtml),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[vocationiq email] falha ao enviar exemplo:", detail);
     return { ok: false, detail };
   }
 }
