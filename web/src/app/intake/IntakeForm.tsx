@@ -201,7 +201,7 @@ export function IntakeForm() {
       <p className="mb-6 text-xs font-semibold uppercase tracking-wide text-ink/50">Passo {passo} de 3</p>
 
       {passo === 1 && (
-        <div className="space-y-6">
+        <div className="space-y-6 pb-48 sm:pb-0">
           <Campo label="Nome completo" required>
             <input type="text" value={f.nome} onChange={(e) => set("nome", e.target.value)} className={inputClass} />
           </Campo>
@@ -210,7 +210,21 @@ export function IntakeForm() {
               <input type="date" value={f.dataNascimento} onChange={(e) => set("dataNascimento", e.target.value)} className={inputClass} />
             </Campo>
             <Campo label="Hora de nascimento" hint="Se não sabes a hora exacta, deixa em branco. A análise fica mais precisa com a hora.">
-              <input type="time" value={f.horaNascimento} onChange={(e) => set("horaNascimento", e.target.value)} className={inputClass} />
+              <input
+                type="time"
+                value={f.horaNascimento}
+                onChange={(e) => set("horaNascimento", e.target.value)}
+                onFocus={(e) => {
+                  // No mobile, o picker nativo de hora (iOS/Android) sobe a
+                  // partir do fundo do ecrã e pode tapar o campo se este
+                  // estiver demasiado em baixo na página — o setTimeout dá
+                  // tempo ao picker de abrir antes de calcular a posição a
+                  // centrar.
+                  const target = e.target;
+                  setTimeout(() => target.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
+                }}
+                className={inputClass}
+              />
             </Campo>
           </div>
           <Campo label="Local de nascimento" required>
