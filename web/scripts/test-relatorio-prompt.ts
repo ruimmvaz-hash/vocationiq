@@ -80,12 +80,35 @@ async function main() {
 
   // Correcção 3 — confirma que a nota de cautela do Ascendente aparece
   // quando horaNascimentoFornecida=false (caso não coberto pelo prompt
-  // principal acima, que tem hora real).
-  const promptSemHora = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, false);
-  const notaPresente = promptSemHora.includes("NOTA INTERNA — hora de nascimento não fornecida");
+  // principal acima, que tem hora real). Mesma pipeline da rota real
+  // (resolverNascimento com hora "" -> fallback meio-dia), não só o
+  // parâmetro a false isolado.
+  const horaVaziaComoNoFormulario = "";
+  const horaAproximada = !horaVaziaComoNoFormulario;
+  const utcDateSemHora = localBirthTimeToUtc({ day, month, year }, horaVaziaComoNoFormulario || "12:00", geo.timezone);
+  if (!utcDateSemHora) throw new Error("data/hora inválida (caso sem hora)");
+  const birthSemHora: BirthInput = { utcDate: utcDateSemHora, latitude: geo.latitude, longitude: geo.longitude };
+
+  const d1SemHora = computeD1Table(birthSemHora);
+  const axesSemHora = computeVocationIQAxes(d1SemHora);
+  const pesosSemHora = computePesosPlanetas(d1SemHora);
+  const dashaSemHora = currentDasha(birthSemHora.utcDate, agora);
+  const proximasSemHora = dashaSemHora.allAntardashas.filter((a) => a.start >= dashaSemHora.antardasha.end).slice(0, 2);
+  const transitosSemHora = computeTransits(birthSemHora, agora);
+  const datasSemHora: DadosDatas = {
+    mahadashaAtual: { senhor: dashaSemHora.mahadasha.lord, inicio: dashaSemHora.mahadasha.start, fim: dashaSemHora.mahadasha.end },
+    antardashaAtual: { senhor: dashaSemHora.antardasha.lord, inicio: dashaSemHora.antardasha.start, fim: dashaSemHora.antardasha.end },
+    proximasAntardashas: proximasSemHora.map((a) => ({ senhor: a.lord, inicio: a.start, fim: a.end })),
+    transitoJupiter: { signo: transitosSemHora.jupiter.sign, aspectosAoNatal: formatarAspectos(transitosSemHora.jupiter.aspectsToNatal) },
+    transitoSaturno: { signo: transitosSemHora.saturn.sign, aspectosAoNatal: formatarAspectos(transitosSemHora.saturn.aspectsToNatal) },
+  };
+
+  const promptSemHora = construirPromptAdulto(intakeAdulto, axesSemHora, pesosSemHora, datasSemHora, !horaAproximada);
+  const indiceNota = promptSemHora.indexOf("NOTA INTERNA");
   console.log("\n" + "=".repeat(80));
-  console.log(`Nota do Ascendente (horaNascimentoFornecida=false): ${notaPresente ? "PRESENTE ✓" : "AUSENTE ✗"}`);
+  console.log('CASO 2 — hora_nascimento="" (mesmo fallback de meio-dia da rota real) — excerto com a nota do Ascendente:');
   console.log("=".repeat(80));
+  console.log(indiceNota === -1 ? "AUSENTE ✗ — a nota não aparece no prompt." : promptSemHora.slice(Math.max(0, indiceNota - 120), indiceNota + 500));
   console.log("=".repeat(80));
   console.log(`Tamanho: ${prompt.length} caracteres`);
 }

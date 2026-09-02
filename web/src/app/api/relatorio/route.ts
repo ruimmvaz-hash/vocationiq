@@ -30,7 +30,11 @@ export const dynamic = "force-dynamic";
 // haiku-4-5-20251001. Usa-se claude-sonnet-5 (o mesmo ID passado neste
 // pedido é inválido; overridable por REPORT_MODEL tal como na Naveya).
 const MODEL = process.env.REPORT_MODEL || "claude-sonnet-5";
-const MAX_TOKENS = 4000;
+// Subido de 4000 para 8000 — um relatório de 5 secções com leitura por
+// cada opção declarada pode legitimamente ultrapassar 4000 tokens de
+// saída, e nesse caso a resposta corta a meio (stop_reason
+// "max_tokens") em vez de produzir um erro claro.
+const MAX_TOKENS = 8000;
 
 const SITUACAO_LABEL = Object.fromEntries(SITUACOES.map((s) => [s.valor, s.label]));
 const ANOS_LABEL = Object.fromEntries(ANOS_EXPERIENCIA.map((a) => [a.valor, a.label]));
@@ -128,7 +132,17 @@ export async function POST(request: Request) {
     const client = new Anthropic({ apiKey });
     const response = await client.messages.create({ model: MODEL, max_tokens: MAX_TOKENS, messages: [{ role: "user", content: prompt }] });
     const textBlock = response.content.find((b) => b.type === "text");
-    if (!textBlock || textBlock.type !== "text") throw new Error("Resposta da Anthropic sem bloco de texto.");
+    if (!textBlock || textBlock.type !== "text") {
+      // Diagnóstico em vez de um erro genérico — sem isto, "sem bloco de
+      // texto" não diz se a causa foi truncagem (stop_reason
+      // "max_tokens"), um bloco de tipo diferente (não há "thinking"
+      // activo neste pedido — nenhum parâmetro `thinking` é passado
+      // acima — mas fica coberto na mesma), ou content mesmo vazio.
+      const tiposDeBloco = response.content.map((b) => b.type).join(", ") || "(nenhum bloco)";
+      const detalhe = `stop_reason=${response.stop_reason}, blocos=[${tiposDeBloco}]`;
+      console.error(`[api/relatorio] resposta sem bloco de texto — ${detalhe}`);
+      throw new Error(`Resposta da Anthropic sem bloco de texto (${detalhe}).`);
+    }
 
     const rascunho = await guardarRascunho(intakeId, textBlock.text);
     return NextResponse.json({ ok: true, rascunhoId: rascunho.id, texto: textBlock.text });
