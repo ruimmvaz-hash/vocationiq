@@ -12,8 +12,18 @@ export default async function AvaliacaoPage({ searchParams }: { searchParams: Pr
   const { id, nota: notaBruta } = await searchParams;
   if (!id) redirect("/");
 
-  const intake = await obterIntake(id).catch(() => null);
-  if (!intake || intake.report_status !== "delivered") redirect("/");
+  const intake = await obterIntake(id).catch((err) => {
+    console.error(`[/avaliacao] obterIntake(${id}) lançou:`, err instanceof Error ? err.message : String(err));
+    return null;
+  });
+  if (!intake) {
+    console.warn(`[/avaliacao] id ${id} não encontrado — a redireccionar para a homepage.`);
+    redirect("/");
+  }
+  if (intake.report_status !== "delivered") {
+    console.warn(`[/avaliacao] id ${id} encontrado mas report_status="${intake.report_status}" (não "delivered") — a redireccionar para a homepage.`);
+    redirect("/");
+  }
 
   const nota = Math.min(5, Math.max(1, Number(notaBruta) || 5));
 

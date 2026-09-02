@@ -171,7 +171,14 @@ export async function listarClientes(): Promise<ClienteRow[]> {
 export async function obterIntake(intakeId: string): Promise<IntakeRow | null> {
   const supabase = await getSupabaseAdmin();
   const { data, error } = await supabase.from("vocationiq_intakes").select("*").eq("id", intakeId).single();
-  if (error) return null;
+  if (error) {
+    // Registado (não silenciado) — esta função alimenta o guard de
+    // /avaliacao, e um erro aqui (id inexistente na ligação Supabase
+    // deste deploy, RLS, etc.) é indistinguível de "pedido não entregue"
+    // sem este log. Consultar Vercel → Logs para a causa exacta.
+    console.error(`[obterIntake] falha ao ler pedido ${intakeId}:`, error.message);
+    return null;
+  }
   return data as IntakeRow;
 }
 
