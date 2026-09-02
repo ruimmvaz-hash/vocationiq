@@ -118,10 +118,18 @@ export async function sendConfirmationEmail(params: { to: string; nome: string }
   }
 }
 
+// Uma fileira só de estrelas idênticas (⭐⭐⭐⭐⭐ repetido 5x, cada uma um
+// link diferente) não deixa claro qual estrela corresponde a que nota —
+// cada linha mostra as estrelas da nota INTEIRA + um rótulo, para não
+// haver dúvida sobre o que se está a escolher.
+const RATULOS_NOTA: Record<number, string> = { 5: "Excelente", 4: "Muito bom", 3: "Bom", 2: "Razoável", 1: "Fraco" };
+
 function linksEstrelas(intakeId: string): string {
-  const estrela = (n: number) =>
-    `<a href="${SITE_URL}/avaliacao?nota=${n}&id=${intakeId}" style="text-decoration:none;font-size:32px;line-height:1;padding:0 4px;">⭐</a>`;
-  return `<div style="margin:16px 0;">${[1, 2, 3, 4, 5].map(estrela).join("")}</div>`;
+  const linha = (n: number) => `
+    <a href="${SITE_URL}/avaliacao?nota=${n}&id=${intakeId}" style="display:block;text-decoration:none;margin-bottom:8px;padding:12px 16px;border-radius:6px;background:#FFF8EB;border:1px solid #F5A623;font-family:Arial,Helvetica,sans-serif;font-size:16px;color:#142C52;">
+      <span style="color:#F5A623;letter-spacing:2px;">${"⭐".repeat(n)}</span>&nbsp;&nbsp;<span style="font-weight:700;">${RATULOS_NOTA[n]}</span>
+    </a>`;
+  return `<div style="margin:16px 0;">${[5, 4, 3, 2, 1].map(linha).join("")}</div>`;
 }
 
 /** Email 2 — entrega do relatório, com PDF anexo. Enviado a partir do modal "Marcar como entregue" em /admin. */

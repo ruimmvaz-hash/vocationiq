@@ -7,8 +7,14 @@
 // exactamente lib/email.ts — se alterares o design lá, actualiza aqui
 // também (ou corre este script logo a seguir para confirmar visualmente).
 //
-// Uso:
-//   RESEND_API_KEY=re_... npx tsx scripts/send-test-emails.ts
+// Uso (para os links das estrelas do Email 2 funcionarem de ponta a
+// ponta, corre primeiro create-test-intake.ts e usa o id devolvido):
+//   npx tsx scripts/create-test-intake.ts
+//   TEST_INTAKE_ID=<id devolvido acima> RESEND_API_KEY=re_... npx tsx scripts/send-test-emails.ts
+//
+// Sem TEST_INTAKE_ID o script continua a correr (só para ver o design),
+// mas os links das estrelas no Email 2 vão redireccionar para a
+// homepage em vez de abrir o formulário.
 
 import { Resend } from "resend";
 
@@ -83,10 +89,14 @@ function p(texto: string): string {
   return `<p style="margin:0 0 16px;">${texto}</p>`;
 }
 
+const RATULOS_NOTA: Record<number, string> = { 5: "Excelente", 4: "Muito bom", 3: "Bom", 2: "Razoável", 1: "Fraco" };
+
 function linksEstrelas(intakeId: string): string {
-  const estrela = (n: number) =>
-    `<a href="${SITE_URL}/avaliacao?nota=${n}&id=${intakeId}" style="text-decoration:none;font-size:32px;line-height:1;padding:0 4px;">⭐</a>`;
-  return `<div style="margin:16px 0;">${[1, 2, 3, 4, 5].map(estrela).join("")}</div>`;
+  const linha = (n: number) => `
+    <a href="${SITE_URL}/avaliacao?nota=${n}&id=${intakeId}" style="display:block;text-decoration:none;margin-bottom:8px;padding:12px 16px;border-radius:6px;background:#FFF8EB;border:1px solid #F5A623;font-family:Arial,Helvetica,sans-serif;font-size:16px;color:#142C52;">
+      <span style="color:#F5A623;letter-spacing:2px;">${"⭐".repeat(n)}</span>&nbsp;&nbsp;<span style="font-weight:700;">${RATULOS_NOTA[n]}</span>
+    </a>`;
+  return `<div style="margin:16px 0;">${[5, 4, 3, 2, 1].map(linha).join("")}</div>`;
 }
 
 async function main() {
@@ -117,7 +127,21 @@ async function main() {
   console.log("Email 1 (confirmação):", resultado1.error ? `FALHOU — ${resultado1.error.message}` : `enviado, id ${resultado1.data?.id}`);
 
   // Email 2 — entrega do relatório (sem PDF, só teste de design)
-  const idTeste = "00000000-0000-0000-0000-000000000000"; // id fictício — só para o link ter a forma certa, não resolve a um pedido real
+  //
+  // Um id inventado nunca resolve a um pedido real — o guard de
+  // /avaliacao e de /api/avaliacao exigem sempre um pedido real com
+  // report_status = 'delivered' (e a FK de intake_id impede gravar uma
+  // avaliação presa a um id que não existe). Correr
+  // scripts/create-test-intake.ts primeiro e passar o id resultante em
+  // TEST_INTAKE_ID torna os links das estrelas neste email totalmente
+  // funcionais, incluindo a submissão.
+  const idTesteFornecido = process.env.TEST_INTAKE_ID?.trim();
+  if (!idTesteFornecido) {
+    console.warn(
+      "Aviso: TEST_INTAKE_ID não definido — os links das estrelas no Email 2 vão apontar para um id que não existe e o /avaliacao vai redireccionar para a homepage. Corre primeiro: npx tsx scripts/create-test-intake.ts",
+    );
+  }
+  const idTeste = idTesteFornecido || "00000000-0000-0000-0000-000000000000";
   const bodyEmail2 = `
     ${p(`Olá ${NOME},`)}
     ${p("O teu relatório VocationIQ está pronto.")}
