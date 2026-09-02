@@ -98,5 +98,5 @@ export { detectBlessingPainHouses, type BlessingPainHit } from "./lifeReport/ble
 export { computeAshtaKuta, type AshtaKutaResult, type AshtaKutaScore } from "./lifeReport/ashtaKuta";
 
 // VOCATIONIQ-ADULTO-metodologia.md — motor de geração do relatório VocationIQ Adulto (ramo "trabalho-quero-mudar").
-export { computePesosPlanetas, ESTADO_PESO, type PesoPlaneta } from "./vocationiq/pesosPlanetas";
+export { computePesosPlanetas, computeSavPorCasa, ESTADO_PESO, type PesoPlaneta, type SavPorCasa, type ClassificacaoApoio } from "./vocationiq/pesosPlanetas";
 export { construirPromptAdulto, SECCAO_TITULOS, MARCADORES, FORCA_VALORES, type VocationiqIntakeAdulto, type DadosDatas, type ForcaValor } from "./vocationiq/promptAdulto";

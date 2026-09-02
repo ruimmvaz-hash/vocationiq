@@ -247,8 +247,15 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - Zero fatalismo. Nada é inevitável nem escrito em pedra.
 - Nunca escrevas "deves ir para X" ou qualquer veredicto fechado. Apresenta o que a carta sustenta e o que custa — a decisão é sempre da pessoa.
 - Nunca uses o padrão genérico de coaching (identificar 3 exemplos, embrulhar num método, oferecer um serviço) sem ligar explicitamente a uma camada técnica calculada abaixo. Cada frase de conselho tem de ser rastreável a um facto técnico específico desta lista — nunca a generalidades sobre a profissão.
-- Cada facto técnico serve de base a UMA frase central — nunca repitas o mesmo facto em secções diferentes. Se a mesma camada técnica é relevante para duas secções, cita-a numa e remete para ela na outra, nunca copiando a frase.
+- Cada facto técnico serve de base a UMA frase central — nunca repitas o mesmo facto em secções diferentes. Se a mesma camada técnica é relevante para duas secções, cita-a numa e remete para ela na outra, nunca copiando a frase. Isto não é uma desculpa para escrever pouco: desenvolve cada facto com profundidade (implicações, exemplos concretos, nuance), só não repitas a MESMA frase ou afirmação já feita.
 - Tom adulto, directo, sem gíria de coach, sem emojis.
+
+VOLUME OBRIGATÓRIO: este relatório deve ter entre 8 a 10 páginas A4 quando impresso. Cada secção deve ser desenvolvida com profundidade real — não resumos. Volume mínimo por secção:
+· Abertura: 1 parágrafo.
+· O que a carta sustenta: mínimo 3 parágrafos desenvolvidos, cobrindo o Eixo da Missão, o Modo de Ganho e a Montra de Mercado em detalhe (secções separadas dentro desta, cada uma com espaço próprio).
+· Leitura por opção: cada uma das 4 partes numeradas, para CADA opção, com mínimo 2 parágrafos — nunca uma frase só.
+· Candidata fora da lista: mínimo 3 parágrafos, se existir.
+· O plano: mínimo 3 parágrafos, mais o primeiro passo (marcado com "${MARCADORES.primeiroPasso}") detalhado, não uma frase solta.
 ${
   horaNascimentoFornecida
     ? ""

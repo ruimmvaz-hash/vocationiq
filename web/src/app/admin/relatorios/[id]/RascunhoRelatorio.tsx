@@ -8,7 +8,7 @@ function formatarDataHora(iso: string): string {
   return new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
 }
 
-/** Passo 3 (VOCATIONIQ-ADULTO-metodologia.md) — gera/edita/guarda o rascunho antes de "Aprovar e enviar" (MarcarEntregueButton, reaproveitado sem alterações à sua própria lógica). */
+/** Passo 3 (VOCATIONIQ-ADULTO-metodologia.md) — gera/edita/guarda o rascunho antes de "Aprovar e enviar" (MarcarEntregueButton com autoGerarPdf: gera e envia o PDF automaticamente a partir do rascunho aprovado, caindo para o upload manual se falhar). */
 export function RascunhoRelatorio({ intakeId, rascunhoInicial, criadoEmInicial }: { intakeId: string; rascunhoInicial: string | null; criadoEmInicial: string | null }) {
   const [texto, setTexto] = useState(rascunhoInicial);
   const [textoEditado, setTextoEditado] = useState(rascunhoInicial ?? "");
@@ -127,7 +127,7 @@ export function RascunhoRelatorio({ intakeId, rascunhoInicial, criadoEmInicial }
             >
               {loading === "guardar" ? "A guardar…" : "Guardar rascunho"}
             </button>
-            <MarcarEntregueButton intakeId={intakeId} jaEntregue={false} label="Aprovar e enviar" />
+            <MarcarEntregueButton intakeId={intakeId} jaEntregue={false} label="Aprovar e enviar" autoGerarPdf />
             <button
               type="button"
               onClick={descartar}

@@ -48,8 +48,7 @@ export interface PesoPlaneta {
 
 const CLASSICAL_GRAHAS: ClassicalGraha[] = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"];
 
-/** Calcula o peso de cada um dos 7 planetas clássicos, segundo a fórmula da secção 2 do documento de metodologia. */
-export function computePesosPlanetas(d1: D1TableResult): PesoPlaneta[] {
+function calcularSav(d1: D1TableResult) {
   const contributorSigns = {
     Sun: d1.rows.Sun.sign,
     Moon: d1.rows.Moon.sign,
@@ -60,8 +59,12 @@ export function computePesosPlanetas(d1: D1TableResult): PesoPlaneta[] {
     Saturn: d1.rows.Saturn.sign,
     Lagna: d1.ascendant.sign,
   } satisfies Record<SavContributor, ZodiacSign>;
+  return computeSarvashtakavarga(contributorSigns, d1.ascendant.sign);
+}
 
-  const sav = computeSarvashtakavarga(contributorSigns, d1.ascendant.sign);
+/** Calcula o peso de cada um dos 7 planetas clássicos, segundo a fórmula da secção 2 do documento de metodologia. */
+export function computePesosPlanetas(d1: D1TableResult): PesoPlaneta[] {
+  const sav = calcularSav(d1);
 
   return CLASSICAL_GRAHAS.map((planeta) => {
     const row: GrahaRow = d1.rows[planeta];
@@ -72,5 +75,31 @@ export function computePesosPlanetas(d1: D1TableResult): PesoPlaneta[] {
     const savCasa = sav.byHouse.find((h) => h.casa === row.house)?.pontuacao ?? 0;
     const peso = Math.round(ESTADO_PESO[estado] * (savCasa / sav.media) * 1000) / 1000;
     return { planeta, casa: row.house, signo: row.sign, estado, savCasa, savMedia: sav.media, peso };
+  });
+}
+
+export type ClassificacaoApoio = "forte" | "medio" | "fraco";
+
+export interface SavPorCasa {
+  casa: number;
+  pontuacao: number;
+  media: number;
+  classificacao: ClassificacaoApoio;
+}
+
+/**
+ * Sarvashtakavarga das 12 casas (Anexo — "Apoio por área de vida"), sem
+ * o factor de dignidade do peso_planeta — é o apoio estrutural da CASA
+ * em si, não de um planeta específico nela. Mesmos limiares do gráfico
+ * de peso (≥1,3× a média = forte, 0,9-1,3× = médio, abaixo = fraco),
+ * aplicados ao rácio pontuacao/média em vez de ao peso ponderado, para
+ * as duas classificações do relatório usarem sempre o mesmo critério.
+ */
+export function computeSavPorCasa(d1: D1TableResult): SavPorCasa[] {
+  const sav = calcularSav(d1);
+  return sav.byHouse.map((h) => {
+    const razao = h.pontuacao / sav.media;
+    const classificacao: ClassificacaoApoio = razao >= 1.3 ? "forte" : razao >= 0.9 ? "medio" : "fraco";
+    return { casa: h.casa, pontuacao: h.pontuacao, media: sav.media, classificacao };
   });
 }

@@ -1,4 +1,4 @@
-import { SECCAO_TITULOS, MARCADORES, type VocationIQAxes, type PesoPlaneta, type EarningMode, type DadosDatas, type ForcaValor } from "@naveya/method-engine";
+import { SECCAO_TITULOS, MARCADORES, type VocationIQAxes, type PesoPlaneta, type EarningMode, type DadosDatas, type ForcaValor, type SavPorCasa, type ClassificacaoApoio } from "@naveya/method-engine";
 
 // Template HTML do relatório VocationIQ Adulto — identidade VocationIQ
 // (azul #1B3A6B + âmbar #F5A623), pronto para imprimir/converter em PDF.
@@ -20,6 +20,10 @@ import { SECCAO_TITULOS, MARCADORES, type VocationIQAxes, type PesoPlaneta, type
  * não tem data/hora/local de nascimento em bruto) — definido aqui
  * `DadosParaTemplate`, o subconjunto exacto que os três blocos da capa
  * precisam; o chamador (a rota) mapeia a partir do que já tem.
+ *
+ * DESVIO 3 — 7º parâmetro `savPorCasa: SavPorCasa[]`, para a tabela
+ * "Apoio por área de vida" do Anexo (pedido numa ronda seguinte). Mesmo
+ * raciocínio: sem os dados calculados, a tabela só podia ser inventada.
  */
 export interface DadosParaTemplate {
   nome: string;
@@ -69,6 +73,42 @@ const CASA_LABEL_LINHAS: Record<number, [string, string]> = {
   2: ["Pela voz e", "consultoria"],
   6: ["Resolvendo", "problemas"],
   10: ["Liderando", "publicamente"],
+};
+
+/** Anexo — "Apoio por área de vida". Traduções em linguagem simples das 12 áreas de vida clássicas (bhavas), sem jargão. */
+const AREA_VIDA_PT: Record<number, string> = {
+  1: "Como te apresentas ao mundo, a tua energia",
+  2: "O que ganhas e como lidas com dinheiro",
+  3: "A tua iniciativa e comunicação do dia a dia",
+  4: "As tuas raízes, casa e estabilidade emocional",
+  5: "A tua criatividade e aquilo que constróis",
+  6: "Como lidas com obstáculos e o trabalho do dia a dia",
+  7: "As tuas parcerias e relações directas",
+  8: "As transformações profundas, o que fica escondido",
+  9: "As tuas crenças e para onde queres expandir",
+  10: "A tua carreira e a cara que mostras publicamente",
+  11: "Os teus ganhos, redes e comunidade",
+  12: "O que soltas e o que fica só para ti",
+};
+
+const CLASSIFICACAO_LABEL: Record<ClassificacaoApoio, string> = { forte: "Forte", medio: "Médio", fraco: "Fraco" };
+function corClassificacao(c: ClassificacaoApoio): string {
+  if (c === "forte") return VERDE;
+  if (c === "medio") return AMBAR;
+  return VERMELHO;
+}
+
+/** Anexo — "Os teus períodos". Descrição genérica (não pessoal) do que cada regente de período clássicamente pede — mesma convenção usada em todo o relatório: dados fixos, nunca inventados pelo LLM. */
+const DASHA_O_QUE_PEDE: Record<string, string> = {
+  Sun: "Pede-te para assumires responsabilidade e liderança visível.",
+  Moon: "Pede-te para cuidares da tua estabilidade emocional e da tua casa.",
+  Mars: "Pede-te acção directa e coragem para resolver o que está parado.",
+  Mercury: "Pede-te clareza de comunicação e atenção aos detalhes práticos.",
+  Jupiter: "Pede-te para investires em crescimento, aprendizagem e visão de longo prazo.",
+  Venus: "Pede-te para cuidares das tuas relações e do que valorizas.",
+  Saturn: "Pede-te disciplina, paciência, e trabalho de fundo sem resultados imediatos.",
+  Rahu: "Pede-te para saíres da tua zona confortável e arriscares algo novo.",
+  Ketu: "Pede-te para soltares o que já não serve e olhares para dentro.",
 };
 
 function escapeHtml(s: string): string {
@@ -420,7 +460,68 @@ function blocoOPlano(corpo: string, datas: DadosDatas): string {
     ${primeiroPasso ? `<div class="destaque-ambar destaque-passo"><p class="rotulo-pequeno">O teu primeiro passo esta semana</p><p>${escapeHtml(primeiroPasso)}</p></div>` : ""}`;
 }
 
-export function gerarHTMLRelatorio(dados: DadosParaTemplate, texto: string, axes: VocationIQAxes, pesos: PesoPlaneta[], earningModes: EarningMode[], datas: DadosDatas): string {
+function tabelaApoioPorAreaDeVida(savPorCasa: SavPorCasa[]): string {
+  const linhas = [...savPorCasa]
+    .sort((a, b) => a.casa - b.casa)
+    .map(
+      (h) => `
+      <tr>
+        <td>${escapeHtml(AREA_VIDA_PT[h.casa] ?? `Área ${h.casa}`)}</td>
+        <td class="col-numero">${h.pontuacao}</td>
+        <td><span class="badge-classificacao" style="background:${corClassificacao(h.classificacao)}">${CLASSIFICACAO_LABEL[h.classificacao]}</span></td>
+      </tr>`,
+    )
+    .join("");
+  return `
+    <table class="tabela-anexo">
+      <thead><tr><th>Área de vida</th><th class="col-numero">Apoio</th><th>Classificação</th></tr></thead>
+      <tbody>${linhas}</tbody>
+    </table>`;
+}
+
+function tabelaOsTeusPeriodos(datas: DadosDatas): string {
+  const periodos = [
+    { ...datas.mahadashaAtual, tipo: "Ciclo actual" },
+    { ...datas.antardashaAtual, tipo: "Período actual" },
+    ...datas.proximasAntardashas.map((p) => ({ ...p, tipo: "Período seguinte" })),
+  ];
+  const linhas = periodos
+    .map(
+      (p) => `
+      <tr>
+        <td>${escapeHtml(p.tipo)}</td>
+        <td>${escapeHtml(PLANETA_PT[p.senhor] ?? p.senhor)}</td>
+        <td>${formatarMesAno(p.inicio)} – ${formatarMesAno(p.fim)}</td>
+        <td>${escapeHtml(DASHA_O_QUE_PEDE[p.senhor] ?? "")}</td>
+      </tr>`,
+    )
+    .join("");
+  return `
+    <table class="tabela-anexo">
+      <thead><tr><th>Período</th><th>Regido por</th><th>Datas</th><th>O que pede</th></tr></thead>
+      <tbody>${linhas}</tbody>
+    </table>`;
+}
+
+function seccaoComoLer(): string {
+  const paragrafos = [
+    "Este relatório cruza várias camadas do teu mapa de nascimento — a tua energia de fundo, a forma como ganhas melhor, o que o mercado já reconhece em ti, e o momento em que estás agora — para chegar a uma leitura sobre cada opção que trouxeste.",
+    "Cada opção só é apresentada como \"sustentada com força\" quando pelo menos duas fontes independentes convergem — nunca por um único sinal isolado.",
+    "As datas que vês na tabela de períodos são reais, calculadas a partir da tua hora de nascimento (ou de uma estimativa, quando não a soubemos) — não são genéricas nem iguais para todos.",
+    "Nada aqui é uma sentença. É um mapa do que a tua carta sustenta e do que custa — a decisão final é sempre tua.",
+  ];
+  return `<div class="caixa-neutra">${paragrafos.map((p) => `<p>${p}</p>`).join("")}</div>`;
+}
+
+export function gerarHTMLRelatorio(
+  dados: DadosParaTemplate,
+  texto: string,
+  axes: VocationIQAxes,
+  pesos: PesoPlaneta[],
+  earningModes: EarningMode[],
+  datas: DadosDatas,
+  savPorCasa: SavPorCasa[],
+): string {
   const seccoes = dividirEmSeccoes(texto);
   const dataGeracao = new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "long", year: "numeric" }).format(new Date());
 
@@ -497,6 +598,16 @@ export function gerarHTMLRelatorio(dados: DadosParaTemplate, texto: string, axes
   .destaque-passo { margin-top: 24px; }
   .destaque-passo p:last-child { font-size: 16px; font-weight: 600; color: var(--azul); }
 
+  .anexo-espaco { margin-top: 32px; }
+  .tabela-anexo { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+  .tabela-anexo th { text-align: left; font-weight: 700; color: var(--azul); padding: 8px 10px; border-bottom: 2px solid var(--ambar); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .tabela-anexo td { padding: 8px 10px; border-bottom: 1px solid #E6E6E6; vertical-align: top; }
+  .tabela-anexo .col-numero { text-align: right; font-weight: 600; }
+  .badge-classificacao { display: inline-block; font-size: 11px; font-weight: 700; color: #FFFFFF; padding: 3px 10px; border-radius: 999px; }
+  .caixa-neutra p { font-size: 14px; margin: 0 0 12px; }
+  .caixa-neutra p:last-child { margin-bottom: 0; }
+  .anexo { page-break-before: always; }
+
   footer.rodape { text-align: center; padding: 40px 20px 60px; color: #6B6B6B; font-size: 12px; border-top: 1px solid #E6E6E6; margin-top: 50px; }
   footer.rodape .rodape-logo { font-weight: 800; color: var(--azul); font-size: 14px; margin-bottom: 8px; }
   footer.rodape .rodape-logo .iq { color: var(--ambar); }
@@ -504,7 +615,7 @@ export function gerarHTMLRelatorio(dados: DadosParaTemplate, texto: string, axes
 
   @media print {
     .capa { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .chip, .badge-forca, .parte-icone { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .chip, .badge-forca, .parte-icone, .badge-classificacao { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
 </style>
 </head>
@@ -563,6 +674,19 @@ export function gerarHTMLRelatorio(dados: DadosParaTemplate, texto: string, axes
     <section class="seccao">
       <h2 class="titulo-seccao">O teu calendário</h2>
       ${blocoOPlano(seccoes[SECCAO_TITULOS.oPlano] ?? "", datas)}
+    </section>
+
+    <section class="seccao anexo">
+      <h2 class="titulo-seccao">Anexo — dados da tua análise</h2>
+
+      <p class="rotulo-pequeno">Como ler este relatório</p>
+      ${seccaoComoLer()}
+
+      <p class="rotulo-pequeno anexo-espaco">Apoio por área de vida</p>
+      ${tabelaApoioPorAreaDeVida(savPorCasa)}
+
+      <p class="rotulo-pequeno anexo-espaco">Os teus períodos</p>
+      ${tabelaOsTeusPeriodos(datas)}
     </section>
 
   </div>
