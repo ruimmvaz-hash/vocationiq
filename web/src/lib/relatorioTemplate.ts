@@ -252,6 +252,13 @@ function parsePlano(corpo: string): { corpo: string; primeiroPasso: string | nul
   return { corpo: resto, primeiroPasso };
 }
 
+/** Extrai "IDENTIDADE: <frase>" do texto em bruto — a linha vem ANTES do primeiro cabeçalho "## ", por isso corre sobre o texto completo, não sobre `seccoes` (dividirEmSeccoes ignora tudo antes do 1º cabeçalho). */
+function parseIdentidade(textoCompleto: string): string | null {
+  const regex = new RegExp(`^${MARCADORES.identidade}\\s*(.+)$`, "m");
+  const match = textoCompleto.match(regex);
+  return match?.[1]?.trim() || null;
+}
+
 function formatarDataLonga(iso: string): string {
   const d = new Date(iso + "T00:00:00");
   return new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "long", year: "numeric" }).format(d);
@@ -355,7 +362,177 @@ function svgTimeline(datas: DadosDatas): string {
   </svg>`;
 }
 
+/** Quebra um texto em linhas de no máximo `maxCarPorLinha` caracteres, por palavra inteira — para caber texto de comprimento variável (vindo do LLM) dentro de formas SVG fixas. */
+function quebrarLinhas(texto: string, maxCarPorLinha: number): string[] {
+  const palavras = texto.split(/\s+/);
+  const linhas: string[] = [];
+  let actual = "";
+  for (const p of palavras) {
+    const tentativa = actual ? `${actual} ${p}` : p;
+    if (tentativa.length > maxCarPorLinha && actual) {
+      linhas.push(actual);
+      actual = p;
+    } else {
+      actual = tentativa;
+    }
+  }
+  if (actual) linhas.push(actual);
+  return linhas;
+}
+
+/** Diagrama de identidade — linhas de convergência dos 7 sinais (características, por peso decrescente) para um círculo central com a frase IDENTIDADE: do LLM. Os sinais e as suas posições são sempre determinísticos; só o texto dentro do círculo vem do LLM. */
+function svgDiagramaIdentidade(sinais: string[], identidade: string): string {
+  const largura = 680;
+  const margemTexto = 230;
+  const cxCirculo = 490;
+  const raioCirculo = 92;
+  const gapLinha = 34;
+  const topo = 20;
+  const alturaSinais = sinais.length * gapLinha;
+  const cyCirculo = Math.max(topo + alturaSinais / 2, raioCirculo + 16);
+  const altura = Math.max(cyCirculo + raioCirculo + 20, topo + alturaSinais + 20);
+
+  const linhas = sinais
+    .map((s, i) => {
+      const y = topo + i * gapLinha + gapLinha / 2;
+      return `
+      <text x="${margemTexto - 10}" y="${y + 5}" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="14" fill="#1A1A1A">${escapeHtml(s)}</text>
+      <path d="M ${margemTexto} ${y} L ${cxCirculo - raioCirculo - 6} ${cyCirculo}" stroke="${AMBAR}" stroke-width="1.5" fill="none" opacity="0.75" />
+      <circle cx="${margemTexto}" cy="${y}" r="3" fill="${AMBAR}" />`;
+    })
+    .join("");
+
+  const linhasIdentidade = quebrarLinhas(identidade, 15);
+  const inicioY = cyCirculo - (linhasIdentidade.length - 1) * 9;
+  const tspans = linhasIdentidade.map((l, i) => `<tspan x="${cxCirculo}" y="${inicioY + i * 18}">${escapeHtml(l)}</tspan>`).join("");
+
+  return `<svg viewBox="0 0 ${largura} ${altura}" width="100%" style="max-width:${largura}px;height:auto" xmlns="http://www.w3.org/2000/svg">
+    ${linhas}
+    <circle cx="${cxCirculo}" cy="${cyCirculo}" r="${raioCirculo}" fill="${AZUL}" />
+    <text text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#FFFFFF">${tspans}</text>
+  </svg>`;
+}
+
+/** Caminho SVG de um sector em anel (donut wedge), usado pela roda das casas. */
+function setorAnelPath(cx: number, cy: number, raioInterno: number, raioExterno: number, anguloInicioDeg: number, anguloFimDeg: number): string {
+  const rad = (deg: number) => (deg * Math.PI) / 180;
+  const ponto = (r: number, ang: number): [number, number] => [cx + r * Math.cos(rad(ang)), cy + r * Math.sin(rad(ang))];
+  const [x1, y1] = ponto(raioExterno, anguloInicioDeg);
+  const [x2, y2] = ponto(raioExterno, anguloFimDeg);
+  const [x3, y3] = ponto(raioInterno, anguloFimDeg);
+  const [x4, y4] = ponto(raioInterno, anguloInicioDeg);
+  return `M ${x1} ${y1} A ${raioExterno} ${raioExterno} 0 0 1 ${x2} ${y2} L ${x3} ${y3} A ${raioInterno} ${raioInterno} 0 0 0 ${x4} ${y4} Z`;
+}
+
+/**
+ * Roda das casas — anel de 12 sectores iguais (casa 1 no topo, sentido
+ * horário), cor por classificação de apoio (reaproveita `classificacao`
+ * já calculado por computeSavPorCasa — as mesmas 3 cores/limiares já
+ * usados na tabela "Apoio por área de vida" do Anexo, para nunca
+ * divergir entre os dois lugares onde a mesma casa aparece), com a casa
+ * dominante do Modo de Ganho destacada por um contorno azul.
+ */
+function svgRodaDasCasas(savPorCasa: SavPorCasa[], casaDominante: number): string {
+  const tamanho = 340;
+  const cx = tamanho / 2;
+  const cy = tamanho / 2;
+  const raioInterno = 46;
+  const raioExterno = 150;
+  const porCasa = new Map(savPorCasa.map((h) => [h.casa, h]));
+
+  const setores = Array.from({ length: 12 }, (_, i) => i + 1)
+    .map((casa) => {
+      const h = porCasa.get(casa);
+      const anguloInicio = (casa - 1) * 30 - 90;
+      const anguloFim = anguloInicio + 30;
+      const anguloMeio = anguloInicio + 15;
+      const rad = (anguloMeio * Math.PI) / 180;
+      const raioTexto = (raioInterno + raioExterno) / 2;
+      const tx = cx + raioTexto * Math.cos(rad);
+      const ty = cy + raioTexto * Math.sin(rad);
+      const dominante = casa === casaDominante;
+      const cor = h ? corClassificacao(h.classificacao) : CINZA_CLARO;
+      const path = setorAnelPath(cx, cy, raioInterno, raioExterno, anguloInicio, anguloFim);
+      return `
+      <path d="${path}" fill="${cor}" stroke="#FFFFFF" stroke-width="1.5" />
+      ${dominante ? `<path d="${path}" fill="none" stroke="${AZUL}" stroke-width="3" />` : ""}
+      <text x="${tx}" y="${ty - 6}" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#FFFFFF">${casa}</text>
+      <text x="${tx}" y="${ty + 11}" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="11" fill="#FFFFFF">${h ? h.pontuacao : "—"}</text>`;
+    })
+    .join("");
+
+  return `<svg viewBox="0 0 ${tamanho} ${tamanho}" width="100%" style="max-width:340px;height:auto" xmlns="http://www.w3.org/2000/svg">
+    ${setores}
+    <circle cx="${cx}" cy="${cy}" r="${raioInterno - 2}" fill="#FFFFFF" />
+  </svg>`;
+}
+
 // ---------- Blocos HTML ----------
+
+/** Os "sinais" do diagrama de identidade — reaproveita os mesmos rótulos humanos já usados no gráfico "O peso de cada característica" (CARACTERISTICA_PT), ordenados por peso decrescente. Sempre determinístico, nunca do LLM. */
+function sinaisIdentidade(pesos: PesoPlaneta[]): string[] {
+  return [...pesos].sort((a, b) => b.peso - a.peso).map((p) => CARACTERISTICA_PT[p.planeta] ?? p.planeta);
+}
+
+function blocoDiagramaIdentidade(pesos: PesoPlaneta[], identidade: string | null): string {
+  if (!identidade) return "";
+  return `
+    <section class="seccao">
+      <h2 class="titulo-seccao">Quem você realmente é</h2>
+      <div class="grafico-wrap grafico-centrado">${svgDiagramaIdentidade(sinaisIdentidade(pesos), identidade)}</div>
+    </section>`;
+}
+
+function blocoRodaDasCasas(savPorCasa: SavPorCasa[], casaDominante: number): string {
+  return `
+    <div class="roda-wrap">
+      ${svgRodaDasCasas(savPorCasa, casaDominante)}
+      <p class="grafico-legenda roda-legenda">Verde = apoio forte · Âmbar = apoio moderado · Vermelho = apoio fraco · Contorno azul = onde ganha melhor</p>
+    </div>`;
+}
+
+/** Rótulo humano da casa dominante do Modo de Ganho — mesma convenção de CASA_LABEL_LINHAS, aqui em frase única para a coluna "O que apoia" da tabela de tensões. */
+const CASA_APOIO_LABEL: Record<number, string> = {
+  2: "Ganhar pela voz e pela consultoria",
+  6: "Ganhar por resolver problemas",
+  10: "Ganhar por liderar publicamente",
+};
+
+/**
+ * Tabela de tensões — determinística: para cada planeta com peso < 0,9
+ * (limiar já usado em corPeso/TERMOS_PROIBIDOS), cruza com a tese central
+ * (Modo de Ganho dominante). Máximo 3 linhas, as tensões mais fortes
+ * primeiro (peso mais baixo). Nunca escrita pelo LLM — só o texto das 5
+ * secções de prosa vem de lá.
+ */
+function tabelaTensoes(pesos: PesoPlaneta[], casaDominante: number): string {
+  const fracos = [...pesos]
+    .filter((p) => p.peso < 0.9)
+    .sort((a, b) => a.peso - b.peso)
+    .slice(0, 3);
+  if (!fracos.length) return "";
+
+  const apoio = CASA_APOIO_LABEL[casaDominante] ?? "A sua forma dominante de ganhar";
+  const linhas = fracos
+    .map(
+      (p) => `
+      <tr>
+        <td>${escapeHtml(apoio)}</td>
+        <td>${escapeHtml(CARACTERISTICA_PT[p.planeta] ?? p.planeta)} <span class="peso-fraco">(peso ${p.peso.toFixed(2)})</span></td>
+        <td>Esta parte da carta está enfraquecida — o que a tese central pede aqui não é natural, tem de ser construído com esforço consciente.</td>
+      </tr>`,
+    )
+    .join("");
+
+  return `
+    <div class="anexo-espaco">
+      <p class="rotulo-pequeno">Onde a carta tem atrito</p>
+      <table class="tabela-anexo tabela-tensoes">
+        <thead><tr><th>O que apoia</th><th>O que resiste</th><th>O que significa</th></tr></thead>
+        <tbody>${linhas}</tbody>
+      </table>
+    </div>`;
+}
 
 function blocoQuemE(d: DadosParaTemplate): string {
   const linhas: [string, string][] = [
@@ -526,6 +703,7 @@ export function gerarHTMLRelatorio(
   const dataGeracao = new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "long", year: "numeric" }).format(new Date());
 
   const opcoes = parseLeituraPorOpcao(seccoes[SECCAO_TITULOS.leituraPorOpcao] ?? "");
+  const identidade = parseIdentidade(texto);
 
   return `<!doctype html>
 <html lang="pt">
@@ -584,6 +762,10 @@ export function gerarHTMLRelatorio(
   .grafico-legenda { font-size: 12px; color: #6B6B6B; margin-top: 10px; }
   .grafico-wrap { overflow-x: auto; }
   .grafico-3barras { display: flex; justify-content: center; }
+  .grafico-centrado { display: flex; justify-content: center; }
+  .roda-wrap { display: flex; flex-direction: column; align-items: center; margin-top: 16px; }
+  .roda-legenda { text-align: center; }
+  .peso-fraco { color: #6B6B6B; font-size: 12px; }
 
   .card-opcao { border: 1px solid #E6E6E6; border-radius: 10px; overflow: hidden; margin-bottom: 24px; page-break-inside: avoid; }
   .card-opcao-header { background: var(--azul); color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-weight: 700; font-size: 16px; }
@@ -636,6 +818,8 @@ export function gerarHTMLRelatorio(
 
   <div class="container">
 
+    ${blocoDiagramaIdentidade(pesos, identidade)}
+
     <section class="seccao">
       <h2 class="titulo-seccao">Quem és, e o que trouxeste</h2>
       <div class="quadro-dados">
@@ -653,12 +837,14 @@ export function gerarHTMLRelatorio(
     <section class="seccao">
       <h2 class="titulo-seccao">${escapeHtml(SECCAO_TITULOS.oQueACartaSustenta)}</h2>
       ${markdownParaHtml(seccoes[SECCAO_TITULOS.oQueACartaSustenta] ?? "")}
+      ${blocoRodaDasCasas(savPorCasa, axes.earningMode.house)}
     </section>
 
     <section class="seccao">
       <h2 class="titulo-seccao">O peso de cada característica</h2>
       <div class="grafico-wrap">${svgGraficoForcas(pesos)}</div>
       <p class="grafico-legenda">Verde = a carta apoia com força · Âmbar = suporte moderado · Vermelho = suporte fraco</p>
+      ${tabelaTensoes(pesos, axes.earningMode.house)}
     </section>
 
     <section class="seccao">

@@ -84,6 +84,7 @@ export const MARCADORES = {
   forca: "FORÇA:",
   candidata: "CANDIDATA:",
   primeiroPasso: "PRIMEIRO PASSO:",
+  identidade: "IDENTIDADE:",
 } as const;
 
 export const FORCA_VALORES = ["forte", "moderada", "fraca"] as const;
@@ -255,15 +256,15 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - Zero fatalismo. Nada é inevitável nem escrito em pedra.
 - Nunca escrevas "deves ir para X" ou qualquer veredicto fechado. Apresenta o que a carta sustenta e o que custa — a decisão é sempre da pessoa.
 - Nunca uses o padrão genérico de coaching (identificar 3 exemplos, embrulhar num método, oferecer um serviço) sem ligar explicitamente a uma camada técnica calculada abaixo. Cada frase de conselho tem de ser rastreável a um facto técnico específico desta lista — nunca a generalidades sobre a profissão.
-- Cada facto técnico serve de base a UMA frase central — nunca repitas o mesmo facto em secções diferentes. Se a mesma camada técnica é relevante para duas secções, cita-a numa e remete para ela na outra, nunca copiando a frase. Isto não é uma desculpa para escrever pouco: desenvolve cada facto com profundidade (implicações, exemplos concretos, nuance), só não repitas a MESMA frase ou afirmação já feita.
+- REGRA ANTI-REPETIÇÃO (reforçada): Cada facto técnico serve de base a UMA frase central em UMA secção. Proibido repetir a MESMA CONCLUSÃO com palavras diferentes — mesmo que a frase literal seja nova. Se "você ganha pela voz" aparece em "O que a carta sustenta", não pode voltar a ser demonstrado em "Leitura por opção" nem em "Candidata fora da lista". Cada secção só pode usar um facto técnico como prova se acrescenta algo genuinamente novo — um custo, uma tensão, uma especificidade. Se não acrescenta nada novo, a secção é curta e remete, nunca repete.
+- PLANETAS FRACOS (peso < 0,9): Devem ser mencionados explicitamente — nunca deixar uma barra vermelha na tabela sem texto correspondente. Se o planeta mais ligado à comunicação (Mercúrio) tem peso fraco, e a tese central é "você ganha pela voz", essa tensão TEM de ser nomeada. Não é contradição — é honestidade. Exemplo correcto: "A sua estrutura aponta para comunicação, mas o canal comunicativo em si é o elo mais fraco da carta — o que significa que esta competência precisa de ser construída, não é natural."
+- ÁREA ACTUAL DA PESSOA: Nunca tratar como dado morto. É o ponto de partida obrigatório de qualquer leitura. Perguntas que o texto deve responder: o que na área actual já serve o que a carta pede? O que na área actual está a trabalhar contra? Que ponte existe entre o que já é e o que quer ser? A transição começa sempre de onde a pessoa está — nunca de zero. Quando a pessoa tem 5+ anos numa área, essa experiência é um activo real — não um obstáculo a ignorar. Nunca tratar a área actual como ponto de partida neutro — é capital acumulado, positivo ou negativo.
+- IDEIA CONCRETA (ideiaConcreta): Quando a pessoa partilhou uma ideia concreta, usá-la para desdobrar a opção declarada — nunca tratar como contexto genérico. Se disse "consultoria SAP", o texto deve diferenciar: a carta sustenta mais "SAP" ou mais "consultoria"? Sustenta o modelo independente ou o modelo de empresa? A ideia concreta é a oportunidade de ser específico — nunca desperdiçar.
+- TENSÃO INTERNA: Sempre que dois sinais da carta apontam em direcções diferentes, o texto É OBRIGADO a nomeá-lo. Nunca escolher só o lado bonito. Exemplos de tensões reais: tese central em "voz/comunicação" mas Mercúrio fraco — nomear. Modo de Ganho aponta para liderança pública mas Montra de Mercado aponta para bastidores — nomear. Missão de longo prazo mas período actual pede pausa — nomear. A tensão é informação, não ruído.
+- O RELATÓRIO NÃO É PARA CONFIRMAR O QUE A PESSOA JÁ PENSA: é para mostrar o que a carta vê — mesmo que contradiga as opções declaradas. Se a carta aponta claramente para uma direcção que a pessoa não declarou, o motor tem de a nomear — não esperar que ela apareça nas opções. A "Candidata fora da lista" não é uma secção opcional — é o momento onde o relatório tem mais valor único. Se os dados convergem em 4 camadas para algo que a pessoa não viu, dizer isso com clareza é o trabalho.
 - Tom adulto, directo, sem gíria de coach, sem emojis.
 
-VOLUME OBRIGATÓRIO: este relatório deve ter entre 8 a 10 páginas A4 quando impresso. Cada secção deve ser desenvolvida com profundidade real — não resumos. Volume mínimo por secção:
-· Abertura: 1 parágrafo.
-· O que a carta sustenta: mínimo 3 parágrafos desenvolvidos, cobrindo o Eixo da Missão, o Modo de Ganho e a Montra de Mercado em detalhe (secções separadas dentro desta, cada uma com espaço próprio).
-· Leitura por opção: cada uma das 4 partes numeradas, para CADA opção, com mínimo 2 parágrafos — nunca uma frase só.
-· Candidata fora da lista: mínimo 3 parágrafos, se existir.
-· O plano: mínimo 3 parágrafos, mais o primeiro passo (marcado com "${MARCADORES.primeiroPasso}") detalhado, não uma frase solta.
+VOLUME: Cada secção deve ser tão longa quanto os dados sustentam — nunca mais, nunca menos. Se uma secção não tem nada genuinamente novo a acrescentar, é curta. Não preencher para atingir um mínimo. Proibido: repetir para parecer completo. Permitido: ser curto e preciso.
 ${
   horaNascimentoFornecida
     ? ""
@@ -309,6 +310,8 @@ ${intake.ideiaConcreta && candidatas.length ? `\nIdeia concreta partilhada (cont
 
 === ESTRUTURA DO RELATÓRIO — exactamente estas 5 secções, por esta ordem ===
 
+ANTES DAS 5 SECÇÕES, escreve, numa linha própria: "${MARCADORES.identidade} " seguido de uma frase de 8 a 12 palavras que descreve o que esta pessoa foi feita para ser — não o que perguntou, não a sua opção, mas a sua natureza estrutural. Deve ser específica desta carta, nunca genérica. Exemplos do formato: "Autoridade que forma e transmite pelo exemplo directo", "Arquitecta de sistemas que comunica o que outros não conseguem ver". Proibido: "pessoa comunicativa", "líder nato", qualquer cliché de coaching. Este marcador é obrigatório e machine-readable, não o omitas.
+
 FORMATO DE SAÍDA (obrigatório): escreve em Markdown. Cada secção começa com um cabeçalho de nível 2, EXACTAMENTE com este texto (sem números, sem variações):
 ## ${SECCAO_TITULOS.abertura}
 ## ${SECCAO_TITULOS.oQueACartaSustenta}
@@ -336,9 +339,11 @@ ${MARCADORES.forca} <forte, moderada ou fraca — forte se ≥2 fontes independe
 Repete o bloco "### <nome> / ${MARCADORES.forca} / 1. / 2. / 3. / 4." para cada opção candidata, uma a seguir à outra.
 
 ## ${SECCAO_TITULOS.candidataForaDaLista}
-A primeira linha é sempre "${MARCADORES.candidata} <nome da opção>" ou "${MARCADORES.candidata} nenhuma" — obrigatória e machine-readable, não a omitas. No máximo uma opção que a pessoa não declarou, e só se pelo menos 4 camadas independentes convergirem (Eixo da Missão, Modo de Ganho, Montra de Mercado, peso por planeta/casa, regência funcional, ou outra camada dos dados acima). Depois da primeira linha, o texto explicativo: se houver candidata, porque é que as 4 camadas convergem; se não houver ("${MARCADORES.candidata} nenhuma"), escreve isso explicitamente — "a tua carta não aponta a nada fora do que já pensaste" é uma resposta válida e completa, não a evites.
+A primeira linha é sempre "${MARCADORES.candidata} <nome da opção>" ou "${MARCADORES.candidata} nenhuma" — obrigatória e machine-readable, não a omitas. No máximo uma opção que a pessoa não declarou, e só se pelo menos 4 camadas independentes convergirem (Eixo da Missão, Modo de Ganho, Montra de Mercado, peso por planeta/casa, regência funcional, ou outra camada dos dados acima). Depois da primeira linha, o texto explicativo: se houver candidata, porque é que as 4 camadas convergem; se não houver ("${MARCADORES.candidata} nenhuma"), escreve isso explicitamente — "a sua carta não aponta a nada fora do que já pensava" é uma resposta válida e completa, não a evites.
 
 ## ${SECCAO_TITULOS.oPlano}
-Usa as datas reais da secção "Datas reais" acima (nunca datas inventadas). Escreve o corpo do plano livremente, e destaca o primeiro passo accionável para esta semana numa linha própria, prefixada exactamente por "${MARCADORES.primeiroPasso} " (obrigatório, machine-readable, não o omitas) — ex.: "${MARCADORES.primeiroPasso} Contacta duas pessoas que já fazem consultoria a solo e pergunta-lhes o que ninguém conta sobre o primeiro ano." Nunca um plano genérico de 90 dias sem ligação às datas calculadas.
+Usa as datas reais da secção "Datas reais" acima (nunca datas inventadas). Escreve o corpo do plano livremente, e destaca o primeiro passo accionável para esta semana numa linha própria, prefixada exactamente por "${MARCADORES.primeiroPasso} " (obrigatório, machine-readable, não o omitas) — ex.: "${MARCADORES.primeiroPasso} Contacte duas pessoas que já fazem consultoria a solo e pergunte-lhes o que ninguém conta sobre o primeiro ano." Nunca um plano genérico de 90 dias sem ligação às datas calculadas.
+
+HORIZONTE TEMPORAL: até 18 meses, afirmações directas. Entre 18 meses e 3 anos, afirmações com cautela ("tende a", "favorece"). Mais de 3 anos, só como pano de fundo, nunca como previsão. A Mahadasha até ao fim do seu ciclo é contexto, não calendário.
 `.trim();
 }

@@ -3,13 +3,12 @@
 // exemplo escrito à mão em vez de chamar a Anthropic — para inspeccionar
 // o template sem gastar uma chamada real. O texto de exemplo segue
 // exactamente o formato que o prompt exige (cabeçalhos "## ",
-// "### <opção>", "FORÇA:", "CANDIDATA:", "PRIMEIRO PASSO:") e cumpre o
-// VOLUME OBRIGATÓRIO (mínimo de parágrafos por secção/parte) para testar
-// se o template produz mesmo 8-10 páginas A4 quando o conteúdo tem a
-// profundidade pedida.
+// "### <opção>", "FORÇA:", "CANDIDATA:", "PRIMEIRO PASSO:", e agora
+// "IDENTIDADE:" antes da primeira secção, para testar o diagrama de
+// identidade novo).
 //
 // Uso: npx tsx scripts/test-relatorio-html.ts [nome-do-ficheiro.html]
-// (por omissão: relatorio-v2.html)
+// (por omissão: relatorio-v3.html)
 
 import { writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
@@ -31,6 +30,8 @@ const ASPECTO_LABEL: Record<string, string> = { Conjuncao: "conjunção", Quadra
 const PONTO_LABEL: Record<string, string> = { Sun: "Sol natal", Moon: "Lua natal", Mercury: "Mercúrio natal", Venus: "Vénus natal", Mars: "Marte natal", Ascendente: "Ascendente natal", MC: "Meio-céu natal" };
 
 const TEXTO_EXEMPLO = `
+IDENTIDADE: Autoridade que traduz números em decisões que outros não ousam tomar
+
 ## Abertura
 Rui trabalha em Contabilidade há entre 5 e 10 anos e chega a este relatório com uma pergunta concreta: faz mais sentido avançar para consultoria a solo, ou procurar um lugar de gestão dentro de uma estrutura maior? Diz sentir-se apenas a processar números para outras pessoas decidirem, e quer estar mais perto da decisão em si — a ideia de consultoria financeira para pequenas empresas já lhe passou pela cabeça, mas ainda não sabe se é desejo ou se é fuga.
 
@@ -141,7 +142,7 @@ async function main() {
   // fica um nível acima, na raiz do repositório.
   const outDir = join(process.cwd(), "..", "docs");
   mkdirSync(outDir, { recursive: true });
-  const nomeFicheiro = process.argv[2] || "relatorio-v2.html";
+  const nomeFicheiro = process.argv[2] || "relatorio-v3.html";
   const outPath = join(outDir, nomeFicheiro);
   writeFileSync(outPath, html, "utf-8");
   console.log(`Guardado em: ${outPath}`);
