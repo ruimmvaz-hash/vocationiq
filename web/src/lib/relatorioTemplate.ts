@@ -398,7 +398,7 @@ function blocoOQueTrouxe(d: DadosParaTemplate): string {
 function blocoOQueEsteRelatorioResponde(): string {
   const itens = [
     "A tua missão de fundo, e onde ela já aparece na tua vida profissional.",
-    "O modo como ganhas melhor dinheiro — a tua Artha Trikona dominante.",
+    "Como e onde ganhas melhor.",
     "Uma leitura honesta de cada opção que estás a considerar: o que a sustenta, o que custa, o que falta.",
     "Se há alguma opção fora da tua lista que a tua carta sustenta com força.",
     "Um primeiro passo concreto para esta semana, ligado às tuas datas reais.",

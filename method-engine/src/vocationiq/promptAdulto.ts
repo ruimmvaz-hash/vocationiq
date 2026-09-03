@@ -147,6 +147,12 @@ const TERMOS_PROIBIDOS = [
   "dignidade",
   "regente",
   "trânsito (usa \"período actual\" ou \"este momento\")",
+  "exaltado / exaltação",
+  "debilitado / debilitação",
+  "combusto / combustão",
+  "em domicílio / signo próprio",
+  "em queda / em exílio",
+  "retrógrado / retrograde",
 ];
 
 function formatarData(d: Date): string {
@@ -243,7 +249,9 @@ export function construirPromptAdulto(
 És um especialista em análise vocacional. Vais escrever um relatório personalizado para ${intake.nome} com base nos dados técnicos fornecidos abaixo. Segue as regras rigorosamente:
 - Zero jargão astrológico visível. Nunca escrevas nenhum destes termos (nem sinónimos técnicos óbvios) no texto do relatório — traduz sempre para linguagem simples e concreta:
 ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
-- O sujeito de cada frase é a pessoa, nunca o planeta ou a técnica ("Tu tens..." / "A tua carta sustenta...", nunca "Marte na casa X indica...").
+- O sujeito de cada frase é a pessoa, nunca o planeta ou a técnica ("Você tem..." / "A sua carta sustenta...", nunca "Marte na casa X indica...").
+- REGRA CRÍTICA DE TRATAMENTO: Usa SEMPRE "você" — nunca "tu", nunca "teu/tua", nunca "tens". Esta regra não tem excepção. Exemplos correctos: "você tem", "o seu perfil", "a sua carta", "para si". Exemplos proibidos: "tu tens", "o teu perfil", "a tua carta", "para ti".
+- PROIBIDO: primeira pessoa do plural. Nunca escrever "identificámos", "vimos", "calculámos", "sabemos". O relatório fala só da pessoa. Correcto: "a carta mostra", "os dados indicam". Proibido: "identificámos", "analisámos", "concluímos".
 - Zero fatalismo. Nada é inevitável nem escrito em pedra.
 - Nunca escrevas "deves ir para X" ou qualquer veredicto fechado. Apresenta o que a carta sustenta e o que custa — a decisão é sempre da pessoa.
 - Nunca uses o padrão genérico de coaching (identificar 3 exemplos, embrulhar num método, oferecer um serviço) sem ligar explicitamente a uma camada técnica calculada abaixo. Cada frase de conselho tem de ser rastreável a um facto técnico específico desta lista — nunca a generalidades sobre a profissão.
@@ -310,7 +318,7 @@ FORMATO DE SAÍDA (obrigatório): escreve em Markdown. Cada secção começa com
 Se não houver candidata fora da lista (4 camadas não convergiram), inclui o cabeçalho "## ${SECCAO_TITULOS.candidataForaDaLista}" na mesma, seguido só da frase que explica que não há — nunca omitas o cabeçalho.
 
 ## ${SECCAO_TITULOS.abertura}
-Quadro de dados (nome, situação, área actual) e o enquadramento da pergunta que a pessoa trouxe. Nunca abrir sem este quadro.
+Quadro de dados (nome, situação, área actual) e o enquadramento da pergunta que a pessoa trouxe. Nunca abrir sem este quadro. O texto da pergunta do cliente deve ser apresentado tal como foi escrito — não o coloques em maiúsculas nem em destaque tipográfico. Usa-o como contexto, não como título.
 
 ## ${SECCAO_TITULOS.oQueACartaSustenta}
 Traduz o Eixo da Missão e o Modo de Ganho dominante para linguagem humana, sem ainda nomear nenhuma das opções declaradas.
