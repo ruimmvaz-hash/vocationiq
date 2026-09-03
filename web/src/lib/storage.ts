@@ -3,9 +3,24 @@ import { getSupabaseAdmin } from "./supabaseAdmin";
 
 const BUCKET = "viq-relatorios";
 
+// Nomes de ficheiro em português quase sempre têm acentos ("Relatório-
+// João.pdf") — chaves de storage sem isto sanitizado podem falhar o
+// upload. O nome original (com acentos) mantém-se em pdf_filename/no
+// anexo do email; só a CHAVE do storage é sanitizada. O intakeId (UUID,
+// já só ASCII/hífens) fica fora da sanitização para preservar a pasta
+// por pedido.
+function sanitizarKey(nome: string): string {
+  return nome
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[^a-zA-Z0-9.\-_]/g, "-")
+    .replace(/-+/g, "-")
+    .toLowerCase();
+}
+
 export async function guardarRelatorioPdf(params: { intakeId: string; filename: string; bytes: Buffer; contentType: string }): Promise<{ id: string; path: string }> {
   const sb = await getSupabaseAdmin();
-  const path = `${params.intakeId}/${Date.now()}-${params.filename}`;
+  const path = `${params.intakeId}/${sanitizarKey(`${Date.now()}-${params.filename}`)}`;
 
   const { error: uploadError } = await sb.storage.from(BUCKET).upload(path, params.bytes, { contentType: params.contentType, upsert: false });
   if (uploadError) throw new Error(`Falha ao guardar o PDF: ${uploadError.message}`);
