@@ -76,6 +76,7 @@ Variáveis a configurar (Project → Settings → Environment Variables):
 | `VOCATIONIQ_VERCEL_PROJECT_ID` | opcional — Project Settings → General, no Vercel | idem |
 | `VOCATIONIQ_VERCEL_TEAM_ID` | opcional | só se o projecto Vercel pertencer a uma equipa |
 | `CRON_SECRET` | uma string longa e aleatória (ex.: `openssl rand -hex 32`) | protege `/api/cron/revisao-emails` — o Vercel envia-a automaticamente como `Authorization: Bearer` quando o cron corre, sem mais nada a configurar |
+| `PDFSHIFT_API_KEY` | a tua API key do PDFShift | conta grátis em [pdfshift.io](https://pdfshift.io) (plano grátis: 25 conversões/mês) — usada para gerar o PDF do relatório automaticamente em "Aprovar e enviar" ([`htmlToPdf.ts`](web/src/lib/htmlToPdf.ts)); puppeteer-core/@sparticuz/chromium foram removidos definitivamente depois de duas tentativas falhadas em produção na Vercel |
 
 **Nomes renomeados (antes eram `VERCEL_API_TOKEN` / `VERCEL_PROJECT_ID` / `VERCEL_TEAM_ID`)**: se já tinhas estas variáveis configuradas no Vercel com os nomes antigos, **apaga-as e recria com o prefixo `VOCATIONIQ_`** — o Vercel injecta automaticamente um conjunto de variáveis próprias de sistema que começam por `VERCEL_` (`VERCEL_ENV`, `VERCEL_URL`, `VERCEL_REGION`, etc. — [documentação oficial](https://vercel.com/docs/environment-variables/system-environment-variables)), e é isso que mais provavelmente estava a fazer `/admin/trafego` continuar a acusar "não configurado" mesmo com os valores certos preenchidos. O código em `lib/vercelAnalytics.ts` já foi actualizado para ler só os nomes novos.
 
