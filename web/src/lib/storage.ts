@@ -18,12 +18,31 @@ function sanitizarKey(nome: string): string {
     .toLowerCase();
 }
 
+/**
+ * Guarda o PDF entregue. Reaproveita a linha de rascunho já existente
+ * para este intake (pdf_path ainda nulo), quando houver uma, em vez de
+ * criar sempre uma linha nova — duas razões: (1) mantém rascunho_texto
+ * disponível na linha entregue, para "rascunho sempre visível" e "Ver
+ * Word" funcionarem depois da entrega; (2) evita deixar a linha de
+ * rascunho órfã (tradeoff conhecido e documentado numa ronda anterior).
+ * Sem rascunho prévio (ex.: entrega manual nos ramos sem motor de
+ * geração), insere uma linha nova como antes.
+ */
 export async function guardarRelatorioPdf(params: { intakeId: string; filename: string; bytes: Buffer; contentType: string }): Promise<{ id: string; path: string }> {
   const sb = await getSupabaseAdmin();
   const path = `${params.intakeId}/${sanitizarKey(`${Date.now()}-${params.filename}`)}`;
 
   const { error: uploadError } = await sb.storage.from(BUCKET).upload(path, params.bytes, { contentType: params.contentType, upsert: false });
   if (uploadError) throw new Error(`Falha ao guardar o PDF: ${uploadError.message}`);
+
+  const { data: existente, error: buscaError } = await sb.from("viq_relatorios").select("id").eq("intake_id", params.intakeId).is("pdf_path", null).maybeSingle();
+  if (buscaError) throw new Error(`Falha ao procurar rascunho existente: ${buscaError.message}`);
+
+  if (existente) {
+    const { error: updateError } = await sb.from("viq_relatorios").update({ pdf_path: path, pdf_filename: params.filename }).eq("id", existente.id);
+    if (updateError) throw new Error(`Falha ao registar o relatório: ${updateError.message}`);
+    return { id: existente.id as string, path };
+  }
 
   const { data, error: insertError } = await sb
     .from("viq_relatorios")
@@ -33,6 +52,65 @@ export async function guardarRelatorioPdf(params: { intakeId: string; filename: 
   if (insertError) throw new Error(`Falha ao registar o relatório: ${insertError.message}`);
 
   return { id: data.id as string, path };
+}
+
+/** Descarrega os bytes de um PDF já guardado no bucket. */
+export async function baixarRelatorioPdf(path: string): Promise<Buffer> {
+  const sb = await getSupabaseAdmin();
+  const { data, error } = await sb.storage.from(BUCKET).download(path);
+  if (error || !data) throw new Error(`Falha ao descarregar o PDF: ${error?.message ?? "ficheiro não encontrado"}`);
+  return Buffer.from(await data.arrayBuffer());
+}
+
+export interface RelatorioMaisRecente {
+  id: string;
+  pdfPath: string | null;
+  pdfFilename: string | null;
+  rascunhoTexto: string | null;
+  enviadoEm: string | null;
+  criadoEm: string;
+}
+
+/** A linha mais recente de viq_relatorios para este intake, entregue ou não — usada pelos botões "Ver PDF"/"Ver Word"/"Reenviar" depois da entrega. */
+export async function obterRelatorioMaisRecente(intakeId: string): Promise<RelatorioMaisRecente | null> {
+  const sb = await getSupabaseAdmin();
+  const { data, error } = await sb
+    .from("viq_relatorios")
+    .select("id, pdf_path, pdf_filename, rascunho_texto, enviado_em, created_at")
+    .eq("intake_id", intakeId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
+  return {
+    id: data.id as string,
+    pdfPath: data.pdf_path as string | null,
+    pdfFilename: data.pdf_filename as string | null,
+    rascunhoTexto: data.rascunho_texto as string | null,
+    enviadoEm: data.enviado_em as string | null,
+    criadoEm: data.created_at as string,
+  };
+}
+
+export interface EnvioRelatorio {
+  email: string;
+  tipo: "inicial" | "reenvio";
+  enviadoEm: string;
+}
+
+/** Regista um envio (inicial ou reenvio) no histórico — nunca substitui, só acrescenta. */
+export async function registarEnvio(relatorioId: string, email: string, tipo: "inicial" | "reenvio"): Promise<void> {
+  const sb = await getSupabaseAdmin();
+  const { error } = await sb.from("viq_relatorio_envios").insert({ relatorio_id: relatorioId, email, tipo });
+  if (error) throw new Error(`Falha ao registar envio: ${error.message}`);
+}
+
+/** Histórico de envios de um relatório, mais recente primeiro. */
+export async function listarEnvios(relatorioId: string): Promise<EnvioRelatorio[]> {
+  const sb = await getSupabaseAdmin();
+  const { data, error } = await sb.from("viq_relatorio_envios").select("email, tipo, enviado_em").eq("relatorio_id", relatorioId).order("enviado_em", { ascending: false });
+  if (error) throw new Error(`Falha ao listar envios: ${error.message}`);
+  return (data ?? []).map((d) => ({ email: d.email as string, tipo: d.tipo as "inicial" | "reenvio", enviadoEm: d.enviado_em as string }));
 }
 
 export async function marcarRelatorioEnviado(relatorioId: string): Promise<void> {

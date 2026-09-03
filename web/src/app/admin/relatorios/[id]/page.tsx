@@ -2,7 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { obterIntake, type IntakeRow } from "@/lib/store";
-import { obterRascunho } from "@/lib/storage";
+import { obterRascunho, obterRelatorioMaisRecente, listarEnvios } from "@/lib/storage";
 import {
   SITUACOES,
   CLAREZA_IDEIA,
@@ -16,6 +16,7 @@ import {
 import { AdminNav } from "@/components/admin/AdminNav";
 import { MarcarEntregueButton } from "./MarcarEntregueButton";
 import { RascunhoRelatorio } from "./RascunhoRelatorio";
+import { RelatorioEntregue } from "./RelatorioEntregue";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +69,12 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
   // bloco de rascunho.
   const mostrarRascunho = intake.situacao === "trabalho-quero-mudar" && intake.report_status !== "delivered";
   const rascunho = mostrarRascunho ? await obterRascunho(intake.id).catch(() => null) : null;
+
+  // Depois da entrega: painel "sempre visível" (Ver HTML/PDF/Word,
+  // rascunho em modo leitura, reenviar, histórico) em vez do botão só de
+  // estado — ver RelatorioEntregue.tsx.
+  const relatorioEntregue = intake.report_status === "delivered" ? await obterRelatorioMaisRecente(intake.id).catch(() => null) : null;
+  const envios = relatorioEntregue ? await listarEnvios(relatorioEntregue.id).catch(() => []) : [];
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-10">
@@ -127,11 +134,23 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
 
       {mostrarRascunho && <RascunhoRelatorio intakeId={intake.id} rascunhoInicial={rascunho?.texto ?? null} criadoEmInicial={rascunho?.criadoEm ?? null} emailAtual={intake.email} />}
 
-      {/* Quando há bloco de rascunho, "Aprovar e enviar" já vem embutido nele — só um botão de entrega no ecrã. */}
-      {!(mostrarRascunho && rascunho?.texto) && (
-        <div className="mt-6 flex flex-wrap items-start gap-4">
-          <MarcarEntregueButton intakeId={intake.id} jaEntregue={intake.report_status === "delivered"} emailAtual={intake.email} />
-        </div>
+      {intake.report_status === "delivered" ? (
+        <RelatorioEntregue
+          intakeId={intake.id}
+          emailAtual={intake.email}
+          temHtml={intake.situacao === "trabalho-quero-mudar" && Boolean(relatorioEntregue?.rascunhoTexto)}
+          rascunhoTexto={relatorioEntregue?.rascunhoTexto ?? null}
+          criadoEm={relatorioEntregue?.criadoEm ?? null}
+          enviadoEm={relatorioEntregue?.enviadoEm ?? null}
+          envios={envios}
+        />
+      ) : (
+        // Quando há bloco de rascunho, "Aprovar e enviar" já vem embutido nele — só um botão de entrega no ecrã.
+        !(mostrarRascunho && rascunho?.texto) && (
+          <div className="mt-6 flex flex-wrap items-start gap-4">
+            <MarcarEntregueButton intakeId={intake.id} jaEntregue={false} emailAtual={intake.email} />
+          </div>
+        )
       )}
     </main>
   );

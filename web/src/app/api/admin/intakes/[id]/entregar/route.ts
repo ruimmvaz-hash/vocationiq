@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { hasSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { obterIntake, marcarIntakeEntregue, atualizarEmailIntake } from "@/lib/store";
-import { guardarRelatorioPdf, marcarRelatorioEnviado } from "@/lib/storage";
+import { guardarRelatorioPdf, marcarRelatorioEnviado, registarEnvio } from "@/lib/storage";
 import { sendReportEmail } from "@/lib/email";
 import { registarEventoServidor } from "@/lib/eventLogServer";
 
@@ -49,6 +49,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     const relatorio = await guardarRelatorioPdf({ intakeId: id, filename: file.name, bytes, contentType: file.type });
     await marcarRelatorioEnviado(relatorio.id);
+    await registarEnvio(relatorio.id, email, "inicial");
     await marcarIntakeEntregue(id);
     await registarEventoServidor("report_delivered", { intakeId: id, viaEmail: true });
 

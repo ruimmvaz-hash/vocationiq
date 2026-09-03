@@ -60,13 +60,13 @@ const PLANETA_PT: Record<string, string> = {
 
 /** Bloco "O peso de cada característica" — o rótulo humano pedido, não o nome técnico do planeta. */
 const CARACTERISTICA_PT: Record<string, string> = {
-  Sun: "A tua missão de fundo",
-  Moon: "O que sentes antes de pensar",
-  Mars: "A tua capacidade de agir",
-  Mercury: "Como comunicas e decides",
-  Jupiter: "Para onde queres crescer",
-  Venus: "O que valorizas",
-  Saturn: "O que te exige mais",
+  Sun: "A sua missão de fundo",
+  Moon: "O que sente antes de pensar",
+  Mars: "A sua capacidade de agir",
+  Mercury: "Como comunica e decide",
+  Jupiter: "Para onde quer crescer",
+  Venus: "O que valoriza",
+  Saturn: "O que mais lhe exige",
 };
 
 const CASA_LABEL_LINHAS: Record<number, [string, string]> = {
@@ -77,18 +77,18 @@ const CASA_LABEL_LINHAS: Record<number, [string, string]> = {
 
 /** Anexo — "Apoio por área de vida". Traduções em linguagem simples das 12 áreas de vida clássicas (bhavas), sem jargão. */
 const AREA_VIDA_PT: Record<number, string> = {
-  1: "Como te apresentas ao mundo, a tua energia",
-  2: "O que ganhas e como lidas com dinheiro",
-  3: "A tua iniciativa e comunicação do dia a dia",
-  4: "As tuas raízes, casa e estabilidade emocional",
-  5: "A tua criatividade e aquilo que constróis",
-  6: "Como lidas com obstáculos e o trabalho do dia a dia",
-  7: "As tuas parcerias e relações directas",
+  1: "Como se apresenta ao mundo, a sua energia",
+  2: "O que ganha e como lida com dinheiro",
+  3: "A sua iniciativa e comunicação do dia a dia",
+  4: "As suas raízes, casa e estabilidade emocional",
+  5: "A sua criatividade e aquilo que constrói",
+  6: "Como lida com obstáculos e o trabalho do dia a dia",
+  7: "As suas parcerias e relações directas",
   8: "As transformações profundas, o que fica escondido",
-  9: "As tuas crenças e para onde queres expandir",
-  10: "A tua carreira e a cara que mostras publicamente",
-  11: "Os teus ganhos, redes e comunidade",
-  12: "O que soltas e o que fica só para ti",
+  9: "As suas crenças e para onde quer expandir",
+  10: "A sua carreira e a cara que mostra publicamente",
+  11: "Os seus ganhos, redes e comunidade",
+  12: "O que solta e o que fica só para si",
 };
 
 const CLASSIFICACAO_LABEL: Record<ClassificacaoApoio, string> = { forte: "Forte", medio: "Médio", fraco: "Fraco" };
@@ -100,15 +100,15 @@ function corClassificacao(c: ClassificacaoApoio): string {
 
 /** Anexo — "Os teus períodos". Descrição genérica (não pessoal) do que cada regente de período clássicamente pede — mesma convenção usada em todo o relatório: dados fixos, nunca inventados pelo LLM. */
 const DASHA_O_QUE_PEDE: Record<string, string> = {
-  Sun: "Pede-te para assumires responsabilidade e liderança visível.",
-  Moon: "Pede-te para cuidares da tua estabilidade emocional e da tua casa.",
-  Mars: "Pede-te acção directa e coragem para resolver o que está parado.",
-  Mercury: "Pede-te clareza de comunicação e atenção aos detalhes práticos.",
-  Jupiter: "Pede-te para investires em crescimento, aprendizagem e visão de longo prazo.",
-  Venus: "Pede-te para cuidares das tuas relações e do que valorizas.",
-  Saturn: "Pede-te disciplina, paciência, e trabalho de fundo sem resultados imediatos.",
-  Rahu: "Pede-te para saíres da tua zona confortável e arriscares algo novo.",
-  Ketu: "Pede-te para soltares o que já não serve e olhares para dentro.",
+  Sun: "Pede-lhe que assuma responsabilidade e liderança visível.",
+  Moon: "Pede-lhe que cuide da sua estabilidade emocional e da sua casa.",
+  Mars: "Pede-lhe acção directa e coragem para resolver o que está parado.",
+  Mercury: "Pede-lhe clareza de comunicação e atenção aos detalhes práticos.",
+  Jupiter: "Pede-lhe que invista em crescimento, aprendizagem e visão de longo prazo.",
+  Venus: "Pede-lhe que cuide das suas relações e do que valoriza.",
+  Saturn: "Pede-lhe disciplina, paciência, e trabalho de fundo sem resultados imediatos.",
+  Rahu: "Pede-lhe que saia da sua zona confortável e arrisque algo novo.",
+  Ketu: "Pede-lhe que solte o que já não serve e olhe para dentro.",
 };
 
 function escapeHtml(s: string): string {
@@ -574,11 +574,11 @@ function blocoOQueTrouxe(d: DadosParaTemplate): string {
 
 function blocoOQueEsteRelatorioResponde(): string {
   const itens = [
-    "A tua missão de fundo, e onde ela já aparece na tua vida profissional.",
-    "Como e onde ganhas melhor.",
-    "Uma leitura honesta de cada opção que estás a considerar: o que a sustenta, o que custa, o que falta.",
-    "Se há alguma opção fora da tua lista que a tua carta sustenta com força.",
-    "Um primeiro passo concreto para esta semana, ligado às tuas datas reais.",
+    "A sua missão de fundo, e onde ela já aparece na sua vida profissional.",
+    "Como e onde ganha melhor.",
+    "Uma leitura honesta de cada opção que está a considerar: o que a sustenta, o que custa, o que falta.",
+    "Se há alguma opção fora da sua lista que a sua carta sustenta com força.",
+    "Um primeiro passo concreto para esta semana, ligado às suas datas reais.",
   ];
   return `
     <div class="bloco-dados">
@@ -592,7 +592,7 @@ function cardOpcao(op: LeituraOpcao): string {
     { icone: "&#10003;", titulo: "O que a carta sustenta" },
     { icone: "&#9888;", titulo: "O que vai custar" },
     { icone: "?", titulo: "O que pede que falta" },
-    { icone: "&#8594;", titulo: "Onde entra a tua matéria" },
+    { icone: "&#8594;", titulo: "Onde entra a sua matéria" },
   ];
   const partes = op.partes
     .map((texto, i) => {
@@ -621,7 +621,7 @@ function blocoCandidataForaDaLista(corpo: string): string {
   if (nome) {
     return `
       <div class="card-candidata">
-        <p class="card-candidata-header">Uma opção que não consideraste ainda</p>
+        <p class="card-candidata-header">Uma opção que ainda não considerou</p>
         <p class="card-candidata-nome">${escapeHtml(nome)}</p>
         ${markdownParaHtml(texto)}
       </div>`;
@@ -634,7 +634,7 @@ function blocoOPlano(corpo: string, datas: DadosDatas): string {
   return `
     <div class="timeline-wrap">${svgTimeline(datas)}</div>
     ${resto ? markdownParaHtml(resto) : ""}
-    ${primeiroPasso ? `<div class="destaque-ambar destaque-passo"><p class="rotulo-pequeno">O teu primeiro passo esta semana</p><p>${escapeHtml(primeiroPasso)}</p></div>` : ""}`;
+    ${primeiroPasso ? `<div class="destaque-ambar destaque-passo"><p class="rotulo-pequeno">O seu primeiro passo esta semana</p><p>${escapeHtml(primeiroPasso)}</p></div>` : ""}`;
 }
 
 function tabelaApoioPorAreaDeVida(savPorCasa: SavPorCasa[]): string {
@@ -682,10 +682,10 @@ function tabelaOsTeusPeriodos(datas: DadosDatas): string {
 
 function seccaoComoLer(): string {
   const paragrafos = [
-    "Este relatório cruza várias camadas do teu mapa de nascimento — a tua energia de fundo, a forma como ganhas melhor, o que o mercado já reconhece em ti, e o momento em que estás agora — para chegar a uma leitura sobre cada opção que trouxeste.",
+    "Este relatório cruza várias camadas do seu mapa de nascimento — a sua energia de fundo, a forma como ganha melhor, o que o mercado já reconhece em si, e o momento em que está agora — para chegar a uma leitura sobre cada opção que trouxe.",
     "Cada opção só é apresentada como \"sustentada com força\" quando pelo menos duas fontes independentes convergem — nunca por um único sinal isolado.",
-    "As datas que vês na tabela de períodos são reais, calculadas a partir da tua hora de nascimento (ou de uma estimativa, quando não a soubemos) — não são genéricas nem iguais para todos.",
-    "Nada aqui é uma sentença. É um mapa do que a tua carta sustenta e do que custa — a decisão final é sempre tua.",
+    "As datas que vê na tabela de períodos são reais, calculadas a partir da sua hora de nascimento (ou de uma estimativa, quando não a soubemos) — não são genéricas nem iguais para todos.",
+    "Nada aqui é uma sentença. É um mapa do que a sua carta sustenta e do que custa — a decisão final é sempre sua.",
   ];
   return `<div class="caixa-neutra">${paragrafos.map((p) => `<p>${p}</p>`).join("")}</div>`;
 }
@@ -723,7 +723,7 @@ export function gerarHTMLRelatorio(
   :root { --azul: ${AZUL}; --ambar: ${AMBAR}; --cinza-claro: ${CINZA_CLARO}; }
   * { box-sizing: border-box; }
   body { font-family: "Inter", Arial, Helvetica, sans-serif; color: #1A1A1A; background: #FFFFFF; margin: 0; padding: 0; }
-  .capa { background: var(--azul); padding: 90px 60px; text-align: center; page-break-after: always; }
+  .capa { min-height: 297mm; background: var(--azul); padding: 40mm 20mm; text-align: center; page-break-after: always; display: flex; flex-direction: column; justify-content: center; align-items: center; }
   .capa-logo { font-size: 36px; font-weight: 800; letter-spacing: 0.5px; color: #FFFFFF; }
   .capa-logo .iq { color: var(--ambar); }
   .capa-tagline { color: var(--ambar); font-size: 15px; margin-top: 10px; font-weight: 500; }
@@ -801,7 +801,7 @@ export function gerarHTMLRelatorio(
   footer.rodape p { font-size: 12px; margin: 2px 0; line-height: 1.5; }
 
   @media print {
-    .capa { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .capa { height: 297mm; min-height: 297mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .chip, .badge-forca, .parte-icone, .badge-classificacao { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
 </style>
@@ -810,7 +810,7 @@ export function gerarHTMLRelatorio(
 
   <div class="capa">
     <div class="capa-logo">Vocation<span class="iq">IQ</span></div>
-    <div class="capa-tagline">Descobre a tua área. Antes de escolheres.</div>
+    <div class="capa-tagline">Descubra a sua área. Antes de escolher.</div>
     <hr class="capa-divisor" />
     <p class="capa-nome">${escapeHtml(dados.nome)}</p>
     <p class="capa-data">${dataGeracao}</p>
@@ -821,7 +821,7 @@ export function gerarHTMLRelatorio(
     ${blocoDiagramaIdentidade(pesos, identidade)}
 
     <section class="seccao">
-      <h2 class="titulo-seccao">Quem és, e o que trouxeste</h2>
+      <h2 class="titulo-seccao">Quem é, e o que trouxe</h2>
       <div class="quadro-dados">
         ${blocoQuemE(dados)}
         ${blocoOQueTrouxe(dados)}
@@ -863,12 +863,12 @@ export function gerarHTMLRelatorio(
     </section>
 
     <section class="seccao">
-      <h2 class="titulo-seccao">O teu calendário</h2>
+      <h2 class="titulo-seccao">O seu calendário</h2>
       ${blocoOPlano(seccoes[SECCAO_TITULOS.oPlano] ?? "", datas)}
     </section>
 
     <section class="seccao anexo">
-      <h2 class="titulo-seccao">Anexo — dados da tua análise</h2>
+      <h2 class="titulo-seccao">Anexo — dados da sua análise</h2>
 
       <p class="rotulo-pequeno">Como ler este relatório</p>
       ${seccaoComoLer()}
@@ -876,7 +876,7 @@ export function gerarHTMLRelatorio(
       <p class="rotulo-pequeno anexo-espaco">Apoio por área de vida</p>
       ${tabelaApoioPorAreaDeVida(savPorCasa)}
 
-      <p class="rotulo-pequeno anexo-espaco">Os teus períodos</p>
+      <p class="rotulo-pequeno anexo-espaco">Os seus períodos</p>
       ${tabelaOsTeusPeriodos(datas)}
     </section>
 
