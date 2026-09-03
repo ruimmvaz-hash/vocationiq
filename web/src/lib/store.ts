@@ -76,6 +76,7 @@ export interface IntakeRow {
   delivered_at: string | null;
   revisao_email_enviado: boolean;
   revisao_email_180_enviado: boolean;
+  alerta_36h_enviado: boolean;
 
   clareza_ideia: string | null;
   areas_consideradas: string[] | null;
@@ -238,4 +239,25 @@ export async function marcarRevisaoEmailEnviado(intakeId: string, marco: "90" | 
     .update({ [coluna]: true })
     .eq("id", intakeId);
   if (error) throw new Error(`Falha ao marcar email de revisão (${marco}d) como enviado: ${error.message}`);
+}
+
+/** Pedidos pagos há mais de 36h sem relatório entregue, ainda sem alerta enviado ao admin. */
+export async function listarPendentesAlerta36h(): Promise<IntakeRow[]> {
+  const supabase = await getSupabaseAdmin();
+  const cutoff = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from("vocationiq_intakes")
+    .select("*")
+    .eq("payment_status", "paid")
+    .neq("report_status", "delivered")
+    .eq("alerta_36h_enviado", false)
+    .lt("paid_at", cutoff);
+  if (error) throw new Error(`Falha ao listar pendentes para alerta de 36h: ${error.message}`);
+  return (data ?? []) as IntakeRow[];
+}
+
+export async function marcarAlerta36hEnviado(intakeId: string): Promise<void> {
+  const supabase = await getSupabaseAdmin();
+  const { error } = await supabase.from("vocationiq_intakes").update({ alerta_36h_enviado: true }).eq("id", intakeId);
+  if (error) throw new Error(`Falha ao marcar alerta de 36h como enviado: ${error.message}`);
 }

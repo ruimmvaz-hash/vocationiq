@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { marcarIntakePago, obterIntake } from "@/lib/store";
 import { marcarRevisaoPaga } from "@/lib/revisaoStore";
-import { sendConfirmationEmail } from "@/lib/email";
+import { sendConfirmationEmail, sendNewOrderAdminEmail } from "@/lib/email";
 import { validarCodigoComercial, registarComissao } from "@/lib/comercialStore";
 import { registarEventoServidor } from "@/lib/eventLogServer";
 import type Stripe from "stripe";
@@ -52,6 +52,20 @@ export async function POST(request: Request) {
         const nome = session.customer_details?.name || "";
         await sendConfirmationEmail({ to: email, nome: nome.split(" ")[0] || nome || "" });
         await registarEventoServidor("payment_completed", { intakeId, amountCents });
+
+        // Notificação interna para o fundador — melhor esforço, nunca deve
+        // bloquear/repetir um pagamento já processado com sucesso.
+        try {
+          await sendNewOrderAdminEmail({
+            nome: intakeAntesDoPagamento?.nome || nome || "",
+            situacao: intakeAntesDoPagamento?.situacao ?? "",
+            email,
+            amountCents,
+            intakeId,
+          });
+        } catch (err) {
+          console.error("[webhook] falha ao enviar notificação de novo pedido ao admin:", err);
+        }
 
         // Comissão de comercial, se o pedido tiver sido feito através do link dele.
         const referralCode = intakeAntesDoPagamento?.referral_code;
