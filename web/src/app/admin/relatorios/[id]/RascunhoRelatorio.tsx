@@ -8,8 +8,8 @@ function formatarDataHora(iso: string): string {
   return new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
 }
 
-/** Passo 3 (VOCATIONIQ-ADULTO-metodologia.md) — gera/edita/guarda o rascunho antes de "Aprovar e enviar" (MarcarEntregueButton com autoGerarPdf: gera e envia o PDF automaticamente a partir do rascunho aprovado, caindo para o upload manual se falhar). */
-export function RascunhoRelatorio({ intakeId, rascunhoInicial, criadoEmInicial }: { intakeId: string; rascunhoInicial: string | null; criadoEmInicial: string | null }) {
+/** Passo 3 (VOCATIONIQ-ADULTO-metodologia.md) — gera/edita/guarda o rascunho antes de "Aprovar e enviar" (upload manual do PDF — ver /preview para gerar o PDF a partir do HTML, Ctrl+P). */
+export function RascunhoRelatorio({ intakeId, rascunhoInicial, criadoEmInicial, emailAtual }: { intakeId: string; rascunhoInicial: string | null; criadoEmInicial: string | null; emailAtual: string | null }) {
   const [texto, setTexto] = useState(rascunhoInicial);
   const [textoEditado, setTextoEditado] = useState(rascunhoInicial ?? "");
   const [criadoEm, setCriadoEm] = useState(criadoEmInicial);
@@ -127,7 +127,15 @@ export function RascunhoRelatorio({ intakeId, rascunhoInicial, criadoEmInicial }
             >
               {loading === "guardar" ? "A guardar…" : "Guardar rascunho"}
             </button>
-            <MarcarEntregueButton intakeId={intakeId} jaEntregue={false} label="Aprovar e enviar" autoGerarPdf />
+            <a
+              href={`/admin/relatorios/${intakeId}/preview`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-md border border-navy px-4 py-2 text-sm font-bold text-navy transition hover:bg-navy hover:text-white"
+            >
+              Ver relatório em HTML
+            </a>
+            <MarcarEntregueButton intakeId={intakeId} jaEntregue={false} label="Aprovar e enviar" emailAtual={emailAtual} />
             <button
               type="button"
               onClick={descartar}

@@ -57,6 +57,13 @@ export async function marcarIntakePago(intakeId: string, params: { email: string
   if (error) throw new Error(`Falha ao marcar pedido como pago: ${error.message}`);
 }
 
+/** Corrige/preenche o email quando o admin o introduz manualmente na entrega (ex.: pedidos sem webhook processado). */
+export async function atualizarEmailIntake(intakeId: string, email: string): Promise<void> {
+  const supabase = await getSupabaseAdmin();
+  const { error } = await supabase.from("vocationiq_intakes").update({ email }).eq("id", intakeId);
+  if (error) throw new Error(`Falha ao actualizar o email do pedido: ${error.message}`);
+}
+
 export interface IntakeRow {
   id: string;
   created_at: string;

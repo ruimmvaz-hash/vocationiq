@@ -3,64 +3,27 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function MarcarEntregueButton({
-  intakeId,
-  jaEntregue,
-  label,
-  autoGerarPdf,
-}: {
-  intakeId: string;
-  jaEntregue: boolean;
-  label?: string;
-  /** Quando true, tenta gerar e enviar o PDF automaticamente a partir do rascunho antes de pedir upload manual — só faz sentido quando se sabe que há um rascunho gerado (ver RascunhoRelatorio.tsx). */
-  autoGerarPdf?: boolean;
-}) {
+export function MarcarEntregueButton({ intakeId, jaEntregue, label, emailAtual }: { intakeId: string; jaEntregue: boolean; label?: string; emailAtual?: string | null }) {
   const [aberto, setAberto] = useState(false);
-  const [aGerarAuto, setAGerarAuto] = useState(false);
-  const [avisoFallback, setAvisoFallback] = useState<string | null>(null);
   const router = useRouter();
 
   if (jaEntregue) {
     return <span className="rounded-full bg-emerald-100 px-3 py-1.5 text-sm font-semibold text-emerald-800">Entregue</span>;
   }
 
-  async function clicar() {
-    if (!autoGerarPdf) {
-      setAberto(true);
-      return;
-    }
-    setAGerarAuto(true);
-    setAvisoFallback(null);
-    const res = await fetch(`/api/admin/intakes/${intakeId}/entregar-automatico`, { method: "POST" });
-    setAGerarAuto(false);
-    if (res.ok) {
-      router.refresh();
-      return;
-    }
-    // Geração automática falhou (ex.: Chromium indisponível neste
-    // deploy) — cai sempre para o upload manual, nunca fica bloqueado.
-    const data = await res.json().catch(() => ({}));
-    setAvisoFallback(data.error ?? "Não foi possível gerar o PDF automaticamente.");
-    setAberto(true);
-  }
-
   return (
     <>
       <button
-        onClick={clicar}
-        disabled={aGerarAuto}
-        className="rounded-md bg-navy px-4 py-2 text-sm font-bold text-white transition hover:bg-navy-dark disabled:cursor-not-allowed disabled:opacity-60"
+        onClick={() => setAberto(true)}
+        className="rounded-md bg-navy px-4 py-2 text-sm font-bold text-white transition hover:bg-navy-dark"
       >
-        {aGerarAuto ? "A gerar e enviar…" : (label ?? "Marcar como entregue")}
+        {label ?? "Marcar como entregue"}
       </button>
       {aberto && (
         <EntregarModal
           intakeId={intakeId}
-          avisoInicial={avisoFallback}
-          onClose={() => {
-            setAberto(false);
-            setAvisoFallback(null);
-          }}
+          emailInicial={emailAtual ?? null}
+          onClose={() => setAberto(false)}
           onDelivered={() => router.refresh()}
         />
       )}
@@ -68,13 +31,19 @@ export function MarcarEntregueButton({
   );
 }
 
-function EntregarModal({ intakeId, avisoInicial, onClose, onDelivered }: { intakeId: string; avisoInicial: string | null; onClose: () => void; onDelivered: () => void }) {
+function EntregarModal({ intakeId, emailInicial, onClose, onDelivered }: { intakeId: string; emailInicial: string | null; onClose: () => void; onDelivered: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [nomeFicheiro, setNomeFicheiro] = useState<string | null>(null);
+  const [email, setEmail] = useState(emailInicial ?? "");
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   async function enviar() {
+    const emailFinal = email.trim();
+    if (!emailFinal || !emailFinal.includes("@")) {
+      setErro("Introduz um email válido.");
+      return;
+    }
     const file = fileRef.current?.files?.[0];
     if (!file) {
       setErro("Anexa o PDF do relatório.");
@@ -85,6 +54,7 @@ function EntregarModal({ intakeId, avisoInicial, onClose, onDelivered }: { intak
 
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("email", emailFinal);
     const res = await fetch(`/api/admin/intakes/${intakeId}/entregar`, { method: "POST", body: formData });
     setLoading(false);
     if (!res.ok) {
@@ -102,11 +72,21 @@ function EntregarModal({ intakeId, avisoInicial, onClose, onDelivered }: { intak
         <h2 className="text-lg font-extrabold text-navy">Marcar como entregue</h2>
         <p className="mt-1 text-sm text-ink/60">Anexa o PDF do relatório — enviamos o email de entrega ao cliente e marcamos o pedido como entregue.</p>
 
-        {avisoInicial && (
-          <p className="mt-3 rounded-md bg-amber/15 px-3 py-2 text-xs text-amber-dark">A geração automática falhou: {avisoInicial}. Anexa o PDF manualmente.</p>
-        )}
-
         <label className="mt-5 block">
+          <span className="mb-1.5 block text-sm font-semibold text-navy">
+            Email de envio <span className="text-red-600">*</span>
+          </span>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="cliente@exemplo.com"
+            className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-ink focus:border-navy focus:outline-none focus:ring-1 focus:ring-navy"
+          />
+          {!emailInicial && <span className="mt-1 block text-xs text-amber-dark">Este pedido não tem email associado — introduz o email a que enviar.</span>}
+        </label>
+
+        <label className="mt-4 block">
           <span className="mb-1.5 block text-sm font-semibold text-navy">
             PDF do relatório <span className="text-red-600">*</span>
           </span>
