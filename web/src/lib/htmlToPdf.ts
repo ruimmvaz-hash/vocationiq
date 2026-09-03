@@ -1,36 +1,47 @@
 import "server-only";
 
-// DESVIO final: puppeteer-core + @sparticuz/chromium (duas tentativas,
-// incluindo a correcção de output file tracing que a Naveya usa) continuou
-// a falhar em produção na Vercel com "The input directory does not
-// exist" — sem confirmação de que essa combinação alguma vez funcionou lá
-// (ver a auditoria anterior: a entrada de tracing do chromium na Naveya
-// nunca teve um commit de "corrigido em produção" dedicado, ao contrário
-// da entrada do ephe/). Substituído pela API do PDFShift — um serviço
-// externo dedicado a HTML->PDF, sem binário nenhum para empacotar/traçar.
+// Réplica exacta de naveya/web/src/lib/report/pdf.ts — é o código que gera
+// TODOS os Life Reports individuais da Naveya em produção (runGeneration
+// -> buildAndUploadDeliverables -> generateReportPdf), o produto principal
+// e mais antigo do fundador, a correr há muito mais tempo que o
+// VocationIQ. Se isto estivesse partido lá, nenhum cliente da Naveya
+// alguma vez teria recebido um relatório — é essa a evidência de que a
+// combinação puppeteer-core + @sparticuz/chromium funciona mesmo na
+// Vercel, com a configuração certa em next.config.mjs (ver lá).
+
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_VERSION);
 
 export async function htmlParaPdf(html: string): Promise<Buffer> {
-  const apiKey = process.env.PDFSHIFT_API_KEY;
-  if (!apiKey) throw new Error("PDFSHIFT_API_KEY não configurada");
+  const puppeteer = await import("puppeteer-core");
 
-  const response = await fetch("https://api.pdfshift.io/v3/convert/pdf", {
-    method: "POST",
-    headers: {
-      Authorization: "Basic " + Buffer.from(`api:${apiKey}`).toString("base64"),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      source: html,
-      format: "A4",
-      margin: "0",
-      print_background: true,
-    }),
-  });
-
-  if (!response.ok) {
-    const erro = await response.text();
-    throw new Error(`PDFShift erro: ${response.status} ${erro}`);
+  let executablePath: string;
+  let args: string[];
+  if (isServerless) {
+    const chromium = (await import("@sparticuz/chromium")).default;
+    executablePath = await chromium.executablePath();
+    args = chromium.args;
+  } else {
+    // Desenvolvimento local (fora da Vercel): @sparticuz/chromium é um
+    // binário Linux, não corre aqui. Aponta CHROME_EXECUTABLE_PATH para um
+    // Chrome/Edge instalado localmente para testar isto fora da Vercel.
+    executablePath = process.env.CHROME_EXECUTABLE_PATH ?? "";
+    if (!executablePath) {
+      throw new Error("CHROME_EXECUTABLE_PATH não definida — necessária para gerar PDF fora da Vercel (em produção usa @sparticuz/chromium automaticamente).");
+    }
+    args = [];
   }
 
-  return Buffer.from(await response.arrayBuffer());
+  const browser = await puppeteer.launch({ executablePath, args, headless: true });
+  try {
+    const page = await browser.newPage();
+    // "load" espera que o <link> das Google Fonts termine de carregar
+    // antes do snapshot — "domcontentloaded" disparava antes da fonte
+    // chegar e o PDF saía com a fonte de sistema por engano.
+    await page.setContent(html, { waitUntil: "load" });
+    await page.evaluateHandle("document.fonts.ready");
+    const pdf = await page.pdf({ printBackground: true, preferCSSPageSize: true });
+    return Buffer.from(pdf);
+  } finally {
+    await browser.close();
+  }
 }

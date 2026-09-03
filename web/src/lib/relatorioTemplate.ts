@@ -537,6 +537,11 @@ export function gerarHTMLRelatorio(
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+  /* htmlToPdf.ts usa preferCSSPageSize (réplica exacta da Naveya) — sem
+     esta regra, o PDF sairia em Letter (tamanho por omissão do Puppeteer)
+     em vez de A4. Margem 0: o espaçamento já vem do padding interno de
+     .capa/.container, tal como antes. */
+  @page { size: A4; margin: 0; }
   :root { --azul: ${AZUL}; --ambar: ${AMBAR}; --cinza-claro: ${CINZA_CLARO}; }
   * { box-sizing: border-box; }
   body { font-family: "Inter", Arial, Helvetica, sans-serif; color: #1A1A1A; background: #FFFFFF; margin: 0; padding: 0; }
