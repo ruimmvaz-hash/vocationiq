@@ -10,8 +10,17 @@ const nextConfig = {
   // output file tracing da Vercel não os detecta sozinho e não os inclui
   // na função serverless sem isto. Réplica exacta de next.config.ts da
   // Naveya (mesma correcção, já validada lá em produção — ver DEPLOY.md).
+  // Os dois caminhos para o binário do chromium (com e sem "../") cobrem
+  // as duas hipóteses de onde a Vercel pode instalar o pacote no build
+  // (raiz do monorepo com hoist vs. dentro de web/, com Root
+  // Directory=web) — incluir um padrão que não existe não tem custo,
+  // o Next.js só inclui o que encontrar.
   outputFileTracingIncludes: {
-    "/**": ["../method-engine/ephe/**", "../node_modules/@sparticuz/chromium/bin/**"],
+    "/**": [
+      "../method-engine/ephe/**",
+      "../node_modules/@sparticuz/chromium/bin/**",
+      "./node_modules/@sparticuz/chromium/bin/**",
+    ],
   },
   images: {
     remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com" }],
