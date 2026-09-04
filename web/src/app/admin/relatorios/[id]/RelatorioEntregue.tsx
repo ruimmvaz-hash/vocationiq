@@ -9,31 +9,64 @@ interface Envio {
   enviadoEm: string;
 }
 
+interface RascunhoNovo {
+  texto: string;
+  criadoEm: string;
+}
+
 function formatarDataHora(iso: string): string {
   return new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
 }
 
-/** Painel "sempre visível" depois da entrega — Ver HTML/PDF/Word, rascunho em modo leitura, reenviar, histórico de envios. */
+const CONFIRMACAO_REGENERAR = "Isto vai substituir o rascunho actual. O relatório já entregue ao cliente não é alterado. Continuar?";
+
+/** Painel "sempre visível" depois da entrega — Ver HTML/PDF/Word, rascunho em modo leitura, regenerar, reenviar, histórico de envios. */
 export function RelatorioEntregue({
   intakeId,
   emailAtual,
   temHtml,
+  podeRegenerar,
   rascunhoTexto,
   criadoEm,
   enviadoEm,
   envios,
+  rascunhoNovo,
 }: {
   intakeId: string;
   emailAtual: string | null;
   /** "Ver relatório em HTML" e "Ver Word" só fazem sentido nos pedidos com motor de geração (rascunho de texto disponível). */
   temHtml: boolean;
+  /** "Regenerar rascunho" só existe nos pedidos com motor de geração (ramo trabalho-quero-mudar) — independente de já haver texto guardado. */
+  podeRegenerar: boolean;
   rascunhoTexto: string | null;
   criadoEm: string | null;
   enviadoEm: string | null;
   envios: Envio[];
+  /** Rascunho gerado depois da entrega (linha à parte, pdf_path ainda nulo) — ainda não enviado, para o admin rever. */
+  rascunhoNovo: RascunhoNovo | null;
 }) {
   const [reenviarAberto, setReenviarAberto] = useState(false);
+  const [regenerando, setRegenerando] = useState(false);
+  const [erroRegenerar, setErroRegenerar] = useState<string | null>(null);
   const router = useRouter();
+
+  async function regenerar() {
+    if (!confirm(CONFIRMACAO_REGENERAR)) return;
+    setRegenerando(true);
+    setErroRegenerar(null);
+    const res = await fetch("/api/relatorio", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ intakeId }),
+    });
+    setRegenerando(false);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setErroRegenerar(body.error ?? "Não foi possível regenerar o rascunho.");
+      return;
+    }
+    router.refresh();
+  }
 
   return (
     <section className="mt-6 rounded-lg border border-border p-5">
@@ -70,6 +103,16 @@ export function RelatorioEntregue({
             Ver Word
           </a>
         )}
+        {podeRegenerar && (
+          <button
+            type="button"
+            onClick={regenerar}
+            disabled={regenerando}
+            className="rounded-md border border-navy px-4 py-2 text-sm font-bold text-navy transition hover:bg-navy hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {regenerando ? "A regenerar…" : "Regenerar rascunho"}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setReenviarAberto(true)}
@@ -79,9 +122,19 @@ export function RelatorioEntregue({
         </button>
       </div>
 
+      {erroRegenerar && <p className="mt-3 text-sm text-red-700">{erroRegenerar}</p>}
+
+      {rascunhoNovo && (
+        <div className="mt-4 rounded-md border-2 border-amber/50 bg-amber/10 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-amber-dark">Novo rascunho — ainda não enviado, gerado em {formatarDataHora(rascunhoNovo.criadoEm)}</p>
+          <p className="mt-1 text-xs text-ink/60">O relatório já entregue (abaixo) continua inalterado. Para enviar esta versão ao cliente, é preciso reenviar manualmente.</p>
+          <pre className="mt-3 max-h-96 overflow-y-auto whitespace-pre-wrap rounded-md border border-border bg-white p-4 font-mono text-sm leading-relaxed text-ink">{rascunhoNovo.texto}</pre>
+        </div>
+      )}
+
       {rascunhoTexto && (
         <div className="mt-4">
-          <p className="rotulo-pequeno mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink/50">Rascunho (modo leitura)</p>
+          <p className="rotulo-pequeno mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink/50">Rascunho entregue (modo leitura)</p>
           <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded-md border border-border bg-paper p-4 font-mono text-sm leading-relaxed text-ink">{rascunhoTexto}</pre>
         </div>
       )}

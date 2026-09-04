@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { hasSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { obterIntake, atualizarEmailIntake } from "@/lib/store";
-import { obterRelatorioMaisRecente, baixarRelatorioPdf, registarEnvio } from "@/lib/storage";
+import { obterRelatorioEntregue, baixarRelatorioPdf, registarEnvio } from "@/lib/storage";
 import { sendReportEmail } from "@/lib/email";
 
 /** "Reenviar relatório" — reenvia o PDF já guardado para um email (por omissão, o do pedido), sem alterar report_status/delivered_at. Regista o reenvio no histórico. */
@@ -14,7 +14,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const intake = await obterIntake(id);
   if (!intake) return NextResponse.json({ error: "pedido não encontrado" }, { status: 404 });
 
-  const relatorio = await obterRelatorioMaisRecente(id);
+  const relatorio = await obterRelatorioEntregue(id);
   if (!relatorio?.pdfPath || !relatorio.pdfFilename) return NextResponse.json({ error: "Sem PDF guardado para reenviar — usa \"Ver PDF\" primeiro para gerar um." }, { status: 400 });
 
   let body: unknown;

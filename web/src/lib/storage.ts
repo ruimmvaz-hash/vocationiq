@@ -62,30 +62,39 @@ export async function baixarRelatorioPdf(path: string): Promise<Buffer> {
   return Buffer.from(await data.arrayBuffer());
 }
 
-export interface RelatorioMaisRecente {
+export interface RelatorioEntregue {
   id: string;
-  pdfPath: string | null;
-  pdfFilename: string | null;
+  pdfPath: string;
+  pdfFilename: string;
   rascunhoTexto: string | null;
   enviadoEm: string | null;
   criadoEm: string;
 }
 
-/** A linha mais recente de viq_relatorios para este intake, entregue ou não — usada pelos botões "Ver PDF"/"Ver Word"/"Reenviar" depois da entrega. */
-export async function obterRelatorioMaisRecente(intakeId: string): Promise<RelatorioMaisRecente | null> {
+/**
+ * A linha ENTREGUE (pdf_path preenchido) mais recente de viq_relatorios
+ * para este intake — usada por "Ver PDF"/"Ver Word"/"Reenviar"/histórico
+ * de envios. Deliberadamente distinta de `obterRascunho` (pdf_path
+ * nulo): depois de "Regenerar rascunho" pós-entrega, passam a coexistir
+ * DUAS linhas para o mesmo intake — a entregue (histórico, imutável) e
+ * um novo rascunho (pdf_path nulo, para rever) — por isso nunca basta
+ * "a linha mais recente" para decidir qual é a entregue.
+ */
+export async function obterRelatorioEntregue(intakeId: string): Promise<RelatorioEntregue | null> {
   const sb = await getSupabaseAdmin();
   const { data, error } = await sb
     .from("viq_relatorios")
     .select("id, pdf_path, pdf_filename, rascunho_texto, enviado_em, created_at")
     .eq("intake_id", intakeId)
+    .not("pdf_path", "is", null)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (error || !data) return null;
+  if (error || !data || !data.pdf_path || !data.pdf_filename) return null;
   return {
     id: data.id as string,
-    pdfPath: data.pdf_path as string | null,
-    pdfFilename: data.pdf_filename as string | null,
+    pdfPath: data.pdf_path as string,
+    pdfFilename: data.pdf_filename as string,
     rascunhoTexto: data.rascunho_texto as string | null,
     enviadoEm: data.enviado_em as string | null,
     criadoEm: data.created_at as string,

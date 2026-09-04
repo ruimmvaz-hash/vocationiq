@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { hasSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { obterIntake } from "@/lib/store";
-import { obterRelatorioMaisRecente } from "@/lib/storage";
+import { obterRelatorioEntregue } from "@/lib/storage";
 import { textoParaDocx } from "@/lib/textoParaDocx";
 
 /** "Ver Word" no backoffice — .docx simples (títulos + parágrafos, sem design) a partir do texto do rascunho, para o admin editar antes de reenviar se precisar. */
@@ -14,7 +14,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const intake = await obterIntake(id);
   if (!intake) return NextResponse.json({ error: "pedido não encontrado" }, { status: 404 });
 
-  const relatorio = await obterRelatorioMaisRecente(id);
+  const relatorio = await obterRelatorioEntregue(id);
   if (!relatorio?.rascunhoTexto) return NextResponse.json({ error: "Sem texto de relatório guardado para este pedido." }, { status: 404 });
 
   try {

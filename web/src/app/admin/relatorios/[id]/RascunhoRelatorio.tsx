@@ -19,7 +19,7 @@ export function RascunhoRelatorio({ intakeId, rascunhoInicial, criadoEmInicial, 
   const router = useRouter();
 
   async function gerar() {
-    if (texto && !confirm("Isto vai substituir o rascunho actual. Continuar?")) return;
+    if (texto && !confirm("Isto vai substituir o rascunho actual. O relatório já entregue ao cliente não é alterado. Continuar?")) return;
     setLoading("gerar");
     setErro(null);
     setMensagem(null);

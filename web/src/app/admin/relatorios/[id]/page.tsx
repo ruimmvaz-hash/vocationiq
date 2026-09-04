@@ -2,7 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { obterIntake, type IntakeRow } from "@/lib/store";
-import { obterRascunho, obterRelatorioMaisRecente, listarEnvios } from "@/lib/storage";
+import { obterRascunho, obterRelatorioEntregue, listarEnvios } from "@/lib/storage";
 import {
   SITUACOES,
   CLAREZA_IDEIA,
@@ -73,8 +73,11 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
   // Depois da entrega: painel "sempre visível" (Ver HTML/PDF/Word,
   // rascunho em modo leitura, reenviar, histórico) em vez do botão só de
   // estado — ver RelatorioEntregue.tsx.
-  const relatorioEntregue = intake.report_status === "delivered" ? await obterRelatorioMaisRecente(intake.id).catch(() => null) : null;
+  const relatorioEntregue = intake.report_status === "delivered" ? await obterRelatorioEntregue(intake.id).catch(() => null) : null;
   const envios = relatorioEntregue ? await listarEnvios(relatorioEntregue.id).catch(() => []) : [];
+  // "Regenerar rascunho" depois de entregue cria uma linha nova (pdf_path
+  // nulo), separada da entregue — obterRascunho já filtra exactamente isso.
+  const rascunhoNovo = intake.report_status === "delivered" ? await obterRascunho(intake.id).catch(() => null) : null;
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-10">
@@ -139,10 +142,12 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
           intakeId={intake.id}
           emailAtual={intake.email}
           temHtml={intake.situacao === "trabalho-quero-mudar" && Boolean(relatorioEntregue?.rascunhoTexto)}
+          podeRegenerar={intake.situacao === "trabalho-quero-mudar"}
           rascunhoTexto={relatorioEntregue?.rascunhoTexto ?? null}
           criadoEm={relatorioEntregue?.criadoEm ?? null}
           enviadoEm={relatorioEntregue?.enviadoEm ?? null}
           envios={envios}
+          rascunhoNovo={rascunhoNovo}
         />
       ) : (
         // Quando há bloco de rascunho, "Aprovar e enviar" já vem embutido nele — só um botão de entrega no ecrã.
