@@ -80,6 +80,10 @@ export function RelatorioEntregue({
         </p>
       )}
 
+      {rascunhoNovo && (
+        <p className="mt-3 text-xs text-ink/50">"Ver relatório em HTML"/"Ver PDF"/"Ver Word" mostram já o rascunho novo abaixo — não o que foi realmente entregue ao cliente.</p>
+      )}
+
       <div className="mt-4 flex flex-wrap gap-2">
         {temHtml && (
           <a

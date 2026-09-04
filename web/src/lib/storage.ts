@@ -179,3 +179,27 @@ export async function apagarRascunho(intakeId: string): Promise<void> {
   const { error } = await sb.from("viq_relatorios").delete().eq("intake_id", intakeId).is("pdf_path", null);
   if (error) throw new Error(`Falha ao apagar rascunho: ${error.message}`);
 }
+
+export interface TextoRelatorioActual {
+  texto: string;
+  origem: "rascunho" | "entregue";
+}
+
+/**
+ * Texto mais actual para pré-visualizar/reimprimir (Ver HTML, Ver PDF,
+ * Ver Word): prefere um rascunho novo ainda não aprovado (regenerado
+ * depois da entrega), e só cai para o texto do relatório entregue se não
+ * houver nenhum rascunho por aprovar. Corrige um bug real — estas três
+ * rotas usavam cada uma só uma das duas linhas (uma só via rascunho,
+ * outra só via entregue), por isso "Ver PDF" continuava a mostrar a
+ * versão antiga depois de "Regenerar rascunho". Nunca lê pdf_path/bytes
+ * guardados — isso é propositadamente só para "Reenviar relatório", que
+ * reenvia deliberadamente o que já foi enviado, não o rascunho actual.
+ */
+export async function obterTextoRelatorioActual(intakeId: string): Promise<TextoRelatorioActual | null> {
+  const rascunho = await obterRascunho(intakeId);
+  if (rascunho?.texto) return { texto: rascunho.texto, origem: "rascunho" };
+  const entregue = await obterRelatorioEntregue(intakeId);
+  if (entregue?.rascunhoTexto) return { texto: entregue.rascunhoTexto, origem: "entregue" };
+  return null;
+}

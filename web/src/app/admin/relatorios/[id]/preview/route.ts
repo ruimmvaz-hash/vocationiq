@@ -1,18 +1,16 @@
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { obterIntake } from "@/lib/store";
-import { obterRascunho } from "@/lib/storage";
+import { obterTextoRelatorioActual } from "@/lib/storage";
 import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTemplate";
 import { calcularDadosAstrologicos, GeocodeError } from "@/lib/relatorioAdultoCompute";
 
 export const dynamic = "force-dynamic";
 
-// Substitui a geração automática de PDF (puppeteer-core/@sparticuz/chromium
-// não funciona no ambiente serverless da Vercel — "The input directory does
-// not exist" confirmado em produção). O admin abre esta rota numa nova tab,
-// faz Ctrl+P → Guardar como PDF, e faz o upload manual no modal "Marcar
-// como entregue". A instrução fica num banner injectado a seguir ao
-// <body>, marcado para não imprimir (evita alterar relatorioTemplate.ts,
-// que é o template real entregue ao cliente).
+// Pré-visualização em HTML do texto mais actual (obterTextoRelatorioActual
+// — o rascunho novo se existir, senão o entregue). Um banner injectado a
+// seguir ao <body>, marcado para não imprimir, aponta para "Ver PDF" (que
+// já gera o PDF automaticamente — não precisa de Ctrl+P manual desde que
+// puppeteer-core/@sparticuz/chromium voltou a funcionar em produção).
 function paginaSimples(titulo: string, mensagem: string): Response {
   const html = `<!doctype html><html lang="pt"><head><meta charset="utf-8"><title>${titulo}</title></head><body style="font-family:Arial,Helvetica,sans-serif;padding:40px;color:#1A1A1A;"><h1 style="color:#1B3A6B;">${titulo}</h1><p>${mensagem}</p></body></html>`;
   return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
@@ -26,8 +24,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const intake = await obterIntake(id);
   if (!intake) return paginaSimples("Pedido não encontrado", "Confirma o link.");
 
-  const rascunho = await obterRascunho(id);
-  if (!rascunho?.texto) return paginaSimples("Ainda sem rascunho", "Gera o rascunho no backoffice antes de pré-visualizar o relatório.");
+  const actual = await obterTextoRelatorioActual(id);
+  if (!actual) return paginaSimples("Ainda sem rascunho", "Gera o rascunho no backoffice antes de pré-visualizar o relatório.");
 
   try {
     const { axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, horaAproximada } = await calcularDadosAstrologicos(intake);
@@ -46,11 +44,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       perguntaEspecifica: intakeAdulto.perguntaEspecifica,
     };
 
-    const html = gerarHTMLRelatorio(dadosTemplate, rascunho.texto, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa);
+    const html = gerarHTMLRelatorio(dadosTemplate, actual.texto, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa);
 
+    const avisoRascunho = actual.origem === "rascunho" ? " (rascunho ainda não aprovado — o relatório entregue continua diferente deste)" : "";
     const banner = `
       <div class="viq-preview-banner" style="position:sticky;top:0;z-index:999;background:#F5A623;color:#142C52;padding:12px 20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;text-align:center;">
-        Para gerar o PDF: Ctrl+P (ou Cmd+P) → Guardar como PDF → fazer upload no modal "Marcar como entregue".
+        Pré-visualização${avisoRascunho} — para gerar o PDF, usa o botão "Ver PDF" no backoffice.
       </div>
       <style>@media print { .viq-preview-banner { display: none !important; } }</style>`;
     const htmlComBanner = html.replace("<body>", `<body>${banner}`);
