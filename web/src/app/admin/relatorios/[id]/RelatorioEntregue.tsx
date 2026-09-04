@@ -46,6 +46,7 @@ export function RelatorioEntregue({
   rascunhoNovo: RascunhoNovo | null;
 }) {
   const [reenviarAberto, setReenviarAberto] = useState(false);
+  const [aprovarAberto, setAprovarAberto] = useState(false);
   const [regenerando, setRegenerando] = useState(false);
   const [erroRegenerar, setErroRegenerar] = useState<string | null>(null);
   const router = useRouter();
@@ -127,7 +128,14 @@ export function RelatorioEntregue({
       {rascunhoNovo && (
         <div className="mt-4 rounded-md border-2 border-amber/50 bg-amber/10 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-amber-dark">Novo rascunho — ainda não enviado, gerado em {formatarDataHora(rascunhoNovo.criadoEm)}</p>
-          <p className="mt-1 text-xs text-ink/60">O relatório já entregue (abaixo) continua inalterado. Para enviar esta versão ao cliente, é preciso reenviar manualmente.</p>
+          <p className="mt-1 text-xs text-ink/60">O relatório já entregue (abaixo) continua inalterado até aprovares este.</p>
+          <button
+            type="button"
+            onClick={() => setAprovarAberto(true)}
+            className="mt-3 rounded-md bg-navy px-4 py-2 text-sm font-bold text-white transition hover:bg-navy-dark"
+          >
+            Aprovar e reenviar com este rascunho
+          </button>
           <pre className="mt-3 max-h-96 overflow-y-auto whitespace-pre-wrap rounded-md border border-border bg-white p-4 font-mono text-sm leading-relaxed text-ink">{rascunhoNovo.texto}</pre>
         </div>
       )}
@@ -152,21 +160,49 @@ export function RelatorioEntregue({
         </div>
       )}
 
-      {reenviarAberto && <ReenviarModal intakeId={intakeId} emailInicial={emailAtual} onClose={() => setReenviarAberto(false)} onReenviado={() => router.refresh()} />}
+      {reenviarAberto && (
+        <EnvioModal
+          intakeId={intakeId}
+          endpoint="reenviar"
+          titulo="Reenviar relatório"
+          descricao="Reenvia o PDF já gerado para o email indicado — não altera o estado de entrega do pedido."
+          emailInicial={emailAtual}
+          onClose={() => setReenviarAberto(false)}
+          onEnviado={() => router.refresh()}
+        />
+      )}
+      {aprovarAberto && (
+        <EnvioModal
+          intakeId={intakeId}
+          endpoint="aprovar-rascunho"
+          titulo="Aprovar e reenviar"
+          descricao="Gera o PDF a partir do novo rascunho e envia-o para o email indicado — a entrega anterior fica no histórico, o estado do pedido não muda."
+          emailInicial={emailAtual}
+          onClose={() => setAprovarAberto(false)}
+          onEnviado={() => router.refresh()}
+        />
+      )}
     </section>
   );
 }
 
-function ReenviarModal({
+/** Modal partilhado por "Reenviar relatório" (PDF já guardado) e "Aprovar e reenviar" (gera PDF do novo rascunho primeiro) — só muda o endpoint e o texto. */
+function EnvioModal({
   intakeId,
+  endpoint,
+  titulo,
+  descricao,
   emailInicial,
   onClose,
-  onReenviado,
+  onEnviado,
 }: {
   intakeId: string;
+  endpoint: string;
+  titulo: string;
+  descricao: string;
   emailInicial: string | null;
   onClose: () => void;
-  onReenviado: () => void;
+  onEnviado: () => void;
 }) {
   const [email, setEmail] = useState(emailInicial ?? "");
   const [loading, setLoading] = useState(false);
@@ -181,7 +217,7 @@ function ReenviarModal({
     }
     setLoading(true);
     setErro(null);
-    const res = await fetch(`/api/admin/intakes/${intakeId}/reenviar`, {
+    const res = await fetch(`/api/admin/intakes/${intakeId}/${endpoint}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: emailFinal }),
@@ -189,21 +225,21 @@ function ReenviarModal({
     setLoading(false);
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      setErro(body.error ?? "Não foi possível reenviar o relatório.");
+      setErro(body.error ?? "Não foi possível enviar.");
       return;
     }
     setEnviado(true);
-    onReenviado();
+    onEnviado();
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="w-full max-w-sm rounded-lg bg-paper p-6 shadow-xl">
-        <h2 className="text-lg font-extrabold text-navy">Reenviar relatório</h2>
-        <p className="mt-1 text-sm text-ink/60">Reenvia o PDF já gerado para o email indicado — não altera o estado de entrega do pedido.</p>
+        <h2 className="text-lg font-extrabold text-navy">{titulo}</h2>
+        <p className="mt-1 text-sm text-ink/60">{descricao}</p>
 
         {enviado ? (
-          <p className="mt-4 rounded-md bg-emerald-50 px-4 py-3 text-sm text-emerald-800">Reenviado com sucesso.</p>
+          <p className="mt-4 rounded-md bg-emerald-50 px-4 py-3 text-sm text-emerald-800">Enviado com sucesso.</p>
         ) : (
           <label className="mt-5 block">
             <span className="mb-1.5 block text-sm font-semibold text-navy">Email de envio</span>
