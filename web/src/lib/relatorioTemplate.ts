@@ -413,57 +413,120 @@ function svgDiagramaIdentidade(sinais: string[], identidade: string): string {
   </svg>`;
 }
 
-/** Caminho SVG de um sector em anel (donut wedge), usado pela roda das casas. */
-function setorAnelPath(cx: number, cy: number, raioInterno: number, raioExterno: number, anguloInicioDeg: number, anguloFimDeg: number): string {
+/** Caminho SVG de um sector em pizza (do centro até `raio`), usado pela Roda da Vida. */
+function setorPiePath(cx: number, cy: number, raio: number, anguloInicioDeg: number, anguloFimDeg: number): string {
+  if (raio <= 0.5) return "";
   const rad = (deg: number) => (deg * Math.PI) / 180;
   const ponto = (r: number, ang: number): [number, number] => [cx + r * Math.cos(rad(ang)), cy + r * Math.sin(rad(ang))];
-  const [x1, y1] = ponto(raioExterno, anguloInicioDeg);
-  const [x2, y2] = ponto(raioExterno, anguloFimDeg);
-  const [x3, y3] = ponto(raioInterno, anguloFimDeg);
-  const [x4, y4] = ponto(raioInterno, anguloInicioDeg);
-  return `M ${x1} ${y1} A ${raioExterno} ${raioExterno} 0 0 1 ${x2} ${y2} L ${x3} ${y3} A ${raioInterno} ${raioInterno} 0 0 0 ${x4} ${y4} Z`;
+  const [x1, y1] = ponto(raio, anguloInicioDeg);
+  const [x2, y2] = ponto(raio, anguloFimDeg);
+  return `M ${cx} ${cy} L ${x1} ${y1} A ${raio} ${raio} 0 0 1 ${x2} ${y2} Z`;
+}
+
+interface DimensaoVida {
+  nome: string;
+  descricao: string;
+  valor: number;
+}
+
+const SAV_MIN = 18;
+const SAV_MAX = 42;
+
+/** Normaliza o SAV (17-45 tipicamente) para escala 0-10, com o limiar exacto pedido; sujeito a arredondamento a 1 casa e capado a [0,10] (só por segurança — a fórmula pedida não capa, mas um valor fora de 0-10 quebraria a leitura "sobre 10" do texto). */
+function normalizarSav(mediaSav: number): number {
+  const bruto = ((mediaSav - SAV_MIN) / (SAV_MAX - SAV_MIN)) * 10;
+  return Math.round(Math.min(10, Math.max(0, bruto)) * 10) / 10;
+}
+
+function mediaSavCasas(savPorCasa: SavPorCasa[], casas: number[]): number {
+  const pontuacoes = casas.map((c) => savPorCasa.find((h) => h.casa === c)?.pontuacao ?? SAV_MIN);
+  return pontuacoes.reduce((a, b) => a + b, 0) / pontuacoes.length;
 }
 
 /**
- * Roda das casas — anel de 12 sectores iguais (casa 1 no topo, sentido
- * horário), cor por classificação de apoio (reaproveita `classificacao`
- * já calculado por computeSavPorCasa — as mesmas 3 cores/limiares já
- * usados na tabela "Apoio por área de vida" do Anexo, para nunca
- * divergir entre os dois lugares onde a mesma casa aparece), com a casa
- * dominante do Modo de Ganho destacada por um contorno azul.
+ * Roda da Vida — 8 dimensões universais (não astrológicas no nome),
+ * cada uma calculada a partir do SAV da(s) casa(s) clássica(s) que a
+ * sustentam, normalizado para 0-10. Sempre determinística — nunca o LLM.
+ * A "fórmula de blend com um planeta" que o pedido menciona por
+ * dimensão (ex.: "casa 6 + Marte") não veio acompanhada de uma fórmula
+ * de combinação — só a normalização do SAV tem fórmula exacta — por
+ * isso cada dimensão usa só o SAV da(s) casa(s) indicada(s); a menção ao
+ * planeta descreve a significação clássica da casa, não um termo extra
+ * a somar (inventar um peso para essa mistura violaria "não inventar").
  */
-function svgRodaDasCasas(savPorCasa: SavPorCasa[], casaDominante: number): string {
-  const tamanho = 340;
+function computeRodaDaVida(savPorCasa: SavPorCasa[]): DimensaoVida[] {
+  return [
+    { nome: "Carreira / Propósito", descricao: "A força da sua vocação e direcção profissional", valor: normalizarSav(mediaSavCasas(savPorCasa, [10])) },
+    { nome: "Finanças / Recursos", descricao: "A sua relação natural com a geração e gestão de recursos", valor: normalizarSav(mediaSavCasas(savPorCasa, [2])) },
+    { nome: "Desenvolvimento Pessoal", descricao: "A sua capacidade de crescer e expandir o seu mundo", valor: normalizarSav(mediaSavCasas(savPorCasa, [1, 9])) },
+    { nome: "Saúde / Energia", descricao: "A sua reserva de energia e capacidade de acção", valor: normalizarSav(mediaSavCasas(savPorCasa, [6])) },
+    { nome: "Relações / Rede", descricao: "A força das suas ligações e do seu círculo", valor: normalizarSav(mediaSavCasas(savPorCasa, [7, 11])) },
+    { nome: "Criatividade / Expressão", descricao: "A sua capacidade de criar e de se expressar", valor: normalizarSav(mediaSavCasas(savPorCasa, [5])) },
+    { nome: "Ambiente / Estilo de vida", descricao: "O que a sua carta pede em termos de base e de raízes", valor: normalizarSav(mediaSavCasas(savPorCasa, [4])) },
+    { nome: "Contribuição / Impacto", descricao: "O que deixa para além de si — a marca que fica nas pessoas e nos sistemas que toca", valor: normalizarSav(mediaSavCasas(savPorCasa, [9, 11])) },
+  ];
+}
+
+function corRodaDaVida(valor: number): string {
+  if (valor >= 7) return VERDE;
+  if (valor >= 4) return AMBAR;
+  return VERMELHO;
+}
+
+/**
+ * Roda da Vida — 8 sectores iguais, cada um preenchido do centro até um
+ * raio proporcional ao valor (0-10); a "pista" de fundo (opacity 0.15)
+ * mostra o sector inteiro para se perceber a escala. Grelha de círculos
+ * concêntricos em 2/4/6/8/10. Nome fora do círculo, valor dentro (com
+ * fundo branco próprio, para ler bem tanto sobre a pista clara como
+ * sobre o preenchimento colorido).
+ */
+function svgRodaDaVida(dimensoes: DimensaoVida[]): string {
+  const tamanho = 460;
   const cx = tamanho / 2;
   const cy = tamanho / 2;
-  const raioInterno = 46;
-  const raioExterno = 150;
-  const porCasa = new Map(savPorCasa.map((h) => [h.casa, h]));
+  const raioMax = 130;
+  const raioValor = 62;
+  const raioLabel = raioMax + 42;
+  const n = dimensoes.length;
+  const anguloPorSector = 360 / n;
 
-  const setores = Array.from({ length: 12 }, (_, i) => i + 1)
-    .map((casa) => {
-      const h = porCasa.get(casa);
-      const anguloInicio = (casa - 1) * 30 - 90;
-      const anguloFim = anguloInicio + 30;
-      const anguloMeio = anguloInicio + 15;
+  const grelha = [2, 4, 6, 8, 10]
+    .map((v) => `<circle cx="${cx}" cy="${cy}" r="${(v / 10) * raioMax}" fill="none" stroke="#E6E6E6" stroke-width="1" />`)
+    .join("");
+
+  const sectores = dimensoes
+    .map((d, i) => {
+      const anguloInicio = i * anguloPorSector - 90;
+      const anguloFim = anguloInicio + anguloPorSector;
+      const anguloMeio = anguloInicio + anguloPorSector / 2;
       const rad = (anguloMeio * Math.PI) / 180;
-      const raioTexto = (raioInterno + raioExterno) / 2;
-      const tx = cx + raioTexto * Math.cos(rad);
-      const ty = cy + raioTexto * Math.sin(rad);
-      const dominante = casa === casaDominante;
-      const cor = h ? corClassificacao(h.classificacao) : CINZA_CLARO;
-      const path = setorAnelPath(cx, cy, raioInterno, raioExterno, anguloInicio, anguloFim);
+      const cor = corRodaDaVida(d.valor);
+      const raioPreenchido = (d.valor / 10) * raioMax;
+
+      const lx = cx + raioLabel * Math.cos(rad);
+      const ly = cy + raioLabel * Math.sin(rad);
+      const cosMeio = Math.cos(rad);
+      const anchor = cosMeio > 0.3 ? "start" : cosMeio < -0.3 ? "end" : "middle";
+      const linhasNome = quebrarLinhas(d.nome, 14);
+      const inicioYNome = ly - ((linhasNome.length - 1) * 12) / 2;
+      const tspansNome = linhasNome.map((l, li) => `<tspan x="${lx}" y="${inicioYNome + li * 13}">${escapeHtml(l)}</tspan>`).join("");
+
+      const vx = cx + raioValor * Math.cos(rad);
+      const vy = cy + raioValor * Math.sin(rad);
+
       return `
-      <path d="${path}" fill="${cor}" stroke="#FFFFFF" stroke-width="1.5" />
-      ${dominante ? `<path d="${path}" fill="none" stroke="${AZUL}" stroke-width="3" />` : ""}
-      <text x="${tx}" y="${ty - 6}" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#FFFFFF">${casa}</text>
-      <text x="${tx}" y="${ty + 11}" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="11" fill="#FFFFFF">${h ? h.pontuacao : "—"}</text>`;
+      <path d="${setorPiePath(cx, cy, raioMax, anguloInicio, anguloFim)}" fill="${cor}" opacity="0.15" stroke="#FFFFFF" stroke-width="1.5" />
+      <path d="${setorPiePath(cx, cy, raioPreenchido, anguloInicio, anguloFim)}" fill="${cor}" />
+      <circle cx="${vx}" cy="${vy}" r="15" fill="#FFFFFF" stroke="${cor}" stroke-width="2" />
+      <text x="${vx}" y="${vy + 4}" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="${AZUL}">${d.valor.toFixed(1)}</text>
+      <text text-anchor="${anchor}" font-family="Inter, Arial, sans-serif" font-size="11" font-weight="600" fill="#1A1A1A">${tspansNome}</text>`;
     })
     .join("");
 
-  return `<svg viewBox="0 0 ${tamanho} ${tamanho}" width="100%" style="max-width:340px;height:auto" xmlns="http://www.w3.org/2000/svg">
-    ${setores}
-    <circle cx="${cx}" cy="${cy}" r="${raioInterno - 2}" fill="#FFFFFF" />
+  return `<svg viewBox="0 0 ${tamanho} ${tamanho}" width="100%" style="max-width:${tamanho}px;height:auto" xmlns="http://www.w3.org/2000/svg">
+    ${grelha}
+    ${sectores}
   </svg>`;
 }
 
@@ -480,14 +543,33 @@ function blocoDiagramaIdentidade(pesos: PesoPlaneta[], identidade: string | null
     <section class="seccao">
       <h2 class="titulo-seccao">Quem você realmente é</h2>
       <div class="grafico-wrap grafico-centrado">${svgDiagramaIdentidade(sinaisIdentidade(pesos), identidade)}</div>
+      <p class="grafico-legenda" style="text-align:center">Os sinais à esquerda são os traços mais fortes da sua carta — convergem na síntese ao centro.</p>
     </section>`;
 }
 
-function blocoRodaDasCasas(savPorCasa: SavPorCasa[], casaDominante: number): string {
+function blocoRodaDaVida(savPorCasa: SavPorCasa[]): string {
+  const dimensoes = computeRodaDaVida(savPorCasa);
+  const lista = dimensoes
+    .map(
+      (d) => `
+      <div class="dimensao-vida-item">
+        <span class="dimensao-vida-nome">${escapeHtml(d.nome)}</span>
+        <span class="dimensao-vida-valor" style="color:${corRodaDaVida(d.valor)}">${d.valor.toFixed(1)}/10</span>
+        <p class="dimensao-vida-descricao">${escapeHtml(d.descricao)}</p>
+      </div>`,
+    )
+    .join("");
+
   return `
-    <div class="roda-wrap">
-      ${svgRodaDasCasas(savPorCasa, casaDominante)}
-      <p class="grafico-legenda roda-legenda">Verde = apoio forte · Âmbar = apoio moderado · Vermelho = apoio fraco · Contorno azul = onde ganha melhor</p>
+    <div class="roda-vida-wrap">
+      <p class="bloco-titulo roda-vida-titulo">O seu perfil de vida</p>
+      <p class="roda-vida-subtitulo">Como a sua carta estrutura cada área da sua vida</p>
+      <div class="grafico-wrap grafico-centrado">${svgRodaDaVida(dimensoes)}</div>
+      <p class="grafico-legenda">Verde = força natural (≥7) · Âmbar = equilíbrio (4-6) · Vermelho = pede mais construção (&lt;4)</p>
+      <div class="caixa-neutra roda-vida-explicacao">
+        <p>Esta roda mostra onde a sua carta tem força natural e onde pede mais esforço. Não é um julgamento — é um mapa. Áreas mais preenchidas indicam onde o seu perfil flui naturalmente. Áreas menos preenchidas indicam onde vai precisar de construir com mais intenção.</p>
+      </div>
+      <div class="dimensao-vida-lista">${lista}</div>
     </div>`;
 }
 
@@ -633,6 +715,7 @@ function blocoOPlano(corpo: string, datas: DadosDatas): string {
   const { corpo: resto, primeiroPasso } = parsePlano(corpo);
   return `
     <div class="timeline-wrap">${svgTimeline(datas)}</div>
+    <p class="grafico-legenda">Âmbar = o período em que está agora · Azul-claro = os períodos seguintes.</p>
     ${resto ? markdownParaHtml(resto) : ""}
     ${primeiroPasso ? `<div class="destaque-ambar destaque-passo"><p class="rotulo-pequeno">O seu primeiro passo esta semana</p><p>${escapeHtml(primeiroPasso)}</p></div>` : ""}`;
 }
@@ -717,9 +800,11 @@ export function gerarHTMLRelatorio(
 <style>
   /* htmlToPdf.ts usa preferCSSPageSize (réplica exacta da Naveya) — sem
      esta regra, o PDF sairia em Letter (tamanho por omissão do Puppeteer)
-     em vez de A4. Margem 0: o espaçamento já vem do padding interno de
-     .capa/.container, tal como antes. */
-  @page { size: A4; margin: 0; }
+     em vez de A4. Margem só na 1ª página é 0 (a capa é bleed total,
+     preenchida pelo padding do próprio .capa); as restantes têm margem
+     real — sem isso o texto saía cortado nas bordas entre páginas. */
+  @page { size: A4; margin: 20mm 16mm 20mm 16mm; }
+  @page :first { margin: 0; }
   :root { --azul: ${AZUL}; --ambar: ${AMBAR}; --cinza-claro: ${CINZA_CLARO}; }
   * { box-sizing: border-box; }
   body { font-family: "Inter", Arial, Helvetica, sans-serif; color: #1A1A1A; background: #FFFFFF; margin: 0; padding: 0; }
@@ -763,9 +848,19 @@ export function gerarHTMLRelatorio(
   .grafico-wrap { overflow-x: auto; }
   .grafico-3barras { display: flex; justify-content: center; }
   .grafico-centrado { display: flex; justify-content: center; }
-  .roda-wrap { display: flex; flex-direction: column; align-items: center; margin-top: 16px; }
-  .roda-legenda { text-align: center; }
   .peso-fraco { color: #6B6B6B; font-size: 12px; }
+
+  .roda-vida-wrap { margin-top: 20px; text-align: center; }
+  .roda-vida-titulo { text-align: center; margin-bottom: 2px; }
+  .roda-vida-subtitulo { font-size: 13px; color: #6B6B6B; margin: 0 0 14px; }
+  .roda-vida-wrap .grafico-legenda { text-align: center; }
+  .roda-vida-explicacao { text-align: left; margin: 16px auto 0; max-width: 560px; }
+  .dimensao-vida-lista { text-align: left; margin: 20px auto 0; max-width: 620px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; }
+  @media (max-width: 700px) { .dimensao-vida-lista { grid-template-columns: 1fr; } }
+  .dimensao-vida-item { border-top: 1px solid #E6E6E6; padding-top: 8px; }
+  .dimensao-vida-nome { font-size: 13px; font-weight: 700; color: var(--azul); }
+  .dimensao-vida-valor { font-size: 13px; font-weight: 700; margin-left: 6px; }
+  .dimensao-vida-descricao { font-size: 12px; color: #6B6B6B; margin: 3px 0 0; line-height: 1.5; }
 
   .card-opcao { border: 1px solid #E6E6E6; border-radius: 10px; overflow: hidden; margin-bottom: 24px; page-break-inside: avoid; }
   .card-opcao-header { background: var(--azul); color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-weight: 700; font-size: 16px; }
@@ -801,8 +896,10 @@ export function gerarHTMLRelatorio(
   footer.rodape p { font-size: 12px; margin: 2px 0; line-height: 1.5; }
 
   @media print {
-    .capa { height: 297mm; min-height: 297mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .chip, .badge-forca, .parte-icone, .badge-classificacao { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .capa { height: 297mm; min-height: 297mm; }
+    h1, h2, h3, p, li, td, th { page-break-inside: avoid; }
+    .parte-opcao { page-break-inside: avoid; }
   }
 </style>
 </head>
@@ -837,7 +934,7 @@ export function gerarHTMLRelatorio(
     <section class="seccao">
       <h2 class="titulo-seccao">${escapeHtml(SECCAO_TITULOS.oQueACartaSustenta)}</h2>
       ${markdownParaHtml(seccoes[SECCAO_TITULOS.oQueACartaSustenta] ?? "")}
-      ${blocoRodaDasCasas(savPorCasa, axes.earningMode.house)}
+      ${blocoRodaDaVida(savPorCasa)}
     </section>
 
     <section class="seccao">
@@ -848,8 +945,9 @@ export function gerarHTMLRelatorio(
     </section>
 
     <section class="seccao">
-      <h2 class="titulo-seccao">Como ganhas melhor</h2>
+      <h2 class="titulo-seccao">Como ganha melhor</h2>
       <div class="grafico-wrap grafico-3barras">${svgModoDeGanho(earningModes, axes.earningMode.house)}</div>
+      <p class="grafico-legenda" style="text-align:center">A barra em azul é o modo dominante — a forma que a sua carta mais sustenta para gerar valor.</p>
     </section>
 
     <section class="seccao">

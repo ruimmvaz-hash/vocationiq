@@ -142,7 +142,7 @@ async function main() {
   // fica um nível acima, na raiz do repositório.
   const outDir = join(process.cwd(), "..", "docs");
   mkdirSync(outDir, { recursive: true });
-  const nomeFicheiro = process.argv[2] || "relatorio-v4.html";
+  const nomeFicheiro = process.argv[2] || "relatorio-v5.html";
   const outPath = join(outDir, nomeFicheiro);
   writeFileSync(outPath, html, "utf-8");
   console.log(`Guardado em: ${outPath}`);
