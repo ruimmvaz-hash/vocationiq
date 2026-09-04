@@ -427,6 +427,8 @@ interface DimensaoVida {
   nome: string;
   descricao: string;
   valor: number;
+  /** Rótulo alternativo só para a etiqueta da roda (espaço fixo) — usado apenas quando "nome" tem uma palavra longa que corta na roda; a lista por baixo continua a mostrar "nome" por inteiro. */
+  rotulo?: string;
 }
 
 const SAV_MIN = 18;
@@ -458,7 +460,7 @@ function computeRodaDaVida(savPorCasa: SavPorCasa[]): DimensaoVida[] {
   return [
     { nome: "Carreira / Propósito", descricao: "A força da sua vocação e direcção profissional", valor: normalizarSav(mediaSavCasas(savPorCasa, [10])) },
     { nome: "Finanças / Recursos", descricao: "A sua relação natural com a geração e gestão de recursos", valor: normalizarSav(mediaSavCasas(savPorCasa, [2])) },
-    { nome: "Desenvolvimento Pessoal", descricao: "A sua capacidade de crescer e expandir o seu mundo", valor: normalizarSav(mediaSavCasas(savPorCasa, [1, 9])) },
+    { nome: "Desenvolvimento Pessoal", rotulo: "Desenv. Pessoal", descricao: "A sua capacidade de crescer e expandir o seu mundo", valor: normalizarSav(mediaSavCasas(savPorCasa, [1, 9])) },
     { nome: "Saúde / Energia", descricao: "A sua reserva de energia e capacidade de acção", valor: normalizarSav(mediaSavCasas(savPorCasa, [6])) },
     { nome: "Relações / Rede", descricao: "A força das suas ligações e do seu círculo", valor: normalizarSav(mediaSavCasas(savPorCasa, [7, 11])) },
     { nome: "Criatividade / Expressão", descricao: "A sua capacidade de criar e de se expressar", valor: normalizarSav(mediaSavCasas(savPorCasa, [5])) },
@@ -508,7 +510,7 @@ function svgRodaDaVida(dimensoes: DimensaoVida[]): string {
       const ly = cy + raioLabel * Math.sin(rad);
       const cosMeio = Math.cos(rad);
       const anchor = cosMeio > 0.3 ? "start" : cosMeio < -0.3 ? "end" : "middle";
-      const linhasNome = quebrarLinhas(d.nome, 14);
+      const linhasNome = quebrarLinhas(d.rotulo ?? d.nome, 14);
       const inicioYNome = ly - ((linhasNome.length - 1) * 12) / 2;
       const tspansNome = linhasNome.map((l, li) => `<tspan x="${lx}" y="${inicioYNome + li * 13}">${escapeHtml(l)}</tspan>`).join("");
 
