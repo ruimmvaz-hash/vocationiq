@@ -81,7 +81,7 @@ export function RelatorioEntregue({
       )}
 
       {rascunhoNovo && (
-        <p className="mt-3 text-xs text-ink/50">"Ver relatório em HTML"/"Ver PDF"/"Ver Word" mostram já o rascunho novo abaixo — não o que foi realmente entregue ao cliente.</p>
+        <p className="mt-3 text-xs text-ink/50">&quot;Ver relatório em HTML&quot;/&quot;Ver PDF&quot;/&quot;Ver Word&quot; mostram já o rascunho novo abaixo — não o que foi realmente entregue ao cliente.</p>
       )}
 
       <div className="mt-4 flex flex-wrap gap-2">
