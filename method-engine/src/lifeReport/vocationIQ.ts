@@ -21,6 +21,9 @@ export interface MissionAxis {
   akSign: ZodiacSign;
   karakamshaSign: ZodiacSign;
   karakamshaHouse: number;
+  /** Cadeia de regência principal (pedido desta ronda) — quem rege a casa do Atmakaraka e quem rege a casa do Karakamsha. Os dois eixos lêem-se sempre JUNTOS (nunca isolados — Parte 4 do prompt), nunca como duas coisas separadas. */
+  regenteCasaAtmakaraka: ClassicalGraha;
+  regenteCasaKarakamsha: ClassicalGraha;
 }
 
 export type EarningModeHouse = 2 | 6 | 10;
@@ -77,13 +80,29 @@ export interface VocationIQAxes {
   stelliumD1: StelliumHit[];
   /** Bloco 2 — REGRA 2: idem, no D10. */
   stelliumD10: StelliumHit[];
+  /** Regente de cada uma das 12 casas a partir do Ascendente (1-12) — acrescento desta ronda, para o catálogo vocacional poder testar ligações de regência (ex.: "regente da 2 ligado ao regente da 10") sem precisar de acesso ao D1 em bruto. */
+  regentesCasas: Record<number, ClassicalGraha>;
 }
 
-/** Passo 2 — avalia a força de cada Artha Trikona (casas 2, 6, 10) e devolve o Modo de Ganho dominante. */
-function computeEarningModes(d1: D1TableResult): EarningMode[] {
+/**
+ * Forma mínima de que `computeEarningModes` precisa para o peso real de
+ * cada planeta — definida aqui, não importada de `vocationiq/pesosPlanetas.ts`,
+ * para não inverter a direcção de dependência do pacote (vocationiq/
+ * depende de lifeReport/, nunca o contrário). Quem chama já calculou os
+ * pesos (`computePesosPlanetas`) e passa-os cá — estruturalmente
+ * compatível com `PesoPlaneta[]` sem precisar de o importar.
+ */
+export interface PesoPlanetaParaModoDeGanho {
+  planeta: ClassicalGraha;
+  peso: number;
+}
+
+/** Passo 2 — avalia a força de cada Artha Trikona (casas 2, 6, 10) e devolve o Modo de Ganho dominante. `pesos`, quando fornecido, acrescenta a força REAL (peso já corrigido por Neecha Bhanga) dos planetas envolvidos — sem ele, mantém-se o comportamento anterior (só dignidade/presença/Drishti). */
+function computeEarningModes(d1: D1TableResult, pesos?: PesoPlanetaParaModoDeGanho[]): EarningMode[] {
   const rows = d1.rows;
   const rulerships = functionalRulerships(d1.ascendant.sign);
   const houses: EarningModeHouse[] = [2, 6, 10];
+  const pesoDe = (planeta: ClassicalGraha): number | undefined => pesos?.find((p) => p.planeta === planeta)?.peso;
 
   return houses
     .map((house) => {
@@ -113,6 +132,32 @@ function computeEarningModes(d1: D1TableResult): EarningMode[] {
       for (const p of drishtiOnHouse) {
         score += 0.5;
         signals.push(`${p} lança Drishti sobre a casa ${house}`);
+      }
+
+      // Força real (peso, já com Neecha Bhanga aplicado quando existe) dos
+      // planetas ocupantes E do regente da casa — pedido explícito desta
+      // ronda: um planeta presente ou regente em força máxima tem de pesar
+      // mais do que a dignidade/presença sozinhas já contam acima.
+      for (const p of planetsInHouse) {
+        const peso = pesoDe(p);
+        if (peso === undefined) continue;
+        if (peso >= 1.3) {
+          score += 1.0;
+          signals.push(`${p} presente na casa ${house} com peso real ${peso.toFixed(2)} (força alta)`);
+        } else if (peso >= 0.9) {
+          score += 0.5;
+        } else {
+          score -= 0.5;
+        }
+      }
+      const pesoLord = pesoDe(lord);
+      if (pesoLord !== undefined) {
+        if (pesoLord >= 1.3) {
+          score += 0.5;
+          signals.push(`regente da casa ${house} (${lord}) com peso real ${pesoLord.toFixed(2)} (força alta)`);
+        } else if (pesoLord >= 0.9) {
+          score += 0.25;
+        }
       }
 
       return {
@@ -147,6 +192,8 @@ function computeMarketShowcase(d1: D1TableResult): MarketShowcase {
 function computeMissionAxis(d1: D1TableResult): MissionAxis {
   const ak = d1.karakas.atmakaraka;
   const akRow = d1.rows[ak];
+  const signoCasaAk = signOfHouse(akRow.house, d1.ascendant.sign);
+  const signoCasaKarakamsha = signOfHouse(d1.karakas.karakamshaHouse, d1.ascendant.sign);
   return {
     atmakaraka: ak,
     akHouse: akRow.house,
@@ -154,6 +201,8 @@ function computeMissionAxis(d1: D1TableResult): MissionAxis {
     akSign: akRow.sign,
     karakamshaSign: d1.karakas.atmakarakaD9Sign,
     karakamshaHouse: d1.karakas.karakamshaHouse,
+    regenteCasaAtmakaraka: SIGN_RULERS[signoCasaAk],
+    regenteCasaKarakamsha: SIGN_RULERS[signoCasaKarakamsha],
   };
 }
 
@@ -175,9 +224,24 @@ function computeD1House10Lord(d1: D1TableResult): { sign: ZodiacSign; lord: Clas
   return { sign, lord, lordDignity: d1.rows[lord].dignity };
 }
 
-/** VocationIQ — os 3 eixos obrigatórios (Passos 1-3) + os dados da REGRA 1/2/3 do algoritmo de síntese (Bloco 2). */
-export function computeVocationIQAxes(d1: D1TableResult): VocationIQAxes {
-  const earningModeAll = computeEarningModes(d1);
+/** Regente de cada uma das 12 casas a partir do Ascendente. */
+function computeRegentesCasas(d1: D1TableResult): Record<number, ClassicalGraha> {
+  const regentes: Record<number, ClassicalGraha> = {};
+  for (let casa = 1; casa <= 12; casa++) {
+    regentes[casa] = SIGN_RULERS[signOfHouse(casa, d1.ascendant.sign)];
+  }
+  return regentes;
+}
+
+/**
+ * VocationIQ — os 3 eixos obrigatórios (Passos 1-3) + os dados da REGRA
+ * 1/2/3 do algoritmo de síntese (Bloco 2). `pesos` é opcional e, quando
+ * fornecido (o pipeline do relatório Adulto já os calcula antes desta
+ * chamada), acrescenta a força real de cada planeta ao Modo de Ganho —
+ * ver `computeEarningModes`.
+ */
+export function computeVocationIQAxes(d1: D1TableResult, pesos?: PesoPlanetaParaModoDeGanho[]): VocationIQAxes {
+  const earningModeAll = computeEarningModes(d1, pesos);
   const d10 = computeD10Table(d1.rows, d1.ascendant.sign, d1.ascendant.degreeInSign);
 
   return {
@@ -193,5 +257,6 @@ export function computeVocationIQAxes(d1: D1TableResult): VocationIQAxes {
     stelliumD10: detectStellium(
       Object.fromEntries(Object.entries(d10.rows).map(([g, row]) => [g, { sign: row.d10Sign, house: row.d10House }])) as Record<Graha, { sign: ZodiacSign; house: number }>,
     ),
+    regentesCasas: computeRegentesCasas(d1),
   };
 }

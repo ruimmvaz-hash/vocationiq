@@ -9,6 +9,7 @@ const ESTADO_PT: Record<string, string> = {
   Neutral: "neutro",
   Enemy: "inimigo",
   Debilitated: "debilitado",
+  NeechaBhanga: "debilitado com cancelação (Neecha Bhanga)",
 };
 
 const MODO_GANHO_ROTULO: Record<number, string> = {
@@ -124,7 +125,7 @@ export function MapaTecnico({ dadosTecnicos, areaActual }: { dadosTecnicos: Dado
   const { axes, pesos, datas, savPorCasa } = dadosTecnicos;
   const pesosOrdenados = [...pesos].sort((a, b) => b.peso - a.peso);
   const tensoes = detectarTensoes(dadosTecnicos, areaActual);
-  const rodaDaVida = computeRodaDaVida(savPorCasa);
+  const rodaDaVida = computeRodaDaVida(savPorCasa, pesos);
   const m = axes.missionAxis;
   const casa11 = axes.marketShowcase.house11FromAL;
 
@@ -230,6 +231,12 @@ export function MapaTecnico({ dadosTecnicos, areaActual }: { dadosTecnicos: Dado
             <dt className="font-semibold text-navy">Mahadasha actual</dt>
             <dd className="text-ink/80">
               {PLANETA_PT[datas.mahadashaAtual.senhor] ?? datas.mahadashaAtual.senhor}, de {formatarDataPT(datas.mahadashaAtual.inicio)} a {formatarDataPT(datas.mahadashaAtual.fim)}.
+              {dadosTecnicos.classificacaoMahadashaAtual && (
+                <>
+                  {" "}
+                  Classificação: <span className="font-semibold">{dadosTecnicos.classificacaoMahadashaAtual.tema}</span> — &quot;{dadosTecnicos.classificacaoMahadashaAtual.abertura}&quot;.
+                </>
+              )}
             </dd>
           </div>
           <div>

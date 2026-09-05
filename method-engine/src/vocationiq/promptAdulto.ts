@@ -4,8 +4,10 @@
 // "DESVIO" a explicar porquê.
 
 import type { VocationIQAxes } from "../lifeReport/vocationIQ";
-import type { PesoPlaneta } from "./pesosPlanetas";
+import type { PesoPlaneta, SavPorCasa } from "./pesosPlanetas";
 import type { ClassicalGraha } from "../lifeReport/types";
+import type { ResultadoCatalogoVocacional } from "./catalogoVocacional";
+import { computeRodaDaVida } from "./rodaDaVida";
 
 /**
  * Dados já resolvidos para texto humano pelo chamador (o site) — os
@@ -102,6 +104,39 @@ const GLOSA_TECNICA: Record<string, string> = {
   Ketu: "Ketu",
 };
 
+export type Elemento = "Fogo" | "Terra" | "Água" | "Éter";
+
+/** Elemento de cada planeta — mapeamento exacto pedido nesta ronda (nunca "Ar": não foi dado nenhum planeta para essa categoria). */
+export const ELEMENTO_PLANETA: Record<string, Elemento> = {
+  Sun: "Fogo",
+  Mars: "Fogo",
+  Jupiter: "Fogo",
+  Mercury: "Terra",
+  Venus: "Terra",
+  Saturn: "Terra",
+  Moon: "Água",
+  Rahu: "Éter",
+  Ketu: "Éter",
+};
+
+export interface ClassificacaoMahadashaEntry {
+  tema: string;
+  abertura: string;
+}
+
+/** Classificação do tom de cada Mahadasha — tabela exacta pedida nesta ronda (Parte 1D/4E). `abertura` é a frase-guia que a Secção "O plano" tem de usar para abrir, antes de qualquer data ou passo. */
+export const MAHADASHA_CLASSIFICACAO: Record<string, ClassificacaoMahadashaEntry> = {
+  Ketu: { tema: "dissolução/fecho", abertura: "prepare e feche, não colha" },
+  Venus: { tema: "expansão/prazer/colheita", abertura: "avance, o ciclo favorece" },
+  Sun: { tema: "afirmação/autoridade", abertura: "afirme e visibilize" },
+  Moon: { tema: "emoção/fluxo/intuição", abertura: "siga o que sente, não o plano" },
+  Mars: { tema: "acção/lançamento/conflito", abertura: "avance com força e decisão" },
+  Rahu: { tema: "ambição/disrupção/ilusão", abertura: "risco real, oportunidade real" },
+  Jupiter: { tema: "crescimento/sabedoria/expansão", abertura: "expanda com intenção" },
+  Saturn: { tema: "estrutura/colheita lenta/responsabilidade", abertura: "construa devagar, vai durar" },
+  Mercury: { tema: "comunicação/adaptação/aprendizagem", abertura: "aprenda e comunique" },
+};
+
 const ESTADO_PT: Record<string, string> = {
   Exalted: "exaltado",
   Own: "próprio",
@@ -110,6 +145,7 @@ const ESTADO_PT: Record<string, string> = {
   Neutral: "neutro",
   Enemy: "inimigo",
   Debilitated: "debilitado",
+  NeechaBhanga: "debilitado com cancelação (Neecha Bhanga Raja Yoga) — lido como força",
 };
 
 /**
@@ -219,13 +255,20 @@ function blocoPesos(pesos: PesoPlaneta[]): string {
   const linhas = pesos
     .slice()
     .sort((a, b) => b.peso - a.peso)
-    .map((p) => `${planetaPt(p.planeta)}: casa ${p.casa} (${p.signo}), estado ${ESTADO_PT[p.estado] ?? p.estado}, SAV da casa ${p.savCasa} (média da carta ${p.savMedia.toFixed(1)}) → peso ${p.peso.toFixed(3)}.`);
+    .map((p) => {
+      const base = `${planetaPt(p.planeta)}: casa ${p.casa} (${p.signo}), estado ${ESTADO_PT[p.estado] ?? p.estado}, SAV da casa ${p.savCasa} (média da carta ${p.savMedia.toFixed(1)}) → peso ${p.peso.toFixed(3)}.`;
+      return p.notaCancelamento ? `${base} NOTA: ${p.notaCancelamento}.` : base;
+    });
   return linhas.join("\n");
 }
 
 function blocoDatas(datas: DadosDatas): string {
+  const classificacao = MAHADASHA_CLASSIFICACAO[datas.mahadashaAtual.senhor];
   return [
     `Mahadasha actual: ${planetaPt(datas.mahadashaAtual.senhor)}, de ${formatarData(datas.mahadashaAtual.inicio)} a ${formatarData(datas.mahadashaAtual.fim)}.`,
+    classificacao
+      ? `Classificação deste ciclo (usa esta frase, ou uma equivalente, para abrir a secção "O plano", antes de qualquer data ou passo): tema "${classificacao.tema}" — "${classificacao.abertura}".`
+      : null,
     `Antardasha actual (o período mais fino, o que está activo agora): ${planetaPt(datas.antardashaAtual.senhor)}, de ${formatarData(datas.antardashaAtual.inicio)} a ${formatarData(datas.antardashaAtual.fim)}.`,
     datas.proximasAntardashas.length
       ? `Antardashas seguintes, dentro da mesma mahadasha: ${datas.proximasAntardashas.map((a) => `${planetaPt(a.senhor)} (${formatarData(a.inicio)} a ${formatarData(a.fim)})`).join("; ")}.`
@@ -237,12 +280,37 @@ function blocoDatas(datas: DadosDatas): string {
     .join("\n");
 }
 
+/** Redesenho do motor (Parte 2C) — traduz o resultado de `catalogarDestinos()` para o formato de dados técnicos pedido. Nunca lista mais do que o catálogo devolveu, nunca ordena por "força" (SPEC-vocacional.md: o catálogo descreve, não escolhe). */
+function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional): string {
+  const listar = (destinos: ResultadoCatalogoVocacional["destinosDeAreaActual"]) =>
+    destinos.length ? destinos.map((d) => `- ${d.nome}: convergência ${d.convergencia} (${d.camadas.join("; ") || "sem camada identificada"})`).join("\n") : "(nenhum destino do catálogo corresponde)";
+
+  return [
+    catalogo.notaAreaGenerica ? `NOTA: ${catalogo.notaAreaGenerica}.` : null,
+    `Derivadas da área actual:\n${listar(catalogo.destinosDeAreaActual)}`,
+    `Alternativas pela carta (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações):\n${listar(catalogo.destinosAlternativos)}`,
+    catalogo.candidataForaDaLista.nome
+      ? `Candidata com ≥4 convergências (inclui sempre o Atmakaraka): ${catalogo.candidataForaDaLista.nome} — camadas: ${catalogo.candidataForaDaLista.camadas.join("; ")}.`
+      : "Candidata com ≥4 convergências: nenhuma — nenhum destino reuniu 4 camadas independentes incluindo o Atmakaraka.",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+/** Redesenho do motor (Parte 5A) — o LLM nunca via a Roda da Vida antes disto (só o template a desenhava, depois de o texto já estar escrito), por isso não podia cumprir a instrução de referenciar valores extremos. Calculada aqui com a mesma função que o template usa (`computeRodaDaVida`, movida para o method-engine), nunca inventada de novo. */
+function blocoRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[]): string {
+  const dimensoes = computeRodaDaVida(savPorCasa, pesos);
+  return dimensoes.map((d) => `${d.nome}: ${d.valor.toFixed(1)}/10${d.valor <= 4 || d.valor >= 7 ? " — EXTREMO, tem de ser referenciado no texto" : ""}`).join("\n");
+}
+
 export function construirPromptAdulto(
   intake: VocationiqIntakeAdulto,
   axes: VocationIQAxes,
   pesosPlanetas: PesoPlaneta[],
   datas: DadosDatas,
   horaNascimentoFornecida: boolean,
+  catalogo: ResultadoCatalogoVocacional,
+  savPorCasa: SavPorCasa[],
 ): string {
   const candidatas = candidatasDeclaradas(intake);
 
@@ -262,6 +330,11 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - IDEIA CONCRETA (ideiaConcreta): Quando a pessoa partilhou uma ideia concreta, usá-la para desdobrar a opção declarada — nunca tratar como contexto genérico. Se disse "consultoria SAP", o texto deve diferenciar: a carta sustenta mais "SAP" ou mais "consultoria"? Sustenta o modelo independente ou o modelo de empresa? A ideia concreta é a oportunidade de ser específico — nunca desperdiçar.
 - TENSÃO INTERNA: Sempre que dois sinais da carta apontam em direcções diferentes, o texto É OBRIGADO a nomeá-lo. Nunca escolher só o lado bonito. Exemplos de tensões reais: tese central em "voz/comunicação" mas Mercúrio fraco — nomear. Modo de Ganho aponta para liderança pública mas Montra de Mercado aponta para bastidores — nomear. Missão de longo prazo mas período actual pede pausa — nomear. A tensão é informação, não ruído.
 - O RELATÓRIO NÃO É PARA CONFIRMAR O QUE A PESSOA JÁ PENSA: é para mostrar o que a carta vê — mesmo que contradiga as opções declaradas. Se a carta aponta claramente para uma direcção que a pessoa não declarou, o motor tem de a nomear — não esperar que ela apareça nas opções. A "Candidata fora da lista" não é uma secção opcional — é o momento onde o relatório tem mais valor único. Se os dados convergem em 4 camadas para algo que a pessoa não viu, dizer isso com clareza é o trabalho.
+- REGRA CRÍTICA — LEITURA CONJUNTA: Nunca ler um eixo isolado. Ordem obrigatória: 1. Atmakaraka — o que a pessoa é por dentro. 2. Karakamsha (signo + casa JUNTOS, sempre) — onde isso aterra. 3. Modo de Ganho — por onde entra o dinheiro, testado contra 1+2. 4. Planetas fracos — explicam o passado, apontam onde falta apoio. Só depois disto testado e amarrado é que se avalia a opção declarada.
+- KARAKAMSHA — NUNCA ISOLADO: Atmakaraka casa 10 + Karakamsha casa 4 NÃO é contradição. É "autoridade que se constrói a partir de base própria, nunca dentro de estrutura alheia." Lidos juntos, os dois eixos dizem a mesma coisa com instrumentos diferentes.
+- PLANETA FRACO + ÁREA ACTUAL: Se a área actual é governada por um planeta fraco (peso < 0,9), isso explica o porquê da insatisfação com precisão. É obrigatório nomear. EXEMPLO: Vénus fraca + estética = "passou anos no campo do planeta mais fraco da sua carta — explica o desgaste, não invalida o talento."
+- OPÇÃO DECLARADA — TRADUZIR SEMPRE: A opção que a pessoa declarou é o vocabulário que tinha à mão. SEMPRE traduzir: o que quis dizer, nos termos da carta? "Quero ser consultora SAP" pode significar "quero ser autoridade que ensina e aconselha com nome próprio" — testar essa tradução, nunca aceitar a opção ao pé da letra.
+- MAHADASHA — CLASSIFICAÇÃO E REGRA: O tom da Mahadasha actual ABRE a secção do plano, antes de qualquer data ou passo. Classificação: Ketu = dissolução/fecho ("prepare e feche, não colha"); Vénus = expansão/prazer/colheita ("avance, o ciclo favorece"); Sol = afirmação/autoridade ("afirme e visibilize"); Lua = emoção/fluxo/intuição ("siga o que sente, não o plano"); Marte = acção/lançamento/conflito ("avance com força e decisão"); Rahu = ambição/disrupção/ilusão ("risco real, oportunidade real"); Júpiter = crescimento/sabedoria/expansão ("expanda com intenção"); Saturno = estrutura/colheita lenta/responsabilidade ("construa devagar, vai durar"); Mercúrio = comunicação/adaptação/aprendizagem ("aprenda e comunique"). A colheita a sério só abre depois do fim da Mahadasha actual — sempre nomear essa data.
 - Tom adulto, directo, sem gíria de coach, sem emojis.
 
 VOLUME: Cada secção deve ser tão longa quanto os dados sustentam — nunca mais, nunca menos. Se uma secção não tem nada genuinamente novo a acrescentar, é curta. Não preencher para atingir um mínimo. Proibido: repetir para parecer completo. Permitido: ser curto e preciso.
@@ -297,6 +370,13 @@ Nunca trates todos os planetas como equivalentes.
 
 -- Datas reais (Vimshottari + trânsitos) --
 ${blocoDatas(datas)}
+
+-- Candidatas do catálogo --
+${blocoCatalogoVocacional(catalogo)}
+
+-- Roda da Vida (8 dimensões, 0-10) --
+${blocoRodaDaVida(savPorCasa, pesosPlanetas)}
+Para cada dimensão marcada EXTREMO (≤4 ou ≥7), o texto tem de ter pelo menos uma frase que explique o que esse valor significa para esta pessoa especificamente — nunca deixar um extremo sem menção.
 
 -- Opções declaradas --
 ${
@@ -339,10 +419,10 @@ ${MARCADORES.forca} <forte, moderada ou fraca — forte se ≥2 fontes independe
 Repete o bloco "### <nome> / ${MARCADORES.forca} / 1. / 2. / 3. / 4." para cada opção candidata, uma a seguir à outra.
 
 ## ${SECCAO_TITULOS.candidataForaDaLista}
-A primeira linha é sempre "${MARCADORES.candidata} <nome da opção>" ou "${MARCADORES.candidata} nenhuma" — obrigatória e machine-readable, não a omitas. No máximo uma opção que a pessoa não declarou, e só se pelo menos 4 camadas independentes convergirem (Eixo da Missão, Modo de Ganho, Montra de Mercado, peso por planeta/casa, regência funcional, ou outra camada dos dados acima). Depois da primeira linha, o texto explicativo: se houver candidata, porque é que as 4 camadas convergem; se não houver ("${MARCADORES.candidata} nenhuma"), escreve isso explicitamente — "a sua carta não aponta a nada fora do que já pensava" é uma resposta válida e completa, não a evites.
+A candidata já vem calculada deterministicamente na secção "Candidatas do catálogo" acima — NÃO calcules a tua própria convergência, NÃO inventes uma candidata diferente. Se essa secção diz "nenhuma", a primeira linha é "${MARCADORES.candidata} nenhuma" e escreves isso explicitamente — "a sua carta não aponta a nada fora do que já pensava" é uma resposta válida e completa, não a evites. Se essa secção nomeia uma candidata concreta, a primeira linha é "${MARCADORES.candidata} <esse nome exacto>", seguida do texto explicativo usando as camadas exactas já listadas (nunca inventes camadas novas nem omitas as que vêm calculadas). A primeira linha é sempre obrigatória e machine-readable, não a omitas.
 
 ## ${SECCAO_TITULOS.oPlano}
-Usa as datas reais da secção "Datas reais" acima (nunca datas inventadas). Escreve o corpo do plano livremente, e destaca o primeiro passo accionável para esta semana numa linha própria, prefixada exactamente por "${MARCADORES.primeiroPasso} " (obrigatório, machine-readable, não o omitas) — ex.: "${MARCADORES.primeiroPasso} Contacte duas pessoas que já fazem consultoria a solo e pergunte-lhes o que ninguém conta sobre o primeiro ano." Nunca um plano genérico de 90 dias sem ligação às datas calculadas.
+Abre com o tom da classificação da Mahadasha actual (secção "Datas reais" acima) — antes de qualquer data ou passo. Usa as datas reais dessa secção (nunca datas inventadas). Escreve o corpo do plano livremente, e destaca o primeiro passo accionável para esta semana numa linha própria, prefixada exactamente por "${MARCADORES.primeiroPasso} " (obrigatório, machine-readable, não o omitas) — ex.: "${MARCADORES.primeiroPasso} Contacte duas pessoas que já fazem consultoria a solo e pergunte-lhes o que ninguém conta sobre o primeiro ano." Nunca um plano genérico de 90 dias sem ligação às datas calculadas.
 
 HORIZONTE TEMPORAL: até 18 meses, afirmações directas. Entre 18 meses e 3 anos, afirmações com cautela ("tende a", "favorece"). Mais de 3 anos, só como pano de fundo, nunca como previsão. A Mahadasha até ao fim do seu ciclo é contexto, não calendário.
 `.trim();

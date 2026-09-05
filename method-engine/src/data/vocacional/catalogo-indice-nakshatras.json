@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "nome": "Índice por Nakshatra — Parte 4 do catálogo",
+    "versao": "1.0",
+    "camada_de_sinal": "nakshatra",
+    "consultar_em": ["lua", "ascendente", "amatyakaraka"],
+    "nota": "O Nakshatra dá a MATÉRIA CONCRETA. É aqui que 'área da saúde' vira 'farmacologia' ou 'obstetrícia' — o nível de precisão que quase nenhum relatório vocacional em Portugal usa.",
+    "campos": {
+      "destinos": "ids de catalogo-cursos.json — cursos ou caminhos autónomos",
+      "refinamento": "especializações DENTRO de um curso. Não são cursos e nunca se nomeiam como tal no relatório — servem para escolher a vertente e para dar concreção à descrição."
+    }
+  },
+
+  "nakshatras": {
+    "ashwini":        { "regente": "ketu",     "destinos": ["medicina", "medicina_veterinaria", "t_emergencia", "ciencias_desporto", "engenharia_veiculos"], "refinamento": ["medicina de urgência", "cura rápida", "veterinária equina", "tudo o que se inicia"] },
+    "bharani":        { "regente": "venus",    "destinos": ["enfermagem", "medicina", "filosofia", "direito", "agronomia", "t_funeraria"], "refinamento": ["obstetrícia", "gestão de transições e de fim de vida", "ética", "arte que lida com limites"] },
+    "krittika":       { "regente": "sol",      "destinos": ["medicina", "t_cozinha", "metalurgia", "f_edicao", "formacao_professores", "t_costura"], "refinamento": ["corte e crítica", "cirurgia", "cozinha de fogo", "edição rigorosa", "docência exigente", "alfaiataria"] },
+    "rohini":         { "regente": "lua",      "destinos": ["agronomia", "engenharia_alimentar", "cabeleireiro_estetica_superior", "belas_artes", "comercio", "musica"], "refinamento": ["agricultura", "alimentação", "beleza e cosmética", "comércio de bens materiais", "botânica"] },
+    "mrigashira":     { "regente": "marte",    "destinos": ["geologia", "musica", "t_imobiliario", "jornalismo", "f_investigacao_livre"], "refinamento": ["investigação e busca", "perfumaria", "exploração"] },
+    "ardra":          { "regente": "rahu",     "destinos": ["engenharia_quimica", "ciencias_farmaceuticas", "psicologia", "protecao_civil", "engenharia_informatica"], "refinamento": ["química e farmacologia", "investigação disruptiva", "emergência e catástrofe", "psicologia de crise"] },
+    "punarvasu":      { "regente": "jupiter",  "destinos": ["formacao_professores", "t_restauro", "filosofia", "turismo", "f_publicacao", "arquitetura"], "refinamento": ["ensino", "reconstrução e restauro", "viagens", "habitação", "aconselhamento"] },
+    "pushya":         { "regente": "saturno",  "destinos": ["nutricao", "f_vida_religiosa", "f_direcao_espiritual", "formacao_professores", "terapia_reabilitacao", "servico_social"], "refinamento": ["nutrição", "cuidado", "sacerdócio", "ensino tradicional", "terapia"] },
+    "ashlesha":       { "regente": "mercurio", "destinos": ["ciencias_farmaceuticas", "psicologia", "ciencia_politica", "f_investigacao_livre", "medicina_complementar"], "refinamento": ["farmacologia e toxicologia", "psicologia profunda", "estratégia e política", "hipnose e terapias"] },
+    "magha":          { "regente": "ketu",     "destinos": ["historia", "arqueologia", "direito", "administracao_publica", "f_imobiliario_proprio"], "refinamento": ["genealogia e património", "direito sucessório", "autoridade institucional", "tradição"] },
+    "purva_phalguni": { "regente": "venus",    "destinos": ["artes_espetaculo", "f_eventos", "design_moda", "hotelaria_restauracao", "turismo"], "refinamento": ["artes performativas", "eventos e casamentos", "lazer"] },
+    "uttara_phalguni":{ "regente": "sol",      "destinos": ["servico_social", "saude_publica", "gestao", "administracao_publica", "direito"], "refinamento": ["ajuda organizada", "contratos", "medicina social", "filantropia", "serviço público"] },
+    "hasta":          { "regente": "lua",      "destinos": ["artesanato_superior", "medicina", "t_massagem", "t_ourivesaria", "f_escrita_propria", "fisioterapia", "t_joalharia"], "refinamento": ["MÃOS", "artesanato", "cirurgia", "massagem", "ourivesaria", "ilustração", "olaria"], "nota": "o Nakshatra das mãos — sinal decisivo para qualquer ofício manual" },
+    "chitra":         { "regente": "marte",    "destinos": ["design_industrial", "arquitetura", "t_joalharia", "t_fotografia", "design_moda", "medicina_dentaria"], "refinamento": ["design", "joalharia", "engenharia estética", "cirurgia estética"] },
+    "swati":          { "regente": "rahu",     "destinos": ["comercio", "f_negociacao", "t_aviacao", "musica", "f_empreendedorismo_digital"], "refinamento": ["comércio independente", "negociação", "aviação e vento", "música de sopro", "autonomia profissional", "meteorologia"] },
+    "vishakha":       { "regente": "jupiter",  "destinos": ["direito", "ciencia_politica", "marketing", "biotecnologia", "f_investigacao_livre"], "refinamento": ["ambição focada", "ciência aplicada", "investigação com objectivo"] },
+    "anuradha":       { "regente": "saturno",  "destinos": ["gestao", "f_comunidade", "f_estrangeiro", "f_vida_religiosa", "turismo"], "refinamento": ["gestão de grupos e comunidades", "mística e devoção", "organização", "amizade profissional"] },
+    "jyeshtha":       { "regente": "mercurio", "destinos": ["protecao_civil", "t_forcas_seguranca", "f_astrologia", "gestao", "auditoria"], "refinamento": ["autoridade técnica sénior", "proteção e segurança", "ocultismo", "investigação policial", "gestão de crise"] },
+    "mula":           { "regente": "ketu",     "destinos": ["ciencias_farmaceuticas", "filosofia", "f_investigacao_livre", "silvicultura", "medicina_complementar", "teologia"], "refinamento": ["RAIZ", "investigação de fundo", "medicina herbal", "filosofia radical", "desconstrução", "botânica"], "nota": "o Nakshatra da raiz — investigação que vai ao fundo e desmonta" },
+    "purva_ashadha":  { "regente": "venus",    "destinos": ["direito", "ciencias_mar", "publicidade", "artes_espetaculo", "jornalismo"], "refinamento": ["persuasão e retórica", "água e náutica", "debate", "propaganda"] },
+    "uttara_ashadha": { "regente": "sol",      "destinos": ["ciencia_politica", "administracao_publica", "ciencias_desporto", "f_lideranca_projeto", "direito"], "refinamento": ["liderança ética", "causas e movimentos", "exploração", "vitória de longo prazo"] },
+    "shravana":       { "regente": "lua",      "destinos": ["linguas", "formacao_professores", "musica", "psicologia", "audiovisual", "terapia_reabilitacao", "direito"], "refinamento": ["OUVIR", "ensino", "línguas", "aconselhamento", "tradição oral", "terapia da fala"], "nota": "o Nakshatra do ouvir — sinal forte para ensino, línguas e aconselhamento" },
+    "dhanishta":      { "regente": "marte",    "destinos": ["musica", "artes_espetaculo", "t_imobiliario", "financas_banca", "t_som_imagem", "ciencias_militares"], "refinamento": ["ritmo", "dança", "gestão de riqueza", "som e acústica"] },
+    "shatabhisha":    { "regente": "rahu",     "destinos": ["medicina_complementar", "f_astrologia", "engenharia_eletronica", "saude_publica", "f_investigacao_livre"], "refinamento": ["cura oculta", "medicina alternativa", "ASTROLOGIA", "tecnologia e electricidade", "investigação isolada", "epidemiologia"], "nota": "um dos dois Nakshatras que apontam astrologia directamente" },
+    "purva_bhadrapada":{ "regente": "jupiter", "destinos": ["teologia", "filosofia", "estatistica", "f_pratica_contemplativa", "t_funeraria", "engenharia_quimica"], "refinamento": ["ascese", "ocultismo", "gestão de fim de vida", "filosofia radical", "indústria"] },
+    "uttara_bhadrapada":{ "regente": "saturno","destinos": ["psicologia", "f_escrita_ensaio", "servico_social", "f_pratica_contemplativa", "ciencias_mar"], "refinamento": ["sabedoria contemplativa", "caridade organizada", "águas profundas", "escrita mística", "psicologia de profundidade"] },
+    "revati":         { "regente": "mercurio", "destinos": ["turismo", "medicina_veterinaria", "medicina", "belas_artes", "hotelaria_restauracao", "educacao_infancia"], "refinamento": ["travessia e transporte", "cuidado", "animais", "proteção dos que passam", "pediatria"] }
+  }
+}

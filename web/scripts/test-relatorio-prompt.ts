@@ -9,9 +9,11 @@ import {
   computeD1Table,
   computeVocationIQAxes,
   computePesosPlanetas,
+  computeSavPorCasa,
   currentDasha,
   computeTransits,
   construirPromptAdulto,
+  catalogarDestinos,
   type VocationiqIntakeAdulto,
   type DadosDatas,
   type BirthInput,
@@ -38,8 +40,11 @@ async function main() {
   const birth: BirthInput = { utcDate, latitude: geo.latitude, longitude: geo.longitude };
 
   const d1 = computeD1Table(birth);
-  const axes = computeVocationIQAxes(d1);
   const pesosPlanetas = computePesosPlanetas(d1);
+  const axes = computeVocationIQAxes(
+    d1,
+    pesosPlanetas.map((p) => ({ planeta: p.planeta, peso: p.peso })),
+  );
 
   const agora = new Date();
   const dasha = currentDasha(birth.utcDate, agora);
@@ -71,7 +76,16 @@ async function main() {
     areasDestinoIncluiAindaNaoSei: false,
   };
 
-  const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, true);
+  const savPorCasa = computeSavPorCasa(d1);
+  const catalogoResultados = catalogarDestinos(
+    axes,
+    pesosPlanetas,
+    savPorCasa,
+    { areaActual: intakeAdulto.areaActual, anosExperiencia: intakeAdulto.anosExperiencia, ideiaConcreta: intakeAdulto.ideiaConcreta },
+    { planeta: axes.missionAxis.atmakaraka, nakshatra: d1.rows[axes.missionAxis.atmakaraka].nakshatra },
+  );
+
+  const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, true, catalogoResultados, savPorCasa);
 
   console.log("=".repeat(80));
   console.log("PROMPT GERADO (caso de teste) — nunca enviado à Anthropic neste script");
@@ -90,8 +104,11 @@ async function main() {
   const birthSemHora: BirthInput = { utcDate: utcDateSemHora, latitude: geo.latitude, longitude: geo.longitude };
 
   const d1SemHora = computeD1Table(birthSemHora);
-  const axesSemHora = computeVocationIQAxes(d1SemHora);
   const pesosSemHora = computePesosPlanetas(d1SemHora);
+  const axesSemHora = computeVocationIQAxes(
+    d1SemHora,
+    pesosSemHora.map((p) => ({ planeta: p.planeta, peso: p.peso })),
+  );
   const dashaSemHora = currentDasha(birthSemHora.utcDate, agora);
   const proximasSemHora = dashaSemHora.allAntardashas.filter((a) => a.start >= dashaSemHora.antardasha.end).slice(0, 2);
   const transitosSemHora = computeTransits(birthSemHora, agora);
@@ -103,7 +120,15 @@ async function main() {
     transitoSaturno: { signo: transitosSemHora.saturn.sign, aspectosAoNatal: formatarAspectos(transitosSemHora.saturn.aspectsToNatal) },
   };
 
-  const promptSemHora = construirPromptAdulto(intakeAdulto, axesSemHora, pesosSemHora, datasSemHora, !horaAproximada);
+  const savPorCasaSemHora = computeSavPorCasa(d1SemHora);
+  const catalogoResultadosSemHora = catalogarDestinos(
+    axesSemHora,
+    pesosSemHora,
+    savPorCasaSemHora,
+    { areaActual: intakeAdulto.areaActual, anosExperiencia: intakeAdulto.anosExperiencia, ideiaConcreta: intakeAdulto.ideiaConcreta },
+    { planeta: axesSemHora.missionAxis.atmakaraka, nakshatra: d1SemHora.rows[axesSemHora.missionAxis.atmakaraka].nakshatra },
+  );
+  const promptSemHora = construirPromptAdulto(intakeAdulto, axesSemHora, pesosSemHora, datasSemHora, !horaAproximada, catalogoResultadosSemHora, savPorCasaSemHora);
   const indiceNota = promptSemHora.indexOf("NOTA INTERNA");
   console.log("\n" + "=".repeat(80));
   console.log('CASO 2 — hora_nascimento="" (mesmo fallback de meio-dia da rota real) — excerto com a nota do Ascendente:');

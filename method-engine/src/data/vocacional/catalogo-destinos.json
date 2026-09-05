@@ -1,0 +1,1923 @@
+{
+  "meta": {
+    "nome": "Catálogo Vocacional Naveya — dicionário de destinos",
+    "versao": "2.0 — internacional",
+    "fonte": "CATALOGO-VOCACIONAL.md v1.1",
+    "arquitectura": {
+      "principio": "O destino é universal; o NOME é local. O id e o código ISCED nunca mudam de país — só o label muda.",
+      "camada_1_destino": "id + isced_area + isced_nivel. Universal. É por aqui que os índices (planetas, combinações, nakshatras, índice inverso) referenciam.",
+      "camada_2_localizacao": "labels por país. PT está tabelado; os outros são produzidos pelo agente a partir da âncora ISCED.",
+      "camada_3_sistema_educativo": "ficheiro separado por país (vias, níveis, portas concretas). Módulo que se liga ou desliga."
+    },
+    "isced": {
+      "o_que_e": "Classificação Internacional Tipo da Educação (ISCED-F 2013, UNESCO). A CNAEF portuguesa deriva dela — os códigos são os mesmos em Portugal, Brasil, Espanha, Angola ou Alemanha.",
+      "isced_area": "código de 4 dígitos da ÁREA de formação. Não indica nível: 0713 cobre tanto Engenharia Electrotécnica como Técnico de Electricidade.",
+      "isced_nivel": "níveis em que essa formação existe. 3=secundário · 4=pós-secundário não superior · 5=superior de ciclo curto · 6=licenciatura · 7=mestrado · null=fora do sistema formal"
+    },
+    "vias_por_nivel": {
+      "nota": "As quatro Vias do catálogo (1.3) são universais — descrevem tipo de percurso, não sistema português.",
+      "A": {
+        "niveis": [
+          6,
+          7
+        ],
+        "pt": "Licenciatura + Mestrado"
+      },
+      "B": {
+        "niveis": [
+          3,
+          4
+        ],
+        "pt": "Cursos Profissionais, CEF, Aprendizagem IEFP"
+      },
+      "C": {
+        "niveis": [
+          5
+        ],
+        "pt": "CTeSP",
+        "outros_nomes": "community college, associate degree, tecnólogo, BTS, HND"
+      },
+      "D": {
+        "niveis": null,
+        "pt": "fora do sistema formal"
+      }
+    },
+    "camadas": {
+      "superior": "Ensino superior formal. Âncora ISCED forte — o agente localiza com segurança.",
+      "tecnico": "Vias técnicas e profissionais. Âncora ISCED de área; o nome varia muito por país.",
+      "fora": "Caminhos fora do sistema formal. Sem código — são universais por natureza. Exigem sempre via de sustento associada (regra 7.4)."
+    },
+    "regra_nomenclatura": {
+      "geral": "O nome que aparece no relatório é o de um CURSO ou caminho concreto — nunca uma função, um cargo ou uma área genérica. 'Gestão de Empresas' é válido; 'Gestão' não é; 'Direcção de projecto editorial' não é.",
+      "pt": "Usar labels.PT. Verificado contra DGES.",
+      "outros_paises": "O agente nomeia a formação como ela se chama no país do cliente, a partir de isced_area + isced_nivel + labels.PT como referência de sentido.",
+      "regra_de_seguranca": "Se o agente não souber com confiança como se chama a formação nesse país, escreve a DESCRIÇÃO em vez de inventar um nome. 'Formação superior em enfermagem, com prática clínica supervisionada' é preferível a um nome inventado.",
+      "instituicoes": "NUNCA nomear instituições de ensino — nem em Portugal. Mudam de oferta, encerram cursos e alteram designações. O relatório nomeia a formação, não a escola."
+    }
+  },
+  "destinos": {
+    "direito": {
+      "camada": "superior",
+      "isced_area": "0421",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Direito"
+      },
+      "vertentes": {
+        "contratual": "Direito na vertente contratual e de negociação",
+        "litigio": "Direito na vertente de litígio e tribunal",
+        "familia": "Direito na vertente de mediação e família",
+        "norma": "Direito na vertente de norma, notariado e regulação",
+        "internacional": "Direito Internacional",
+        "sucessorio": "Direito Sucessório"
+      }
+    },
+    "ciencia_politica": {
+      "camada": "superior",
+      "isced_area": "0312",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Ciência Política"
+      }
+    },
+    "gestao": {
+      "camada": "superior",
+      "isced_area": "0413",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Gestão"
+      }
+    },
+    "administracao_publica": {
+      "camada": "superior",
+      "isced_area": "0413",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Administração Pública"
+      }
+    },
+    "medicina": {
+      "camada": "superior",
+      "isced_area": "0912",
+      "isced_nivel": [
+        7
+      ],
+      "labels": {
+        "PT": "Medicina"
+      },
+      "vertentes": {
+        "cirurgica": "Medicina com vocação cirúrgica",
+        "interna": "Medicina Interna",
+        "pediatria": "Pediatria",
+        "cardiologia": "Cardiologia",
+        "ortopedia": "Ortopedia",
+        "obstetricia": "Obstetrícia",
+        "diagnostico": "Medicina de diagnóstico",
+        "urgencia": "Medicina de urgência",
+        "geriatria": "Geriatria",
+        "paliativos": "Cuidados Paliativos",
+        "estetica": "Cirurgia estética"
+      }
+    },
+    "arquitetura": {
+      "camada": "superior",
+      "isced_area": "0731",
+      "isced_nivel": [
+        7
+      ],
+      "labels": {
+        "PT": "Arquitetura"
+      }
+    },
+    "urbanismo": {
+      "camada": "superior",
+      "isced_area": "0731",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Urbanismo"
+      }
+    },
+    "relacoes_internacionais": {
+      "camada": "superior",
+      "isced_area": "0312",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Relações Internacionais"
+      }
+    },
+    "ciencias_militares": {
+      "camada": "superior",
+      "isced_area": "1031",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Ciências Militares"
+      }
+    },
+    "enfermagem": {
+      "camada": "superior",
+      "isced_area": "0913",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Enfermagem"
+      },
+      "vertentes": {
+        "obstetrica": "Enfermagem de Saúde Materna e Obstétrica",
+        "urgencia": "Enfermagem Médico-Cirúrgica — urgência",
+        "comunitaria": "Enfermagem Comunitária",
+        "saude_mental": "Enfermagem de Saúde Mental e Psiquiátrica"
+      }
+    },
+    "psicologia": {
+      "camada": "superior",
+      "isced_area": "0313",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Psicologia"
+      },
+      "vertentes": {
+        "clinica": "Psicologia Clínica",
+        "aconselhamento": "Psicologia na vertente de aconselhamento e relação",
+        "profundidade": "Psicologia de profundidade",
+        "crise": "Psicologia de crise"
+      }
+    },
+    "educacao_infancia": {
+      "camada": "superior",
+      "isced_area": "0112",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Educação Básica — Educadores de Infância"
+      }
+    },
+    "ciencias_educacao": {
+      "camada": "superior",
+      "isced_area": "0111",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Ciências da Educação"
+      }
+    },
+    "formacao_professores": {
+      "camada": "superior",
+      "isced_area": "0113",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Formação de Professores"
+      }
+    },
+    "servico_social": {
+      "camada": "superior",
+      "isced_area": "0923",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Serviço Social"
+      }
+    },
+    "apoio_criancas_jovens": {
+      "camada": "superior",
+      "isced_area": "0922",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Educação Social"
+      }
+    },
+    "ciencias_mar": {
+      "camada": "superior",
+      "isced_area": "0511",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Ciências do Mar"
+      }
+    },
+    "engenharia_alimentar": {
+      "camada": "superior",
+      "isced_area": "0721",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Engenharia Alimentar"
+      }
+    },
+    "nutricao": {
+      "camada": "superior",
+      "isced_area": "0915",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Ciências da Nutrição"
+      }
+    },
+    "terapia_reabilitacao": {
+      "camada": "superior",
+      "isced_area": "0915",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Terapia e Reabilitação"
+      }
+    },
+    "fisioterapia": {
+      "camada": "superior",
+      "isced_area": "0915",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Fisioterapia"
+      }
+    },
+    "gerontologia": {
+      "camada": "superior",
+      "isced_area": "0921",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Gerontologia"
+      }
+    },
+    "hotelaria_restauracao": {
+      "camada": "superior",
+      "isced_area": "1013",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Gestão Hoteleira e Restauração"
+      }
+    },
+    "biblioteconomia": {
+      "camada": "superior",
+      "isced_area": "0322",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Ciências da Informação e Documentação"
+      }
+    },
+    "literatura_linguistica": {
+      "camada": "superior",
+      "isced_area": "0232",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Estudos Portugueses e Linguística"
+      }
+    },
+    "linguas": {
+      "camada": "superior",
+      "isced_area": "0231",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Línguas, Literaturas e Culturas"
+      }
+    },
+    "linguas_classicas": {
+      "camada": "superior",
+      "isced_area": "0231",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Línguas e Literaturas Clássicas — Grego, Latim, Hebraico"
+      }
+    },
+    "traducao": {
+      "camada": "superior",
+      "isced_area": "0231",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Tradução"
+      }
+    },
+    "jornalismo": {
+      "camada": "superior",
+      "isced_area": "0321",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Ciências da Comunicação — Jornalismo"
+      }
+    },
+    "marketing": {
+      "camada": "superior",
+      "isced_area": "0414",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Marketing"
+      }
+    },
+    "publicidade": {
+      "camada": "superior",
+      "isced_area": "0414",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Publicidade e Marketing"
+      }
+    },
+    "contabilidade": {
+      "camada": "superior",
+      "isced_area": "0411",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Contabilidade e Fiscalidade"
+      }
+    },
+    "auditoria": {
+      "camada": "superior",
+      "isced_area": "0411",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Auditoria e Controlo de Gestão"
+      }
+    },
+    "matematica": {
+      "camada": "superior",
+      "isced_area": "0541",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Matemática"
+      }
+    },
+    "matematica_pura": {
+      "camada": "superior",
+      "isced_area": "0541",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Matemática Pura"
+      }
+    },
+    "estatistica": {
+      "camada": "superior",
+      "isced_area": "0542",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Estatística e Investigação Operacional"
+      }
+    },
+    "engenharia_informatica": {
+      "camada": "superior",
+      "isced_area": "0613",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Engenharia Informática"
+      }
+    },
+    "sistemas_redes": {
+      "camada": "superior",
+      "isced_area": "0612",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Sistemas e Redes de Informação"
+      }
+    },
+    "economia": {
+      "camada": "superior",
+      "isced_area": "0311",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Economia"
+      }
+    },
+    "comercio": {
+      "camada": "superior",
+      "isced_area": "0416",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Gestão Comercial"
+      }
+    },
+    "secretariado": {
+      "camada": "superior",
+      "isced_area": "0415",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Secretariado e Assessoria de Direção"
+      }
+    },
+    "ciencias_farmaceuticas": {
+      "camada": "superior",
+      "isced_area": "0916",
+      "isced_nivel": [
+        7
+      ],
+      "labels": {
+        "PT": "Ciências Farmacêuticas"
+      }
+    },
+    "audiovisual": {
+      "camada": "superior",
+      "isced_area": "0211",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Som e Imagem — Produção de Media"
+      }
+    },
+    "design_moda": {
+      "camada": "superior",
+      "isced_area": "0212",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Design de Moda"
+      }
+    },
+    "design_interiores": {
+      "camada": "superior",
+      "isced_area": "0212",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Design de Interiores"
+      }
+    },
+    "design_industrial": {
+      "camada": "superior",
+      "isced_area": "0212",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Design Industrial e de Produto"
+      }
+    },
+    "design_grafico": {
+      "camada": "superior",
+      "isced_area": "0212",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Design de Comunicação"
+      }
+    },
+    "belas_artes": {
+      "camada": "superior",
+      "isced_area": "0213",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Belas-Artes"
+      }
+    },
+    "musica": {
+      "camada": "superior",
+      "isced_area": "0215",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Música"
+      }
+    },
+    "artes_espetaculo": {
+      "camada": "superior",
+      "isced_area": "0215",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Artes do Espetáculo — Teatro e Dança"
+      }
+    },
+    "artesanato_superior": {
+      "camada": "superior",
+      "isced_area": "0214",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Artes e Ofícios Tradicionais"
+      }
+    },
+    "medicina_dentaria": {
+      "camada": "superior",
+      "isced_area": "0911",
+      "isced_nivel": [
+        7
+      ],
+      "labels": {
+        "PT": "Medicina Dentária"
+      }
+    },
+    "turismo": {
+      "camada": "superior",
+      "isced_area": "1015",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Turismo e Lazer"
+      }
+    },
+    "cabeleireiro_estetica_superior": {
+      "camada": "superior",
+      "isced_area": "1012",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Ciências Cosméticas"
+      }
+    },
+    "historia_arte": {
+      "camada": "superior",
+      "isced_area": "0222",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "História da Arte"
+      }
+    },
+    "enologia": {
+      "camada": "superior",
+      "isced_area": "0811",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Enologia"
+      }
+    },
+    "engenharia_mecanica": {
+      "camada": "superior",
+      "isced_area": "0715",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Engenharia Mecânica"
+      }
+    },
+    "engenharia_civil": {
+      "camada": "superior",
+      "isced_area": "0732",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Engenharia Civil"
+      }
+    },
+    "metalurgia": {
+      "camada": "superior",
+      "isced_area": "0715",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Engenharia Metalúrgica e de Materiais"
+      }
+    },
+    "ciencias_desporto": {
+      "camada": "superior",
+      "isced_area": "1014",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Ciências do Desporto"
+      }
+    },
+    "protecao_civil": {
+      "camada": "superior",
+      "isced_area": "1032",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Proteção Civil"
+      }
+    },
+    "engenharia_veiculos": {
+      "camada": "superior",
+      "isced_area": "0716",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Engenharia Aeronáutica e de Veículos"
+      }
+    },
+    "engenharia_minas": {
+      "camada": "superior",
+      "isced_area": "0724",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Engenharia de Minas e Geoambiente"
+      }
+    },
+    "engenharia_quimica": {
+      "camada": "superior",
+      "isced_area": "0711",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Engenharia Química"
+      }
+    },
+    "medicina_veterinaria": {
+      "camada": "superior",
+      "isced_area": "0841",
+      "isced_nivel": [
+        7
+      ],
+      "labels": {
+        "PT": "Medicina Veterinária"
+      }
+    },
+    "engenharia_eletronica": {
+      "camada": "superior",
+      "isced_area": "0714",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Engenharia Eletrónica e Automação"
+      }
+    },
+    "teologia": {
+      "camada": "superior",
+      "isced_area": "0221",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Teologia"
+      }
+    },
+    "ciencias_religiao": {
+      "camada": "superior",
+      "isced_area": "0221",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Ciências da Religião"
+      }
+    },
+    "filosofia": {
+      "camada": "superior",
+      "isced_area": "0223",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Filosofia"
+      }
+    },
+    "financas_banca": {
+      "camada": "superior",
+      "isced_area": "0412",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Finanças, Banca e Seguros"
+      }
+    },
+    "historia": {
+      "camada": "superior",
+      "isced_area": "0222",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "História"
+      }
+    },
+    "arqueologia": {
+      "camada": "superior",
+      "isced_area": "0222",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Arqueologia"
+      }
+    },
+    "sociologia": {
+      "camada": "superior",
+      "isced_area": "0314",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Sociologia"
+      }
+    },
+    "antropologia": {
+      "camada": "superior",
+      "isced_area": "0314",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Antropologia"
+      }
+    },
+    "geologia": {
+      "camada": "superior",
+      "isced_area": "0532",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Geologia"
+      }
+    },
+    "seguranca_higiene": {
+      "camada": "superior",
+      "isced_area": "1022",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Segurança e Higiene no Trabalho"
+      }
+    },
+    "saude_publica": {
+      "camada": "superior",
+      "isced_area": "1021",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Saúde Pública"
+      }
+    },
+    "agronomia": {
+      "camada": "superior",
+      "isced_area": "0811",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Engenharia Agronómica"
+      }
+    },
+    "silvicultura": {
+      "camada": "superior",
+      "isced_area": "0821",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Engenharia Florestal"
+      }
+    },
+    "biotecnologia": {
+      "camada": "superior",
+      "isced_area": "0512",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Biotecnologia"
+      }
+    },
+    "bioquimica": {
+      "camada": "superior",
+      "isced_area": "0512",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Bioquímica"
+      }
+    },
+    "ciencias_ambiente": {
+      "camada": "superior",
+      "isced_area": "0522",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Ciências do Ambiente"
+      }
+    },
+    "fisica": {
+      "camada": "superior",
+      "isced_area": "0533",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Física"
+      }
+    },
+    "tecnologias_diagnostico": {
+      "camada": "superior",
+      "isced_area": "0914",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Tecnologias de Diagnóstico e Terapêutica"
+      }
+    },
+    "analises_clinicas": {
+      "camada": "superior",
+      "isced_area": "0914",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Análises Clínicas e Saúde Pública"
+      }
+    },
+    "imagiologia": {
+      "camada": "superior",
+      "isced_area": "0914",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Imagem Médica e Radioterapia"
+      }
+    },
+    "medicina_complementar": {
+      "camada": "superior",
+      "isced_area": "0917",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Terapêuticas Complementares"
+      }
+    },
+    "cardiopneumologia": {
+      "camada": "superior",
+      "isced_area": "0914",
+      "isced_nivel": [
+        6
+      ],
+      "labels": {
+        "PT": "Cardiopneumologia"
+      }
+    },
+    "t_direcao_equipa": {
+      "camada": "tecnico",
+      "isced_area": "0413",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Direção e chefia de equipa"
+      }
+    },
+    "t_protecao_pessoas": {
+      "camada": "tecnico",
+      "isced_area": "1032",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Proteção Civil e Socorro"
+      }
+    },
+    "t_restauracao": {
+      "camada": "tecnico",
+      "isced_area": "1013",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Restauração e Bar"
+      }
+    },
+    "t_ourivesaria": {
+      "camada": "tecnico",
+      "isced_area": "0214",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Ourivesaria"
+      }
+    },
+    "t_eletricidade": {
+      "camada": "tecnico",
+      "isced_area": "0713",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Eletrónica, Automação e Comando"
+      }
+    },
+    "t_cozinha": {
+      "camada": "tecnico",
+      "isced_area": "1013",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Cozinha e Pastelaria"
+      }
+    },
+    "t_apoio_infancia": {
+      "camada": "tecnico",
+      "isced_area": "0922",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Apoio à Infância"
+      }
+    },
+    "t_auxiliar_saude": {
+      "camada": "tecnico",
+      "isced_area": "0913",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico Auxiliar de Saúde"
+      }
+    },
+    "t_geriatria": {
+      "camada": "tecnico",
+      "isced_area": "0921",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Apoio Psicossocial e Geriatria"
+      }
+    },
+    "t_turismo": {
+      "camada": "tecnico",
+      "isced_area": "1015",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Turismo"
+      }
+    },
+    "t_imobiliario": {
+      "camada": "tecnico",
+      "isced_area": "0416",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Mediação Imobiliária"
+      }
+    },
+    "t_nautica": {
+      "camada": "tecnico",
+      "isced_area": "1041",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Máquinas e Navegação Marítima"
+      }
+    },
+    "t_massagem": {
+      "camada": "tecnico",
+      "isced_area": "1012",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Termalismo e Bem-Estar"
+      }
+    },
+    "t_programacao": {
+      "camada": "tecnico",
+      "isced_area": "0613",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Programação e Sistemas de Informação"
+      }
+    },
+    "t_contabilidade": {
+      "camada": "tecnico",
+      "isced_area": "0411",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Contabilidade"
+      }
+    },
+    "t_vendas": {
+      "camada": "tecnico",
+      "isced_area": "0416",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Comercial e Vendas"
+      }
+    },
+    "t_seguros": {
+      "camada": "tecnico",
+      "isced_area": "0412",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Mediação de Seguros"
+      }
+    },
+    "t_analises": {
+      "camada": "tecnico",
+      "isced_area": "0914",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Análises Clínicas"
+      }
+    },
+    "t_redes_sociais": {
+      "camada": "tecnico",
+      "isced_area": "0414",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Comunicação e Marketing Digital"
+      }
+    },
+    "t_design_grafico": {
+      "camada": "tecnico",
+      "isced_area": "0212",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Design Gráfico"
+      }
+    },
+    "t_logistica": {
+      "camada": "tecnico",
+      "isced_area": "1041",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Logística e Distribuição"
+      }
+    },
+    "t_lingua_gestual": {
+      "camada": "tecnico",
+      "isced_area": "0231",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Intérprete de Língua Gestual Portuguesa"
+      }
+    },
+    "t_cabeleireiro": {
+      "camada": "tecnico",
+      "isced_area": "1012",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Cabeleireiro"
+      }
+    },
+    "t_estetica": {
+      "camada": "tecnico",
+      "isced_area": "1012",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Estética e Cosmética"
+      }
+    },
+    "t_joalharia": {
+      "camada": "tecnico",
+      "isced_area": "0214",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Joalharia"
+      }
+    },
+    "t_costura": {
+      "camada": "tecnico",
+      "isced_area": "0723",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Modelação e Confeção"
+      }
+    },
+    "t_decoracao": {
+      "camada": "tecnico",
+      "isced_area": "0212",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Design de Interiores e Exteriores"
+      }
+    },
+    "t_fotografia": {
+      "camada": "tecnico",
+      "isced_area": "0211",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Fotografia"
+      }
+    },
+    "t_pastelaria": {
+      "camada": "tecnico",
+      "isced_area": "0721",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Pastelaria e Panificação"
+      }
+    },
+    "t_paisagismo": {
+      "camada": "tecnico",
+      "isced_area": "0812",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Jardinagem e Espaços Verdes"
+      }
+    },
+    "t_som_imagem": {
+      "camada": "tecnico",
+      "isced_area": "0211",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Áudio e Vídeo"
+      }
+    },
+    "t_serralharia": {
+      "camada": "tecnico",
+      "isced_area": "0715",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Serralharia e Soldadura"
+      }
+    },
+    "t_construcao": {
+      "camada": "tecnico",
+      "isced_area": "0732",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Construção Civil"
+      }
+    },
+    "t_mecanica_auto": {
+      "camada": "tecnico",
+      "isced_area": "0716",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Mecatrónica Automóvel"
+      }
+    },
+    "t_forcas_seguranca": {
+      "camada": "tecnico",
+      "isced_area": "1032",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Forças de segurança e forças armadas"
+      }
+    },
+    "t_treinador": {
+      "camada": "tecnico",
+      "isced_area": "1014",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Desporto e Treino"
+      }
+    },
+    "t_emergencia": {
+      "camada": "tecnico",
+      "isced_area": "0913",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Emergência Pré-Hospitalar"
+      }
+    },
+    "t_talho": {
+      "camada": "tecnico",
+      "isced_area": "0721",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Processamento de Carnes"
+      }
+    },
+    "t_manutencao": {
+      "camada": "tecnico",
+      "isced_area": "0715",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Manutenção Industrial"
+      }
+    },
+    "t_piloto": {
+      "camada": "tecnico",
+      "isced_area": "1041",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Piloto — formação aeronáutica certificada"
+      }
+    },
+    "t_formacao_tecnica": {
+      "camada": "tecnico",
+      "isced_area": "0114",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Formador — Certificado de Competências Pedagógicas"
+      }
+    },
+    "t_editorial": {
+      "camada": "tecnico",
+      "isced_area": "0211",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Produção Editorial"
+      }
+    },
+    "t_guia": {
+      "camada": "tecnico",
+      "isced_area": "1015",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Guia-Intérprete Nacional"
+      }
+    },
+    "t_canalizacao": {
+      "camada": "tecnico",
+      "isced_area": "0732",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Instalações Hidráulicas"
+      }
+    },
+    "t_carpintaria": {
+      "camada": "tecnico",
+      "isced_area": "0722",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Carpintaria e Marcenaria"
+      }
+    },
+    "t_agricultura": {
+      "camada": "tecnico",
+      "isced_area": "0811",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Produção Agropecuária"
+      }
+    },
+    "t_armazem": {
+      "camada": "tecnico",
+      "isced_area": "1041",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Gestão de Armazém"
+      }
+    },
+    "t_arquivo": {
+      "camada": "tecnico",
+      "isced_area": "0322",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Arquivo e Documentação"
+      }
+    },
+    "t_qualidade": {
+      "camada": "tecnico",
+      "isced_area": "0413",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Controlo de Qualidade"
+      }
+    },
+    "t_funeraria": {
+      "camada": "tecnico",
+      "isced_area": "1039",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Serviços Funerários"
+      }
+    },
+    "t_cibersseguranca": {
+      "camada": "tecnico",
+      "isced_area": "0612",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Cibersegurança"
+      }
+    },
+    "t_video": {
+      "camada": "tecnico",
+      "isced_area": "0211",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Produção Audiovisual"
+      }
+    },
+    "t_conteudo_digital": {
+      "camada": "tecnico",
+      "isced_area": "0211",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Criação de Conteúdo Digital"
+      }
+    },
+    "t_comercio_internacional": {
+      "camada": "tecnico",
+      "isced_area": "0416",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Comércio Internacional"
+      }
+    },
+    "t_aviacao": {
+      "camada": "tecnico",
+      "isced_area": "1041",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Operações de Transporte Aéreo"
+      }
+    },
+    "t_restauro": {
+      "camada": "tecnico",
+      "isced_area": "0214",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Conservação e Restauro"
+      }
+    },
+    "t_terapias_complementares": {
+      "camada": "tecnico",
+      "isced_area": "0917",
+      "isced_nivel": [
+        3,
+        4,
+        5
+      ],
+      "labels": {
+        "PT": "Técnico de Terapias Complementares"
+      }
+    },
+    "f_marca_pessoal": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Negócio próprio com marca pessoal"
+      }
+    },
+    "f_lideranca_projeto": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Direção de projeto ou instituição própria"
+      }
+    },
+    "f_politica_local": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Política local e representação"
+      }
+    },
+    "f_doula": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Doula e acompanhamento de nascimento"
+      }
+    },
+    "f_cozinha_propria": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Cozinha própria e alimentação como projeto"
+      }
+    },
+    "f_escrita_memoria": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Escrita de memória, história de família e biografia"
+      }
+    },
+    "f_comunidade": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Criação de comunidade e espaços de pertença"
+      }
+    },
+    "f_escrita_propria": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Escrita e autoria em qualquer formato"
+      }
+    },
+    "f_edicao": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Edição e revisão independente"
+      }
+    },
+    "f_traducao_independente": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Tradução independente"
+      }
+    },
+    "f_formacao_online": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Formação online e criação de escola própria"
+      }
+    },
+    "f_atelier": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Ateliê próprio de ofício de mãos"
+      }
+    },
+    "f_consultoria_imagem": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Consultoria de imagem e estilo"
+      }
+    },
+    "f_eventos": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Organização de eventos e casamentos"
+      }
+    },
+    "f_curadoria": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Curadoria e comércio de arte"
+      }
+    },
+    "f_empreitada": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Empreitada e obra por conta própria"
+      }
+    },
+    "f_desporto_competicao": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Desporto de competição e treino"
+      }
+    },
+    "f_artes_marciais": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Escola de defesa pessoal e artes marciais"
+      }
+    },
+    "f_ensino_proprio": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Ensino próprio — escola, curso, mentoria"
+      }
+    },
+    "f_escrita_ensaio": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Escrita de fundo — ensaio e pensamento"
+      }
+    },
+    "f_vida_religiosa": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Vida religiosa e ministério"
+      }
+    },
+    "f_direcao_espiritual": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Direção espiritual e formação de adultos"
+      }
+    },
+    "f_supervisao": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Aconselhamento sénior e supervisão"
+      }
+    },
+    "f_publicacao": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Edição e publicação própria"
+      }
+    },
+    "f_imobiliario_proprio": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Imobiliário e património próprio"
+      }
+    },
+    "f_agricultura_propria": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Agricultura e terra própria"
+      }
+    },
+    "f_restauro_proprio": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Restauro e conservação por conta própria"
+      }
+    },
+    "f_pratica_contemplativa": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Disciplina espiritual e prática contemplativa"
+      }
+    },
+    "f_empreendedorismo_digital": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Empreendedorismo digital e escala"
+      }
+    },
+    "f_estrangeiro": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Trabalho no estrangeiro ou com o estrangeiro"
+      }
+    },
+    "f_presenca_publica": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Presença pública em plataformas"
+      }
+    },
+    "f_astrologia": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Astrologia e sistemas simbólicos — prática e ensino"
+      }
+    },
+    "f_investigacao_livre": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Investigação livre e escrita de profundidade"
+      }
+    },
+    "f_terapia_espiritual": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Terapia e acompanhamento espiritual"
+      }
+    },
+    "f_hermeneutica": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Hermenêutica e investigação de fundo"
+      }
+    },
+    "f_mediacao_relacional": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Mediação e aconselhamento relacional"
+      }
+    },
+    "f_negociacao": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Negociação e intermediação por conta própria"
+      }
+    },
+    "f_cuidado_oficio": {
+      "camada": "fora",
+      "isced_nivel": null,
+      "labels": {
+        "PT": "Cuidado como ofício próprio"
+      }
+    }
+  }
+}

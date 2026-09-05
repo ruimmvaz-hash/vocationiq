@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "nome": "Índice por combinação — Parte 3 do catálogo",
+    "versao": "1.0",
+    "camada_de_sinal": "combinacao",
+    "nota": "É aqui que o catálogo ganha precisão. Um planeta forte dá território largo; dois planetas em relação dão o curso. Todos os valores são ids de catalogo-cursos.json.",
+    "condicoes_de_activacao": {
+      "descricao": "Uma combinação está activa se QUALQUER uma destas condições se verificar. O motor deve registar QUAL delas activou, para efeito de rastreio.",
+      "lista": [
+        { "id": "conjuncao", "regra": "os dois planetas no mesmo signo (védico, signo inteiro)" },
+        { "id": "drishti_mutuo", "regra": "cada um lança Drishti sobre o outro; sem orbe, por casas" },
+        { "id": "recepcao_mutua", "regra": "cada um ocupa o signo regido pelo outro (parivartana yoga)" },
+        { "id": "amk_regente10", "regra": "um é Amatyakaraka e o outro rege a Casa 10, ou vice-versa" }
+      ]
+    },
+    "peso": "A combinação vale como camada de sinal PRÓPRIA, distinta da camada karaka. Se Júpiter aponta teologia pela Parte 2 e Júpiter+Ketu aponta teologia pela Parte 3, são DOIS sinais independentes."
+  },
+
+  "combinacoes": [
+    { "par": ["jupiter", "ketu"], "destinos": ["teologia", "ciencias_religiao", "filosofia", "f_astrologia", "f_hermeneutica", "linguas_classicas", "f_pratica_contemplativa", "f_escrita_ensaio"], "nota": "combinação de sabedoria simbólica — a mais forte para teologia e sistemas simbólicos" },
+    { "par": ["jupiter", "mercurio"], "destinos": ["direito", "f_publicacao", "f_edicao", "literatura_linguistica", "traducao", "formacao_professores", "jornalismo", "f_escrita_ensaio"], "nota": "escrita académica, tradução erudita, jornalismo de análise" },
+    { "par": ["jupiter", "saturno"], "destinos": ["direito", "teologia", "historia", "arquitetura", "gestao", "formacao_professores"], "nota": "doutrina, norma, magistratura, ensino superior, gestão institucional" },
+    { "par": ["jupiter", "venus"], "destinos": ["historia_arte", "musica", "f_mediacao_relacional", "hotelaria_restauracao", "f_curadoria", "belas_artes"], "nota": "arte sacra, direito de família e mediação, música litúrgica, hotelaria de sentido", "vertentes": { "direito": "familia" } },
+    { "par": ["jupiter", "sol"], "destinos": ["direito", "ciencia_politica", "administracao_publica", "f_lideranca_projeto", "formacao_professores", "medicina"], "nota": "magistratura, direcção de instituição, ensino com autoridade, medicina interna", "vertentes": { "medicina": "interna" } },
+    { "par": ["jupiter", "marte"], "destinos": ["medicina", "direito", "engenharia_mecanica", "ciencias_militares", "ciencias_desporto"], "nota": "cirurgia, litígio, engenharia com comando, oficial de carreira", "vertentes": { "medicina": "cirurgica", "direito": "litigio" } },
+    { "par": ["jupiter", "lua"], "destinos": ["medicina", "psicologia", "educacao_infancia", "ciencias_educacao", "nutricao", "servico_social"], "nota": "pediatria, psicologia clínica, aconselhamento familiar, ensino básico", "vertentes": { "medicina": "pediatria", "psicologia": "clinica" } },
+    { "par": ["jupiter", "rahu"], "destinos": ["direito", "financas_banca", "f_formacao_online", "f_estrangeiro", "relacoes_internacionais"], "nota": "direito internacional, banca, formação online em escala", "vertentes": { "direito": "internacional" } },
+
+    { "par": ["mercurio", "venus"], "destinos": ["design_grafico", "design_moda", "design_interiores", "publicidade", "f_escrita_propria", "t_fotografia", "t_joalharia", "artesanato_superior"], "nota": "design em qualquer vertente, comunicação de marca, joalharia de autor" },
+    { "par": ["mercurio", "marte"], "destinos": ["engenharia_informatica", "engenharia_mecanica", "medicina", "jornalismo", "direito", "engenharia_eletronica"], "nota": "programação, cirurgia, jornalismo de terreno, debate e litígio, robótica", "vertentes": { "medicina": "cirurgica", "direito": "litigio" } },
+    { "par": ["mercurio", "saturno"], "destinos": ["contabilidade", "auditoria", "matematica", "t_arquivo", "biblioteconomia", "literatura_linguistica", "sistemas_redes", "estatistica"], "nota": "auditoria, arquivística, linguística estrutural, programação de sistemas, notariado", "vertentes": { "direito": "norma" } },
+    { "par": ["mercurio", "lua"], "destinos": ["psicologia", "jornalismo", "f_escrita_memoria", "ciencias_educacao", "enfermagem", "audiovisual"], "nota": "comunicação com grande público, escrita memorialística, ensino básico" },
+    { "par": ["mercurio", "ketu"], "destinos": ["matematica_pura", "linguas_classicas", "f_astrologia", "analises_clinicas", "tecnologias_diagnostico", "f_investigacao_livre", "sistemas_redes"], "nota": "línguas antigas (grego, latim, hebraico), criptografia, simbólica, astrologia técnica, diagnóstico" },
+    { "par": ["mercurio", "rahu"], "destinos": ["engenharia_informatica", "sistemas_redes", "marketing", "t_comercio_internacional", "t_conteudo_digital", "biotecnologia"], "nota": "dados e IA, marketing digital, comércio internacional" },
+    { "par": ["mercurio", "sol"], "destinos": ["jornalismo", "direito", "ciencia_politica", "gestao", "administracao_publica"], "nota": "comunicação institucional, jornalismo político, porta-vozia" },
+
+    { "par": ["venus", "marte"], "destinos": ["medicina_dentaria", "belas_artes", "t_joalharia", "design_industrial", "artes_espetaculo", "ciencias_desporto", "t_cabeleireiro"], "nota": "cirurgia estética e dentária, escultura, dança, desporto artístico", "vertentes": { "medicina": "estetica" } },
+    { "par": ["venus", "saturno"], "destinos": ["arquitetura", "t_restauro", "f_restauro_proprio", "t_ourivesaria", "musica", "historia_arte"], "nota": "restauro e conservação, ourivesaria, música clássica, arte de longa maturação, património" },
+    { "par": ["venus", "lua"], "destinos": ["hotelaria_restauracao", "t_estetica", "t_decoracao", "t_pastelaria", "design_moda", "t_massagem", "f_eventos"], "nota": "hotelaria, estética e bem-estar, alimentação e pastelaria, terapias corporais" },
+    { "par": ["venus", "ketu"], "destinos": ["t_restauro", "musica", "f_terapia_espiritual", "belas_artes", "f_pratica_contemplativa"], "nota": "arte sacra, música contemplativa, terapias energéticas, iconografia, arte sem mercado" },
+    { "par": ["venus", "rahu"], "destinos": ["design_moda", "audiovisual", "f_presenca_publica", "t_video", "cabeleireiro_estetica_superior", "publicidade"], "nota": "moda, imagem e entretenimento, luxo, influência digital, cosmética" },
+
+    { "par": ["sol", "saturno"], "destinos": ["gestao", "administracao_publica", "direito", "medicina", "engenharia_civil", "ciencia_politica"], "nota": "gestão institucional, magistratura, ortopedia, política de longo prazo, engenharia de estruturas", "vertentes": { "medicina": "ortopedia", "direito": "norma" } },
+    { "par": ["sol", "marte"], "destinos": ["medicina", "ciencias_militares", "protecao_civil", "ciencias_desporto", "t_forcas_seguranca"], "nota": "cirurgia, carreira militar, forças de segurança, cardiologia, liderança de campo", "vertentes": { "medicina": "cardiologia" } },
+    { "par": ["sol", "lua"], "destinos": ["saude_publica", "servico_social", "ciencia_politica", "audiovisual", "f_presenca_publica"], "nota": "saúde pública, política social, figura pública com vocação de cuidado" },
+    { "par": ["sol", "ketu"], "destinos": ["filosofia", "f_vida_religiosa", "f_investigacao_livre", "f_escrita_propria", "teologia"], "nota": "autoridade sem cargo, investigação independente, autoria solitária" },
+
+    { "par": ["lua", "marte"], "destinos": ["enfermagem", "t_emergencia", "medicina", "t_cozinha", "t_imobiliario", "fisioterapia"], "nota": "obstetrícia, enfermagem de urgência, emergência médica, cozinha profissional", "vertentes": { "medicina": "obstetricia", "enfermagem": "obstetrica" } },
+    { "par": ["lua", "saturno"], "destinos": ["gerontologia", "servico_social", "agronomia", "t_arquivo", "medicina", "t_geriatria", "f_escrita_memoria"], "nota": "geriatria e cuidados continuados, trabalho social, arquivo e história de família, cuidados paliativos", "vertentes": { "medicina": "paliativos" } },
+    { "par": ["lua", "ketu"], "destinos": ["psicologia", "medicina", "f_pratica_contemplativa", "f_terapia_espiritual", "f_escrita_propria"], "nota": "psicologia profunda, cuidados paliativos, contemplação, escrita interior", "vertentes": { "psicologia": "profundidade", "medicina": "paliativos" } },
+
+    { "par": ["marte", "saturno"], "destinos": ["engenharia_civil", "metalurgia", "medicina", "ciencias_militares", "engenharia_minas", "t_mecanica_auto", "t_construcao"], "nota": "construção civil, indústria e metalomecânica, cirurgia ortopédica, militar de carreira", "vertentes": { "medicina": "ortopedia" } },
+    { "par": ["marte", "ketu"], "destinos": ["medicina", "imagiologia", "tecnologias_diagnostico", "f_artes_marciais", "f_investigacao_livre"], "nota": "cirurgia de precisão, imagiologia e diagnóstico invasivo, artes marciais, investigação forense", "vertentes": { "medicina": "diagnostico" } },
+    { "par": ["marte", "rahu"], "destinos": ["t_cibersseguranca", "engenharia_eletronica", "engenharia_veiculos", "f_desporto_competicao", "f_empreendedorismo_digital", "ciencias_militares"], "nota": "cibersegurança, tecnologia industrial, desporto de risco, engenharia militar" },
+
+    { "par": ["saturno", "ketu"], "destinos": ["arqueologia", "matematica_pura", "t_restauro", "f_pratica_contemplativa", "geologia", "f_investigacao_livre"], "nota": "arqueologia, restauro, vida monástica, investigação de raiz, geologia" },
+    { "par": ["saturno", "rahu"], "destinos": ["f_imobiliario_proprio", "engenharia_minas", "t_logistica", "engenharia_eletronica", "t_armazem"], "nota": "imobiliário de escala, indústria e tecnologia pesada, logística global, mineração" }
+  ]
+}

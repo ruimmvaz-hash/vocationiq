@@ -95,19 +95,44 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
   // recalculado aqui a partir do que já foi pedido acima, para não repetir
   // as mesmas duas queries: prefere o rascunho por aprovar, cai para o
   // texto do relatório entregue quando não há nenhum rascunho novo.
-  const actual: { id: string; texto: string; dadosTecnicos: DadosTecnicosArmazenados | null; promptCompleto: string | null; auditoriaLlm: string | null; auditoriaCriadaEm: string | null } | null =
-    rascunho?.texto
-      ? { id: rascunho.id, texto: rascunho.texto, dadosTecnicos: rascunho.dadosTecnicos, promptCompleto: rascunho.promptCompleto, auditoriaLlm: rascunho.auditoriaLlm, auditoriaCriadaEm: rascunho.auditoriaCriadaEm }
-      : relatorioEntregue?.rascunhoTexto
-        ? {
-            id: relatorioEntregue.id,
-            texto: relatorioEntregue.rascunhoTexto,
-            dadosTecnicos: relatorioEntregue.dadosTecnicos,
-            promptCompleto: relatorioEntregue.promptCompleto,
-            auditoriaLlm: relatorioEntregue.auditoriaLlm,
-            auditoriaCriadaEm: relatorioEntregue.auditoriaCriadaEm,
-          }
-        : null;
+  const actual: {
+    id: string;
+    texto: string;
+    dadosTecnicos: DadosTecnicosArmazenados | null;
+    promptCompleto: string | null;
+    auditoriaLlm: string | null;
+    auditoriaCriadaEm: string | null;
+    criticaLlm: string | null;
+    criticaCriadaEm: string | null;
+    rascunhoReescrito: string | null;
+    rascunhoVersao: number;
+  } | null = rascunho?.texto
+    ? {
+        id: rascunho.id,
+        texto: rascunho.texto,
+        dadosTecnicos: rascunho.dadosTecnicos,
+        promptCompleto: rascunho.promptCompleto,
+        auditoriaLlm: rascunho.auditoriaLlm,
+        auditoriaCriadaEm: rascunho.auditoriaCriadaEm,
+        criticaLlm: rascunho.criticaLlm,
+        criticaCriadaEm: rascunho.criticaCriadaEm,
+        rascunhoReescrito: rascunho.rascunhoReescrito,
+        rascunhoVersao: rascunho.rascunhoVersao,
+      }
+    : relatorioEntregue?.rascunhoTexto
+      ? {
+          id: relatorioEntregue.id,
+          texto: relatorioEntregue.rascunhoTexto,
+          dadosTecnicos: relatorioEntregue.dadosTecnicos,
+          promptCompleto: relatorioEntregue.promptCompleto,
+          auditoriaLlm: relatorioEntregue.auditoriaLlm,
+          auditoriaCriadaEm: relatorioEntregue.auditoriaCriadaEm,
+          criticaLlm: relatorioEntregue.criticaLlm,
+          criticaCriadaEm: relatorioEntregue.criticaCriadaEm,
+          rascunhoReescrito: relatorioEntregue.rascunhoReescrito,
+          rascunhoVersao: relatorioEntregue.rascunhoVersao,
+        }
+      : null;
 
   const podeVerRelatorio = podeGerarAutomatico && actual !== null;
 
@@ -211,7 +236,15 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
       {/* SECÇÃO 4 — AUDITORIA DO LLM (só quando há rascunho; fechada por defeito) */}
       {actual?.texto && (
         <AccordionSection titulo="4 · Auditoria do LLM" subtitulo="~€0.08 por análise">
-          <SeccaoAuditoria intakeId={intake.id} auditoriaInicial={actual.auditoriaLlm} auditoriaCriadaEmInicial={actual.auditoriaCriadaEm} />
+          <SeccaoAuditoria
+            intakeId={intake.id}
+            auditoriaInicial={actual.auditoriaLlm}
+            auditoriaCriadaEmInicial={actual.auditoriaCriadaEm}
+            criticaLlm={actual.criticaLlm}
+            criticaCriadaEm={actual.criticaCriadaEm}
+            rascunhoReescrito={actual.rascunhoReescrito}
+            rascunhoVersao={actual.rascunhoVersao}
+          />
         </AccordionSection>
       )}
 

@@ -13,6 +13,12 @@ export interface DatasArmazenadas {
   transitoSaturno: { signo: string; aspectosAoNatal: string[] };
 }
 
+/** Classificação da Mahadasha actual (redesenho do motor, Parte 1D/6) — só {tema, abertura}, sem depender do tipo `DadosRicos` de relatorioAdultoCompute.ts (evita import cruzado desnecessário por um par de strings). */
+export interface ClassificacaoMahadashaArmazenada {
+  tema: string;
+  abertura: string;
+}
+
 /** Ficha do "Mapa técnico" (secção 2 de /admin/relatorios/[id]) tal como volta de `viq_relatorios.dados_tecnicos` — as datas já são string ISO (sobrevivem ao round-trip jsonb), nunca `Date`. */
 export interface DadosTecnicosArmazenados {
   axes: VocationIQAxes;
@@ -20,6 +26,7 @@ export interface DadosTecnicosArmazenados {
   earningModes: EarningMode[];
   datas: DatasArmazenadas;
   savPorCasa: SavPorCasa[];
+  classificacaoMahadashaAtual?: ClassificacaoMahadashaArmazenada;
 }
 
 /** A mesma ficha, do lado de quem GUARDA logo a seguir a calcular (`datas` ainda com `Date` reais — o Supabase serializa para ISO ao enviar, por isso não há tipo em comum entre escrita e leitura). */
@@ -29,6 +36,7 @@ export interface DadosTecnicosParaGuardar {
   earningModes: EarningMode[];
   datas: DadosDatas;
   savPorCasa: SavPorCasa[];
+  classificacaoMahadashaAtual?: ClassificacaoMahadashaArmazenada;
 }
 
 // Nomes de ficheiro em português quase sempre têm acentos ("Relatório-
@@ -101,6 +109,10 @@ export interface RelatorioEntregue {
   promptCompleto: string | null;
   auditoriaLlm: string | null;
   auditoriaCriadaEm: string | null;
+  criticaLlm: string | null;
+  criticaCriadaEm: string | null;
+  rascunhoReescrito: string | null;
+  rascunhoVersao: number;
 }
 
 /**
@@ -116,7 +128,7 @@ export async function obterRelatorioEntregue(intakeId: string): Promise<Relatori
   const sb = await getSupabaseAdmin();
   const { data, error } = await sb
     .from("viq_relatorios")
-    .select("id, pdf_path, pdf_filename, rascunho_texto, enviado_em, created_at, dados_tecnicos, prompt_completo, auditoria_llm, auditoria_criada_em")
+    .select("id, pdf_path, pdf_filename, rascunho_texto, enviado_em, created_at, dados_tecnicos, prompt_completo, auditoria_llm, auditoria_criada_em, critica_llm, critica_criada_em, rascunho_reescrito, rascunho_versao")
     .eq("intake_id", intakeId)
     .not("pdf_path", "is", null)
     .order("created_at", { ascending: false })
@@ -134,6 +146,10 @@ export async function obterRelatorioEntregue(intakeId: string): Promise<Relatori
     promptCompleto: (data.prompt_completo as string | null) ?? null,
     auditoriaLlm: (data.auditoria_llm as string | null) ?? null,
     auditoriaCriadaEm: (data.auditoria_criada_em as string | null) ?? null,
+    criticaLlm: (data.critica_llm as string | null) ?? null,
+    criticaCriadaEm: (data.critica_criada_em as string | null) ?? null,
+    rascunhoReescrito: (data.rascunho_reescrito as string | null) ?? null,
+    rascunhoVersao: (data.rascunho_versao as number | null) ?? 1,
   };
 }
 
@@ -171,30 +187,44 @@ export async function marcarRelatorioEnviado(relatorioId: string): Promise<void>
  * nova a cada "Gerar rascunho"; a linha final da entrega (com PDF, via
  * guardarRelatorioPdf) continua a ser sempre uma linha à parte.
  */
+/** Resultado da Parte 3 (crítica + reescrita condicional) a persistir junto com o rascunho — só vem preenchido quando quem chama acabou de correr o processo de 3 passos (POST /api/relatorio). */
+export interface DadosCriticaParaGuardar {
+  criticaLlm: string;
+  rascunhoReescrito: string | null;
+}
+
 /**
- * `dadosTecnicos`/`promptCompleto` só vêm preenchidos quando quem chama
- * acabou de gerar o rascunho pelo motor (POST /api/relatorio) — nesse
- * caso substituem sempre o que estava guardado. Quando ficam por
+ * `dadosTecnicos`/`promptCompleto`/`critica` só vêm preenchidos quando
+ * quem chama acabou de gerar o rascunho pelo motor (POST /api/relatorio)
+ * — nesse caso substituem sempre o que estava guardado. Quando ficam por
  * definir (ex.: PUT /api/relatorio, edição manual do admin sem
  * regeneração), a coluna correspondente não é tocada — o texto pode
- * mudar à mão sem invalidar o "Mapa técnico"/"Prompt completo" da última
- * geração real, que continuam válidos.
+ * mudar à mão sem invalidar o "Mapa técnico"/"Prompt completo"/"Crítica"
+ * da última geração real, que continuam válidos.
+ *
+ * `rascunho_versao` incrementa só quando `critica.rascunhoReescrito` não
+ * é `null` (uma reescrita de facto aconteceu nesta geração) — nunca a
+ * cada geração/edição em si (Parte 3, pedido explícito).
  */
-export async function guardarRascunho(intakeId: string, texto: string, dadosTecnicos?: DadosTecnicosParaGuardar, promptCompleto?: string): Promise<{ id: string }> {
+export async function guardarRascunho(intakeId: string, texto: string, dadosTecnicos?: DadosTecnicosParaGuardar, promptCompleto?: string, critica?: DadosCriticaParaGuardar): Promise<{ id: string }> {
   const sb = await getSupabaseAdmin();
   const agora = new Date().toISOString();
+  const houveReescrita = critica !== undefined && critica.rascunhoReescrito !== null;
   const camposExtra = {
     ...(dadosTecnicos !== undefined ? { dados_tecnicos: dadosTecnicos } : {}),
     ...(promptCompleto !== undefined ? { prompt_completo: promptCompleto } : {}),
+    ...(critica !== undefined ? { critica_llm: critica.criticaLlm, critica_criada_em: agora, rascunho_reescrito: critica.rascunhoReescrito } : {}),
   };
 
-  const { data: existente, error: buscaError } = await sb.from("viq_relatorios").select("id").eq("intake_id", intakeId).is("pdf_path", null).maybeSingle();
+  const { data: existente, error: buscaError } = await sb.from("viq_relatorios").select("id, rascunho_versao").eq("intake_id", intakeId).is("pdf_path", null).maybeSingle();
   if (buscaError) throw new Error(`Falha ao procurar rascunho existente: ${buscaError.message}`);
 
   if (existente) {
+    const versaoActual = (existente.rascunho_versao as number | null) ?? 1;
+    const camposVersao = houveReescrita ? { rascunho_versao: versaoActual + 1 } : {};
     const { error } = await sb
       .from("viq_relatorios")
-      .update({ rascunho_texto: texto, rascunho_criado_em: agora, ...camposExtra })
+      .update({ rascunho_texto: texto, rascunho_criado_em: agora, ...camposExtra, ...camposVersao })
       .eq("id", existente.id);
     if (error) throw new Error(`Falha ao actualizar rascunho: ${error.message}`);
     return { id: existente.id as string };
@@ -202,7 +232,7 @@ export async function guardarRascunho(intakeId: string, texto: string, dadosTecn
 
   const { data, error } = await sb
     .from("viq_relatorios")
-    .insert({ intake_id: intakeId, rascunho_texto: texto, rascunho_criado_em: agora, ...camposExtra })
+    .insert({ intake_id: intakeId, rascunho_texto: texto, rascunho_criado_em: agora, ...camposExtra, ...(houveReescrita ? { rascunho_versao: 2 } : {}) })
     .select("id")
     .single();
   if (error) throw new Error(`Falha ao guardar rascunho: ${error.message}`);
@@ -217,6 +247,10 @@ export interface RascunhoRelatorio {
   promptCompleto: string | null;
   auditoriaLlm: string | null;
   auditoriaCriadaEm: string | null;
+  criticaLlm: string | null;
+  criticaCriadaEm: string | null;
+  rascunhoReescrito: string | null;
+  rascunhoVersao: number;
 }
 
 /** Último rascunho por gerar/aprovar (pdf_path ainda nulo) para este intake, se existir. */
@@ -224,7 +258,7 @@ export async function obterRascunho(intakeId: string): Promise<RascunhoRelatorio
   const sb = await getSupabaseAdmin();
   const { data, error } = await sb
     .from("viq_relatorios")
-    .select("id, rascunho_texto, rascunho_criado_em, dados_tecnicos, prompt_completo, auditoria_llm, auditoria_criada_em")
+    .select("id, rascunho_texto, rascunho_criado_em, dados_tecnicos, prompt_completo, auditoria_llm, auditoria_criada_em, critica_llm, critica_criada_em, rascunho_reescrito, rascunho_versao")
     .eq("intake_id", intakeId)
     .is("pdf_path", null)
     .not("rascunho_texto", "is", null)
@@ -238,6 +272,10 @@ export async function obterRascunho(intakeId: string): Promise<RascunhoRelatorio
     promptCompleto: (data.prompt_completo as string | null) ?? null,
     auditoriaLlm: (data.auditoria_llm as string | null) ?? null,
     auditoriaCriadaEm: (data.auditoria_criada_em as string | null) ?? null,
+    criticaLlm: (data.critica_llm as string | null) ?? null,
+    criticaCriadaEm: (data.critica_criada_em as string | null) ?? null,
+    rascunhoReescrito: (data.rascunho_reescrito as string | null) ?? null,
+    rascunhoVersao: (data.rascunho_versao as number | null) ?? 1,
   };
 }
 
@@ -265,6 +303,10 @@ export interface TextoRelatorioActual {
   promptCompleto: string | null;
   auditoriaLlm: string | null;
   auditoriaCriadaEm: string | null;
+  criticaLlm: string | null;
+  criticaCriadaEm: string | null;
+  rascunhoReescrito: string | null;
+  rascunhoVersao: number;
 }
 
 /**
@@ -289,6 +331,10 @@ export async function obterTextoRelatorioActual(intakeId: string): Promise<Texto
       promptCompleto: rascunho.promptCompleto,
       auditoriaLlm: rascunho.auditoriaLlm,
       auditoriaCriadaEm: rascunho.auditoriaCriadaEm,
+      criticaLlm: rascunho.criticaLlm,
+      criticaCriadaEm: rascunho.criticaCriadaEm,
+      rascunhoReescrito: rascunho.rascunhoReescrito,
+      rascunhoVersao: rascunho.rascunhoVersao,
     };
   }
   const entregue = await obterRelatorioEntregue(intakeId);
@@ -301,6 +347,10 @@ export async function obterTextoRelatorioActual(intakeId: string): Promise<Texto
       promptCompleto: entregue.promptCompleto,
       auditoriaLlm: entregue.auditoriaLlm,
       auditoriaCriadaEm: entregue.auditoriaCriadaEm,
+      criticaLlm: entregue.criticaLlm,
+      criticaCriadaEm: entregue.criticaCriadaEm,
+      rascunhoReescrito: entregue.rascunhoReescrito,
+      rascunhoVersao: entregue.rascunhoVersao,
     };
   }
   return null;

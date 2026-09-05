@@ -10,12 +10,18 @@ import {
   computeSavPorCasa,
   currentDasha,
   computeTransits,
+  catalogarDestinos,
+  ELEMENTO_PLANETA,
+  MAHADASHA_CLASSIFICACAO,
   type VocationiqIntakeAdulto,
   type DadosDatas,
   type BirthInput,
   type VocationIQAxes,
   type PesoPlaneta,
   type SavPorCasa,
+  type Elemento,
+  type ClassificacaoMahadashaEntry,
+  type ResultadoCatalogoVocacional,
 } from "@naveya/method-engine";
 
 // Pipeline de cálculo astrológico partilhada entre /api/relatorio (gera o
@@ -84,6 +90,23 @@ function construirIntakeAdulto(intake: IntakeRow): VocationiqIntakeAdulto {
   };
 }
 
+export interface ElementoPlaneta {
+  planeta: string;
+  elemento: Elemento;
+}
+
+/** Dados mais ricos pedidos nesta ronda (Parte 1D) — nenhum exige cálculo astrológico novo: elementos e classificação da Mahadasha são glosas fixas (method-engine); a cadeia de regência já vem em `axes.missionAxis` (calculada lá, onde `signOfHouse`/`SIGN_RULERS` já estavam em âmbito); o SAV das 12 casas já era `savPorCasa` (sempre as 12, nunca só as ocupadas). */
+export interface DadosRicos {
+  elementos: ElementoPlaneta[];
+  classificacaoMahadashaAtual: ClassificacaoMahadashaEntry;
+}
+
+function construirDadosRicos(datas: DadosDatas): DadosRicos {
+  const elementos = Object.entries(ELEMENTO_PLANETA).map(([planeta, elemento]) => ({ planeta, elemento }));
+  const classificacaoMahadashaAtual = MAHADASHA_CLASSIFICACAO[datas.mahadashaAtual.senhor] ?? { tema: "—", abertura: "—" };
+  return { elementos, classificacaoMahadashaAtual };
+}
+
 export interface DadosAstrologicos {
   horaAproximada: boolean;
   axes: VocationIQAxes;
@@ -91,18 +114,50 @@ export interface DadosAstrologicos {
   savPorCasa: SavPorCasa[];
   datas: DadosDatas;
   intakeAdulto: VocationiqIntakeAdulto;
+  dadosRicos: DadosRicos;
+  catalogoResultados: ResultadoCatalogoVocacional;
 }
 
-/** Recalcula tudo o que o motor VocationIQ Adulto precisa a partir de um pedido — determinístico, sempre o mesmo resultado para os mesmos dados de nascimento. Lança GeocodeError se o local/hora de nascimento não puder ser resolvido. */
+/**
+ * Recalcula tudo o que o motor VocationIQ Adulto precisa a partir de um
+ * pedido — determinístico, sempre o mesmo resultado para os mesmos
+ * dados de nascimento. Lança GeocodeError se o local/hora de nascimento
+ * não puder ser resolvido.
+ *
+ * Ordem importa: `pesosPlanetas` calcula-se ANTES de `axes` (invertido
+ * face à versão anterior) porque `computeVocationIQAxes` agora aceita os
+ * pesos já calculados, para o Modo de Ganho pesar a força REAL dos
+ * planetas envolvidos, não só dignidade/presença/Drishti (Parte 1B desta
+ * ronda) — e porque os pesos já vêm com Neecha Bhanga Raja Yoga
+ * verificado (Parte 1A), por isso o Modo de Ganho herda a correcção
+ * automaticamente.
+ */
 export async function calcularDadosAstrologicos(intake: IntakeRow): Promise<DadosAstrologicos> {
   const { birth, horaAproximada } = await resolverNascimento(intake.local_nascimento, intake.data_nascimento, intake.hora_nascimento);
 
   const d1 = computeD1Table(birth);
-  const axes = computeVocationIQAxes(d1);
   const pesosPlanetas = computePesosPlanetas(d1);
+  const axes = computeVocationIQAxes(
+    d1,
+    pesosPlanetas.map((p) => ({ planeta: p.planeta, peso: p.peso })),
+  );
   const savPorCasa = computeSavPorCasa(d1);
   const datas = construirDadosDatas(birth, new Date());
   const intakeAdulto = construirIntakeAdulto(intake);
+  const dadosRicos = construirDadosRicos(datas);
 
-  return { horaAproximada, axes, pesosPlanetas, savPorCasa, datas, intakeAdulto };
+  // Parte 2 do redesenho — catálogo vocacional (183 destinos + índices).
+  // atmakarakaInfo vem daqui (d1.rows tem a nakshatra já calculada) porque
+  // `catalogarDestinos` recebe só axes/pesos/savPorCasa/intake/atmakarakaInfo,
+  // nunca o D1 em bruto (ver DESVIO em catalogoVocacional.ts).
+  const atmakaraka = axes.missionAxis.atmakaraka;
+  const catalogoResultados = catalogarDestinos(
+    axes,
+    pesosPlanetas,
+    savPorCasa,
+    { areaActual: intakeAdulto.areaActual, anosExperiencia: intakeAdulto.anosExperiencia, ideiaConcreta: intakeAdulto.ideiaConcreta },
+    { planeta: atmakaraka, nakshatra: d1.rows[atmakaraka].nakshatra },
+  );
+
+  return { horaAproximada, axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, dadosRicos, catalogoResultados };
 }

@@ -1,4 +1,18 @@
-import { SECCAO_TITULOS, MARCADORES, type VocationIQAxes, type PesoPlaneta, type EarningMode, type DadosDatas, type ForcaValor, type SavPorCasa, type ClassificacaoApoio } from "@naveya/method-engine";
+import {
+  SECCAO_TITULOS,
+  MARCADORES,
+  computeRodaDaVida,
+  type VocationIQAxes,
+  type PesoPlaneta,
+  type EarningMode,
+  type DadosDatas,
+  type ForcaValor,
+  type SavPorCasa,
+  type ClassificacaoApoio,
+  type DimensaoVida,
+} from "@naveya/method-engine";
+
+export { computeRodaDaVida, type DimensaoVida };
 
 // Template HTML do relatório VocationIQ Adulto — identidade VocationIQ
 // (azul #1B3A6B + âmbar #F5A623), pronto para imprimir/converter em PDF.
@@ -423,52 +437,6 @@ function setorPiePath(cx: number, cy: number, raio: number, anguloInicioDeg: num
   return `M ${cx} ${cy} L ${x1} ${y1} A ${raio} ${raio} 0 0 1 ${x2} ${y2} Z`;
 }
 
-export interface DimensaoVida {
-  nome: string;
-  descricao: string;
-  valor: number;
-  /** Rótulo alternativo só para a etiqueta da roda (espaço fixo) — usado apenas quando "nome" tem uma palavra longa que corta na roda; a lista por baixo continua a mostrar "nome" por inteiro. */
-  rotulo?: string;
-}
-
-const SAV_MIN = 18;
-const SAV_MAX = 42;
-
-/** Normaliza o SAV (17-45 tipicamente) para escala 0-10, com o limiar exacto pedido; sujeito a arredondamento a 1 casa e capado a [0,10] (só por segurança — a fórmula pedida não capa, mas um valor fora de 0-10 quebraria a leitura "sobre 10" do texto). */
-function normalizarSav(mediaSav: number): number {
-  const bruto = ((mediaSav - SAV_MIN) / (SAV_MAX - SAV_MIN)) * 10;
-  return Math.round(Math.min(10, Math.max(0, bruto)) * 10) / 10;
-}
-
-function mediaSavCasas(savPorCasa: SavPorCasa[], casas: number[]): number {
-  const pontuacoes = casas.map((c) => savPorCasa.find((h) => h.casa === c)?.pontuacao ?? SAV_MIN);
-  return pontuacoes.reduce((a, b) => a + b, 0) / pontuacoes.length;
-}
-
-/**
- * Roda da Vida — 8 dimensões universais (não astrológicas no nome),
- * cada uma calculada a partir do SAV da(s) casa(s) clássica(s) que a
- * sustentam, normalizado para 0-10. Sempre determinística — nunca o LLM.
- * A "fórmula de blend com um planeta" que o pedido menciona por
- * dimensão (ex.: "casa 6 + Marte") não veio acompanhada de uma fórmula
- * de combinação — só a normalização do SAV tem fórmula exacta — por
- * isso cada dimensão usa só o SAV da(s) casa(s) indicada(s); a menção ao
- * planeta descreve a significação clássica da casa, não um termo extra
- * a somar (inventar um peso para essa mistura violaria "não inventar").
- */
-export function computeRodaDaVida(savPorCasa: SavPorCasa[]): DimensaoVida[] {
-  return [
-    { nome: "Carreira / Propósito", descricao: "A força da sua vocação e direcção profissional", valor: normalizarSav(mediaSavCasas(savPorCasa, [10])) },
-    { nome: "Finanças / Recursos", descricao: "A sua relação natural com a geração e gestão de recursos", valor: normalizarSav(mediaSavCasas(savPorCasa, [2])) },
-    { nome: "Desenvolvimento Pessoal", rotulo: "Desenv. Pessoal", descricao: "A sua capacidade de crescer e expandir o seu mundo", valor: normalizarSav(mediaSavCasas(savPorCasa, [1, 9])) },
-    { nome: "Saúde / Energia", descricao: "A sua reserva de energia e capacidade de acção", valor: normalizarSav(mediaSavCasas(savPorCasa, [6])) },
-    { nome: "Relações / Rede", descricao: "A força das suas ligações e do seu círculo", valor: normalizarSav(mediaSavCasas(savPorCasa, [7, 11])) },
-    { nome: "Criatividade / Expressão", descricao: "A sua capacidade de criar e de se expressar", valor: normalizarSav(mediaSavCasas(savPorCasa, [5])) },
-    { nome: "Ambiente / Estilo de vida", descricao: "O que a sua carta pede em termos de base e de raízes", valor: normalizarSav(mediaSavCasas(savPorCasa, [4])) },
-    { nome: "Contribuição / Impacto", descricao: "O que deixa para além de si — a marca que fica nas pessoas e nos sistemas que toca", valor: normalizarSav(mediaSavCasas(savPorCasa, [9, 11])) },
-  ];
-}
-
 export function corRodaDaVida(valor: number): string {
   if (valor >= 7) return VERDE;
   if (valor >= 4) return AMBAR;
@@ -549,8 +517,8 @@ function blocoDiagramaIdentidade(pesos: PesoPlaneta[], identidade: string | null
     </section>`;
 }
 
-function blocoRodaDaVida(savPorCasa: SavPorCasa[]): string {
-  const dimensoes = computeRodaDaVida(savPorCasa);
+function blocoRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[]): string {
+  const dimensoes = computeRodaDaVida(savPorCasa, pesos);
   const lista = dimensoes
     .map(
       (d) => `
@@ -583,17 +551,14 @@ const CASA_APOIO_LABEL: Record<number, string> = {
 };
 
 /**
- * Tabela de tensões — determinística: para cada planeta com peso < 0,9
- * (limiar já usado em corPeso/TERMOS_PROIBIDOS), cruza com a tese central
- * (Modo de Ganho dominante). Máximo 3 linhas, as tensões mais fortes
- * primeiro (peso mais baixo). Nunca escrita pelo LLM — só o texto das 5
- * secções de prosa vem de lá.
+ * Tabela de tensões — determinística: para CADA planeta com peso < 0,9
+ * (limiar já usado em corPeso/TERMOS_PROIBIDOS), sem excepção nem tecto —
+ * cruza com a tese central (Modo de Ganho dominante). Peso mais baixo
+ * primeiro. Nunca escrita pelo LLM — só o texto das 5 secções de prosa
+ * vem de lá.
  */
 function tabelaTensoes(pesos: PesoPlaneta[], casaDominante: number): string {
-  const fracos = [...pesos]
-    .filter((p) => p.peso < 0.9)
-    .sort((a, b) => a.peso - b.peso)
-    .slice(0, 3);
+  const fracos = [...pesos].filter((p) => p.peso < 0.9).sort((a, b) => a.peso - b.peso);
   if (!fracos.length) return "";
 
   const apoio = CASA_APOIO_LABEL[casaDominante] ?? "A sua forma dominante de ganhar";
@@ -936,7 +901,7 @@ export function gerarHTMLRelatorio(
     <section class="seccao">
       <h2 class="titulo-seccao">${escapeHtml(SECCAO_TITULOS.oQueACartaSustenta)}</h2>
       ${markdownParaHtml(seccoes[SECCAO_TITULOS.oQueACartaSustenta] ?? "")}
-      ${blocoRodaDaVida(savPorCasa)}
+      ${blocoRodaDaVida(savPorCasa, pesos)}
     </section>
 
     <section class="seccao">

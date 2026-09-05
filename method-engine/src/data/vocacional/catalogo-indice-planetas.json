@@ -1,0 +1,165 @@
+{
+  "meta": {
+    "nome": "Índice por planeta — Parte 2 do catálogo",
+    "versao": "1.0",
+    "camada_de_sinal": "karaka",
+    "nota": "Todos os valores de 'destinos' são ids do ficheiro catalogo-cursos.json. Nenhum nome em texto livre. Se um id não existir no dicionário, é erro de integridade e a varredura deve falhar em vez de ignorar.",
+    "regra_de_contagem": "Esta camada conta UMA VEZ por destino, independentemente de quantos planetas o apontem. Ver secção 1.0 do catálogo: sinais independentes são de camadas distintas, não de repetições dentro da mesma camada."
+  },
+
+  "planetas": {
+
+    "sol": {
+      "label": "Sol",
+      "materia_prima": "o próprio nome como valor; decidir e responder pela decisão; ser olhado; poder, ossos, coração, vitalidade",
+      "destinos": {
+        "superior": ["direito", "ciencia_politica", "gestao", "administracao_publica", "medicina", "relacoes_internacionais", "ciencias_militares"],
+        "superior_condicionado": [
+          { "id": "arquitetura", "condicao": "requer Vénus em força" }
+        ],
+        "tecnico": ["t_direcao_equipa", "t_protecao_pessoas", "t_ourivesaria", "t_eletricidade", "cardiopneumologia"],
+        "tecnico_condicionado": [
+          { "id": "t_restauracao", "condicao": "em posição de dono, não de empregado" }
+        ],
+        "fora": ["f_marca_pessoal", "f_lideranca_projeto", "f_politica_local"]
+      },
+      "vertentes_preferidas": {
+        "medicina": ["cardiologia", "ortopedia", "cirurgica"]
+      },
+      "contraindicacao": "funções de execução anónima e prolongada; cadeias hierárquicas longas onde nunca decide. Não é incapacidade — é desgaste caro.",
+      "aviso_obrigatorio": "Um Sol forte desgasta-se em bastidores permanentes. O custo é de energia e de motivação, e isso diz-se."
+    },
+
+    "lua": {
+      "label": "Lua",
+      "materia_prima": "o que nutre e o que acolhe; a leitura do estado emocional alheio; líquidos, alimentos, casa, infância, multidões",
+      "destinos": {
+        "superior": ["enfermagem", "psicologia", "educacao_infancia", "ciencias_educacao", "servico_social", "apoio_criancas_jovens", "ciencias_mar", "engenharia_alimentar", "nutricao", "terapia_reabilitacao", "gerontologia", "hotelaria_restauracao", "biblioteconomia"],
+        "tecnico": ["t_cozinha", "t_apoio_infancia", "t_auxiliar_saude", "t_geriatria", "t_turismo", "t_imobiliario", "t_nautica", "t_massagem"],
+        "fora": ["f_cuidado_oficio", "f_doula", "f_cozinha_propria", "f_escrita_memoria", "f_comunidade"]
+      },
+      "vertentes_preferidas": {
+        "enfermagem": ["obstetrica"]
+      },
+      "contraindicacao": "ambientes friamente competitivos e sem vínculo; funções que exijam indiferença sistemática ao estado do outro.",
+      "aviso_obrigatorio": "A Lua é o povo — é o indicador clássico de quem comunica com muita gente ao mesmo tempo. Biblioteconomia entra porque a Lua é memória guardada."
+    },
+
+    "mercurio": {
+      "label": "Mercúrio",
+      "materia_prima": "traduzir, ligar, negociar, medir, escrever, mover informação; mãos rápidas e mente rápida",
+      "destinos": {
+        "superior": ["literatura_linguistica", "linguas", "traducao", "jornalismo", "marketing", "publicidade", "contabilidade", "matematica", "estatistica", "engenharia_informatica", "sistemas_redes", "economia", "comercio", "secretariado", "ciencias_farmaceuticas", "audiovisual"],
+        "superior_condicionado": [
+          { "id": "direito", "condicao": "apenas na vertente contratual e de negociação, não na de tribunal", "vertente": "contratual" }
+        ],
+        "tecnico": ["t_programacao", "t_contabilidade", "t_vendas", "t_imobiliario", "t_seguros", "t_analises", "t_redes_sociais", "t_logistica", "t_lingua_gestual"],
+        "tecnico_condicionado": [
+          { "id": "t_design_grafico", "condicao": "requer Vénus" }
+        ],
+        "fora": ["f_escrita_propria", "f_edicao", "f_traducao_independente", "f_formacao_online", "f_negociacao"]
+      },
+      "contraindicacao": "rotina monótona sem variedade nem interlocutor; isolamento prolongado sem troca.",
+      "aviso_obrigatorio": "Ciências Farmacêuticas entra porque Mercúrio é a fórmula e a dose. O valor de Mercúrio está em explicar bem o que é complexo."
+    },
+
+    "venus": {
+      "label": "Vénus",
+      "materia_prima": "o que é belo e o que vale; medir, harmonizar, agradar, compor; a mão que faz coisa bonita; contratos, prazer, parcerias",
+      "destinos": {
+        "superior": ["design_moda", "design_interiores", "design_industrial", "design_grafico", "belas_artes", "arquitetura", "urbanismo", "musica", "artes_espetaculo", "artesanato_superior", "medicina_dentaria", "marketing", "turismo", "cabeleireiro_estetica_superior", "historia_arte", "enologia"],
+        "superior_condicionado": [
+          { "id": "psicologia", "condicao": "vertente de aconselhamento e relação", "vertente": "aconselhamento" },
+          { "id": "direito", "condicao": "vertente de mediação e família", "vertente": "familia" }
+        ],
+        "tecnico": ["t_cabeleireiro", "t_estetica", "t_design_grafico", "t_joalharia", "t_costura", "t_decoracao", "t_fotografia", "t_pastelaria", "t_paisagismo", "t_som_imagem", "t_massagem"],
+        "fora": ["f_atelier", "f_consultoria_imagem", "f_eventos", "f_mediacao_relacional", "f_curadoria"]
+      },
+      "vertentes_preferidas": {
+        "medicina_dentaria": ["estetica_funcional"]
+      },
+      "contraindicacao": "ambientes feios, brutos ou sem harmonia possível; conflito permanente e explícito; trabalho onde a forma não conte para nada.",
+      "aviso_obrigatorio": "Medicina Dentária entra em Vénus por ser estética funcional aplicada ao rosto — não por ser área de saúde."
+    },
+
+    "marte": {
+      "label": "Marte",
+      "materia_prima": "cortar, construir, defender, competir, resolver por ação direta; ferro, fogo, lâmina, motor, músculo",
+      "destinos": {
+        "superior": ["engenharia_mecanica", "engenharia_civil", "metalurgia", "ciencias_desporto", "ciencias_militares", "protecao_civil", "engenharia_veiculos", "engenharia_minas", "engenharia_quimica", "fisioterapia"],
+        "superior_condicionado": [
+          { "id": "medicina", "condicao": "vocação cirúrgica", "vertente": "cirurgica" },
+          { "id": "direito", "condicao": "vertente de litígio e tribunal", "vertente": "litigio" },
+          { "id": "medicina_veterinaria", "condicao": "vertente cirúrgica" }
+        ],
+        "tecnico": ["t_serralharia", "t_eletricidade", "t_construcao", "t_mecanica_auto", "t_forcas_seguranca", "t_treinador", "t_emergencia", "t_talho", "t_manutencao", "t_piloto"],
+        "fora": ["f_atelier", "f_empreitada", "f_desporto_competicao", "f_artes_marciais"]
+      },
+      "contraindicacao": "funções sem alvo nem fim visível; espera longa sem ação; ambientes de diplomacia obrigatória e permanente.",
+      "aviso_obrigatorio": "Marte serve qualquer atividade que exija resolver depressa o que está partido."
+    },
+
+    "jupiter": {
+      "label": "Júpiter",
+      "materia_prima": "ensinar, julgar com critério, dar sentido, expandir; a lei e a fé; o mestre, o juiz, o sacerdote, o conselheiro",
+      "destinos": {
+        "superior": ["teologia", "ciencias_religiao", "filosofia", "direito", "ciencias_educacao", "formacao_professores", "financas_banca", "economia", "historia", "arqueologia", "ciencia_politica", "sociologia"],
+        "superior_condicionado": [
+          { "id": "medicina", "condicao": "sobretudo Medicina Interna e Pediatria", "vertente": "interna" },
+          { "id": "psicologia", "condicao": "vertente clínica de profundidade", "vertente": "clinica" },
+          { "id": "gestao", "condicao": "em consultoria estratégica" }
+        ],
+        "tecnico": ["t_formacao_tecnica", "t_contabilidade", "t_editorial", "t_guia"],
+        "fora": ["f_ensino_proprio", "f_escrita_ensaio", "f_vida_religiosa", "f_supervisao", "f_publicacao", "f_direcao_espiritual"]
+      },
+      "contraindicacao": "funções puramente mecânicas e sem horizonte de sentido; ambientes onde a pergunta 'porquê' seja mal recebida.",
+      "aviso_obrigatorio": "Júpiter serve qualquer atividade onde o valor esteja em dar sentido, não em executar. É o karaka clássico do ensino — a sua presença forte no Ascendente, a reger a Casa 10 ou a aspetar 5/9, obriga a considerar Ensino mesmo quando o Atmakaraka aponta noutra direção."
+    },
+
+    "saturno": {
+      "label": "Saturno",
+      "materia_prima": "durar, sustentar, organizar, medir o tempo, lidar com o que é duro e lento; pedra, terra, osso, arquivo, velhice",
+      "destinos": {
+        "superior": ["engenharia_civil", "arquitetura", "geologia", "engenharia_minas", "historia", "arqueologia", "auditoria", "contabilidade", "seguranca_higiene", "saude_publica", "gerontologia", "silvicultura", "agronomia", "biblioteconomia", "estatistica"],
+        "superior_condicionado": [
+          { "id": "direito", "condicao": "vertente de norma, notariado e regulação", "vertente": "norma" },
+          { "id": "gestao", "condicao": "em operações e processos" }
+        ],
+        "tecnico": ["t_construcao", "t_canalizacao", "t_carpintaria", "t_agricultura", "t_manutencao", "t_armazem", "t_arquivo", "t_qualidade", "t_funeraria"],
+        "fora": ["f_imobiliario_proprio", "f_agricultura_propria", "f_restauro_proprio", "f_pratica_contemplativa"]
+      },
+      "contraindicacao": "ambientes de mudança caótica e permanente; funções que exijam resultado imediato e brilho rápido.",
+      "aviso_obrigatorio": "Saturno em Upachaya (3, 6, 10, 11) MELHORA com o tempo — não é problema, é ativo de carreira de maturação tardia. A leitura tem de o dizer para o jovem não se julgar lento. Saturno serve qualquer atividade cujo valor se construa em dez anos, não em dez meses."
+    },
+
+    "rahu": {
+      "label": "Rahu",
+      "materia_prima": "a sede que não se sacia; o que é novo, híbrido, estrangeiro, de nicho ou de massa; tecnologia de ponta, ilusão, imagem, escala",
+      "destinos": {
+        "superior": ["engenharia_informatica", "sistemas_redes", "engenharia_eletronica", "audiovisual", "marketing", "publicidade", "relacoes_internacionais", "linguas", "biotecnologia", "bioquimica", "ciencias_farmaceuticas", "ciencias_ambiente", "antropologia"],
+        "tecnico": ["t_programacao", "t_cibersseguranca", "t_video", "t_conteudo_digital", "t_comercio_internacional", "t_aviacao", "t_fotografia"],
+        "fora": ["f_empreendedorismo_digital", "f_estrangeiro", "f_presenca_publica"]
+      },
+      "contraindicacao": null,
+      "aviso_obrigatorio": "OBRIGATÓRIO. Rahu indica frequentemente a área de maior sucesso mundano E a de maior risco de vazio. Se o Atmakaraka não acompanhar, o relatório deve dizer que o rendimento vem mas a satisfação não — sem dramatizar e sem proibir.",
+      "flag_verificacao": "verificar_alinhamento_atmakaraka"
+    },
+
+    "ketu": {
+      "label": "Ketu",
+      "materia_prima": "saber sem ter aprendido; largar; ver o que está por baixo; o oculto, o sagrado, o diagnóstico, o simbólico, a matemática pura, a raiz",
+      "destinos": {
+        "superior": ["filosofia", "teologia", "matematica_pura", "fisica", "tecnologias_diagnostico", "medicina_complementar", "historia", "arqueologia", "ciencias_ambiente"],
+        "superior_condicionado": [
+          { "id": "psicologia", "condicao": "vertente clínica", "vertente": "clinica" },
+          { "id": "medicina", "condicao": "medicina de diagnóstico", "vertente": "diagnostico" }
+        ],
+        "tecnico": ["t_analises", "t_restauro", "t_terapias_complementares"],
+        "fora": ["f_astrologia", "f_vida_religiosa", "f_investigacao_livre", "f_terapia_espiritual"]
+      },
+      "contraindicacao": null,
+      "aviso_obrigatorio": "OBRIGATÓRIO. Ketu dá competência sem desejo. É frequente a pessoa ser muito boa numa área e não a querer. Se a área de Ketu aparecer na lista, tem de vir com esta ressalva explícita — senão o relatório empurra o jovem para aquilo em que ele é bom e onde vai secar. A área de Ketu serve muitas vezes melhor como FERRAMENTA ao serviço de outra coisa do que como profissão principal.",
+      "flag_verificacao": "ressalva_competencia_sem_desejo"
+    }
+  }
+}

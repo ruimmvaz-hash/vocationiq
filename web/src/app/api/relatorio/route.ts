@@ -8,12 +8,18 @@ import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTempl
 import { calcularDadosAstrologicos, GeocodeError } from "@/lib/relatorioAdultoCompute";
 import { SITUACOES } from "@/lib/validation";
 import { construirPromptAdulto } from "@naveya/method-engine";
+import { construirPromptCritica, parseCritica, construirPromptReescrita } from "@/lib/criticaRelatorio";
 
 // Motor de geração do relatório VocationIQ Adulto — ramo "trabalho-quero-
 // mudar" (VOCATIONIQ-ADULTO-metodologia.md, secção 6: os outros ramos
 // ficam para spec separada, não implementados aqui).
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+// Redesenho do motor (Parte 3) — até 3 chamadas sequenciais à Anthropic
+// (gerar, criticar, e reescrever se alguma falha) em vez de 1. 60s
+// chegava para uma chamada; para três, subido para 280s (o tecto prático
+// do runtime Node por defeito da Vercel — confirmar no plano do projecto
+// se isto ainda não for suficiente em produção).
+export const maxDuration = 280;
 
 // Nota de modelo (mesma correcção já documentada em
 // naveya/web/src/lib/report/write.ts): "claude-sonnet-4-6" pedido não
@@ -24,10 +30,31 @@ const MODEL = process.env.REPORT_MODEL || "claude-sonnet-5";
 // Subido de 4000 para 8000, e agora para 16000 — o relatório passou a
 // ter um volume obrigatório de 8-10 páginas A4 (ver promptAdulto.ts),
 // bem acima do que 8000 tokens de saída conseguem cobrir sem cortar a
-// meio (stop_reason "max_tokens").
+// meio (stop_reason "max_tokens"). A reescrita (Parte 3, Passo 3) produz
+// outro relatório inteiro — mesmo tecto. A crítica é só texto de análise,
+// tecto mais baixo.
 const MAX_TOKENS = 16000;
+const MAX_TOKENS_CRITICA = 4096;
 
 const SITUACAO_LABEL = Object.fromEntries(SITUACOES.map((s) => [s.valor, s.label]));
+
+/** Uma chamada de texto à Anthropic (gerar/criticar/reescrever partilham a mesma forma) — thinking sempre desligado, mesmo diagnóstico de "sem bloco de texto" para as 3 chamadas. */
+async function gerarTexto(client: Anthropic, prompt: string, maxTokens: number): Promise<string> {
+  const response = await client.messages.create({
+    model: MODEL,
+    max_tokens: maxTokens,
+    thinking: { type: "disabled" },
+    messages: [{ role: "user", content: prompt }],
+  });
+  const textBlock = response.content.find((b) => b.type === "text");
+  if (!textBlock || textBlock.type !== "text") {
+    const tiposDeBloco = response.content.map((b) => b.type).join(", ") || "(nenhum bloco)";
+    const detalhe = `stop_reason=${response.stop_reason}, blocos=[${tiposDeBloco}]`;
+    console.error(`[api/relatorio] resposta sem bloco de texto — ${detalhe}`);
+    throw new Error(`Resposta da Anthropic sem bloco de texto (${detalhe}).`);
+  }
+  return textBlock.text;
+}
 
 export async function POST(request: Request) {
   if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "não autenticado" }, { status: 401 });
@@ -54,38 +81,42 @@ export async function POST(request: Request) {
   if (!apiKey) return NextResponse.json({ error: "ANTHROPIC_API_KEY não configurada." }, { status: 503 });
 
   try {
-    const { horaAproximada, axes, pesosPlanetas, savPorCasa, datas, intakeAdulto } = await calcularDadosAstrologicos(intake);
+    const { horaAproximada, axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, catalogoResultados, dadosRicos } = await calcularDadosAstrologicos(intake);
 
-    const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, !horaAproximada);
+    const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, !horaAproximada, catalogoResultados, savPorCasa);
 
     const client = new Anthropic({ apiKey });
-    // Confirmado em produção (ver commit anterior): sem `thinking`
-    // explícito, este modelo usa "adaptive" thinking por omissão e pode
-    // gastar TODO o max_tokens em blocos de "thinking" sem nunca chegar
-    // a escrever texto (stop_reason "max_tokens", blocos=[thinking]).
-    // "disabled" força a resposta directa, sem essa camada.
-    const response = await client.messages.create({
-      model: MODEL,
-      max_tokens: MAX_TOKENS,
-      thinking: { type: "disabled" },
-      messages: [{ role: "user", content: prompt }],
-    });
-    const textBlock = response.content.find((b) => b.type === "text");
-    if (!textBlock || textBlock.type !== "text") {
-      // Diagnóstico em vez de um erro genérico — sem isto, "sem bloco de
-      // texto" não diz se a causa foi truncagem (stop_reason
-      // "max_tokens") ou outro tipo de bloco.
-      const tiposDeBloco = response.content.map((b) => b.type).join(", ") || "(nenhum bloco)";
-      const detalhe = `stop_reason=${response.stop_reason}, blocos=[${tiposDeBloco}]`;
-      console.error(`[api/relatorio] resposta sem bloco de texto — ${detalhe}`);
-      throw new Error(`Resposta da Anthropic sem bloco de texto (${detalhe}).`);
+
+    // Passo 2 — gerar. Confirmado em produção (ver commit anterior): sem
+    // `thinking` explícito, este modelo usa "adaptive" thinking por
+    // omissão e pode gastar TODO o max_tokens em blocos de "thinking" sem
+    // nunca chegar a escrever texto (stop_reason "max_tokens", blocos=
+    // [thinking]). "disabled" força a resposta directa, sem essa camada.
+    const textoOriginal = await gerarTexto(client, prompt, MAX_TOKENS);
+
+    // Passo 3 — criticar. Segunda chamada, sempre (nunca opcional) — o
+    // resultado fica guardado mesmo quando tudo passa, para auditoria.
+    const promptCritica = construirPromptCritica(prompt, textoOriginal);
+    const textoCritica = await gerarTexto(client, promptCritica, MAX_TOKENS_CRITICA);
+    const resultadoCritica = parseCritica(textoCritica);
+
+    // Passo 3 — reescrever, só se pelo menos um critério falhou de facto
+    // (nunca quando a crítica não seguiu o formato pedido — não se força
+    // uma reescrita sobre dados não interpretáveis, ver criticaRelatorio.ts).
+    let textoFinal = textoOriginal;
+    let rascunhoReescrito: string | null = null;
+    if (resultadoCritica.falhas.length > 0) {
+      const promptReescrita = construirPromptReescrita(textoOriginal, resultadoCritica.falhas);
+      rascunhoReescrito = await gerarTexto(client, promptReescrita, MAX_TOKENS);
+      textoFinal = rascunhoReescrito;
     }
 
-    // "Mapa técnico"/"Prompt completo" (ficha do cliente reorganizada em
-    // /admin/relatorios/[id]) — guardados tal como calculados agora, para
-    // essas secções nunca terem de recalcular nem chamar a Anthropic.
-    const dadosTecnicosParaGuardar = { axes, pesos: pesosPlanetas, earningModes: axes.earningModeAll, datas, savPorCasa };
-    const rascunho = await guardarRascunho(intakeId, textBlock.text, dadosTecnicosParaGuardar, prompt);
+    // "Mapa técnico"/"Prompt completo"/"Crítica" (ficha do cliente
+    // reorganizada em /admin/relatorios/[id]) — guardados tal como
+    // calculados agora, para essas secções nunca terem de recalcular nem
+    // chamar a Anthropic outra vez.
+    const dadosTecnicosParaGuardar = { axes, pesos: pesosPlanetas, earningModes: axes.earningModeAll, datas, savPorCasa, classificacaoMahadashaAtual: dadosRicos.classificacaoMahadashaAtual };
+    const rascunho = await guardarRascunho(intakeId, textoFinal, dadosTecnicosParaGuardar, prompt, { criticaLlm: textoCritica, rascunhoReescrito });
 
     // Passa os dados técnicos já calculados ao template — os gráficos
     // (SVG) são sempre gerados a partir destes, nunca do texto do LLM.
@@ -102,9 +133,9 @@ export async function POST(request: Request) {
       ideiaConcreta: intakeAdulto.ideiaConcreta,
       perguntaEspecifica: intakeAdulto.perguntaEspecifica,
     };
-    const html = gerarHTMLRelatorio(dadosTemplate, textBlock.text, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa);
+    const html = gerarHTMLRelatorio(dadosTemplate, textoFinal, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa);
 
-    return NextResponse.json({ ok: true, rascunhoId: rascunho.id, texto: textBlock.text, html });
+    return NextResponse.json({ ok: true, rascunhoId: rascunho.id, texto: textoFinal, html, houveReescrita: rascunhoReescrito !== null });
   } catch (err) {
     if (err instanceof GeocodeError) return NextResponse.json({ error: err.message }, { status: 422 });
     const message = err instanceof Error ? err.message : String(err);

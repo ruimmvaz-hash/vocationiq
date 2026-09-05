@@ -104,8 +104,11 @@ async function main() {
   const birth: BirthInput = { utcDate, latitude: geo.latitude, longitude: geo.longitude };
 
   const d1 = computeD1Table(birth);
-  const axes = computeVocationIQAxes(d1);
   const pesosPlanetas = computePesosPlanetas(d1);
+  const axes = computeVocationIQAxes(
+    d1,
+    pesosPlanetas.map((p) => ({ planeta: p.planeta, peso: p.peso })),
+  );
   const savPorCasa = computeSavPorCasa(d1);
 
   const agora = new Date();

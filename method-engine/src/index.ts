@@ -92,11 +92,50 @@ export { CLASSICAL_GRAHAS, ALL_GRAHAS, SIGNS_ORDER, type BirthInput, type Graha,
 export { detectYogas, type YogaHit } from "./lifeReport/yogas";
 export { detectGlobalConfigurations, type GlobalConfigHit } from "./lifeReport/western/globalConfigs";
 export { detectVocationalFamilies, type VocationalFamilyHit, type VocationalCaution, type VocationalResult } from "./lifeReport/vocational";
-export { computeVocationIQAxes, type VocationIQAxes, type MissionAxis, type EarningMode, type MarketShowcase, type AngularLord } from "./lifeReport/vocationIQ";
+export {
+  computeVocationIQAxes,
+  type VocationIQAxes,
+  type MissionAxis,
+  type EarningMode,
+  type MarketShowcase,
+  type AngularLord,
+  type PesoPlanetaParaModoDeGanho,
+} from "./lifeReport/vocationIQ";
 export { computeEliminatoryKuta, type EliminatoryKutaResult } from "./lifeReport/kuta";
 export { detectBlessingPainHouses, type BlessingPainHit } from "./lifeReport/blessingPainHouses";
 export { computeAshtaKuta, type AshtaKutaResult, type AshtaKutaScore } from "./lifeReport/ashtaKuta";
 
 // VOCATIONIQ-ADULTO-metodologia.md — motor de geração do relatório VocationIQ Adulto (ramo "trabalho-quero-mudar").
-export { computePesosPlanetas, computeSavPorCasa, ESTADO_PESO, type PesoPlaneta, type SavPorCasa, type ClassificacaoApoio } from "./vocationiq/pesosPlanetas";
-export { construirPromptAdulto, SECCAO_TITULOS, MARCADORES, FORCA_VALORES, type VocationiqIntakeAdulto, type DadosDatas, type ForcaValor } from "./vocationiq/promptAdulto";
+export {
+  computePesosPlanetas,
+  computeSavPorCasa,
+  detectarNeechaBhanga,
+  ESTADO_PESO,
+  type PesoPlaneta,
+  type SavPorCasa,
+  type ClassificacaoApoio,
+  type EstadoPlaneta,
+  type NeechaBhangaResultado,
+} from "./vocationiq/pesosPlanetas";
+export {
+  catalogarDestinos,
+  type ResultadoCatalogoVocacional,
+  type DestinoConvergente,
+  type CandidataForaDaLista,
+  type IntakeParaCatalogo,
+  type AtmakarakaInfo,
+} from "./vocationiq/catalogoVocacional";
+export { computeRodaDaVida, type DimensaoVida } from "./vocationiq/rodaDaVida";
+export {
+  construirPromptAdulto,
+  SECCAO_TITULOS,
+  MARCADORES,
+  FORCA_VALORES,
+  ELEMENTO_PLANETA,
+  MAHADASHA_CLASSIFICACAO,
+  type VocationiqIntakeAdulto,
+  type DadosDatas,
+  type ForcaValor,
+  type Elemento,
+  type ClassificacaoMahadashaEntry,
+} from "./vocationiq/promptAdulto";
