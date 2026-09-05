@@ -285,6 +285,23 @@ function areaActualEGenerica(areaActual: string): boolean {
  * independentes), nunca por popularidade nem por "o destino mais
  * nomeado". Determinístico — nunca chama a Anthropic.
  */
+/**
+ * Depuração — camadas de UM destino específico, sem o limiar de ≥2 que
+ * `catalogarDestinos` aplica às alternativas. Útil para responder "porque
+ * é que X não apareceu?" sem ter de repetir a lógica de contexto.
+ */
+export function depurarCamadasDestino(destinoId: string, axes: VocationIQAxes, pesos: PesoPlaneta[], savPorCasa: SavPorCasa[], intake: IntakeParaCatalogo, atmakarakaInfo: AtmakarakaInfo): string[] {
+  const ctx: ContextoAvaliacao = {
+    axes,
+    pesos,
+    savPorCasa,
+    atmakarakaInfo,
+    palavrasAreaActual: palavrasSignificativas(intake.areaActual),
+    palavrasIdeiaConcreta: intake.ideiaConcreta ? palavrasSignificativas(intake.ideiaConcreta) : [],
+  };
+  return camadasParaDestino(destinoId, ctx);
+}
+
 export function catalogarDestinos(axes: VocationIQAxes, pesos: PesoPlaneta[], savPorCasa: SavPorCasa[], intake: IntakeParaCatalogo, atmakarakaInfo: AtmakarakaInfo): ResultadoCatalogoVocacional {
   const ctx: ContextoAvaliacao = {
     axes,
@@ -331,15 +348,27 @@ export function catalogarDestinos(axes: VocationIQAxes, pesos: PesoPlaneta[], sa
     }
   }
 
-  // Um destino com uma só camada (ex.: só "Amatyakaraka aponta para aqui")
-  // não é uma alternativa com informação real — é ruído de catálogo, o
-  // mesmo tipo de problema que SPEC-vocacional.md documenta ("nomeado
-  // por muitas fontes" não é o mesmo que "sustentado"). Exigir ≥2 camadas
-  // mantém só alternativas onde pelo menos duas medidas independentes
-  // batem no mesmo destino, e evita inundar o prompt com dezenas de
-  // destinos de sinal único.
+  // Um destino com uma só camada GENÉRICA (ex.: só "eixo do rendimento
+  // aponta para aqui") não é uma alternativa com informação real — é
+  // ruído de catálogo, o mesmo tipo de problema que SPEC-vocacional.md
+  // documenta ("nomeado por muitas fontes" não é o mesmo que
+  // "sustentado"). Exigir ≥2 camadas nesse caso evita inundar o prompt
+  // com dezenas de destinos de sinal único.
+  //
+  // DESVIO (encontrado ao testar com a carta real da Melina) — um
+  // destino com UMA SÓ camada, quando essa camada vem do Atmakaraka OU
+  // do Amatyakaraka (os karakas pessoais, não um sinal genérico), fica de
+  // fora do limiar. Sem esta excepção, "Negócio próprio com marca
+  // pessoal" (f_marca_pessoal, via Amatyakaraka=Sol) nunca chegava a
+  // aparecer no prompt — exactamente o sinal que levou o especialista a
+  // apontar "marca própria" para ela. Um sinal de karaka pessoal, mesmo
+  // sozinho, pesa mais do que dois sinais genéricos coincidentes (ver
+  // também o gate de Atmakaraka obrigatório na candidata fora da lista,
+  // abaixo — o mesmo princípio).
   const LIMIAR_MINIMO_ALTERNATIVA = 2;
-  const destinosAlternativos = [...idsCarta].map((id) => construirDestinoConvergente(id, ctx)).filter((d) => d.convergencia >= LIMIAR_MINIMO_ALTERNATIVA);
+  const destinosAlternativos = [...idsCarta]
+    .map((id) => construirDestinoConvergente(id, ctx))
+    .filter((d) => d.convergencia >= LIMIAR_MINIMO_ALTERNATIVA || d.camadas.some((c) => c.startsWith("Atmakaraka") || c.startsWith("Amatyakaraka")));
 
   // Passo 4 — candidata fora da lista: só entre as ALTERNATIVAS (nunca
   // repete uma opção que a área actual já descreve), só se ≥4 camadas
