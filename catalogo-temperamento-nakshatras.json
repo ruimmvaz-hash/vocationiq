@@ -1,0 +1,379 @@
+{
+  "meta": {
+    "nome": "Temperamento por Nakshatra — 27 entradas",
+    "versao": "1.0",
+    "funcao": "Dá a MATÉRIA CONCRETA do carácter. É a diferença entre um adjectivo e uma cena. Complementa o catalogo-indice-nakshatras.json, que dá a matéria VOCACIONAL — a mesma tradição vista do outro ângulo.",
+    "onde_se_usa": {
+      "capitulo_1": "Nakshatra da Lua (o mundo interno) e do Ascendente (a presença)",
+      "capitulo_2": "Nakshatra do Atmakaraka",
+      "capitulo_5": "Nakshatra do Amatyakaraka"
+    },
+    "estrutura": {
+      "nucleo": "a imagem única que organiza tudo o resto. Impede a dispersão.",
+      "como_se_ve": "cenas verificáveis. A pessoa responde 'isso acontece-me' ou 'não'. NUNCA adjectivos.",
+      "o_que_cobra": "o custo. Exigência presente, nunca desfecho — princípio de zero fatalismo.",
+      "o_que_nao_sabe_de_si": "o campo que produz o 'até que enfim alguém percebe'. É a leitura que a pessoa nunca articulou."
+    },
+    "regras_de_uso": [
+      "O Nakshatra dá uma CENA, nunca um adjectivo. Se sair 'é sensível', 'é determinado', 'é curioso', não foi usado.",
+      "NUNCA nomear o Nakshatra nem usar a palavra no texto do cliente.",
+      "Cruzar sempre com a casa e a dignidade: o Nakshatra diz a matéria, a casa diz onde se manifesta.",
+      "Se o Nakshatra apontar em direcção diferente do resto do desenho, isso é tensão e escreve-se como tal.",
+      "Não usar as quatro linhas todas de cada vez. Escolher a que cruza com o resto do perfil."
+    ]
+  },
+
+  "nakshatras": {
+    "ashwini": {
+      "ordem": 1, "regente": "ketu", "faixa": "Carneiro 0°00'–13°20'",
+      "nucleo": "o arranque. Chegar primeiro e resolver antes de a coisa piorar.",
+      "como_se_ve": [
+        "resolve em minutos o que outros levam dias a decidir",
+        "é a primeira pessoa a agir quando algo corre mal — antes de saber se é da sua conta",
+        "começa muitas coisas e passa adiante quando deixam de ser urgentes",
+        "impacienta-se de forma visível com quem precisa de tempo para pensar",
+        "cura os outros com uma facilidade que não sabe explicar"
+      ],
+      "o_que_cobra": "a pressa faz-lhe perder o que só se ganha com tempo. E deixa atrás de si coisas começadas que mais ninguém acaba.",
+      "o_que_nao_sabe_de_si": "que a urgência com que socorre os outros é a mesma coisa que a impede de estar quieta consigo."
+    },
+    "bharani": {
+      "ordem": 2, "regente": "venus", "faixa": "Carneiro 13°20'–26°40'",
+      "nucleo": "suportar. Aguentar o peso de uma passagem — nascimento, fim, mudança irreversível.",
+      "como_se_ve": [
+        "as pessoas contam-lhe o que não contam a mais ninguém, e ela aguenta",
+        "está presente nos momentos difíceis dos outros — doença, morte, ruptura — e funciona bem lá",
+        "tem uma relação intensa com limites: os que aceita, os que impõe, os que quebra",
+        "sente o desejo com força e a culpa com a mesma força",
+        "acaba as coisas de vez, sem meias mortes"
+      ],
+      "o_que_cobra": "carrega o que os outros não conseguem, e não tem a quem entregar o seu.",
+      "o_que_nao_sabe_de_si": "que a intensidade que às vezes a assusta é a mesma capacidade que a faz aguentar o que ninguém aguenta."
+    },
+    "krittika": {
+      "ordem": 3, "regente": "sol", "faixa": "Carneiro 26°40' – Touro 10°00'",
+      "nucleo": "o corte. Separar o que presta do que não presta.",
+      "como_se_ve": [
+        "vê o que está errado num trabalho antes de ver o que está bem — em qualquer trabalho, incluindo o seu",
+        "diz a verdade que os outros calam, e às vezes magoa sem ter querido",
+        "não tolera trabalho mal feito, e é intolerável sobretudo consigo",
+        "há sempre comida por perto: alimenta os outros, ou come para pensar",
+        "prefere a discussão limpa ao silêncio educado"
+      ],
+      "o_que_cobra": "a lâmina volta-se primeiro para dentro. A exigência cansa mais quem a tem do que quem a recebe.",
+      "o_que_nao_sabe_de_si": "que a nitidez com que vê o defeito nos outros é o mesmo instrumento com que se corta a si própria. É uma só faculdade, não duas."
+    },
+    "rohini": {
+      "ordem": 4, "regente": "lua", "faixa": "Touro 10°00'–23°20'",
+      "nucleo": "fazer crescer. O que planta pega, e leva o tempo que tem de levar.",
+      "como_se_ve": [
+        "torna bonito e habitável qualquer sítio onde fica — mesmo de passagem",
+        "atrai sem fazer esforço, e às vezes sem querer",
+        "espera pelo que quer em vez de aceitar o que aparece",
+        "não muda de opinião por pressão; muda quando decide mudar",
+        "liga-se ao que é concreto: a terra, a comida, o corpo, o objecto bem feito"
+      ],
+      "o_que_cobra": "o que segura por afecto pode ficar preso. E o que não larga a tempo apodrece.",
+      "o_que_nao_sabe_de_si": "que aquilo a que os outros chamam teimosia é a mesma coisa que lhe permite esperar anos por algo que valia a pena."
+    },
+    "mrigashira": {
+      "ordem": 5, "regente": "marte", "faixa": "Touro 23°20' – Gémeos 6°40'",
+      "nucleo": "a procura. Farejar o que está para lá do que já se conhece.",
+      "como_se_ve": [
+        "está sempre a investigar alguma coisa, mesmo sem projecto que o justifique",
+        "muda de assunto, de casa, de interesse — e não é falta de compromisso, é fome",
+        "encontra coisas que os outros não sabiam que existiam",
+        "liga-se depressa às pessoas e desliga com a mesma leveza",
+        "há uma inquietação de fundo que a curiosidade mantém ocupada"
+      ],
+      "o_que_cobra": "chega a muitos sítios e fica em poucos. E o que procura muda de sítio sempre que se aproxima.",
+      "o_que_nao_sabe_de_si": "que não está à procura de uma coisa. Está à procura de continuar a procurar — e isso é diferente de nunca encontrar."
+    },
+    "ardra": {
+      "ordem": 6, "regente": "rahu", "faixa": "Gémeos 6°40'–20°00'",
+      "nucleo": "a tempestade que limpa. A dor que serve para alguma coisa.",
+      "como_se_ve": [
+        "atravessou coisas que a maioria não teria atravessado, e fala delas com naturalidade",
+        "funciona bem em crise e mal em rotina calma",
+        "faz perguntas que desmontam o conforto de uma conversa",
+        "por dentro está mais organizada do que parece de fora — ou o contrário, e ninguém acerta",
+        "transforma o que lhe aconteceu em coisa útil para os outros"
+      ],
+      "o_que_cobra": "confunde intensidade com verdade, e às vezes revolve o que já estava resolvido.",
+      "o_que_nao_sabe_de_si": "que sobreviveu ao que sobreviveu não por ser dura, mas porque sente tudo com uma intensidade que também é o seu motor."
+    },
+    "punarvasu": {
+      "ordem": 7, "regente": "jupiter", "faixa": "Gémeos 20°00' – Caranguejo 3°20'",
+      "nucleo": "voltar. Recomeçar depois de perder, e recomeçar inteira.",
+      "como_se_ve": [
+        "já perdeu coisas importantes e reconstruiu sem se amargurar",
+        "as pessoas voltam para ela depois de se afastarem",
+        "dá com facilidade e não faz contas ao que deu",
+        "precisa de espaço e de horizonte; sufoca no que é apertado",
+        "encontra sempre a maneira de voltar ao essencial depois de se dispersar"
+      ],
+      "o_que_cobra": "a generosidade tem um limite que raramente anuncia, e quando chega lá já foi longe demais.",
+      "o_que_nao_sabe_de_si": "que a capacidade de recomeçar não é otimismo. É ter percebido cedo que o que importa cabe todo numa mala pequena."
+    },
+    "pushya": {
+      "ordem": 8, "regente": "saturno", "faixa": "Caranguejo 3°20'–16°40'",
+      "nucleo": "alimentar. Ser o sítio onde os outros se seguram.",
+      "como_se_ve": [
+        "é a pessoa a quem os outros ligam quando algo corre mal, e não sabe bem porquê",
+        "cuida sem que lhe peçam e sem esperar que agradeçam",
+        "tem uma paciência longa com os outros e nenhuma com a própria lentidão",
+        "prefere que as coisas se façam devagar e bem",
+        "há sempre alguém a comer, a dormir ou a chorar em casa dela"
+      ],
+      "o_que_cobra": "sustenta toda a gente e não tem estrutura montada para se sustentar a si.",
+      "o_que_nao_sabe_de_si": "que a exigência que aplica a si própria é a única que nunca aplicaria a quem cuida."
+    },
+    "ashlesha": {
+      "ordem": 9, "regente": "mercurio", "faixa": "Caranguejo 16°40'–30°00'",
+      "nucleo": "o abraço que também prende. Ver a intenção por trás da palavra.",
+      "como_se_ve": [
+        "percebe o que a pessoa quer antes de ela o dizer — e às vezes antes de ela saber",
+        "não confia de imediato, e quem ganha a confiança tem-na inteira",
+        "guarda informação e usa-a no momento em que serve",
+        "atrai pessoas que se agarram, e nem sempre percebe que ajudou a isso",
+        "sabe onde dói e escolhe se toca ou não"
+      ],
+      "o_que_cobra": "a mesma leitura que a protege isola-a. E o que segura por afecto pode sufocar.",
+      "o_que_nao_sabe_de_si": "que não desconfia por ser fria. Desconfia porque lê depressa de mais e vê coisas que preferia não ver."
+    },
+    "magha": {
+      "ordem": 10, "regente": "ketu", "faixa": "Leão 0°00'–13°20'",
+      "nucleo": "a linhagem. Vir de algum sítio e carregá-lo, com orgulho e com peso.",
+      "como_se_ve": [
+        "os antepassados, a família ou a tradição pesam nas decisões, mesmo quando diz que não",
+        "tem uma dignidade natural que os outros respeitam sem saber porquê",
+        "sente-se responsável por honrar alguma coisa maior do que ela",
+        "reconhece hierarquia e valor onde outros vêem só pessoas",
+        "guarda objectos, histórias e nomes que mais ninguém guardaria"
+      ],
+      "o_que_cobra": "o que herdou também a prende. E a dignidade endurece com facilidade.",
+      "o_que_nao_sabe_de_si": "que o peso que carrega em nome dos que vieram antes ninguém lho pediu — e que largá-lo não seria traição."
+    },
+    "purva_phalguni": {
+      "ordem": 11, "regente": "venus", "faixa": "Leão 13°20'–26°40'",
+      "nucleo": "o descanso merecido. O prazer que não pede desculpa.",
+      "como_se_ve": [
+        "sabe parar, gozar e não sentir culpa por isso — e isso irrita quem não sabe",
+        "torna qualquer encontro numa coisa agradável, quase sem querer",
+        "trabalha bem quando o trabalho tem prazer, e mal quando não tem",
+        "quer ser amada tanto quanto quer ser respeitada",
+        "junta pessoas e cria ocasião onde não havia"
+      ],
+      "o_que_cobra": "evita o que é árido, e há coisas importantes que são áridas.",
+      "o_que_nao_sabe_de_si": "que a facilidade com que descansa não é preguiça — é uma competência que a maior parte das pessoas não tem e nunca aprende."
+    },
+    "uttara_phalguni": {
+      "ordem": 12, "regente": "sol", "faixa": "Leão 26°40' – Virgem 10°00'",
+      "nucleo": "o pacto. A palavra dada vale, e cumpre-se mesmo quando já não apetece.",
+      "como_se_ve": [
+        "cumpre o que prometeu muito depois de o entusiasmo ter passado",
+        "ajuda de forma organizada, não impulsiva — trata da papelada, não só do abraço",
+        "precisa de independência dentro da relação, não fora dela",
+        "sente-se responsável por quem depende dela",
+        "cansa-se de carregar sozinha o que devia ser repartido, e demora a dizê-lo"
+      ],
+      "o_que_cobra": "fica em compromissos muito depois de estes deixarem de servir, por não saber sair sem falhar.",
+      "o_que_nao_sabe_de_si": "que a lealdade que a define é também o que a prende — e que sair a tempo não é quebrar a palavra."
+    },
+    "hasta": {
+      "ordem": 13, "regente": "lua", "faixa": "Virgem 10°00'–23°20'",
+      "nucleo": "a mão. O que passa pelos dedos fica bem feito.",
+      "como_se_ve": [
+        "faz com as mãos melhor do que explica com palavras",
+        "precisa de mexer em alguma coisa enquanto pensa",
+        "arranja, ajusta e melhora tudo o que lhe passa pelas mãos, mesmo o que não é seu",
+        "usa o humor para levar o que pesa",
+        "tem um nervosismo de fundo que a competência disfarça bem"
+      ],
+      "o_que_cobra": "o detalhe absorve-a, e às vezes o conjunto perde-se enquanto aperfeiçoa a peça.",
+      "o_que_nao_sabe_de_si": "que a habilidade das mãos e a ansiedade são a mesma energia — uma dá saída à outra, e é por isso que precisa de estar sempre a fazer."
+    },
+    "chitra": {
+      "ordem": 14, "regente": "marte", "faixa": "Virgem 23°20' – Balança 6°40'",
+      "nucleo": "a forma. Ver a coisa acabada antes de ela existir.",
+      "como_se_ve": [
+        "vê logo como uma coisa devia ser, e sofre com o que está a meio",
+        "arruma, veste e compõe com um cuidado que os outros notam sem saber nomear",
+        "quer ser vista, e ao mesmo tempo não quer que se note que quer",
+        "não consegue entregar o que ainda não está como imaginou",
+        "constrói: objectos, espaços, projectos — coisas que ficam de pé"
+      ],
+      "o_que_cobra": "o perfeccionismo atrasa mais do que melhora. E o que nunca fica pronto nunca chega a existir.",
+      "o_que_nao_sabe_de_si": "que a imagem que tem na cabeça do trabalho acabado é um dom raro — e que é o mesmo dom que a impede de entregar."
+    },
+    "swati": {
+      "ordem": 15, "regente": "rahu", "faixa": "Balança 6°40'–20°00'",
+      "nucleo": "o vento. Mover-se sozinha, e equilibrar-se em terreno instável.",
+      "como_se_ve": [
+        "precisa de fazer as coisas à sua maneira, mesmo quando a maneira dos outros era mais fácil",
+        "move-se bem onde não há regras claras",
+        "negoceia e contorna em vez de confrontar",
+        "aguenta a instabilidade melhor do que a maioria — e pior a falta de liberdade",
+        "constrói o seu próprio equilíbrio, sem apoio de ninguém, e demorou a consegui-lo"
+      ],
+      "o_que_cobra": "a diplomacia adia confrontos que precisavam de acontecer. E a independência às vezes é distância.",
+      "o_que_nao_sabe_de_si": "que a independência não foi escolha — foi o que teve de construir cedo, e depois passou a preferir."
+    },
+    "vishakha": {
+      "ordem": 16, "regente": "jupiter", "faixa": "Balança 20°00' – Escorpião 3°20'",
+      "nucleo": "o alvo. Uma coisa de cada vez, até a conseguir.",
+      "como_se_ve": [
+        "consegue o que quer, e o que quer costuma demorar anos",
+        "quando decide que algo importa, o resto passa a segundo plano — pessoas incluídas",
+        "os outros chamam-lhe obsessão; para ela é apenas continuar",
+        "chega e sente vazio pouco depois, e escolhe outro alvo",
+        "não desiste por cansaço, só por perder a convicção"
+      ],
+      "o_que_cobra": "o caminho é sacrificado ao destino, e depois o destino não sabe a nada.",
+      "o_que_nao_sabe_de_si": "que o vazio que sente ao chegar não é sinal de que escolheu mal. É o preço de ter feito do alvo a única coisa."
+    },
+    "anuradha": {
+      "ordem": 17, "regente": "saturno", "faixa": "Escorpião 3°20'–16°40'",
+      "nucleo": "a devoção. Ficar, mesmo quando ficar deixou de ser fácil.",
+      "como_se_ve": [
+        "as amizades duram décadas e sobrevivem à distância e ao silêncio",
+        "organiza por trás sem precisar que lhe atribuam o mérito",
+        "aguenta com pessoas difíceis muito além do que era razoável",
+        "trabalha melhor em grupo do que sozinha, mesmo sendo capaz sozinha",
+        "há algo a que é fiel — uma pessoa, uma causa, uma prática — e isso organiza a vida toda"
+      ],
+      "o_que_cobra": "a fidelidade mantém-na em sítios onde já não é bem tratada.",
+      "o_que_nao_sabe_de_si": "que o que os outros lêem como paciência é, na verdade, uma esperança que ela não desiste de ter."
+    },
+    "jyeshtha": {
+      "ordem": 18, "regente": "mercurio", "faixa": "Escorpião 16°40'–30°00'",
+      "nucleo": "senioridade. A autoridade que se ganha a carregar peso, não a que se herda.",
+      "como_se_ve": [
+        "lê a hierarquia de qualquer sala em segundos — quem manda, quem finge que manda, quem está a ser deixado de fora",
+        "protege quem está em desvantagem sem lhe terem pedido",
+        "carrega responsabilidade que ninguém lhe atribuiu",
+        "sente-se mais velha do que a idade que tem, e sempre se sentiu",
+        "guarda os segredos dos outros e conta poucos dos seus"
+      ],
+      "o_que_cobra": "solidão no topo. Um orgulho que lhe custa admitir. E o ressentimento de fazer muito sem que se note.",
+      "o_que_nao_sabe_de_si": "que ninguém lhe pôs aquela responsabilidade em cima. Assumiu-a — e depois queixa-se do peso."
+    },
+    "mula": {
+      "ordem": 19, "regente": "ketu", "faixa": "Sagitário 0°00'–13°20'",
+      "nucleo": "a raiz. Desmontar até ao princípio.",
+      "como_se_ve": [
+        "não aceita a resposta oficial; escava até ao fundo mesmo depois de lhe darem a explicação",
+        "desmonta o que os outros dão por assente — e às vezes não sabe voltar a montar",
+        "perdeu ou largou coisas cedo, e daí veio uma liberdade que ninguém lhe ofereceu",
+        "é atraída precisamente por aquilo que os outros evitam olhar",
+        "prefere a pergunta desconfortável à resposta que serve"
+      ],
+      "o_que_cobra": "arranca antes de saber se era preciso arrancar. E há ciclos em que perde o que tinha construído.",
+      "o_que_nao_sabe_de_si": "que a facilidade em largar não é frieza. É competência — e é rara."
+    },
+    "purva_ashadha": {
+      "ordem": 20, "regente": "venus", "faixa": "Sagitário 13°20'–26°40'",
+      "nucleo": "a maré que não se detém. Convencer sem precisar de ter razão.",
+      "como_se_ve": [
+        "convence as pessoas com facilidade, e nem sempre pelos melhores argumentos",
+        "acredita no que diz enquanto o diz, e isso ouve-se",
+        "não admite que estava errada — reformula até o erro parecer uma etapa",
+        "levanta o ânimo de uma sala sem se propor a isso",
+        "volta sempre ao mesmo tema, de maneiras diferentes, ao longo de anos"
+      ],
+      "o_que_cobra": "a convicção passa à frente da verificação, e às vezes leva os outros com ela.",
+      "o_que_nao_sabe_de_si": "que a dificuldade em dizer 'enganei-me' não é orgulho — é que, para si, mudar de ideias parece perder a força que a move."
+    },
+    "uttara_ashadha": {
+      "ordem": 21, "regente": "sol", "faixa": "Sagitário 26°40' – Capricórnio 10°00'",
+      "nucleo": "a vitória que dura. Ganhar tarde, e ganhar de vez.",
+      "como_se_ve": [
+        "as coisas que lhe correm bem demoraram muito mais tempo do que aos outros",
+        "não anuncia nada antes de estar feito",
+        "aguenta processos longos sem perder o fio",
+        "tem dificuldade em celebrar enquanto não estiver tudo acabado — e nunca está",
+        "as pessoas confiam-lhe o que é importante, e ela raramente falha"
+      ],
+      "o_que_cobra": "adia o gozo indefinidamente, e a vida acontece durante a espera.",
+      "o_que_nao_sabe_de_si": "que a lentidão de que se queixa é exactamente o que faz o resultado ficar de pé quando o dos outros cai."
+    },
+    "shravana": {
+      "ordem": 22, "regente": "lua", "faixa": "Capricórnio 10°00'–23°20'",
+      "nucleo": "o ouvido. Aprender por escutar, e guardar o que ouviu.",
+      "como_se_ve": [
+        "as pessoas contam-lhe coisas em conversas de cinco minutos",
+        "lembra-se do que os outros disseram há anos, e do tom com que disseram",
+        "aprende melhor a ouvir do que a ler",
+        "o silêncio não a incomoda — nem o dela nem o dos outros",
+        "repete e transmite o que aprendeu, quase sem dar por isso"
+      ],
+      "o_que_cobra": "ouve tanto que às vezes não sabe o que pensa antes de ouvir os outros.",
+      "o_que_nao_sabe_de_si": "que o que faz naturalmente — escutar sem interromper — é a coisa mais rara e mais desejada que há."
+    },
+    "dhanishta": {
+      "ordem": 23, "regente": "marte", "faixa": "Capricórnio 23°20' – Aquário 6°40'",
+      "nucleo": "o ritmo. Marcar o compasso e fazer os outros entrar nele.",
+      "como_se_ve": [
+        "tem um ritmo próprio de trabalho e de vida, e não o ajusta ao dos outros",
+        "sente música, cadência, tempo — em coisas que não são música",
+        "trabalha para ter, e não se desculpa por isso",
+        "dá materialmente com facilidade, e emocionalmente com mais dificuldade",
+        "não pára quando o corpo pede — pára quando o trabalho acaba"
+      ],
+      "o_que_cobra": "o corpo cobra o que a vontade ignorou. E há uma solidão em não ajustar o passo a ninguém.",
+      "o_que_nao_sabe_de_si": "que a ambição de que se envergonha às vezes é o que mantém em pé as pessoas que dependem dela."
+    },
+    "shatabhisha": {
+      "ordem": 24, "regente": "rahu", "faixa": "Aquário 6°40'–20°00'",
+      "nucleo": "o círculo fechado. Curar sozinha, por caminhos que ninguém percorreu.",
+      "como_se_ve": [
+        "precisa de estar só para funcionar, e não é timidez",
+        "chega a conclusões certas por caminhos que ninguém consegue reconstituir",
+        "interessa-se por aquilo que a medicina ou a ciência oficial ainda não explicam",
+        "as pessoas demoram anos a perceber o que ela disse no princípio",
+        "cura os outros e trata-se a si com muito menos cuidado"
+      ],
+      "o_que_cobra": "a solidão que escolhe passa facilmente a isolamento que não escolheu.",
+      "o_que_nao_sabe_de_si": "que não é incompreendida por ser estranha. É que chega lá primeiro, e falta-lhe paciência para esperar pelos outros."
+    },
+    "purva_bhadrapada": {
+      "ordem": 25, "regente": "jupiter", "faixa": "Aquário 20°00' – Peixes 3°20'",
+      "nucleo": "o fogo que consome. Dar-se por inteiro a alguma coisa maior.",
+      "como_se_ve": [
+        "há sempre uma causa, uma ideia ou uma pessoa a quem se entrega sem medida",
+        "abdica de conforto por convicção, e não o vive como sacrifício",
+        "a intensidade afasta as pessoas antes de as atrair",
+        "pensa em coisas últimas — sentido, morte, o que fica — mais do que a maioria",
+        "muda por crise, não por decisão calma"
+      ],
+      "o_que_cobra": "queima-se pelo que acredita, e nem sempre verifica se o que acredita merecia.",
+      "o_que_nao_sabe_de_si": "que a capacidade de se entregar assim é o que a torna insubstituível — e é a mesma que a deixa sem nada quando a coisa acaba."
+    },
+    "uttara_bhadrapada": {
+      "ordem": 26, "regente": "saturno", "faixa": "Peixes 3°20'–16°40'",
+      "nucleo": "a profundidade calma. Saber muito e não precisar de o mostrar.",
+      "como_se_ve": [
+        "as pessoas procuram-na quando estão em baixo, e saem de lá mais leves",
+        "não se altera com facilidade, e isso acalma quem está à volta",
+        "percebe as coisas mais tarde e melhor do que quem reagiu logo",
+        "dá conselhos que só fazem sentido meses depois",
+        "guarda uma parte de si que ninguém conhece, e está bem assim"
+      ],
+      "o_que_cobra": "a calma que oferece esconde o que precisaria de dizer. E ninguém pergunta a quem parece bem.",
+      "o_que_nao_sabe_de_si": "que a serenidade que os outros lhe invejam custou-lhe alguma coisa que ela nunca contou a ninguém."
+    },
+    "revati": {
+      "ordem": 27, "regente": "mercurio", "faixa": "Peixes 16°40'–30°00'",
+      "nucleo": "a travessia. Levar os outros ao destino e ficar para trás.",
+      "como_se_ve": [
+        "acompanha pessoas em transições — mudanças, lutos, partidas — e depois deixa-as ir",
+        "não distingue os seus dos outros: cuida de quem aparece",
+        "os animais e as crianças aproximam-se dela sem razão aparente",
+        "sabe quando uma coisa acabou, e aceita-o antes dos outros",
+        "confia no caminho mesmo sem saber para onde vai"
+      ],
+      "o_que_cobra": "leva toda a gente a algum lado e não se pergunta para onde vai. E despede-se tantas vezes que se habituou.",
+      "o_que_nao_sabe_de_si": "que a facilidade com que deixa ir as pessoas não é desapego. É que já se despediu tantas vezes que aprendeu a fazê-lo sem partir."
+    }
+  }
+}
