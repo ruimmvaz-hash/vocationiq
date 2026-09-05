@@ -37,6 +37,15 @@ IDENTIDADE: Autoridade que traduz números em decisões que outros não ousam to
 ## Abertura
 Rui trabalha em Contabilidade há entre 5 e 10 anos e chega a este relatório com uma pergunta concreta: faz mais sentido avançar para consultoria a solo, ou procurar um lugar de gestão dentro de uma estrutura maior? Diz sentir-se apenas a processar números para outras pessoas decidirem, e quer estar mais perto da decisão em si — a ideia de consultoria financeira para pequenas empresas já lhe passou pela cabeça, mas ainda não sabe se é desejo ou se é fuga.
 
+## Quem é
+DOM: A capacidade de agir com decisão no momento certo, sem esperar autorização de uma estrutura por cima de si — o planeta mais forte de toda a sua carta está ligado directamente à iniciativa.
+DOM: Uma autoridade natural construída pela forma como já é visto de fora — colegas e clientes já o procuram quando precisam de uma opinião fundamentada, não só de um número calculado.
+DOM: Uma vontade de fundo em compreender o que se passa nos bastidores antes de outros o verem, uma força estrutural que raramente falha.
+LIMITAÇÃO: A fluidez de explicar e ser entendida ainda precisa de ser construída — não é a parte mais natural da sua carta, e vai custar-lhe mais do que a outros num primeiro momento público.
+LIMITAÇÃO: O sentido do que vale a pena cobrar pelo seu tempo é a área mais frágil do seu mapa — o risco real é sub-cobrar-se quando finalmente decidir avançar sozinho (desenvolvido mais à frente, na tabela de atrito).
+O que genuinamente valoriza é a substância sobre a aparência — prefere estar certo e ser útil a parecer bem numa reunião. Isso explica porque a parte do trabalho actual que mais o desgasta não é a técnica em si, é ser avaliado por decisões de outra pessoa.
+SÍNTESE: É a pessoa que já sabe o que fazer antes de lhe pedirem, mas ainda paga o preço de uma voz sem palco — onde rende mais é a decidir, onde rende menos é a comunicar essa decisão em voz alta.
+
 ## O que a carta sustenta
 A sua missão de fundo está ligada a compreender o que se passa nos bastidores antes de outros o verem — não é uma inclinação superficial, é a forma mais forte da sua carta de organizar a sua vontade. Isso explica porque é que "ver os números" nunca foi o problema para si: sempre soube ler o que eles significam antes de qualquer outra pessoa na sala. O que falta não é capacidade de compreensão, é espaço para a expressar em voz alta antes de ser tarde para influenciar a decisão.
 
@@ -111,7 +120,7 @@ async function main() {
   const pesosPlanetas = computePesosPlanetas(d1);
   const axes = computeVocationIQAxes(
     d1,
-    pesosPlanetas.map((p) => ({ planeta: p.planeta, peso: p.peso })),
+    pesosPlanetas.map((p) => ({ planeta: p.planeta, peso: p.peso, estado: p.estado })),
   );
   const savPorCasa = computeSavPorCasa(d1);
 

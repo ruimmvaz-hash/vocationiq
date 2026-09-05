@@ -115,7 +115,7 @@ export async function POST(request: Request) {
     // reorganizada em /admin/relatorios/[id]) — guardados tal como
     // calculados agora, para essas secções nunca terem de recalcular nem
     // chamar a Anthropic outra vez.
-    const dadosTecnicosParaGuardar = { axes, pesos: pesosPlanetas, earningModes: axes.earningModeAll, datas, savPorCasa, classificacaoMahadashaAtual: dadosRicos.classificacaoMahadashaAtual };
+    const dadosTecnicosParaGuardar = { axes, pesos: pesosPlanetas, earningModes: axes.earningModeAll, earningModeDominante: axes.earningModeDominante, datas, savPorCasa, classificacaoMahadashaAtual: dadosRicos.classificacaoMahadashaAtual };
     const rascunho = await guardarRascunho(intakeId, textoFinal, dadosTecnicosParaGuardar, prompt, { criticaLlm: textoCritica, rascunhoReescrito });
 
     // Passa os dados técnicos já calculados ao template — os gráficos

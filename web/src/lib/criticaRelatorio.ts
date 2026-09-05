@@ -88,7 +88,7 @@ export function parseCritica(textoCritica: string): ResultadoCritica {
 
 const INSTRUCAO_REESCRITA = `Reescreve este relatório corrigindo APENAS as falhas identificadas abaixo.
 Não alteres o que está correcto.
-Mantém todos os marcadores machine-readable (IDENTIDADE:, FORÇA:, CANDIDATA:, PRIMEIRO PASSO:)`;
+Mantém todos os marcadores machine-readable (FRASE_ABERTURA:, IDENTIDADE:, DOM:, LIMITAÇÃO:, SÍNTESE:, INSIGHT:, FORÇA:, CANDIDATA:, PRIMEIRO PASSO:) e todos os cabeçalhos "## " das 6 secções, incluindo "## Quem é".`;
 
 export function construirPromptReescrita(rascunhoOriginal: string, falhas: string[]): string {
   return `${INSTRUCAO_REESCRITA}\nFalhas a corrigir:\n${falhas.map((f) => `- ${f}`).join("\n")}\n\n=== RELATÓRIO ORIGINAL ===\n${rascunhoOriginal}`;

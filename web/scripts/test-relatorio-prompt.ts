@@ -43,7 +43,7 @@ async function main() {
   const pesosPlanetas = computePesosPlanetas(d1);
   const axes = computeVocationIQAxes(
     d1,
-    pesosPlanetas.map((p) => ({ planeta: p.planeta, peso: p.peso })),
+    pesosPlanetas.map((p) => ({ planeta: p.planeta, peso: p.peso, estado: p.estado })),
   );
 
   const agora = new Date();
@@ -107,7 +107,7 @@ async function main() {
   const pesosSemHora = computePesosPlanetas(d1SemHora);
   const axesSemHora = computeVocationIQAxes(
     d1SemHora,
-    pesosSemHora.map((p) => ({ planeta: p.planeta, peso: p.peso })),
+    pesosSemHora.map((p) => ({ planeta: p.planeta, peso: p.peso, estado: p.estado })),
   );
   const dashaSemHora = currentDasha(birthSemHora.utcDate, agora);
   const proximasSemHora = dashaSemHora.allAntardashas.filter((a) => a.start >= dashaSemHora.antardasha.end).slice(0, 2);

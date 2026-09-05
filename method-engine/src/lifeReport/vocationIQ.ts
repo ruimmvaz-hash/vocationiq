@@ -38,6 +38,8 @@ export interface EarningMode {
   house: EarningModeHouse;
   label: string;
   score: number;
+  /** Nº de camadas independentes que convergem nesta casa — planetas presentes + regente em dignidade forte (1, quando aplicável) + planetas que lançam Drishti. Nunca inclui o bónus de força real (peso) — esse é um ajuste de magnitude sobre as MESMAS camadas, não uma camada nova. Usado só para o desempate entre casas com a mesma pontuação (correcção desta ronda — TAREFA 2), nunca para a própria pontuação. */
+  camadasConvergentes: number;
   signals: string[];
   planetsInHouse: Graha[];
   lord: ClassicalGraha;
@@ -67,7 +69,10 @@ export interface VocationIQAxes {
   missionAxis: MissionAxis;
   /** Bloco 2 — REGRA 1 (Filtro do Amatyakaraka): o 2º maior grau no D1, comanda a ferramenta diária de trabalho. */
   amatyakaraka: ClassicalGraha;
+  /** O 1º elemento de `earningModeDominante` — mantido para compatibilidade com quem só lê um único Modo de Ganho dominante (ex.: destaque de uma única barra num gráfico). Em caso de co-dominância, é só UMA das duas casas empatadas — quem precisa de reflectir os dois usa `earningModeDominante`. */
   earningMode: EarningMode;
+  /** Correcção desta ronda (TAREFA 2) — o(s) Modo(s) de Ganho dominante(s) desta carta: 1 elemento no caso normal, 2 em caso de empate total (mesma pontuação E mesmo nº de camadas convergentes) — nunca mais de 2. Ver `resolverEarningModeDominante`. */
+  earningModeDominante: EarningMode[];
   earningModeAll: EarningMode[];
   marketShowcase: MarketShowcase;
   /** Bloco 2 — REGRA 3: tabela D-10 completa (carreira/acção pública). */
@@ -95,14 +100,25 @@ export interface VocationIQAxes {
 export interface PesoPlanetaParaModoDeGanho {
   planeta: ClassicalGraha;
   peso: number;
+  /**
+   * Correcção desta ronda (TAREFA 1) — o estado efectivo (dignidade
+   * clássica, ou "NeechaBhanga" quando a debilidade foi cancelada) que já
+   * serviu para calcular `peso`, no mesmo formato de `EstadoPlaneta` em
+   * `vocationiq/pesosPlanetas.ts` (não importado daqui, para não inverter
+   * a direcção de dependência do pacote — ver nota acima). Opcional para
+   * compatibilidade com chamadores que ainda não o passam; quando ausente,
+   * o bloco de dignidade do regente cai de volta à dignidade clássica em
+   * bruto (`d1.rows[lord].dignity`), tal como antes desta correcção.
+   */
+  estado?: DignityDetail | "NeechaBhanga";
 }
 
-/** Passo 2 — avalia a força de cada Artha Trikona (casas 2, 6, 10) e devolve o Modo de Ganho dominante. `pesos`, quando fornecido, acrescenta a força REAL (peso já corrigido por Neecha Bhanga) dos planetas envolvidos — sem ele, mantém-se o comportamento anterior (só dignidade/presença/Drishti). */
+/** Passo 2 — avalia a força de cada Artha Trikona (casas 2, 6, 10) e devolve o Modo de Ganho dominante. `pesos`, quando fornecido, acrescenta a força REAL (peso já corrigido por Neecha Bhanga) dos planetas envolvidos, E substitui a fonte de dignidade do regente pelo `estado` já corrigido (TAREFA 1 — antes desta correcção, o bloco de dignidade lia sempre `d1.rows[lord].dignity` em bruto, nunca sabendo do cancelamento, o que podia aplicar a penalização de "debilitado" ao mesmo tempo que o bónus de força real já tratava o planeta como forte). Sem `pesos`, mantém-se o comportamento anterior (só dignidade clássica em bruto/presença/Drishti). */
 function computeEarningModes(d1: D1TableResult, pesos?: PesoPlanetaParaModoDeGanho[]): EarningMode[] {
   const rows = d1.rows;
   const rulerships = functionalRulerships(d1.ascendant.sign);
   const houses: EarningModeHouse[] = [2, 6, 10];
-  const pesoDe = (planeta: ClassicalGraha): number | undefined => pesos?.find((p) => p.planeta === planeta)?.peso;
+  const infoDe = (planeta: ClassicalGraha): PesoPlanetaParaModoDeGanho | undefined => pesos?.find((p) => p.planeta === planeta);
 
   return houses
     .map((house) => {
@@ -112,14 +128,22 @@ function computeEarningModes(d1: D1TableResult, pesos?: PesoPlanetaParaModoDeGan
       const drishtiOnHouse = CLASSICAL_GRAHAS.filter((g) => rows[g].drishtiEmittedTargets.some((t) => t.targetHouse === house));
 
       let score = 0;
+      let camadasConvergentes = 0;
       const signals: string[] = [];
 
-      // Moolatrikona incluído (SPEC-003) — escala 0-6 coloca-o acima de "Own".
+      // Dignidade do regente — fonte única (TAREFA 1): o `estado` já
+      // corrigido por Neecha Bhanga quando os pesos estão disponíveis;
+      // sem pesos, cai de volta à dignidade clássica em bruto. Moolatrikona
+      // incluído (SPEC-003) — escala 0-6 coloca-o acima de "Own".
+      // NeechaBhanga conta como dignidade forte (é debilidade cancelada,
+      // lida como força) — nunca aplica a penalização de "debilitado".
       const lordRow = rows[lord];
-      if (lordRow.dignity === "Exalted" || lordRow.dignity === "Own" || lordRow.dignity === "Moolatrikona") {
+      const lordEstado = infoDe(lord)?.estado ?? lordRow.dignity;
+      if (lordEstado === "Exalted" || lordEstado === "Own" || lordEstado === "Moolatrikona" || lordEstado === "NeechaBhanga") {
         score += 2;
-        signals.push(`regente da casa ${house} (${lord}) em dignidade forte (${lordRow.dignity})`);
-      } else if (lordRow.dignity === "Debilitated") {
+        camadasConvergentes += 1;
+        signals.push(`regente da casa ${house} (${lord}) em dignidade forte (${lordEstado === "NeechaBhanga" ? "debilitado com cancelação, lido como força" : lordEstado})`);
+      } else if (lordEstado === "Debilitated") {
         score -= 1;
       }
       if (rulerships[lord]?.includes(house)) {
@@ -127,19 +151,23 @@ function computeEarningModes(d1: D1TableResult, pesos?: PesoPlanetaParaModoDeGan
       }
       for (const p of planetsInHouse) {
         score += 1.5;
+        camadasConvergentes += 1;
         signals.push(`${p} presente na casa ${house}`);
       }
       for (const p of drishtiOnHouse) {
         score += 0.5;
+        camadasConvergentes += 1;
         signals.push(`${p} lança Drishti sobre a casa ${house}`);
       }
 
       // Força real (peso, já com Neecha Bhanga aplicado quando existe) dos
-      // planetas ocupantes E do regente da casa — pedido explícito desta
-      // ronda: um planeta presente ou regente em força máxima tem de pesar
-      // mais do que a dignidade/presença sozinhas já contam acima.
+      // planetas ocupantes E do regente da casa — pedido explícito de uma
+      // ronda anterior: um planeta presente ou regente em força máxima tem
+      // de pesar mais do que a dignidade/presença sozinhas já contam acima.
+      // Ajuste de MAGNITUDE sobre as mesmas camadas já contadas acima —
+      // nunca soma a `camadasConvergentes` (não é uma fonte nova).
       for (const p of planetsInHouse) {
-        const peso = pesoDe(p);
+        const peso = infoDe(p)?.peso;
         if (peso === undefined) continue;
         if (peso >= 1.3) {
           score += 1.0;
@@ -150,7 +178,7 @@ function computeEarningModes(d1: D1TableResult, pesos?: PesoPlanetaParaModoDeGan
           score -= 0.5;
         }
       }
-      const pesoLord = pesoDe(lord);
+      const pesoLord = infoDe(lord)?.peso;
       if (pesoLord !== undefined) {
         if (pesoLord >= 1.3) {
           score += 0.5;
@@ -164,12 +192,38 @@ function computeEarningModes(d1: D1TableResult, pesos?: PesoPlanetaParaModoDeGan
         house,
         label: EARNING_MODE_LABEL[house],
         score: Math.round(score * 10) / 10,
+        camadasConvergentes,
         signals,
         planetsInHouse,
         lord,
       };
     })
     .sort((a, b) => b.score - a.score);
+}
+
+/**
+ * TAREFA 2 — regra de desempate explícita para o Modo de Ganho dominante
+ * (antes desta correcção, o empate resolvia-se por acidente da ordem do
+ * array `[2, 6, 10]`, via a estabilidade do `Array.prototype.sort` — nunca
+ * uma decisão metodológica). Critério 1: mais camadas independentes a
+ * convergir (`camadasConvergentes`). Critério 2, se ainda empatado: as
+ * casas empatadas são co-dominantes — devolve as duas (nunca mais do que
+ * 2; com 3 casas possíveis no total, um empate triplo devolveria as duas
+ * primeiras pela ordem estável `[2, 6, 10]`, caso extremo não coberto pela
+ * spec, tratado como o mais próximo do pedido).
+ */
+export function resolverEarningModeDominante(earningModeAll: EarningMode[]): EarningMode[] {
+  if (earningModeAll.length === 0) return [];
+  const maiorScore = earningModeAll[0].score;
+  const empatados = earningModeAll.filter((e) => e.score === maiorScore);
+  if (empatados.length === 1) return empatados;
+
+  const maiorCamadas = Math.max(...empatados.map((e) => e.camadasConvergentes));
+  const porCamadas = empatados.filter((e) => e.camadasConvergentes === maiorCamadas);
+  if (porCamadas.length === 1) return porCamadas;
+
+  // Empate total (pontuação e camadas iguais) — co-dominância.
+  return porCamadas.slice(0, 2);
 }
 
 /** Passo 3 — Casa 11 a partir do Arudha Lagna (a Montra de Mercado). */
@@ -242,12 +296,14 @@ function computeRegentesCasas(d1: D1TableResult): Record<number, ClassicalGraha>
  */
 export function computeVocationIQAxes(d1: D1TableResult, pesos?: PesoPlanetaParaModoDeGanho[]): VocationIQAxes {
   const earningModeAll = computeEarningModes(d1, pesos);
+  const earningModeDominante = resolverEarningModeDominante(earningModeAll);
   const d10 = computeD10Table(d1.rows, d1.ascendant.sign, d1.ascendant.degreeInSign);
 
   return {
     missionAxis: computeMissionAxis(d1),
     amatyakaraka: d1.karakas.amatyakaraka,
-    earningMode: earningModeAll[0],
+    earningMode: earningModeDominante[0],
+    earningModeDominante,
     earningModeAll,
     marketShowcase: computeMarketShowcase(d1),
     d10,

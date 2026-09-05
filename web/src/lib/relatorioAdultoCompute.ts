@@ -139,7 +139,7 @@ export async function calcularDadosAstrologicos(intake: IntakeRow): Promise<Dado
   const pesosPlanetas = computePesosPlanetas(d1);
   const axes = computeVocationIQAxes(
     d1,
-    pesosPlanetas.map((p) => ({ planeta: p.planeta, peso: p.peso })),
+    pesosPlanetas.map((p) => ({ planeta: p.planeta, peso: p.peso, estado: p.estado })),
   );
   const savPorCasa = computeSavPorCasa(d1);
   const datas = construirDadosDatas(birth, new Date());

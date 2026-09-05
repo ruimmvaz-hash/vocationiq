@@ -3,6 +3,7 @@ import {
   MARCADORES,
   computeRodaDaVida,
   MAHADASHA_CLASSIFICACAO,
+  normalizarTextoLivre,
   type VocationIQAxes,
   type PesoPlaneta,
   type EarningMode,
@@ -274,6 +275,34 @@ function parsePlano(corpo: string): { corpo: string; primeiroPasso: string | nul
   return { corpo: resto, primeiroPasso };
 }
 
+interface SeccaoQuemE {
+  doms: string[];
+  limitacoes: string[];
+  sintese: string | null;
+  oQueValoriza: string;
+}
+
+/** Correcção do especialista (TAREFA 3) — separa a secção "Quem é" nos seus marcadores: DOM/LIMITAÇÃO (0 ou mais linhas cada) e SÍNTESE (1 linha final). O que sobra depois de remover os três é o parágrafo livre "o que valoriza". */
+function parseSeccaoQuemE(corpo: string): SeccaoQuemE {
+  const domRegex = new RegExp(`^${MARCADORES.dom}\\s*(.*)$`, "gm");
+  const limitacaoRegex = new RegExp(`^${MARCADORES.limitacao}\\s*(.*)$`, "gm");
+  const sinteseRegex = new RegExp(`^${MARCADORES.sinteseQuemE}\\s*(.*)$`, "m");
+
+  const doms: string[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = domRegex.exec(corpo))) if (m[1].trim()) doms.push(m[1].trim());
+
+  const limitacoes: string[] = [];
+  while ((m = limitacaoRegex.exec(corpo))) if (m[1].trim()) limitacoes.push(m[1].trim());
+
+  const sinteseMatch = corpo.match(sinteseRegex);
+  const sintese = sinteseMatch?.[1]?.trim() || null;
+
+  const oQueValoriza = corpo.replace(domRegex, "").replace(limitacaoRegex, "").replace(sinteseRegex, "").trim();
+
+  return { doms, limitacoes, sintese, oQueValoriza };
+}
+
 /** Extrai "IDENTIDADE: <frase>" do texto em bruto — a linha vem ANTES do primeiro cabeçalho "## ", por isso corre sobre o texto completo, não sobre `seccoes` (dividirEmSeccoes ignora tudo antes do 1º cabeçalho). */
 function parseIdentidade(textoCompleto: string): string | null {
   const regex = new RegExp(`^${MARCADORES.identidade}\\s*(.+)$`, "m");
@@ -326,7 +355,7 @@ function svgGraficoForcas(pesos: PesoPlaneta[]): string {
   return `<svg viewBox="0 0 ${largura} ${altura}" width="100%" style="max-width:${largura}px;height:auto" xmlns="http://www.w3.org/2000/svg">${linhas}</svg>`;
 }
 
-function svgModoDeGanho(earningModes: EarningMode[], casaDominante: number): string {
+function svgModoDeGanho(earningModes: EarningMode[], casasDominantes: number[]): string {
   const largura = 460;
   const altura = 250;
   const larguraBarra = 96;
@@ -343,10 +372,11 @@ function svgModoDeGanho(earningModes: EarningMode[], casaDominante: number): str
       const x = margem + i * (larguraBarra + gap);
       const alturaBarra = Math.max(4, (e.score / maiorScore) * alturaMaxBarra);
       const y = baseY - alturaBarra;
-      // A casa dominante vem de axes.earningMode.house (o campo já
-      // computado e autoritativo por computeVocationIQAxes), não de
-      // recalcular o máximo aqui — evita divergir em caso de empate.
-      const dominante = e.house === casaDominante;
+      // As casas dominantes vêm de axes.earningModeDominante (já
+      // computado e autoritativo por computeVocationIQAxes, com a regra de
+      // desempate/co-dominância da TAREFA 2), não de recalcular o máximo
+      // aqui — evita divergir, e destaca as DUAS barras em caso de empate.
+      const dominante = casasDominantes.includes(e.house);
       const cor = dominante ? AZUL : CINZA_CLARO;
       const corTexto = dominante ? AZUL : "#6B6B6B";
       const [linha1, linha2] = CASA_LABEL_LINHAS[e.house] ?? ["", ""];
@@ -791,24 +821,44 @@ const CASA_APOIO_LABEL: Record<number, string> = {
 };
 
 /**
+ * TAREFA 4 (correcção do especialista) — implicação prática ESPECÍFICA de
+ * cada planeta fraco, uma frase própria por planeta (nunca a mesma frase
+ * genérica repetida). Texto exacto pedido, determinístico — gerado pelo
+ * código, nunca pelo LLM (só a 3ª coluna da tabela "Onde a carta tem
+ * atrito" muda; as outras duas mantêm-se).
+ */
+const IMPLICACAO_PRATICA_PLANETA: Record<string, string> = {
+  Mercury: "A fluidez de explicar e ser entendida precisa de ser construída — não é natural. Apoio externo (editor, coach de comunicação) compensa.",
+  Venus: "O sentido de valor próprio e o que se sente à-vontade a cobrar é a área mais fraca. Risco: sub-cobrar ou aceitar menos do que vale.",
+  Moon: "A gestão emocional em decisões importantes pede atenção — não tomar grandes decisões em momentos de baixa.",
+  Mars: "A capacidade de agir com rapidez e decisão custa mais do que devia — reservar energia para as batalhas que importam.",
+  Sun: "A afirmação pública da identidade profissional precisa de ser construída com intenção — não acontece por acidente.",
+  Jupiter: "A expansão e o crescimento pedem mais esforço do que para outros — crescer devagar é uma estratégia, não uma falha.",
+  Saturn: "A estrutura e a disciplina de longo prazo precisam de sistemas externos — não confiar só na força de vontade.",
+};
+
+/**
  * Tabela de tensões — determinística: para CADA planeta com peso < 0,9
  * (limiar já usado em corPeso/TERMOS_PROIBIDOS), sem excepção nem tecto —
- * cruza com a tese central (Modo de Ganho dominante). Peso mais baixo
- * primeiro. Nunca escrita pelo LLM — só o texto das 5 secções de prosa
- * vem de lá.
+ * cruza com a tese central (Modo(s) de Ganho dominante(s) — pode ser mais
+ * do que um em caso de co-dominância, TAREFA 2). Peso mais baixo primeiro.
+ * Nunca escrita pelo LLM — só o texto das 5 secções de prosa vem de lá.
+ * Colunas renomeadas (TAREFA 4): "O que a carta sustenta" / "O que
+ * resiste" / "O que isto implica na prática" — a 3ª já não repete a mesma
+ * frase genérica para planetas diferentes.
  */
-function tabelaTensoes(pesos: PesoPlaneta[], casaDominante: number): string {
+function tabelaTensoes(pesos: PesoPlaneta[], casasDominantes: number[]): string {
   const fracos = [...pesos].filter((p) => p.peso < 0.9).sort((a, b) => a.peso - b.peso);
   if (!fracos.length) return "";
 
-  const apoio = CASA_APOIO_LABEL[casaDominante] ?? "A sua forma dominante de ganhar";
+  const apoio = casasDominantes.map((c) => CASA_APOIO_LABEL[c] ?? "A sua forma dominante de ganhar").join(" e ");
   const linhas = fracos
     .map(
       (p) => `
       <tr>
         <td>${escapeHtml(apoio)}</td>
         <td>${escapeHtml(CARACTERISTICA_PT[p.planeta] ?? p.planeta)} <span class="peso-fraco">(peso ${p.peso.toFixed(2)})</span></td>
-        <td>Esta parte da carta está enfraquecida — o que a tese central pede aqui não é natural, tem de ser construído com esforço consciente.</td>
+        <td>${escapeHtml(IMPLICACAO_PRATICA_PLANETA[p.planeta] ?? "Esta parte da carta está enfraquecida — o que a tese central pede aqui não é natural, tem de ser construído com esforço consciente.")}</td>
       </tr>`,
     )
     .join("");
@@ -817,7 +867,7 @@ function tabelaTensoes(pesos: PesoPlaneta[], casaDominante: number): string {
     <div class="anexo-espaco">
       <p class="rotulo-pequeno">Onde a carta tem atrito</p>
       <table class="tabela-anexo tabela-tensoes">
-        <thead><tr><th>O que apoia</th><th>O que resiste</th><th>O que significa</th></tr></thead>
+        <thead><tr><th>O que a carta sustenta</th><th>O que resiste</th><th>O que isto implica na prática</th></tr></thead>
         <tbody>${linhas}</tbody>
       </table>
     </div>`;
@@ -861,13 +911,14 @@ function blocoQuemE(d: DadosParaTemplate): string {
     </div>`;
 }
 
+/** TAREFA 7 (correcção do especialista) — normaliza o texto livre da pessoa antes de entrar no template, mesma função usada em promptAdulto.ts (nunca duas versões). Nunca corrige ortografia, só deixa de amplificar visualmente um erro de maiúsculas com mais maiúsculas. */
 function blocoOQueTrouxe(d: DadosParaTemplate): string {
   return `
     <div class="bloco-dados">
       <p class="bloco-titulo">O que trouxe</p>
       ${
         d.oQueNaoFunciona
-          ? `<div class="citacao"><p>&ldquo;${escapeHtml(d.oQueNaoFunciona)}&rdquo;</p></div>`
+          ? `<div class="citacao"><p>&ldquo;${escapeHtml(normalizarTextoLivre(d.oQueNaoFunciona))}&rdquo;</p></div>`
           : ""
       }
       ${
@@ -875,8 +926,8 @@ function blocoOQueTrouxe(d: DadosParaTemplate): string {
           ? `<p class="rotulo-pequeno">Opções consideradas</p><div class="chips">${d.opcoesConsideradas.map((o) => `<span class="chip">${escapeHtml(o)}</span>`).join("")}</div>`
           : ""
       }
-      ${d.ideiaConcreta ? `<div class="destaque-ambar"><p class="rotulo-pequeno">Ideia concreta</p><p>${escapeHtml(d.ideiaConcreta)}</p></div>` : ""}
-      ${d.perguntaEspecifica ? `<div class="destaque-navy"><p class="rotulo-pequeno">Pergunta a que este relatório responde</p><p>${escapeHtml(d.perguntaEspecifica)}</p></div>` : ""}
+      ${d.ideiaConcreta ? `<div class="destaque-ambar"><p class="rotulo-pequeno">Ideia concreta</p><p>${escapeHtml(normalizarTextoLivre(d.ideiaConcreta))}</p></div>` : ""}
+      ${d.perguntaEspecifica ? `<div class="destaque-navy"><p class="rotulo-pequeno">Pergunta a que este relatório responde</p><p>${escapeHtml(normalizarTextoLivre(d.perguntaEspecifica))}</p></div>` : ""}
     </div>`;
 }
 
@@ -933,6 +984,41 @@ function cardOpcao(op: LeituraOpcao, dados: DadosParaTemplate, pesos: PesoPlanet
       ${op.insight ? `<div class="caixa-insight"><p>${escapeHtml(op.insight)}</p></div>` : ""}
       ${partes}
     </div>`;
+}
+
+/** Correcção do especialista (TAREFA 3C) — secção "Quem é": um card por dom (fundo verde suave, ícone de visto), um card por limitação (fundo âmbar suave, ícone de alerta), o parágrafo livre "o que valoriza" e, no fim, a frase de síntese em destaque (caixa navy, texto branco). Nada aqui é inventado pelo template — só organiza o que o LLM já escreveu nos marcadores obrigatórios. Se a secção vier vazia (rascunho antigo, gerado antes desta correcção), não desenha nada. */
+function blocoSeccaoQuemE(corpo: string): string {
+  if (!corpo.trim()) return "";
+  const { doms, limitacoes, sintese, oQueValoriza } = parseSeccaoQuemE(corpo);
+  if (!doms.length && !limitacoes.length && !sintese && !oQueValoriza) return "";
+
+  const cardsDoms = doms
+    .map(
+      (d) => `
+      <div class="card-dom">
+        <span class="card-dom-icone">&#10003;</span>
+        <p>${escapeHtml(d)}</p>
+      </div>`,
+    )
+    .join("");
+  const cardsLimitacoes = limitacoes
+    .map(
+      (l) => `
+      <div class="card-limitacao">
+        <span class="card-limitacao-icone">&#9888;</span>
+        <p>${escapeHtml(l)}</p>
+      </div>`,
+    )
+    .join("");
+
+  return `
+    <section class="seccao">
+      <h2 class="titulo-seccao">${escapeHtml(SECCAO_TITULOS.quemE)}</h2>
+      ${doms.length ? `<div class="grelha-dons-limitacoes">${cardsDoms}</div>` : ""}
+      ${limitacoes.length ? `<div class="grelha-dons-limitacoes grelha-limitacoes">${cardsLimitacoes}</div>` : ""}
+      ${oQueValoriza ? markdownParaHtml(oQueValoriza) : ""}
+      ${sintese ? `<div class="caixa-sintese-quemE"><p>${escapeHtml(sintese)}</p></div>` : ""}
+    </section>`;
 }
 
 function blocoCandidataForaDaLista(corpo: string, catalogo: ResultadoCatalogoVocacional | null): string {
@@ -1112,6 +1198,18 @@ export function gerarHTMLRelatorio(
   .parte-icone { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: var(--azul); color: #FFFFFF; font-size: 12px; flex-shrink: 0; }
   .parte-opcao p { font-size: 14px; margin: 0; }
 
+  /* Correcção do especialista — secção "Quem é" (TAREFA 3C) */
+  .grelha-dons-limitacoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .card-dom, .card-limitacao { border-radius: 8px; padding: 14px 16px; display: flex; gap: 10px; align-items: flex-start; }
+  .card-dom { background: rgba(79,122,92,0.12); border-left: 3px solid ${VERDE}; }
+  .card-limitacao { background: rgba(245,166,35,0.14); border-left: 3px solid var(--ambar); }
+  .card-dom-icone, .card-limitacao-icone { flex-shrink: 0; font-size: 15px; font-weight: 700; line-height: 1.5; }
+  .card-dom-icone { color: ${VERDE}; }
+  .card-limitacao-icone { color: var(--ambar); }
+  .card-dom p, .card-limitacao p { margin: 0; font-size: 14px; line-height: 1.6; }
+  .caixa-sintese-quemE { background: var(--azul); color: #FFFFFF; border-radius: 10px; padding: 20px 22px; margin-top: 8px; }
+  .caixa-sintese-quemE p { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.6; }
+
   .card-candidata { border: 2px solid var(--ambar); border-radius: 10px; padding: 20px; }
   .card-candidata-header { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--ambar); margin: 0 0 6px; }
   .card-candidata-nome { font-size: 18px; font-weight: 700; color: var(--azul); margin: 0 0 12px; }
@@ -1212,6 +1310,8 @@ export function gerarHTMLRelatorio(
       ${markdownParaHtml(seccoes[SECCAO_TITULOS.abertura] ?? "")}
     </section>
 
+    ${blocoSeccaoQuemE(seccoes[SECCAO_TITULOS.quemE] ?? "")}
+
     <section class="seccao">
       <h2 class="titulo-seccao">${escapeHtml(SECCAO_TITULOS.oQueACartaSustenta)}</h2>
       ${markdownParaHtml(seccoes[SECCAO_TITULOS.oQueACartaSustenta] ?? "")}
@@ -1226,12 +1326,12 @@ export function gerarHTMLRelatorio(
 
       ${blocoRodaDaVida(savPorCasa, pesos)}
 
-      <div class="subseccao">${tabelaTensoes(pesos, axes.earningMode.house)}</div>
+      <div class="subseccao">${tabelaTensoes(pesos, axes.earningModeDominante.map((e) => e.house))}</div>
     </section>
 
     <section class="seccao">
       <h2 class="titulo-seccao">Como ganha melhor</h2>
-      <div class="grafico-wrap grafico-3barras">${svgModoDeGanho(earningModes, axes.earningMode.house)}</div>
+      <div class="grafico-wrap grafico-3barras">${svgModoDeGanho(earningModes, axes.earningModeDominante.map((e) => e.house))}</div>
       <p class="grafico-legenda" style="text-align:center">A barra em azul é o modo dominante — a forma que a sua carta mais sustenta para gerar valor.</p>
     </section>
 

@@ -94,6 +94,7 @@ export { detectGlobalConfigurations, type GlobalConfigHit } from "./lifeReport/w
 export { detectVocationalFamilies, type VocationalFamilyHit, type VocationalCaution, type VocationalResult } from "./lifeReport/vocational";
 export {
   computeVocationIQAxes,
+  resolverEarningModeDominante,
   type VocationIQAxes,
   type MissionAxis,
   type EarningMode,
@@ -128,6 +129,7 @@ export {
 export { computeRodaDaVida, type DimensaoVida } from "./vocationiq/rodaDaVida";
 export {
   construirPromptAdulto,
+  normalizarTextoLivre,
   SECCAO_TITULOS,
   MARCADORES,
   FORCA_VALORES,

@@ -135,7 +135,7 @@ async function main() {
   const pesosPlanetas = computePesosPlanetas(d1);
   const axes = computeVocationIQAxes(
     d1,
-    pesosPlanetas.map((p) => ({ planeta: p.planeta, peso: p.peso })),
+    pesosPlanetas.map((p) => ({ planeta: p.planeta, peso: p.peso, estado: p.estado })),
   );
   const datas = await construirDadosDatas(birth, new Date());
   const intakeAdulto = construirIntakeAdulto(intake);

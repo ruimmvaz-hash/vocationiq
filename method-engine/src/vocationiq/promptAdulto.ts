@@ -66,6 +66,8 @@ export interface DadosDatas {
  */
 export const SECCAO_TITULOS = {
   abertura: "Abertura",
+  /** Correcção do especialista (nova secção) — retrato de personalidade, entre "Abertura" e "O que a carta sustenta". Ver TAREFA 3 no prompt abaixo. */
+  quemE: "Quem é",
   oQueACartaSustenta: "O que a carta sustenta",
   leituraPorOpcao: "Leitura por opção",
   candidataForaDaLista: "Candidata fora da lista",
@@ -91,6 +93,12 @@ export const MARCADORES = {
   fraseAbertura: "FRASE_ABERTURA:",
   /** Melhorias visuais ao template — a frase de síntese no topo de cada card de opção. */
   insight: "INSIGHT:",
+  /** Correcção do especialista — secção "Quem é" (TAREFA 3): um dom (2-3 obrigatórios), uma linha por dom. */
+  dom: "DOM:",
+  /** Correcção do especialista — secção "Quem é" (TAREFA 3): uma limitação (1-2 obrigatórias), uma linha por limitação. */
+  limitacao: "LIMITAÇÃO:",
+  /** Correcção do especialista — secção "Quem é" (TAREFA 3): a frase de síntese final da secção. */
+  sinteseQuemE: "SÍNTESE:",
 } as const;
 
 export const FORCA_VALORES = ["forte", "moderada", "fraca"] as const;
@@ -204,6 +212,26 @@ function planetaPt(g: ClassicalGraha | string): string {
   return GLOSA_TECNICA[g] ?? g;
 }
 
+/**
+ * TAREFA 7 (correcção do especialista) — normaliza o texto livre escrito
+ * pela própria pessoa (nunca o texto do LLM) antes de entrar no prompt ou
+ * no template: sentence case simples (1ª letra maiúscula, resto
+ * minúsculas). Nunca corrige ortografia — preserva as palavras exactas da
+ * pessoa, erros incluídos — só deixa de amplificar visualmente um erro de
+ * maiúsculas com mais maiúsculas. Aplicado nos dois pontos onde texto
+ * livre entra (aqui e em `relatorioTemplate.ts`), a mesma função, nunca
+ * duas versões. DESVIO conhecido e aceite: uma sigla que a pessoa tenha
+ * escrito em maiúsculas a meio da frase (ex.: "SAP") também é descida
+ * para minúsculas — a instrução pedida é literal ("resto minúsculas"),
+ * sem excepção para siglas.
+ */
+export function normalizarTextoLivre(texto: string): string {
+  const t = texto.trim();
+  if (!t) return t;
+  const minusculo = t.toLowerCase();
+  return minusculo.charAt(0).toUpperCase() + minusculo.slice(1);
+}
+
 /** Metodologia §1.1/§1.2 — deriva a lista de candidatas a partir de areasDestino/areasDestinoOutra. Vazio quando não há nada declarado (o LLM aplica o §1.3 nesse caso, ver texto do prompt). */
 function candidatasDeclaradas(intake: VocationiqIntakeAdulto): string[] {
   const candidatas = [...intake.areasDestino];
@@ -217,7 +245,7 @@ function blocoAbertura(intake: VocationiqIntakeAdulto): string {
     `Situação declarada: ${intake.situacaoDeclarada}`,
     `Área actual: ${intake.areaActual}`,
     `Anos de experiência na área actual: ${intake.anosExperiencia}`,
-    intake.oQueNaoFunciona ? `O que não está a funcionar (nas palavras da pessoa): "${intake.oQueNaoFunciona}"` : null,
+    intake.oQueNaoFunciona ? `O que não está a funcionar (nas palavras da pessoa): "${normalizarTextoLivre(intake.oQueNaoFunciona)}"` : null,
   ].filter(Boolean);
   return linhas.join("\n");
 }
@@ -232,15 +260,28 @@ function blocoEixoMissao(axes: VocationIQAxes): string {
 }
 
 function blocoModoDeGanho(axes: VocationIQAxes): string {
-  const dominante = axes.earningMode;
+  const dominantes = axes.earningModeDominante;
   const ROTULO_HUMANO: Record<number, string> = {
     2: "ganha pela voz — consultoria, ensino, comunicação directa do que sabe",
     6: "ganha por resolver o problema de outra pessoa — cura, crise, serviço, análise",
     10: "ganha por assumir a cara pública de uma coisa — liderança, execução, empreendedorismo visível",
   };
+  // TAREFA 2 (correcção do especialista) — antes desta correcção, um
+  // empate exacto entre duas casas resolvia-se por acidente da ordem do
+  // array interno, nunca por decisão metodológica. Agora, empate real
+  // (mesma pontuação E mesmo nº de camadas convergentes, ver
+  // `resolverEarningModeDominante`) devolve as duas casas como
+  // co-dominantes — o LLM tem de as apresentar como igualmente sustentadas,
+  // nunca escolher uma só para simplificar.
+  const linhaDominante =
+    dominantes.length > 1
+      ? `Modo de Ganho CO-DOMINANTE (empate real, mesma pontuação e mesmo nº de camadas convergentes — nunca escolhas só um dos dois): casa ${dominantes[0].house} (${ROTULO_HUMANO[dominantes[0].house]}) e casa ${dominantes[1].house} (${ROTULO_HUMANO[dominantes[1].house]}), ambas com pontuação ${dominantes[0].score}. Usa esta frase, ou uma equivalente, ao escrever sobre o Modo de Ganho: "Modo de Ganho co-dominante: casa ${dominantes[0].house} e casa ${dominantes[1].house} — a carta sustenta os dois com igual força."`
+      : `Modo de Ganho dominante: casa ${dominantes[0].house} (${ROTULO_HUMANO[dominantes[0].house]}), pontuação ${dominantes[0].score}.`;
   const linhas = [
-    `Modo de Ganho dominante: casa ${dominante.house} (${ROTULO_HUMANO[dominante.house]}), pontuação ${dominante.score}.`,
-    `Sinais que sustentam esta casa: ${dominante.signals.length ? dominante.signals.join("; ") : "nenhum sinal directo — só a dignidade base do regente."}`,
+    linhaDominante,
+    `Sinais que sustentam ${dominantes.length > 1 ? "estas casas" : "esta casa"}: ${dominantes
+      .map((d) => `casa ${d.house}: ${d.signals.length ? d.signals.join("; ") : "nenhum sinal directo — só a dignidade base do regente"}`)
+      .join(" | ")}`,
     `As três Artha Trikonas, por ordem de força nesta carta: ${axes.earningModeAll.map((e) => `casa ${e.house} (pontuação ${e.score})`).join(", ")}.`,
   ];
   return linhas.join("\n");
@@ -341,6 +382,12 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - MAHADASHA — CLASSIFICAÇÃO E REGRA: O tom da Mahadasha actual ABRE a secção do plano, antes de qualquer data ou passo. Classificação: Ketu = dissolução/fecho ("prepare e feche, não colha"); Vénus = expansão/prazer/colheita ("avance, o ciclo favorece"); Sol = afirmação/autoridade ("afirme e visibilize"); Lua = emoção/fluxo/intuição ("siga o que sente, não o plano"); Marte = acção/lançamento/conflito ("avance com força e decisão"); Rahu = ambição/disrupção/ilusão ("risco real, oportunidade real"); Júpiter = crescimento/sabedoria/expansão ("expanda com intenção"); Saturno = estrutura/colheita lenta/responsabilidade ("construa devagar, vai durar"); Mercúrio = comunicação/adaptação/aprendizagem ("aprenda e comunique"). A colheita a sério só abre depois do fim da Mahadasha actual — sempre nomear essa data.
 - MARCADORES OBRIGATÓRIOS (recapitulação — cada um já está descrito no lugar exacto onde vai abaixo, mas fica aqui reunido para nunca esquecer nenhum): antes de ${MARCADORES.identidade} "${MARCADORES.fraseAbertura} <frase de 10-15 palavras, poderosa e específica>"; dentro de cada bloco "### <opção>", antes do ponto 1: "${MARCADORES.insight} <frase de síntese em menos de 15 palavras>". São machine-readable e obrigatórios — nunca omitir.
 - COERÊNCIA COM OS VISUAIS: o relatório tem elementos visuais gerados automaticamente — gráfico de forças (7 planetas com pesos calculados), radar de competências (6 eixos), Roda da Vida (8 dimensões), tabela de tensões. O texto DEVE referenciar estes visuais quando relevante ("Como mostra o gráfico de forças...", "A sua roda de vida revela...", "O radar de competências confirma..."). NUNCA contradizer o que os visuais mostram — se um visual mostra um valor fraco, o texto não pode dizer que é forte.
+- ESCALA DE CONFIANÇA (correcção do especialista, obrigatória em todo o relatório) — a linguagem usada tem de bater sempre com o nº de camadas que sustentam a afirmação, nunca mais confiante do que os dados permitem:
+  · CONVERGÊNCIA FORTE (≥4 camadas): linguagem sem reserva. Ex.: "A sua carta sustenta X com clareza."
+  · SINAL FORTE (2-3 camadas): confiança, citando as fontes. Ex.: "Dois sinais independentes apontam para X — o Eixo da Missão e o Modo de Ganho convergem aqui."
+  · LEITURA (interpretação sólida, sem convergência mensurável): escreve-se como leitura, nunca como facto. Ex.: "Uma leitura possível desta carta é X — não como facto, mas como direcção."
+  · EM ABERTO (a carta não distingue): diz isso directamente. Ex.: "A carta não distingue entre X e Y — a decisão fica com você."
+  Proibido usar linguagem de "Convergência forte" para algo que só tem um "Sinal forte" — o nível de confiança da frase tem de corresponder exactamente ao nível de convergência que a sustenta.
 - Tom adulto, directo, sem gíria de coach, sem emojis.
 
 VOLUME: Cada secção deve ser tão longa quanto os dados sustentam — nunca mais, nunca menos. Se uma secção não tem nada genuinamente novo a acrescentar, é curta. Não preencher para atingir um mínimo. Proibido: repetir para parecer completo. Permitido: ser curto e preciso.
@@ -390,9 +437,9 @@ ${
     ? `A pessoa declarou estas opções (avalia TODAS, mesmo as que a carta sustenta fracamente):\n${candidatas.map((c) => `- ${c}`).join("\n")}`
     : `A pessoa NÃO declarou opções concretas${intake.areasDestinoIncluiAindaNaoSei ? ' (escolheu "ainda não sei")' : ""}. Deriva até 3 candidatas plausíveis a partir do texto livre abaixo — se não conseguires nenhuma candidata clara, NÃO bloqueies o relatório: escreve a Secção 2 (o que a carta sustenta, em geral) e resolve o relatório inteiro pela Secção 4 (candidata fora da lista). Texto livre disponível:`
 }
-${!candidatas.length ? [intake.paraOndeQuerIr && `"Para onde queres ir": ${intake.paraOndeQuerIr}`, intake.perguntaEspecifica && `Pergunta específica: ${intake.perguntaEspecifica}`, intake.ideiaConcreta && `Ideia concreta: ${intake.ideiaConcreta}`].filter(Boolean).join("\n") || "(nenhum texto livre preenchido — escreve só a partir do que a carta sustenta em geral.)" : ""}
+${!candidatas.length ? [intake.paraOndeQuerIr && `"Para onde queres ir": ${normalizarTextoLivre(intake.paraOndeQuerIr)}`, intake.perguntaEspecifica && `Pergunta específica: ${normalizarTextoLivre(intake.perguntaEspecifica)}`, intake.ideiaConcreta && `Ideia concreta: ${normalizarTextoLivre(intake.ideiaConcreta)}`].filter(Boolean).join("\n") || "(nenhum texto livre preenchido — escreve só a partir do que a carta sustenta em geral.)" : ""}
 ${intake.tipoMudanca.length ? `\nTipo de mudança que a pessoa diz querer (usa para calibrar a parte 4 de cada leitura — ex.: se inclui trabalhar por conta própria ou abrir negócio, responde explicitamente se a carta sustenta trabalho a solo nessa opção): ${intake.tipoMudanca.join(", ")}.` : ""}
-${intake.ideiaConcreta && candidatas.length ? `\nIdeia concreta partilhada (contexto adicional, não é uma opção à parte): ${intake.ideiaConcreta}` : ""}
+${intake.ideiaConcreta && candidatas.length ? `\nIdeia concreta partilhada (contexto adicional, não é uma opção à parte): ${normalizarTextoLivre(intake.ideiaConcreta)}` : ""}
 
 === ESTRUTURA DO RELATÓRIO — exactamente estas 5 secções, por esta ordem ===
 
@@ -402,6 +449,7 @@ DEPOIS de ${MARCADORES.fraseAbertura}, escreve, numa linha própria: "${MARCADOR
 
 FORMATO DE SAÍDA (obrigatório): escreve em Markdown. Cada secção começa com um cabeçalho de nível 2, EXACTAMENTE com este texto (sem números, sem variações):
 ## ${SECCAO_TITULOS.abertura}
+## ${SECCAO_TITULOS.quemE}
 ## ${SECCAO_TITULOS.oQueACartaSustenta}
 ## ${SECCAO_TITULOS.leituraPorOpcao}
 ## ${SECCAO_TITULOS.candidataForaDaLista}
@@ -410,6 +458,23 @@ Se não houver candidata fora da lista (4 camadas não convergiram), inclui o ca
 
 ## ${SECCAO_TITULOS.abertura}
 Quadro de dados (nome, situação, área actual) e o enquadramento da pergunta que a pessoa trouxe. Nunca abrir sem este quadro. O texto da pergunta do cliente deve ser apresentado tal como foi escrito — não o coloques em maiúsculas nem em destaque tipográfico. Usa-o como contexto, não como título.
+
+## ${SECCAO_TITULOS.quemE}
+Secção nova (correcção do especialista) — um retrato de personalidade, ANTES de qualquer opção ser mencionada. Formato EXACTO, obrigatório e machine-readable — não omitas nem reordenes os marcadores:
+
+DONS — 2 a 3 linhas "${MARCADORES.dom} <frase>", obrigatório:
+- Um dom = um planeta com peso ≥ 1,3. Se nenhum planeta atingir 1,3, usa os dois planetas de maior peso da carta (mesmo abaixo de 1,3) — nunca deixes esta secção sem dons.
+- Cada dom cita o planeta + a casa + a dignidade, traduzidos para linguagem simples (nunca o nome técnico do planeta/casa/dignidade em jargão — mesma lista de termos proibidos de sempre). Nunca um adjectivo solto ("é comunicativa") sem estar rastreável a este dado técnico específico.
+- A confiança da frase deve corresponder ao peso real (um peso de 1,8 não se escreve com a mesma força que um de 1,32 — ver ESCALA DE CONFIANÇA acima).
+
+LIMITAÇÕES — 1 a 2 linhas "${MARCADORES.limitacao} <frase>", obrigatório:
+- Uma limitação = um planeta com peso < 0,9.
+- Frase PRÓPRIA e ESPECÍFICA para cada planeta fraco — PROIBIDO repetir a mesma frase genérica para planetas diferentes. Cada planeta tem uma implicação prática concreta, nunca genérica: Mercúrio fraco afecta a fluidez de explicar e ser entendida; Vénus fraca afecta o sentido de valor próprio e o à-vontade a cobrar; Lua fraca afecta a gestão emocional e a intuição em decisões; Marte fraco afecta a capacidade de agir com rapidez e decisão; Sol fraco afecta a afirmação pública da identidade profissional; Júpiter fraco afecta a expansão/crescimento (custa mais do que para outros); Saturno fraco afecta a estrutura e a disciplina de longo prazo (precisa de sistemas externos). Usa estas implicações como ponto de partida, nunca como frase a copiar literalmente duas vezes.
+- REGRA DE NÃO-DUPLICAÇÃO: o relatório já tem, mais abaixo, uma tabela determinística ("Onde a carta tem atrito") com a implicação prática detalhada de CADA planeta fraco. Se vais nomear aqui um planeta fraco que essa tabela já desenvolve, NÃO repitas a explicação inteira — uma frase curta que o nomeia e remete (ex.: "Vénus, a área mais fraca da carta, aparece desenvolvida mais à frente") chega; o desenvolvimento completo fica só na tabela.
+
+O QUE VALORIZA — sempre com conteúdo real (nunca omitir, mesmo quando Vénus é a camada mais fraca da carta — "o que valoriza" nunca fica só como um número solto no gráfico de pesos, sem explicação no texto): um parágrafo curto, sem marcador, sobre o que esta pessoa genuinamente valoriza, ancorado em Vénus e nos dons/limitações já nomeados.
+
+Termina a secção com uma linha "${MARCADORES.sinteseQuemE} <frase>" — uma frase compacta que resume: quem é, o que a move, o que a trava, onde rende mais, onde rende menos. Nunca introduzas aqui um facto novo que não vá aparecer depois no corpo do relatório — é síntese do que já foi dito, não uma antecipação de algo só explicado mais tarde.
 
 ## ${SECCAO_TITULOS.oQueACartaSustenta}
 Traduz o Eixo da Missão e o Modo de Ganho dominante para linguagem humana, sem ainda nomear nenhuma das opções declaradas.
@@ -429,6 +494,8 @@ Repete o bloco "### <nome> / ${MARCADORES.forca} / ${MARCADORES.insight} / 1. / 
 
 ## ${SECCAO_TITULOS.candidataForaDaLista}
 A candidata já vem calculada deterministicamente na secção "Candidatas do catálogo" acima — NÃO calcules a tua própria convergência, NÃO inventes uma candidata diferente. Se essa secção diz "nenhuma", a primeira linha é "${MARCADORES.candidata} nenhuma" e escreves isso explicitamente — "a sua carta não aponta a nada fora do que já pensava" é uma resposta válida e completa, não a evites. Se essa secção nomeia uma candidata concreta, a primeira linha é "${MARCADORES.candidata} <esse nome exacto>", seguida do texto explicativo usando as camadas exactas já listadas (nunca inventes camadas novas nem omitas as que vêm calculadas). A primeira linha é sempre obrigatória e machine-readable, não a omitas.
+
+REGRA ABSOLUTA — CANDIDATA FORA DA LISTA (correcção do especialista): PROIBIDO nomear qualquer candidata, mesmo como pista abaixo do limiar, sem que venha explicitamente da secção "Candidatas do catálogo" acima. Se nenhuma candidata do catálogo atingiu ≥4 camadas, a resposta é "${MARCADORES.candidata} nenhuma" — explica honestamente que a carta não aponta a nada fora do que já foi pensado. NUNCA preenchas com estereótipos de profissão ou associações livres a arquétipos abstractos. Exemplo do que NÃO fazer: sugerir "engenharia, auditoria, saúde pública" por associação livre a "Saturno = estrutura/rigor" — essas profissões não vieram do catálogo, vieram de associação livre; isto é invenção, não leitura, e é exactamente o que esta regra proíbe.
 
 ## ${SECCAO_TITULOS.oPlano}
 Abre com o tom da classificação da Mahadasha actual (secção "Datas reais" acima) — antes de qualquer data ou passo. Usa as datas reais dessa secção (nunca datas inventadas). Escreve o corpo do plano livremente, e destaca o primeiro passo accionável para esta semana numa linha própria, prefixada exactamente por "${MARCADORES.primeiroPasso} " (obrigatório, machine-readable, não o omitas) — ex.: "${MARCADORES.primeiroPasso} Contacte duas pessoas que já fazem consultoria a solo e pergunte-lhes o que ninguém conta sobre o primeiro ano." Nunca um plano genérico de 90 dias sem ligação às datas calculadas.
