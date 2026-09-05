@@ -133,7 +133,7 @@ export async function POST(request: Request) {
       ideiaConcreta: intakeAdulto.ideiaConcreta,
       perguntaEspecifica: intakeAdulto.perguntaEspecifica,
     };
-    const html = gerarHTMLRelatorio(dadosTemplate, textoFinal, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa);
+    const html = gerarHTMLRelatorio(dadosTemplate, textoFinal, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
 
     return NextResponse.json({ ok: true, rascunhoId: rascunho.id, texto: textoFinal, html, houveReescrita: rascunhoReescrito !== null });
   } catch (err) {

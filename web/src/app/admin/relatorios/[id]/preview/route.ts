@@ -28,7 +28,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (!actual) return paginaSimples("Ainda sem rascunho", "Gera o rascunho no backoffice antes de pré-visualizar o relatório.");
 
   try {
-    const { axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, horaAproximada } = await calcularDadosAstrologicos(intake);
+    const { axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, horaAproximada, catalogoResultados } = await calcularDadosAstrologicos(intake);
 
     const dadosTemplate: DadosParaTemplate = {
       nome: intake.nome,
@@ -44,7 +44,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       perguntaEspecifica: intakeAdulto.perguntaEspecifica,
     };
 
-    const html = gerarHTMLRelatorio(dadosTemplate, actual.texto, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa);
+    const html = gerarHTMLRelatorio(dadosTemplate, actual.texto, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
 
     const avisoRascunho = actual.origem === "rascunho" ? " (rascunho ainda não aprovado — o relatório entregue continua diferente deste)" : "";
     const banner = `

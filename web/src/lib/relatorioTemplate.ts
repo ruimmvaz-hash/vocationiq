@@ -2,6 +2,7 @@ import {
   SECCAO_TITULOS,
   MARCADORES,
   computeRodaDaVida,
+  MAHADASHA_CLASSIFICACAO,
   type VocationIQAxes,
   type PesoPlaneta,
   type EarningMode,
@@ -10,6 +11,7 @@ import {
   type SavPorCasa,
   type ClassificacaoApoio,
   type DimensaoVida,
+  type ResultadoCatalogoVocacional,
 } from "@naveya/method-engine";
 
 export { computeRodaDaVida, type DimensaoVida };
@@ -218,10 +220,11 @@ function dividirEmSeccoes(texto: string): Record<string, string> {
 interface LeituraOpcao {
   nome: string;
   forca: ForcaValor;
+  insight: string | null;
   partes: string[];
 }
 
-/** Divide o corpo da secção "Leitura por opção" pelos cabeçalhos "### <nome>" que o prompt exige, extrai a linha FORÇA: e as 4 partes numeradas de cada opção. */
+/** Divide o corpo da secção "Leitura por opção" pelos cabeçalhos "### <nome>" que o prompt exige, extrai a linha FORÇA:, a linha INSIGHT: (melhorias visuais, Parte 1B) e as 4 partes numeradas de cada opção. */
 function parseLeituraPorOpcao(corpo: string): LeituraOpcao[] {
   const blocos = corpo.split(/^###\s+/m).filter((b) => b.trim());
   return blocos.map((bloco) => {
@@ -232,7 +235,12 @@ function parseLeituraPorOpcao(corpo: string): LeituraOpcao[] {
     const forcaRegex = new RegExp(`${MARCADORES.forca}\\s*(forte|moderada|fraca)`, "i");
     const forcaMatch = resto.match(forcaRegex);
     const forca = (forcaMatch?.[1]?.toLowerCase() as ForcaValor) ?? "moderada";
-    const semForca = resto.replace(forcaRegex, "").trim();
+    let semForca = resto.replace(forcaRegex, "").trim();
+
+    const insightRegex = new RegExp(`^${MARCADORES.insight}\\s*(.*)$`, "m");
+    const insightMatch = semForca.match(insightRegex);
+    const insight = insightMatch?.[1]?.trim() || null;
+    semForca = semForca.replace(insightRegex, "").trim();
 
     const indices: number[] = [];
     const numRegex = /^\d[.)]\s+/gm;
@@ -243,7 +251,7 @@ function parseLeituraPorOpcao(corpo: string): LeituraOpcao[] {
       return semForca.slice(start, end).replace(/^\d[.)]\s+/, "").trim();
     });
 
-    return { nome, forca, partes };
+    return { nome, forca, insight, partes };
   });
 }
 
@@ -269,6 +277,13 @@ function parsePlano(corpo: string): { corpo: string; primeiroPasso: string | nul
 /** Extrai "IDENTIDADE: <frase>" do texto em bruto — a linha vem ANTES do primeiro cabeçalho "## ", por isso corre sobre o texto completo, não sobre `seccoes` (dividirEmSeccoes ignora tudo antes do 1º cabeçalho). */
 function parseIdentidade(textoCompleto: string): string | null {
   const regex = new RegExp(`^${MARCADORES.identidade}\\s*(.+)$`, "m");
+  const match = textoCompleto.match(regex);
+  return match?.[1]?.trim() || null;
+}
+
+/** Melhorias visuais ao template (Parte 1A) — extrai "FRASE_ABERTURA: <frase>", também antes do 1º cabeçalho, mesma lógica de parseIdentidade. */
+function parseFraseAbertura(textoCompleto: string): string | null {
+  const regex = new RegExp(`^${MARCADORES.fraseAbertura}\\s*(.+)$`, "m");
   const match = textoCompleto.match(regex);
   return match?.[1]?.trim() || null;
 }
@@ -500,6 +515,231 @@ function svgRodaDaVida(dimensoes: DimensaoVida[]): string {
   </svg>`;
 }
 
+// ---------- Melhorias visuais ao template (Parte 2) ----------
+
+/** Mesmo tecto usado por rodaDaVida.ts para normalizar SAV para 0-10 — não exportado de lá (é interno àquele módulo), por isso o mesmo valor (337 pontos totais / 12 casas ≈ 42 no limiar superior típico) é repetido aqui, nunca reinventado com outro número. */
+const SAV_MAX_RADAR = 42;
+
+interface EixoCompetencia {
+  nome: string;
+  valor: number;
+}
+
+/**
+ * Radar de competências (melhorias visuais, Parte 2A) — 6 eixos, fórmula
+ * exacta pedida: (peso do planeta + SAV_da_casa/SAV_max*10) / 2, capado
+ * a [0,10] só por segurança (a mesma cautela já aplicada à Roda da Vida).
+ */
+function computeRadarCompetencias(pesos: PesoPlaneta[], savPorCasa: SavPorCasa[]): EixoCompetencia[] {
+  const pesoDe = (planeta: string) => pesos.find((p) => p.planeta === planeta)?.peso ?? 0;
+  const savDe = (casa: number) => savPorCasa.find((h) => h.casa === casa)?.pontuacao ?? 0;
+  const valor = (planeta: string, casa: number) => {
+    const bruto = (pesoDe(planeta) + (savDe(casa) / SAV_MAX_RADAR) * 10) / 2;
+    return Math.round(Math.min(10, Math.max(0, bruto)) * 10) / 10;
+  };
+  return [
+    { nome: "Comunicação", valor: valor("Mercury", 2) },
+    { nome: "Liderança", valor: valor("Sun", 10) },
+    { nome: "Criatividade", valor: valor("Venus", 5) },
+    { nome: "Estrutura", valor: valor("Saturn", 6) },
+    { nome: "Relação", valor: valor("Moon", 7) },
+    { nome: "Execução", valor: valor("Mars", 1) },
+  ];
+}
+
+/**
+ * SVG do radar — polígono preenchido (não sectores em pizza, como a Roda
+ * da Vida) ligando os 6 vértices, cada um à distância proporcional ao
+ * seu valor. Grelha de círculos concêntricos + eixos radiais para leitura
+ * fácil, mesma convenção visual da Roda da Vida.
+ */
+function svgRadarCompetencias(eixos: EixoCompetencia[]): string {
+  const tamanho = 400;
+  const cx = tamanho / 2;
+  const cy = tamanho / 2;
+  const raioMax = 120;
+  const raioLabel = raioMax + 34;
+  const n = eixos.length;
+  const anguloPasso = 360 / n;
+
+  const grelha = [2, 4, 6, 8, 10]
+    .map((v) => `<circle cx="${cx}" cy="${cy}" r="${(v / 10) * raioMax}" fill="none" stroke="#E6E6E6" stroke-width="1" />`)
+    .join("");
+
+  const ponto = (valor10: number, i: number): [number, number] => {
+    const anguloDeg = i * anguloPasso - 90;
+    const rad = (anguloDeg * Math.PI) / 180;
+    const r = (valor10 / 10) * raioMax;
+    return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+  };
+
+  const eixosRadiais = eixos
+    .map((_, i) => {
+      const anguloDeg = i * anguloPasso - 90;
+      const rad = (anguloDeg * Math.PI) / 180;
+      const x = cx + raioMax * Math.cos(rad);
+      const y = cy + raioMax * Math.sin(rad);
+      return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#E6E6E6" stroke-width="1" />`;
+    })
+    .join("");
+
+  const poligono = eixos.map((e, i) => ponto(e.valor, i).join(",")).join(" ");
+
+  const labels = eixos
+    .map((e, i) => {
+      const anguloDeg = i * anguloPasso - 90;
+      const rad = (anguloDeg * Math.PI) / 180;
+      const lx = cx + raioLabel * Math.cos(rad);
+      const ly = cy + raioLabel * Math.sin(rad);
+      const cosAng = Math.cos(rad);
+      const anchor = cosAng > 0.3 ? "start" : cosAng < -0.3 ? "end" : "middle";
+      return `
+      <text x="${lx}" y="${ly - 4}" text-anchor="${anchor}" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="${AZUL}">${escapeHtml(e.nome)}</text>
+      <text x="${lx}" y="${ly + 12}" text-anchor="${anchor}" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="${AMBAR}">${e.valor.toFixed(1)}</text>`;
+    })
+    .join("");
+
+  return `<svg viewBox="0 0 ${tamanho} ${tamanho}" width="100%" style="max-width:${tamanho}px;height:auto" xmlns="http://www.w3.org/2000/svg">
+    ${grelha}
+    ${eixosRadiais}
+    <polygon points="${poligono}" fill="${AMBAR}" fill-opacity="0.3" stroke="${AMBAR}" stroke-width="2" />
+    ${labels}
+  </svg>`;
+}
+
+function blocoRadarCompetencias(pesos: PesoPlaneta[], savPorCasa: SavPorCasa[]): string {
+  const eixos = computeRadarCompetencias(pesos, savPorCasa);
+  return `
+    <div class="radar-wrap">
+      <p class="bloco-titulo" style="text-align:center">O seu perfil de competências</p>
+      <p class="roda-vida-subtitulo" style="text-align:center">Onde a sua carta tem força natural</p>
+      <div class="grafico-wrap grafico-centrado">${svgRadarCompetencias(eixos)}</div>
+      <p class="grafico-legenda" style="text-align:center">Valores calculados a partir da força real da sua carta — não são avaliações de personalidade.</p>
+    </div>`;
+}
+
+/**
+ * Diagrama de ponte (melhorias visuais, Parte 2B) — "o que já tem" (a
+ * área actual e o que a carta já sustenta) versus "o que a nova opção
+ * pede" (o que se aprende, o que não muda). Determinístico, por opção.
+ *
+ * DESVIO — o pedido não deu fórmula para "custo médio" no centro da
+ * seta; sem uma fórmula, um número aqui seria inventado. A seta mostra
+ * só a palavra "Transição", nunca um valor fabricado. "O que se aprende"
+ * também não veio com fórmula — usa o mesmo vocabulário humano do Modo
+ * de Ganho dominante (já estabelecido em CASA_APOIO_LABEL/promptAdulto.ts),
+ * nunca inventado de novo. "O que não muda" é o único item com fórmula
+ * clara: o planeta mais fraco (peso mínimo) de toda a carta.
+ */
+const MODO_GANHO_APRENDE: Record<number, string> = {
+  2: "A disciplina de comunicar com clareza para quem paga por isso.",
+  6: "A resistência de resolver o problema de outra pessoa, uma e outra vez.",
+  10: "A exposição de assumir a cara pública de uma decisão.",
+};
+
+function svgSetaTransicao(): string {
+  const largura = 90;
+  const altura = 40;
+  return `<svg viewBox="0 0 ${largura} ${altura}" width="100%" style="max-width:${largura}px;height:auto" xmlns="http://www.w3.org/2000/svg">
+    <line x1="4" y1="20" x2="70" y2="20" stroke="${AMBAR}" stroke-width="3" />
+    <path d="M 62 10 L 78 20 L 62 30 Z" fill="${AMBAR}" />
+  </svg>`;
+}
+
+function blocoDiagramaPonte(dados: DadosParaTemplate, pesos: PesoPlaneta[], axes: VocationIQAxes): string {
+  const ordenados = [...pesos].sort((a, b) => b.peso - a.peso);
+  const maisForte = ordenados[0];
+  const segundoForte = ordenados[1];
+  const maisFraco = ordenados[ordenados.length - 1];
+
+  const jaTem = [
+    `${escapeHtml(dados.anosExperiencia)} de experiência em ${escapeHtml(dados.areaActual)}`,
+    `Autoridade construída no tema "${escapeHtml(dados.areaActual)}"`,
+    maisForte && maisForte.peso >= 1.3 ? `Força natural em ${escapeHtml(CARACTERISTICA_PT[maisForte.planeta] ?? maisForte.planeta)}` : null,
+    segundoForte && segundoForte.peso >= 1.3 ? `Força natural em ${escapeHtml(CARACTERISTICA_PT[segundoForte.planeta] ?? segundoForte.planeta)}` : null,
+  ].filter((x): x is string => Boolean(x));
+
+  const aprende = MODO_GANHO_APRENDE[axes.earningMode.house] ?? "A disciplina que esta opção pede no dia a dia.";
+  const naoMuda = maisFraco ? `${escapeHtml(CARACTERISTICA_PT[maisFraco.planeta] ?? maisFraco.planeta)} continua a ser o elo mais frágil da sua carta — não desaparece com formação.` : "";
+
+  return `
+    <div class="ponte-wrap">
+      <p class="bloco-titulo" style="text-align:center">A sua ponte de transição</p>
+      <div class="ponte-grelha">
+        <div class="ponte-coluna ponte-verde">
+          <p class="rotulo-pequeno">O que já tem</p>
+          <ul>${jaTem.map((i) => `<li>${i}</li>`).join("")}</ul>
+        </div>
+        <div class="ponte-centro">${svgSetaTransicao()}<span>Transição</span></div>
+        <div class="ponte-coluna-dupla">
+          <div class="ponte-coluna ponte-verde">
+            <p class="rotulo-pequeno">O que se aprende</p>
+            <p>${aprende}</p>
+          </div>
+          <div class="ponte-coluna ponte-vermelha">
+            <p class="rotulo-pequeno">O que não muda</p>
+            <p>${naoMuda}</p>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+/**
+ * Diagrama de convergência da candidata fora da lista (melhorias
+ * visuais, Parte 2C) — um nó por camada que convergiu (o catálogo já dá
+ * a lista completa, com texto humano — nunca inventado aqui). Só chamado
+ * quando há candidata (ver blocoCandidataForaDaLista).
+ */
+function svgDiagramaConvergencia(nomeCandidata: string, camadas: string[]): string {
+  const largura = 640;
+  const cx = largura / 2;
+  const raioCentro = 80;
+  const gapNo = 30;
+  const alturaNos = camadas.length * gapNo;
+  const topo = 20;
+  const cy = Math.max(topo + alturaNos / 2, raioCentro + 20);
+  const altura = Math.max(cy + raioCentro + 20, topo + alturaNos + 20);
+  const margemTexto = largura - 260;
+
+  const nos = camadas
+    .map((c, i) => {
+      // A camada já vem como "Rótulo (detalhe) resto da frase" — separa só o rótulo (antes do primeiro parêntese ou dois-pontos) do resto, para o nó não ficar com uma frase inteira.
+      const separador = c.search(/[(:]/);
+      const rotulo = (separador > 0 ? c.slice(0, separador) : c).trim();
+      const detalhe = (separador > 0 ? c.slice(separador) : "").replace(/^[:(]\s*/, "").trim();
+      const y = topo + i * gapNo + gapNo / 2;
+      const linhasDetalhe = quebrarLinhas(detalhe, 46);
+      return {
+        svg: `
+        <text x="${margemTexto - 10}" y="${y + 4}" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="${AZUL}">${escapeHtml(rotulo)}</text>
+        <path d="M ${margemTexto} ${y} L ${cx + raioCentro + 6} ${cy}" stroke="${AMBAR}" stroke-width="2" fill="none" opacity="0.8" />
+        <circle cx="${margemTexto}" cy="${y}" r="3" fill="${AMBAR}" />`,
+        legenda: `${rotulo}${linhasDetalhe.length ? " — " + linhasDetalhe.join(" ") : ""}`,
+      };
+    });
+
+  const linhasCandidata = quebrarLinhas(nomeCandidata, 16);
+  const inicioY = cy - ((linhasCandidata.length - 1) * 10) / 2;
+  const tspans = linhasCandidata.map((l, i) => `<tspan x="${cx}" y="${inicioY + i * 20}">${escapeHtml(l)}</tspan>`).join("");
+
+  return `<svg viewBox="0 0 ${largura} ${altura}" width="100%" style="max-width:${largura}px;height:auto" xmlns="http://www.w3.org/2000/svg">
+    ${nos.map((n) => n.svg).join("")}
+    <circle cx="${cx}" cy="${cy}" r="${raioCentro}" fill="${AZUL}" />
+    <text text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#FFFFFF">${tspans}</text>
+  </svg>`;
+}
+
+function blocoDiagramaConvergencia(catalogo: ResultadoCatalogoVocacional | null): string {
+  if (!catalogo?.candidataForaDaLista.nome || catalogo.candidataForaDaLista.camadas.length === 0) return "";
+  const { nome, camadas } = catalogo.candidataForaDaLista;
+  return `
+    <div class="convergencia-wrap">
+      <p class="bloco-titulo" style="text-align:center">Porque esta opção não é acidente</p>
+      <div class="grafico-wrap grafico-centrado">${svgDiagramaConvergencia(nome, camadas)}</div>
+    </div>`;
+}
+
 // ---------- Blocos HTML ----------
 
 /** Os "sinais" do diagrama de identidade — reaproveita os mesmos rótulos humanos já usados no gráfico "O peso de cada característica" (CARACTERISTICA_PT), ordenados por peso decrescente. Sempre determinístico, nunca do LLM. */
@@ -583,6 +823,25 @@ function tabelaTensoes(pesos: PesoPlaneta[], casaDominante: number): string {
     </div>`;
 }
 
+/** Melhorias visuais ao template (Parte 1A) — a frase que a pessoa vai lembrar, logo após a capa. Sem FRASE_ABERTURA (LLM não a escreveu), não aparece nada. */
+function blocoFraseAbertura(frase: string | null): string {
+  if (!frase) return "";
+  return `<div class="frase-abertura"><p>${escapeHtml(frase)}</p></div>`;
+}
+
+/** Melhorias visuais ao template (Parte 1D) — abre a secção "O plano" com o ciclo (Mahadasha) actual e a sua classificação, já calculada pelo motor (MAHADASHA_CLASSIFICACAO), nunca inventada aqui. */
+function blocoCaixaPeriodoActual(datas: DadosDatas): string {
+  const classificacao = MAHADASHA_CLASSIFICACAO[datas.mahadashaAtual.senhor];
+  const nomePlaneta = PLANETA_PT[datas.mahadashaAtual.senhor] ?? datas.mahadashaAtual.senhor;
+  return `
+    <div class="caixa-periodo-actual">
+      <p class="caixa-periodo-label">&#128197; Período actual</p>
+      <p class="caixa-periodo-mahadasha">${escapeHtml(nomePlaneta.toUpperCase())}</p>
+      ${classificacao ? `<p class="caixa-periodo-classificacao">&ldquo;${escapeHtml(classificacao.abertura)}&rdquo;</p>` : ""}
+      <p class="caixa-periodo-fim">Termina em ${formatarMesAno(datas.mahadashaAtual.fim)}</p>
+    </div>`;
+}
+
 function blocoQuemE(d: DadosParaTemplate): string {
   const linhas: [string, string][] = [
     ["Nome", d.nome],
@@ -636,7 +895,7 @@ function blocoOQueEsteRelatorioResponde(): string {
     </div>`;
 }
 
-function cardOpcao(op: LeituraOpcao): string {
+function cardOpcao(op: LeituraOpcao, dados: DadosParaTemplate, pesos: PesoPlaneta[], axes: VocationIQAxes): string {
   const PARTE_LABEL = [
     { icone: "&#10003;", titulo: "O que a carta sustenta" },
     { icone: "&#9888;", titulo: "O que vai custar" },
@@ -647,6 +906,15 @@ function cardOpcao(op: LeituraOpcao): string {
     .map((texto, i) => {
       const info = PARTE_LABEL[i];
       if (!info) return "";
+      // Melhorias visuais, Parte 1C — o ponto 2 ("o que vai custar") ganha
+      // a sua própria caixa de destaque, em vez da faixa alternada comum.
+      if (i === 1) {
+        return `
+        <div class="caixa-custo">
+          <p class="caixa-custo-label">&#9888; O que isto vai custar</p>
+          ${markdownParaHtml(texto)}
+        </div>`;
+      }
       return `
       <div class="parte-opcao ${i % 2 === 1 ? "parte-alt" : ""}">
         <p class="parte-titulo"><span class="parte-icone">${info.icone}</span>${info.titulo}</p>
@@ -661,14 +929,17 @@ function cardOpcao(op: LeituraOpcao): string {
         <span>${escapeHtml(op.nome)}</span>
         <span class="badge-forca" style="background:${corForca(op.forca)}">${FORCA_LABEL[op.forca]}</span>
       </div>
+      ${blocoDiagramaPonte(dados, pesos, axes)}
+      ${op.insight ? `<div class="caixa-insight"><p>${escapeHtml(op.insight)}</p></div>` : ""}
       ${partes}
     </div>`;
 }
 
-function blocoCandidataForaDaLista(corpo: string): string {
+function blocoCandidataForaDaLista(corpo: string, catalogo: ResultadoCatalogoVocacional | null): string {
   const { nome, texto } = parseCandidataForaDaLista(corpo);
   if (nome) {
     return `
+      ${blocoDiagramaConvergencia(catalogo)}
       <div class="card-candidata">
         <p class="card-candidata-header">Uma opção que ainda não considerou</p>
         <p class="card-candidata-nome">${escapeHtml(nome)}</p>
@@ -681,10 +952,11 @@ function blocoCandidataForaDaLista(corpo: string): string {
 function blocoOPlano(corpo: string, datas: DadosDatas): string {
   const { corpo: resto, primeiroPasso } = parsePlano(corpo);
   return `
+    ${blocoCaixaPeriodoActual(datas)}
     <div class="timeline-wrap">${svgTimeline(datas)}</div>
     <p class="grafico-legenda">Âmbar = o período em que está agora · Azul-claro = os períodos seguintes.</p>
     ${resto ? markdownParaHtml(resto) : ""}
-    ${primeiroPasso ? `<div class="destaque-ambar destaque-passo"><p class="rotulo-pequeno">O seu primeiro passo esta semana</p><p>${escapeHtml(primeiroPasso)}</p></div>` : ""}`;
+    ${primeiroPasso ? `<div class="caixa-primeiro-passo"><p class="caixa-primeiro-passo-label">O seu primeiro passo esta semana</p><p>${escapeHtml(primeiroPasso)}</p></div>` : ""}`;
 }
 
 function tabelaApoioPorAreaDeVida(savPorCasa: SavPorCasa[]): string {
@@ -748,12 +1020,14 @@ export function gerarHTMLRelatorio(
   earningModes: EarningMode[],
   datas: DadosDatas,
   savPorCasa: SavPorCasa[],
+  catalogoResultados: ResultadoCatalogoVocacional,
 ): string {
   const seccoes = dividirEmSeccoes(texto);
   const dataGeracao = new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "long", year: "numeric" }).format(new Date());
 
   const opcoes = parseLeituraPorOpcao(seccoes[SECCAO_TITULOS.leituraPorOpcao] ?? "");
   const identidade = parseIdentidade(texto);
+  const fraseAbertura = parseFraseAbertura(texto);
 
   return `<!doctype html>
 <html lang="pt">
@@ -763,7 +1037,7 @@ export function gerarHTMLRelatorio(
 <title>Relatório VocationIQ — ${escapeHtml(dados.nome)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   /* htmlToPdf.ts usa preferCSSPageSize (réplica exacta da Naveya) — sem
      esta regra, o PDF sairia em Letter (tamanho por omissão do Puppeteer)
@@ -857,6 +1131,43 @@ export function gerarHTMLRelatorio(
   .caixa-neutra p:last-child { margin-bottom: 0; }
   .anexo { page-break-before: always; }
 
+  /* Melhorias visuais ao template — Parte 1 (caixas de destaque) */
+  .subseccao { margin-top: 32px; }
+  .frase-abertura { background: var(--ambar); color: var(--azul); text-align: center; padding: 40px; }
+  .frase-abertura p { font-family: "Cormorant Garamond", Georgia, serif; font-size: 32px; font-weight: 600; line-height: 1.35; margin: 0; text-wrap: balance; }
+
+  .caixa-insight { background: var(--azul); color: #FFFFFF; font-style: italic; font-size: 16px; padding: 16px 20px; border-radius: 8px; margin-bottom: 18px; }
+  .caixa-insight p { margin: 0; line-height: 1.6; }
+
+  .caixa-custo { border-left: 4px solid ${VERMELHO}; background: #fdf2f0; padding: 16px 20px; }
+  .caixa-custo-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: ${VERMELHO}; margin: 0 0 8px; }
+  .caixa-custo p { font-size: 14px; margin: 0; }
+
+  .caixa-periodo-actual { background: var(--azul); color: #FFFFFF; border-radius: 10px; padding: 24px; text-align: center; margin-bottom: 20px; }
+  .caixa-periodo-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #FFFFFF; opacity: 0.8; margin: 0 0 10px; }
+  .caixa-periodo-mahadasha { font-size: 20px; font-weight: 800; color: var(--ambar); margin: 0 0 10px; letter-spacing: 0.5px; }
+  .caixa-periodo-classificacao { font-size: 14px; font-style: italic; color: #FFFFFF; margin: 0 0 10px; line-height: 1.6; }
+  .caixa-periodo-fim { font-size: 14px; font-weight: 700; color: var(--ambar); margin: 0; }
+
+  .caixa-primeiro-passo { background: var(--ambar); color: var(--azul); border-radius: 10px; padding: 24px; margin-top: 24px; }
+  .caixa-primeiro-passo-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--azul); margin: 0 0 8px; }
+  .caixa-primeiro-passo p:last-child { font-size: 18px; font-weight: 700; margin: 0; line-height: 1.5; }
+
+  /* Melhorias visuais ao template — Parte 2 (diagramas SVG novos) */
+  .radar-wrap, .convergencia-wrap { margin-top: 20px; text-align: center; }
+
+  .ponte-wrap { background: var(--cinza-claro); border-radius: 10px; padding: 20px; margin-bottom: 18px; }
+  .ponte-grelha { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; margin-top: 14px; }
+  @media (max-width: 700px) { .ponte-grelha { grid-template-columns: 1fr; } }
+  .ponte-coluna { background: #FFFFFF; border-radius: 8px; padding: 14px 16px; }
+  .ponte-coluna ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.7; }
+  .ponte-coluna p { font-size: 13px; margin: 0; line-height: 1.7; }
+  .ponte-verde { border-left: 3px solid ${VERDE}; }
+  .ponte-vermelha { border-left: 3px solid ${VERMELHO}; margin-top: 10px; }
+  .ponte-coluna-dupla { display: flex; flex-direction: column; }
+  .ponte-centro { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .ponte-centro span { font-size: 11px; font-weight: 700; color: var(--ambar); text-transform: uppercase; letter-spacing: 0.5px; }
+
   footer.rodape { text-align: center; padding: 40px 20px 60px; color: #6B6B6B; font-size: 12px; border-top: 1px solid #E6E6E6; margin-top: 50px; }
   footer.rodape .rodape-logo { font-weight: 800; color: var(--azul); font-size: 14px; margin-bottom: 8px; }
   footer.rodape .rodape-logo .iq { color: var(--ambar); }
@@ -867,6 +1178,7 @@ export function gerarHTMLRelatorio(
     .capa { height: 297mm; min-height: 297mm; }
     h1, h2, h3, p, li, td, th { page-break-inside: avoid; }
     .parte-opcao { page-break-inside: avoid; }
+    .caixa-custo, .caixa-periodo-actual, .caixa-primeiro-passo, .caixa-insight, .ponte-wrap, .frase-abertura { page-break-inside: avoid; }
   }
 </style>
 </head>
@@ -880,9 +1192,9 @@ export function gerarHTMLRelatorio(
     <p class="capa-data">${dataGeracao}</p>
   </div>
 
-  <div class="container">
+  ${blocoFraseAbertura(fraseAbertura)}
 
-    ${blocoDiagramaIdentidade(pesos, identidade)}
+  <div class="container">
 
     <section class="seccao">
       <h2 class="titulo-seccao">Quem é, e o que trouxe</h2>
@@ -893,6 +1205,8 @@ export function gerarHTMLRelatorio(
       </div>
     </section>
 
+    ${blocoDiagramaIdentidade(pesos, identidade)}
+
     <section class="seccao">
       <h2 class="titulo-seccao">${escapeHtml(SECCAO_TITULOS.abertura)}</h2>
       ${markdownParaHtml(seccoes[SECCAO_TITULOS.abertura] ?? "")}
@@ -901,14 +1215,18 @@ export function gerarHTMLRelatorio(
     <section class="seccao">
       <h2 class="titulo-seccao">${escapeHtml(SECCAO_TITULOS.oQueACartaSustenta)}</h2>
       ${markdownParaHtml(seccoes[SECCAO_TITULOS.oQueACartaSustenta] ?? "")}
-      ${blocoRodaDaVida(savPorCasa, pesos)}
-    </section>
 
-    <section class="seccao">
-      <h2 class="titulo-seccao">O peso de cada característica</h2>
-      <div class="grafico-wrap">${svgGraficoForcas(pesos)}</div>
-      <p class="grafico-legenda">Verde = a carta apoia com força · Âmbar = suporte moderado · Vermelho = suporte fraco</p>
-      ${tabelaTensoes(pesos, axes.earningMode.house)}
+      <div class="subseccao">
+        <p class="bloco-titulo">O peso de cada característica</p>
+        <div class="grafico-wrap">${svgGraficoForcas(pesos)}</div>
+        <p class="grafico-legenda">Verde = a carta apoia com força · Âmbar = suporte moderado · Vermelho = suporte fraco</p>
+      </div>
+
+      <div class="subseccao">${blocoRadarCompetencias(pesos, savPorCasa)}</div>
+
+      ${blocoRodaDaVida(savPorCasa, pesos)}
+
+      <div class="subseccao">${tabelaTensoes(pesos, axes.earningMode.house)}</div>
     </section>
 
     <section class="seccao">
@@ -919,12 +1237,12 @@ export function gerarHTMLRelatorio(
 
     <section class="seccao">
       <h2 class="titulo-seccao">${escapeHtml(SECCAO_TITULOS.leituraPorOpcao)}</h2>
-      ${opcoes.map(cardOpcao).join("")}
+      ${opcoes.map((op) => cardOpcao(op, dados, pesos, axes)).join("")}
     </section>
 
     <section class="seccao">
       <h2 class="titulo-seccao">${escapeHtml(SECCAO_TITULOS.candidataForaDaLista)}</h2>
-      ${blocoCandidataForaDaLista(seccoes[SECCAO_TITULOS.candidataForaDaLista] ?? "")}
+      ${blocoCandidataForaDaLista(seccoes[SECCAO_TITULOS.candidataForaDaLista] ?? "", catalogoResultados)}
     </section>
 
     <section class="seccao">

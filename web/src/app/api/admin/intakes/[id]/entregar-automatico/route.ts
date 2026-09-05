@@ -46,7 +46,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!rascunho) return NextResponse.json({ error: "não há rascunho gerado para este pedido" }, { status: 400 });
 
   try {
-    const { axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, horaAproximada } = await calcularDadosAstrologicos(intake);
+    const { axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, horaAproximada, catalogoResultados } = await calcularDadosAstrologicos(intake);
 
     const dadosTemplate: DadosParaTemplate = {
       nome: intake.nome,
@@ -61,7 +61,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       ideiaConcreta: intakeAdulto.ideiaConcreta,
       perguntaEspecifica: intakeAdulto.perguntaEspecifica,
     };
-    const html = gerarHTMLRelatorio(dadosTemplate, rascunho.texto, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa);
+    const html = gerarHTMLRelatorio(dadosTemplate, rascunho.texto, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
 
     const bytes = await htmlParaPdf(html);
     const filename = `Relatorio-VocationIQ-${intake.nome.replace(/[^a-zA-Z0-9À-ÿ ]/g, "").trim().replace(/\s+/g, "-")}.pdf`;

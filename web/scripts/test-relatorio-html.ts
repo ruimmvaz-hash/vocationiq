@@ -19,6 +19,7 @@ import {
   computeSavPorCasa,
   currentDasha,
   computeTransits,
+  catalogarDestinos,
   type DadosDatas,
   type BirthInput,
 } from "@naveya/method-engine";
@@ -30,6 +31,7 @@ const ASPECTO_LABEL: Record<string, string> = { Conjuncao: "conjunção", Quadra
 const PONTO_LABEL: Record<string, string> = { Sun: "Sol natal", Moon: "Lua natal", Mercury: "Mercúrio natal", Venus: "Vénus natal", Mars: "Marte natal", Ascendente: "Ascendente natal", MC: "Meio-céu natal" };
 
 const TEXTO_EXEMPLO = `
+FRASE_ABERTURA: O planeta mais forte da sua carta não pede reconhecimento — pede que traduza o que ninguém mais consegue ler.
 IDENTIDADE: Autoridade que traduz números em decisões que outros não ousam tomar
 
 ## Abertura
@@ -46,6 +48,7 @@ A forma como já é reconhecido de fora — o que colegas e clientes já esperam
 
 ### Consultoria (SAP, RH, gestão, etc.)
 FORÇA: forte
+INSIGHT: A mesma voz que hoje esconde por trás dos números é o seu activo mais valioso no mercado.
 1. Duas camadas independentes convergem com força nesta opção: a sua forma de ganhar dinheiro mais forte na carta é precisamente pela voz e pelo conselho directo, e o que o mercado já reconhece em si aponta exactamente na mesma direcção — ser você a dizer o caminho a seguir, não só a registá-lo depois de decidido. Quando duas fontes independentes convergem desta forma, não é coincidência nem interpretação optimista — é o desenho mais consistente que esta carta tem para onde ganha mais e onde é mais reconhecido a coincidirem na mesma opção.
 
 Além disso, o planeta que mais pesa nesta carta está numa posição de força evidente e ligado directamente à acção e à iniciativa — a capacidade de avançar sozinho, sem esperar autorização de uma estrutura por cima de si, é uma das partes mais fortes de todo o seu mapa, não uma zona neutra. Isso torna a hipótese de trabalhar a solo mais sustentada do que normalmente seria só pela sua vontade consciente de o tentar.
@@ -64,6 +67,7 @@ Se um dia mudar de sector por completo, esta mesma função continuaria a ser on
 
 ### Finanças / contabilidade
 FORÇA: moderada
+INSIGHT: Ficar é seguro, mas a estrutura que já conhece não lhe vai dar a voz que procura.
 1. Há suporte real nesta opção, mas menos directo do que na consultoria — continuar dentro da mesma área aproveita toda a experiência que já construiu ao longo destes anos, e isso tem valor real e mensurável no mercado. Ainda assim, esta opção sozinha não resolve a tensão de fundo que descreve: a falta de voz na decisão continua a existir mesmo que o título do cargo mude, se a estrutura de poder à sua volta não mudar com ele.
 
 2. O custo aqui é subtil mas persistente: continuar a pagar o mesmo preço que já paga hoje — ficar fisicamente perto da decisão sem ser você a tomá-la — mesmo que o cargo passe a chamar-se "sénior" ou "gestor". Um título novo não é o mesmo que autoridade real sobre o resultado final, e é essa distinção que vai continuar a incomodá-lo se não for endereçada explicitamente na negociação de qualquer novo papel.
@@ -139,13 +143,20 @@ async function main() {
     perguntaEspecifica: "Faz sentido tentar consultoria a solo ou é melhor procurar um cargo de gestão numa empresa maior?",
   };
 
-  const html = gerarHTMLRelatorio(dadosTemplate, TEXTO_EXEMPLO, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa);
+  const catalogoResultados = catalogarDestinos(
+    axes,
+    pesosPlanetas,
+    savPorCasa,
+    { areaActual: dadosTemplate.areaActual, anosExperiencia: dadosTemplate.anosExperiencia, ideiaConcreta: dadosTemplate.ideiaConcreta },
+    { planeta: axes.missionAxis.atmakaraka, nakshatra: d1.rows[axes.missionAxis.atmakaraka].nakshatra },
+  );
+  const html = gerarHTMLRelatorio(dadosTemplate, TEXTO_EXEMPLO, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
 
   // Corre sempre a partir de web/ (convenção dos outros scripts) — docs/
   // fica um nível acima, na raiz do repositório.
   const outDir = join(process.cwd(), "..", "docs");
   mkdirSync(outDir, { recursive: true });
-  const nomeFicheiro = process.argv[2] || "relatorio-v5.html";
+  const nomeFicheiro = process.argv[2] || "relatorio-v6.html";
   const outPath = join(outDir, nomeFicheiro);
   writeFileSync(outPath, html, "utf-8");
   console.log(`Guardado em: ${outPath}`);

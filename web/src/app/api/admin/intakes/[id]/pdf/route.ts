@@ -34,7 +34,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   if (!actual) return NextResponse.json({ error: "Sem rascunho nem relatório entregue para este pedido." }, { status: 404 });
 
   try {
-    const { axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, horaAproximada } = await calcularDadosAstrologicos(intake);
+    const { axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, horaAproximada, catalogoResultados } = await calcularDadosAstrologicos(intake);
     const dadosTemplate: DadosParaTemplate = {
       nome: intake.nome,
       dataNascimento: intake.data_nascimento,
@@ -48,7 +48,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       ideiaConcreta: intakeAdulto.ideiaConcreta,
       perguntaEspecifica: intakeAdulto.perguntaEspecifica,
     };
-    const html = gerarHTMLRelatorio(dadosTemplate, actual.texto, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa);
+    const html = gerarHTMLRelatorio(dadosTemplate, actual.texto, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
     const bytes = await htmlParaPdf(html);
     const filename = `Relatorio-VocationIQ-${intake.nome.replace(/[^a-zA-Z0-9À-ÿ ]/g, "").trim().replace(/\s+/g, "-")}.pdf`;
 
