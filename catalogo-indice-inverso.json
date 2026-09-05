@@ -1,0 +1,155 @@
+{
+  "meta": {
+    "nome": "Índice inverso e refinamento por casa — Partes 5 e 6 do catálogo",
+    "versao": "1.0",
+    "funcao": "É ESTE ficheiro que alimenta a varredura sistemática (Passo 7b do PROTOCOLO-DERIVACAO). O motor percorre TODAS as áreas, uma a uma, e verifica os sinais — em vez de derivar a partir dos planetas e deixar áreas por considerar.",
+    "razao": "As três omissões conhecidas (Gestão no caso Alexandra, Ensino no caso Bruno, Saúde/Psicologia/Análise financeira no caso Alice) não foram erros de interpretação: foram áreas que nunca chegaram a ser consideradas. A varredura pelo índice inverso é a correcção estrutural desse erro.",
+    "regra_de_saida_obrigatoria": "Para CADA área do índice inverso o motor devolve sempre um resultado — nunca omite. Os valores possíveis são: encaixe_forte, encaixe_parcial, a_testar, nao_sustentado. 'nao_sustentado' alimenta a secção inversa (1.7) e NUNCA é silêncio."
+  },
+
+  "regente_casa10_por_casa": {
+    "1":  "a profissão é a identidade; nome próprio à porta; trabalho por conta própria favorecido",
+    "2":  "profissão ligada à voz, à família, aos recursos, à alimentação, ao património",
+    "3":  "mãos, escrita, comunicação, comércio local, iniciativa própria de pequena escala",
+    "4":  "trabalho a partir de casa, imobiliário, educação, terra, cuidado, instituição-mãe",
+    "5":  "criação, ensino, espectáculo, crianças, especulação, autoria",
+    "6":  "serviço, saúde, rotina técnica, emprego estruturado, concorrência, animais",
+    "7":  "parceria, sociedade, público, comércio, mediação, aconselhamento — raramente sozinho",
+    "8":  "investigação, o oculto, crise, seguros, finança alheia, terapia, cirurgia, transformação",
+    "9":  "ensino superior, direito, religião, estrangeiro, editoração, filosofia — via académica longa favorecida",
+    "10": "vocação directa e visível; autoridade; carreira institucional forte",
+    "11": "redes, associações, tecnologia, ganhos em escala, causas colectivas",
+    "12": "estrangeiro, bastidores, hospital, mosteiro, investigação isolada, arte, espiritualidade — e trabalho em silêncio"
+  },
+
+  "casas_leitura_obrigatoria_menores": {
+    "3": { "leitura": "mãos, curiosidade curta, fala, desenho, construir", "nota": "em crianças é o sinal mais legível de todos, porque é o que já se vê ao vivo" },
+    "5": { "leitura": "o que a criança produz sozinha, sem que ninguém peça", "nota": "o indicador mais honesto de dom — não passou por escola nenhuma" },
+    "4": { "leitura": "o ambiente de aprendizagem de que precisa", "nota": "secção obrigatória no modelo criança; das mais úteis aos pais" },
+    "9": { "leitura": "se este perfil aguenta e quer estudo longo", "nota": "ler com Júpiter e Mercúrio ANTES de sugerir qualquer via universitária" }
+  },
+
+  "eixo_do_rendimento": [
+    { "condicao": "regente da 2 ligado ao regente da 10", "leitura": "o que faz paga-lhe directamente; profissão e sustento são a mesma coisa" },
+    { "condicao": "regente da 11 forte, ou benéficos na 11", "leitura": "o rendimento vem por rede, associação, escala, muitas pessoas — não por uma só fonte" },
+    { "condicao": "regente da 2 na 6", "leitura": "o dinheiro entra por trabalho quotidiano e serviço prestado, não por golpe de sorte nem por criação isolada" },
+    { "condicao": "regente da 2 ou da 11 ligado a Vénus ou Júpiter", "leitura": "o dom converte-se bem em dinheiro sem precisar de brutalidade comercial" },
+    { "condicao": "casas 2 e 11 sem ligação à 10", "leitura": "neste perfil, o que dá sentido e o que paga podem não ser a mesma actividade", "regra_de_escrita": "diz-se, com cuidado e sem drama, como arquitectura de vida — uma frente que sustenta e outra que realiza. NUNCA como condenação." }
+  ],
+
+  "indice_inverso": [
+    {
+      "area": "medicina",
+      "label": "Medicina e saúde",
+      "destinos": ["medicina", "enfermagem", "ciencias_farmaceuticas", "fisioterapia", "tecnologias_diagnostico", "nutricao", "terapia_reabilitacao", "saude_publica", "medicina_dentaria", "medicina_veterinaria"],
+      "sinais_exigidos": [
+        { "tipo": "planeta_forte", "valores": ["sol", "marte"], "modo": "qualquer" },
+        { "tipo": "casa_activa", "valores": ["6", "8"], "modo": "qualquer" },
+        { "tipo": "planeta_forte", "valores": ["jupiter"], "modo": "obrigatorio_para_via_longa" },
+        { "tipo": "planeta_funcional", "valores": ["mercurio"], "modo": "obrigatorio" },
+        { "tipo": "nakshatra", "valores": ["ashwini", "ashlesha", "mula", "shatabhisha", "pushya"], "modo": "qualquer" }
+      ],
+      "exigencia_se_faltarem": "disciplina sustentada durante muitos anos a partir de reserva emprestada, e uma estrutura de apoio montada de propósito"
+    },
+    {
+      "area": "direito",
+      "label": "Direito",
+      "destinos": ["direito", "ciencia_politica", "administracao_publica"],
+      "sinais_exigidos": [
+        { "tipo": "planeta_forte", "valores": ["jupiter", "sol"], "modo": "qualquer" },
+        { "tipo": "casa_activa", "valores": ["9", "10"], "modo": "qualquer" },
+        { "tipo": "planeta_funcional", "valores": ["mercurio"], "modo": "obrigatorio", "para": "a argumentação" },
+        { "tipo": "planeta_funcional", "valores": ["saturno"], "modo": "obrigatorio", "para": "a norma" }
+      ],
+      "exigencia_se_faltarem": "encontrar dentro da área a vertente que o desenho serve (mediação, contrato, investigação), sob pena de exercício sem convicção"
+    },
+    {
+      "area": "psicologia",
+      "label": "Psicologia",
+      "destinos": ["psicologia", "servico_social", "apoio_criancas_jovens"],
+      "sinais_exigidos": [
+        { "tipo": "planeta_forte", "valores": ["lua"], "modo": "obrigatorio", "alternativa": "lua bem aspectada" },
+        { "tipo": "casa_activa", "valores": ["8", "12"], "modo": "qualquer" },
+        { "tipo": "planeta_funcional", "valores": ["mercurio"], "modo": "obrigatorio", "para": "a escuta" },
+        { "tipo": "planeta_forte", "valores": ["ketu", "jupiter"], "modo": "qualquer", "para": "a profundidade" }
+      ],
+      "exigencia_se_faltarem": "construir de forma deliberada o contentor emocional que o desenho não dá de origem — supervisão, terapia própria, limites de horário"
+    },
+    {
+      "area": "engenharia",
+      "label": "Engenharia",
+      "destinos": ["engenharia_mecanica", "engenharia_civil", "engenharia_quimica", "engenharia_eletronica", "engenharia_veiculos", "metalurgia", "engenharia_minas", "engenharia_informatica"],
+      "sinais_exigidos": [
+        { "tipo": "planeta_forte", "valores": ["marte", "saturno"], "modo": "qualquer" },
+        { "tipo": "planeta_funcional", "valores": ["mercurio"], "modo": "obrigatorio" },
+        { "tipo": "casa_activa", "valores": ["3", "10"], "modo": "qualquer" }
+      ],
+      "exigencia_se_faltarem": "escolher desde cedo a especialização que usa o que a pessoa tem de melhor, em vez da que a nota permitiu"
+    },
+    {
+      "area": "artes",
+      "label": "Artes",
+      "destinos": ["belas_artes", "design_moda", "design_interiores", "design_industrial", "design_grafico", "musica", "artes_espetaculo", "artesanato_superior", "historia_arte", "f_atelier"],
+      "sinais_exigidos": [
+        { "tipo": "planeta_forte", "valores": ["venus"], "modo": "indispensavel" },
+        { "tipo": "casa_activa", "valores": ["5"], "modo": "obrigatorio" },
+        { "tipo": "planeta_forte", "valores": ["lua", "ketu"], "modo": "qualquer", "para": "a matéria interior" }
+      ],
+      "exigencia_se_faltarem": "uma via de sustento montada em paralelo desde o início",
+      "regra_de_escrita": "indicar sempre QUAL a via de sustento. Nunca desencorajar."
+    },
+    {
+      "area": "gestao_economia",
+      "label": "Gestão e Economia",
+      "destinos": ["gestao", "economia", "financas_banca", "contabilidade", "auditoria", "comercio", "marketing"],
+      "sinais_exigidos": [
+        { "tipo": "combinacao", "valores": [["mercurio", "jupiter"]], "modo": "qualquer" },
+        { "tipo": "planeta_forte", "valores": ["sol"], "modo": "alternativa_a_combinacao" },
+        { "tipo": "casa_activa", "valores": ["2", "10", "11"], "modo": "qualquer" },
+        { "tipo": "planeta_funcional", "valores": ["saturno"], "modo": "obrigatorio", "para": "a operação" }
+      ],
+      "exigencia_se_faltarem": "encontrar a função dentro da área que não seja de folha de cálculo (relação, estratégia, produto)",
+      "nota_de_verificacao": "OMISSÃO CONHECIDA — caso Alexandra. Mercúrio é karaka do comércio: se estiver em dignidade na Casa 10 ou a reger casa de dinheiro, esta área tem de ser considerada mesmo que o Atmakaraka aponte noutra direcção."
+    },
+    {
+      "area": "informatica",
+      "label": "Informática",
+      "destinos": ["engenharia_informatica", "sistemas_redes", "t_programacao", "t_cibersseguranca"],
+      "sinais_exigidos": [
+        { "tipo": "planeta_forte", "valores": ["mercurio"], "modo": "indispensavel" },
+        { "tipo": "planeta_forte", "valores": ["rahu", "saturno"], "modo": "qualquer" },
+        { "tipo": "casa_activa", "valores": ["3", "6", "11"], "modo": "qualquer" }
+      ],
+      "exigencia_se_faltarem": "método de estudo técnico montado de raiz e um ritmo próprio; sem Mercúrio forte o esforço exigido é muito superior à média"
+    },
+    {
+      "area": "ensino",
+      "label": "Ensino",
+      "destinos": ["formacao_professores", "ciencias_educacao", "educacao_infancia", "f_ensino_proprio", "f_formacao_online", "t_formacao_tecnica"],
+      "sinais_exigidos": [
+        { "tipo": "planeta_forte", "valores": ["jupiter"], "modo": "indispensavel" },
+        { "tipo": "casa_activa", "valores": ["5", "9"], "modo": "qualquer" },
+        { "tipo": "planeta_forte", "valores": ["lua"], "modo": "condicional", "para": "ensinar os mais novos" },
+        { "tipo": "planeta_forte", "valores": ["sol", "saturno"], "modo": "condicional", "para": "ensinar os mais velhos" }
+      ],
+      "exigencia_se_faltarem": "competência de gestão de sala treinada à parte — a vocação de conteúdo não a fornece",
+      "nota_de_verificacao": "OMISSÃO CONHECIDA — caso Bruno. Júpiter é o karaka do ensino: no Ascendente, a reger a Casa 10, ou a aspectar 5/9, obriga a considerar esta área. Foi marcada PARCIAL quando devia ser FORTE."
+    }
+  ],
+
+  "nota_sobre_notas_escolares": {
+    "regra": "Ter boa nota a uma disciplina NÃO é sinal vocacional. É sinal de Mercúrio funcional e de disciplina de estudo, e serve dezenas de territórios diferentes.",
+    "razao": "Confundir nota com vocação é o erro nº 1 da orientação escolar portuguesa — e é frequentemente a razão pela qual um jovem de perfil de mãos acaba numa engenharia que não quer.",
+    "quando_escrever": "explicitamente no relatório sempre que o caso o justifique"
+  },
+
+  "procedimento_area_nao_tabelada": {
+    "referencia": "1.7a do catálogo",
+    "passos": [
+      "Decompor a área em 3 exigências de fundo — que qualidades pede em permanência",
+      "Traduzir cada exigência para sinal técnico, pela Parte 2 (planeta), Parte 4 (Nakshatra) e Parte 5 (casa)",
+      "Verificar presença: 3 sinais → encaixe forte · 2 → parcial · 1 ou 0 → secção inversa com os quatro elementos de 1.7"
+    ],
+    "nota": "Registar a entrada nova neste ficheiro — é assim que o catálogo cresce."
+  }
+}

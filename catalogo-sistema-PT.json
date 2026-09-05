@@ -1,0 +1,352 @@
+{
+  "meta": {
+    "nome": "Módulo de sistema educativo — Portugal",
+    "pais": "PT",
+    "versao": "1.0",
+    "fonte": "CATALOGO-VOCACIONAL.md Parte 7",
+    "funcao": "Responde à pergunta que só existe no relatório do jovem: QUE FAÇO EM SETEMBRO. O dicionário de destinos diz qual a formação; este módulo diz por que porta se lá chega neste país.",
+    "molde": "Este ficheiro é o primeiro de uma família. Um módulo de outro país replica esta estrutura: niveis · secundario · dupla_certificacao · superior · regras_de_escrita. O que muda é o conteúdo, não o esquema.",
+    "quando_nao_existe_modulo": "Se o cliente for de país sem módulo, descrever por NÍVEL ISCED em vez de nomear vias locais: 'formação superior curta, cerca de dois anos, orientada para a prática'. A pessoa reconhece no sistema dela. NUNCA inventar nomes de vias estrangeiras.",
+    "manutencao": "Legislação verificada a 2026-08. Reconfirmar antes de cada ano lectivo — a oferta muda."
+  },
+  "niveis": {
+    "3": {
+      "local": "Ensino secundário",
+      "qnq": 3,
+      "duracao": "3 anos (10.º-12.º)"
+    },
+    "4": {
+      "local": "Ensino secundário com dupla certificação",
+      "qnq": 4,
+      "duracao": "3 anos"
+    },
+    "5": {
+      "local": "CTeSP — Curso Técnico Superior Profissional",
+      "qnq": 5,
+      "duracao": "2 anos"
+    },
+    "6": {
+      "local": "Licenciatura",
+      "qnq": 6,
+      "duracao": "3-4 anos"
+    },
+    "7": {
+      "local": "Mestrado / Mestrado integrado",
+      "qnq": 7,
+      "duracao": "2 anos, ou 5-6 anos se integrado"
+    }
+  },
+  "secundario": {
+    "regulamentacao": "Portaria n.º 226-A/2018, de 7 de agosto, ao abrigo do Decreto-Lei n.º 55/2018",
+    "natureza": "vias científico-humanísticas, vocacionadas para prosseguimento de estudos superiores",
+    "decisao": "tomada no final do 9.º ano, com efeito na matrícula do 10.º",
+    "vias": [
+      {
+        "id": "ciencias_tecnologias",
+        "label": "Ciências e Tecnologias",
+        "serve": [
+          "agronomia",
+          "analises_clinicas",
+          "bioquimica",
+          "biotecnologia",
+          "cabeleireiro_estetica_superior",
+          "cardiopneumologia",
+          "ciencias_ambiente",
+          "ciencias_desporto",
+          "ciencias_farmaceuticas",
+          "ciencias_mar",
+          "ciencias_militares",
+          "enfermagem",
+          "engenharia_alimentar",
+          "engenharia_civil",
+          "engenharia_eletronica",
+          "engenharia_informatica",
+          "engenharia_mecanica",
+          "engenharia_minas",
+          "engenharia_quimica",
+          "engenharia_veiculos",
+          "enologia",
+          "estatistica",
+          "fisica",
+          "fisioterapia",
+          "geologia",
+          "gerontologia",
+          "imagiologia",
+          "matematica",
+          "matematica_pura",
+          "medicina",
+          "medicina_complementar",
+          "medicina_dentaria",
+          "medicina_veterinaria",
+          "metalurgia",
+          "nutricao",
+          "protecao_civil",
+          "saude_publica",
+          "seguranca_higiene",
+          "silvicultura",
+          "sistemas_redes",
+          "tecnologias_diagnostico",
+          "terapia_reabilitacao",
+          "urbanismo"
+        ],
+        "sinais_tipicos": [
+          {
+            "tipo": "planeta_forte",
+            "valores": [
+              "marte",
+              "saturno",
+              "mercurio"
+            ],
+            "modo": "qualquer"
+          },
+          {
+            "tipo": "casa_activa",
+            "valores": [
+              "6",
+              "8",
+              "10"
+            ],
+            "modo": "qualquer"
+          }
+        ]
+      },
+      {
+        "id": "ciencias_socioeconomicas",
+        "label": "Ciências Socioeconómicas",
+        "serve": [
+          "administracao_publica",
+          "auditoria",
+          "comercio",
+          "contabilidade",
+          "economia",
+          "estatistica",
+          "financas_banca",
+          "gestao",
+          "hotelaria_restauracao",
+          "marketing",
+          "publicidade",
+          "relacoes_internacionais",
+          "secretariado",
+          "sociologia",
+          "turismo"
+        ],
+        "sinais_tipicos": [
+          {
+            "tipo": "combinacao",
+            "valores": [
+              [
+                "mercurio",
+                "jupiter"
+              ]
+            ],
+            "modo": "qualquer"
+          },
+          {
+            "tipo": "casa_activa",
+            "valores": [
+              "2",
+              "11"
+            ],
+            "modo": "qualquer"
+          },
+          {
+            "tipo": "planeta_forte",
+            "valores": [
+              "sol"
+            ],
+            "modo": "qualquer"
+          }
+        ],
+        "nota": "Direito é acessível por esta via e por Línguas e Humanidades. A escolha entre as duas decide-se pelo resto do perfil, não pelo curso de destino. Estatística, Turismo e Publicidade são acessíveis por mais de uma via — a escolha decide-se pelo resto do perfil, não pelo curso de destino."
+      },
+      {
+        "id": "linguas_humanidades",
+        "label": "Línguas e Humanidades",
+        "serve": [
+          "antropologia",
+          "apoio_criancas_jovens",
+          "arqueologia",
+          "biblioteconomia",
+          "ciencia_politica",
+          "ciencias_educacao",
+          "ciencias_religiao",
+          "direito",
+          "educacao_infancia",
+          "filosofia",
+          "formacao_professores",
+          "gerontologia",
+          "historia",
+          "historia_arte",
+          "jornalismo",
+          "linguas",
+          "linguas_classicas",
+          "literatura_linguistica",
+          "psicologia",
+          "publicidade",
+          "servico_social",
+          "sociologia",
+          "teologia",
+          "traducao",
+          "turismo"
+        ],
+        "sinais_tipicos": [
+          {
+            "tipo": "planeta_forte",
+            "valores": [
+              "jupiter",
+              "mercurio",
+              "ketu",
+              "venus"
+            ],
+            "modo": "qualquer"
+          },
+          {
+            "tipo": "casa_activa",
+            "valores": [
+              "9"
+            ],
+            "modo": "qualquer"
+          }
+        ]
+      },
+      {
+        "id": "artes_visuais",
+        "label": "Artes Visuais",
+        "serve": [
+          "arquitetura",
+          "artes_espetaculo",
+          "artesanato_superior",
+          "audiovisual",
+          "belas_artes",
+          "design_grafico",
+          "design_industrial",
+          "design_interiores",
+          "design_moda",
+          "musica",
+          "urbanismo"
+        ],
+        "sinais_tipicos": [
+          {
+            "tipo": "planeta_forte",
+            "valores": [
+              "venus"
+            ],
+            "modo": "indispensavel"
+          },
+          {
+            "tipo": "casa_activa",
+            "valores": [
+              "5"
+            ],
+            "modo": "obrigatorio"
+          },
+          {
+            "tipo": "nakshatra",
+            "valores": [
+              "chitra",
+              "hasta",
+              "rohini"
+            ],
+            "modo": "qualquer"
+          }
+        ],
+        "nota": "Música e Artes do Espectáculo têm percurso próprio no secundário — os Cursos Artísticos Especializados (CAE), de dupla certificação. Para perfis com Vénus indispensável e Casa 5 activa em matéria musical ou performativa, o CAE é o encaixe superior, não Artes Visuais."
+      }
+    ],
+    "nota_informatica": {
+      "facto": "existe um curso científico-humanístico de Informática, criado no âmbito do Plano de Inovação 2024-27, com base na matriz de Ciências e Tecnologias",
+      "aviso": "NÃO é oferta generalizada — existe apenas nas escolas aderentes",
+      "regra": "verificar a oferta da escola do cliente antes de o nomear. Se não for possível verificar, não nomear."
+    }
+  },
+  "dupla_certificacao": {
+    "nivel_isced": 4,
+    "qnq": 4,
+    "serve_via": "B",
+    "regra_de_tom": {
+      "obrigatoria": true,
+      "texto": "Quando os critérios da Via B estiverem cumpridos, esta via NUNCA se apresenta como consolação nem como plano B. Apresenta-se como o encaixe superior para este perfil, com rendimento real e frequentemente mais rápido. Em Portugal há perfis de mãos a arrastarem-se por licenciaturas que os diminuem, e ninguém lhes disse.",
+      "delimitacao": "Quando os critérios NÃO estiverem cumpridos, esta via NÃO ENTRA na lista — e a ausência regista-se por escrito com a razão técnica. (Correcção imposta pelo caso Bruno: a regra de tom foi lida como incentivo a incluir a via, e produziu uma entrada no Top 5 sem nenhum dos seis critérios cumprido.)"
+    },
+    "modalidades": [
+      {
+        "id": "cursos_profissionais",
+        "label": "Cursos Profissionais",
+        "duracao": "3 anos",
+        "carga": "3100-3440 horas",
+        "componentes": "quatro componentes, incluindo Formação em Contexto de Trabalho",
+        "enquadramento": "Catálogo Nacional de Qualificações (ANQEP)",
+        "acesso_superior": true
+      },
+      {
+        "id": "cursos_artisticos",
+        "label": "Cursos Artísticos Especializados",
+        "areas": "música, dança, artes visuais, teatro",
+        "acesso_superior": true
+      },
+      {
+        "id": "cef",
+        "label": "Cursos de Educação e Formação",
+        "nota": "percurso alternativo com forte componente prática"
+      },
+      {
+        "id": "aprendizagem",
+        "label": "Cursos de Aprendizagem (IEFP)",
+        "nota": "percurso alternativo com forte componente prática"
+      }
+    ]
+  },
+  "superior": {
+    "licenciatura": {
+      "nivel_isced": 6,
+      "duracao": "3-4 anos",
+      "tipos": [
+        "universitário",
+        "politécnico"
+      ]
+    },
+    "mestrado_integrado": {
+      "nivel_isced": 7,
+      "areas": [
+        "medicina",
+        "arquitetura",
+        "medicina_veterinaria",
+        "medicina_dentaria",
+        "ciencias_farmaceuticas",
+        "algumas engenharias"
+      ]
+    },
+    "ctesp": {
+      "nivel_isced": 5,
+      "label": "CTeSP — Curso Técnico Superior Profissional",
+      "duracao": "2 anos",
+      "qnq": 5,
+      "instituicao": "politécnico",
+      "acesso_licenciatura": true,
+      "serve_via": "C",
+      "regra_de_escrita": {
+        "obrigatoria": true,
+        "texto": "Sistematicamente subvalorizado pelas famílias e frequentemente o melhor encaixe real. Quando o perfil o indica, o relatório DEFENDE-O COM ARGUMENTO — não o menciona de passagem.",
+        "argumentos_a_usar": [
+          "qualificação superior aplicada",
+          "dois anos em vez de três ou quatro",
+          "entrada mais rápida no rendimento",
+          "permite prosseguir para licenciatura sem perder o percurso"
+        ]
+      }
+    }
+  },
+  "fora_do_sistema": {
+    "razao_de_existir": "Nenhum serviço de orientação escolar em Portugal vai dizer a um jovem que o desenho dele aponta para teologia, para trabalho com símbolos, para escrita de fundo ou para ofício autónomo. Se o relatório disser — com fundamento técnico e com a moldura de 1.8 — é insubstituível.",
+    "regra_de_honestidade": {
+      "obrigatoria": true,
+      "texto": "Ao nomear um caminho fora do sistema formal, o relatório indica SEMPRE a via de sustento associada. Nunca se entrega a um jovem de 17 anos 'o seu caminho é a escrita' sem dizer o que paga as contas enquanto a escrita cresce.",
+      "justificacao": "Não é prudência excessiva — é a diferença entre um relatório responsável e um que faz estragos."
+    }
+  },
+  "regras_de_escrita": {
+    "instituicoes": "NUNCA nomear instituições de ensino. O relatório nomeia a formação e a via, não a escola. As instituições mudam a oferta e encerram cursos.",
+    "notas_escolares": "Ter boa nota a uma disciplina NÃO é sinal vocacional — é sinal de Mercúrio funcional e de disciplina de estudo, e serve dezenas de territórios. Confundir nota com vocação é o erro nº 1 da orientação escolar portuguesa e é frequentemente a razão pela qual um jovem de perfil de mãos acaba numa engenharia que não quer.",
+    "moldura_obrigatoria": "A lista entrega-se sempre com a moldura explícita, no início e no fim: isto é para reconhecer, não para obedecer. O critério final de decisão é o reconhecimento interno do jovem, não o documento."
+  }
+}
