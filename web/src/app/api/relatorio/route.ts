@@ -81,7 +81,11 @@ export async function POST(request: Request) {
       throw new Error(`Resposta da Anthropic sem bloco de texto (${detalhe}).`);
     }
 
-    const rascunho = await guardarRascunho(intakeId, textBlock.text);
+    // "Mapa técnico"/"Prompt completo" (ficha do cliente reorganizada em
+    // /admin/relatorios/[id]) — guardados tal como calculados agora, para
+    // essas secções nunca terem de recalcular nem chamar a Anthropic.
+    const dadosTecnicosParaGuardar = { axes, pesos: pesosPlanetas, earningModes: axes.earningModeAll, datas, savPorCasa };
+    const rascunho = await guardarRascunho(intakeId, textBlock.text, dadosTecnicosParaGuardar, prompt);
 
     // Passa os dados técnicos já calculados ao template — os gráficos
     // (SVG) são sempre gerados a partir destes, nunca do texto do LLM.

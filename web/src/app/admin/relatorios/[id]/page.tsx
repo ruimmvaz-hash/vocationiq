@@ -2,7 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { obterIntake, type IntakeRow } from "@/lib/store";
-import { obterRascunho, obterRelatorioEntregue, listarEnvios } from "@/lib/storage";
+import { obterRascunho, obterRelatorioEntregue, listarEnvios, type DadosTecnicosArmazenados } from "@/lib/storage";
 import {
   SITUACOES,
   CLAREZA_IDEIA,
@@ -14,9 +14,12 @@ import {
   CATEGORIAS_AREAS_DESTINO,
 } from "@/lib/validation";
 import { AdminNav } from "@/components/admin/AdminNav";
-import { MarcarEntregueButton } from "./MarcarEntregueButton";
-import { RascunhoRelatorio } from "./RascunhoRelatorio";
-import { RelatorioEntregue } from "./RelatorioEntregue";
+import { AccordionSection } from "@/components/admin/Accordion";
+import { MapaTecnico } from "./MapaTecnico";
+import { SeccaoRascunho } from "./SeccaoRascunho";
+import { SeccaoAuditoria } from "./SeccaoAuditoria";
+import { SeccaoPrompt } from "./SeccaoPrompt";
+import { SeccaoEntrega } from "./SeccaoEntrega";
 
 export const dynamic = "force-dynamic";
 
@@ -34,8 +37,21 @@ function formatarDataHora(iso: string | null): string {
   return new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
 }
 
+function formatarData(iso: string | null): string {
+  if (!iso) return "—";
+  return new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(iso));
+}
+
 function formatarValor(cents: number | null): string {
   return `€${((cents ?? 9900) / 100).toFixed(2)}`;
+}
+
+/** Estado (pago / rascunho / entregue) pedido para o cabeçalho — não é só o `report_status` bruto, cruza com a existência de rascunho. */
+function EstadoBadge({ intake, temRascunho }: { intake: IntakeRow; temRascunho: boolean }) {
+  if (intake.report_status === "delivered") return <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">Entregue</span>;
+  if (temRascunho) return <span className="rounded-full bg-amber/20 px-3 py-1 text-xs font-bold text-amber-dark">Rascunho pronto</span>;
+  if (intake.payment_status === "paid") return <span className="rounded-full bg-fog px-3 py-1 text-xs font-bold text-ink/70">Pago — por gerar</span>;
+  return <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">{intake.payment_status}</span>;
 }
 
 export default async function AdminIntakeDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -53,7 +69,7 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
 
   if (erro) {
     return (
-      <main className="mx-auto max-w-2xl px-6 py-10">
+      <main className="mx-auto max-w-3xl px-6 py-10">
         <AdminNav active="relatorios" />
         <Link href="/admin/relatorios" className="text-sm font-semibold text-navy hover:underline">
           ← Todos os pedidos
@@ -65,98 +81,158 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
   if (!intake) notFound();
 
   // Motor de geração (VOCATIONIQ-ADULTO-metodologia.md) só cobre o ramo
-  // "trabalho-quero-mudar" — noutras situações não faz sentido mostrar o
-  // bloco de rascunho.
-  const mostrarRascunho = intake.situacao === "trabalho-quero-mudar" && intake.report_status !== "delivered";
-  const rascunho = mostrarRascunho ? await obterRascunho(intake.id).catch(() => null) : null;
+  // "trabalho-quero-mudar" — as secções 2 (Mapa técnico)/3 (Rascunho)/4
+  // (Auditoria)/5 (Prompt) ficam vazias/desactivadas nos outros ramos.
+  const podeGerarAutomatico = intake.situacao === "trabalho-quero-mudar";
 
-  // Depois da entrega: painel "sempre visível" (Ver HTML/PDF/Word,
-  // rascunho em modo leitura, reenviar, histórico) em vez do botão só de
-  // estado — ver RelatorioEntregue.tsx.
-  const relatorioEntregue = intake.report_status === "delivered" ? await obterRelatorioEntregue(intake.id).catch(() => null) : null;
+  const [rascunho, relatorioEntregue] = await Promise.all([
+    obterRascunho(intake.id).catch(() => null),
+    intake.report_status === "delivered" ? obterRelatorioEntregue(intake.id).catch(() => null) : Promise.resolve(null),
+  ]);
   const envios = relatorioEntregue ? await listarEnvios(relatorioEntregue.id).catch(() => []) : [];
-  // "Regenerar rascunho" depois de entregue cria uma linha nova (pdf_path
-  // nulo), separada da entregue — obterRascunho já filtra exactamente isso.
-  const rascunhoNovo = intake.report_status === "delivered" ? await obterRascunho(intake.id).catch(() => null) : null;
+
+  // "Actual" — o mesmo critério de obterTextoRelatorioActual (storage.ts),
+  // recalculado aqui a partir do que já foi pedido acima, para não repetir
+  // as mesmas duas queries: prefere o rascunho por aprovar, cai para o
+  // texto do relatório entregue quando não há nenhum rascunho novo.
+  const actual: { id: string; texto: string; dadosTecnicos: DadosTecnicosArmazenados | null; promptCompleto: string | null; auditoriaLlm: string | null; auditoriaCriadaEm: string | null } | null =
+    rascunho?.texto
+      ? { id: rascunho.id, texto: rascunho.texto, dadosTecnicos: rascunho.dadosTecnicos, promptCompleto: rascunho.promptCompleto, auditoriaLlm: rascunho.auditoriaLlm, auditoriaCriadaEm: rascunho.auditoriaCriadaEm }
+      : relatorioEntregue?.rascunhoTexto
+        ? {
+            id: relatorioEntregue.id,
+            texto: relatorioEntregue.rascunhoTexto,
+            dadosTecnicos: relatorioEntregue.dadosTecnicos,
+            promptCompleto: relatorioEntregue.promptCompleto,
+            auditoriaLlm: relatorioEntregue.auditoriaLlm,
+            auditoriaCriadaEm: relatorioEntregue.auditoriaCriadaEm,
+          }
+        : null;
+
+  const podeVerRelatorio = podeGerarAutomatico && actual !== null;
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-10">
+    <main className="mx-auto max-w-3xl px-6 py-10">
       <AdminNav active="relatorios" />
       <Link href="/admin/relatorios" className="text-sm font-semibold text-navy hover:underline">
         ← Todos os pedidos
       </Link>
 
-      {/* O QUE O CLIENTE PEDIU — em destaque, fundo diferenciado, no topo */}
+      {/* CABEÇALHO — sempre visível */}
       <div className="mt-4 rounded-lg border-l-4 border-amber bg-navy px-6 py-5">
-        <p className="text-xs font-bold uppercase tracking-wide text-amber">O que o cliente pediu</p>
-        <h1 className="mt-1 text-2xl font-extrabold text-white">{intake.nome}</h1>
-        <p className="mt-1 text-sm text-white/70">{SITUACAO_LABEL[intake.situacao] ?? intake.situacao}</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-extrabold text-white">{intake.nome}</h1>
+            <p className="mt-1 text-sm text-white/70">
+              {SITUACAO_LABEL[intake.situacao] ?? intake.situacao} · Pedido em {formatarData(intake.created_at)}
+            </p>
+          </div>
+          <EstadoBadge intake={intake} temRascunho={Boolean(rascunho?.texto)} />
+        </div>
+        {podeVerRelatorio && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              href={`/admin/relatorios/${intake.id}/preview`}
+              target="_blank"
+              className="rounded-md border border-white/40 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/10"
+            >
+              Ver HTML
+            </Link>
+            <Link
+              href={`/api/admin/intakes/${intake.id}/pdf`}
+              target="_blank"
+              className="rounded-md border border-white/40 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/10"
+            >
+              Ver PDF
+            </Link>
+            <Link href={`/api/admin/intakes/${intake.id}/docx`} className="rounded-md border border-white/40 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/10">
+              Ver Word
+            </Link>
+          </div>
+        )}
       </div>
 
-      <Seccao titulo="Dados de nascimento">
-        <Campo label="Nome completo" valor={intake.nome} />
-        <Campo label="Data de nascimento" valor={intake.data_nascimento} />
-        <Campo label="Hora de nascimento" valor={intake.hora_nascimento ?? "não fornecida"} />
-        <Campo label="Local de nascimento" valor={intake.local_nascimento} />
-      </Seccao>
+      {/* SECÇÃO 1 — FICHA DO CLIENTE (aberta por defeito) */}
+      <AccordionSection titulo="1 · Ficha do cliente" defaultOpen>
+        <Seccao titulo="Dados de nascimento">
+          <Campo label="Nome completo" valor={intake.nome} />
+          <Campo label="Email" valor={intake.email ?? "—"} />
+          <Campo label="Data de nascimento" valor={intake.data_nascimento} />
+          <Campo label="Hora de nascimento" valor={intake.hora_nascimento ?? "não fornecida"} />
+          <Campo label="Local de nascimento" valor={intake.local_nascimento} />
+        </Seccao>
 
-      <RespostasSituacao intake={intake} />
+        <RespostasSituacao intake={intake} />
 
-      {intake.ideia_concreta?.trim() && (
-        <section className="mt-6 rounded-lg border-2 border-amber/50 bg-amber/10 p-5">
-          <p className="text-sm font-bold text-navy">Ideia concreta</p>
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-ink">{intake.ideia_concreta}</p>
-        </section>
+        {intake.ideia_concreta?.trim() && (
+          <section className="mt-6 rounded-lg border-2 border-amber/50 bg-amber/10 p-5">
+            <p className="text-sm font-bold text-navy">Ideia concreta</p>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-ink">{intake.ideia_concreta}</p>
+          </section>
+        )}
+
+        {intake.contexto_adicional?.trim() && (
+          <section className="mt-6 rounded-lg border-2 border-amber/50 bg-amber/10 p-5">
+            <p className="text-sm font-bold text-navy">O que te trouxe aqui</p>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-ink">{intake.contexto_adicional}</p>
+          </section>
+        )}
+
+        {intake.pergunta_especifica?.trim() && (
+          <section className="mt-6 rounded-lg border-2 border-navy bg-navy/5 p-5">
+            <p className="text-sm font-bold text-navy">Pergunta específica — é o que o relatório tem de responder</p>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-ink">{intake.pergunta_especifica}</p>
+          </section>
+        )}
+
+        <Seccao titulo="Dados do pagamento">
+          <Campo label="Valor pago" valor={formatarValor(intake.amount_cents)} />
+          <Campo label="Data e hora do pagamento" valor={formatarDataHora(intake.paid_at)} />
+          <Campo label="ID da transacção Stripe" valor={intake.stripe_checkout_session_id ?? "—"} monoespaco />
+        </Seccao>
+      </AccordionSection>
+
+      {/* SECÇÃO 2 — MAPA TÉCNICO (fechada por defeito) */}
+      <AccordionSection titulo="2 · Mapa técnico" subtitulo="Determinístico — sem chamar a Anthropic">
+        <MapaTecnico dadosTecnicos={actual?.dadosTecnicos ?? null} areaActual={intake.area_trabalho_actual ?? ""} />
+      </AccordionSection>
+
+      {/* SECÇÃO 3 — RASCUNHO (aberta por defeito quando há rascunho) */}
+      <AccordionSection titulo="3 · Rascunho" defaultOpen={Boolean(actual?.texto)}>
+        <SeccaoRascunho
+          intakeId={intake.id}
+          podeGerar={podeGerarAutomatico}
+          textoInicial={actual?.texto ?? null}
+          criadoEmInicial={rascunho?.criadoEm ?? relatorioEntregue?.criadoEm ?? null}
+          temDraftReal={Boolean(rascunho?.texto)}
+        />
+      </AccordionSection>
+
+      {/* SECÇÃO 4 — AUDITORIA DO LLM (só quando há rascunho; fechada por defeito) */}
+      {actual?.texto && (
+        <AccordionSection titulo="4 · Auditoria do LLM" subtitulo="~€0.08 por análise">
+          <SeccaoAuditoria intakeId={intake.id} auditoriaInicial={actual.auditoriaLlm} auditoriaCriadaEmInicial={actual.auditoriaCriadaEm} />
+        </AccordionSection>
       )}
 
-      {intake.contexto_adicional?.trim() && (
-        <section className="mt-6 rounded-lg border-2 border-amber/50 bg-amber/10 p-5">
-          <p className="text-sm font-bold text-navy">O que te trouxe aqui</p>
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-ink">{intake.contexto_adicional}</p>
-        </section>
-      )}
+      {/* SECÇÃO 5 — PROMPT COMPLETO (fechada por defeito) */}
+      <AccordionSection titulo="5 · Prompt completo" subtitulo="Debug interno">
+        <SeccaoPrompt prompt={actual?.promptCompleto ?? null} />
+      </AccordionSection>
 
-      {intake.pergunta_especifica?.trim() && (
-        <section className="mt-6 rounded-lg border-2 border-navy bg-navy/5 p-5">
-          <p className="text-sm font-bold text-navy">Pergunta específica — é o que o relatório tem de responder</p>
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-ink">{intake.pergunta_especifica}</p>
-        </section>
-      )}
-
-      <Seccao titulo="Dados do pagamento">
-        <Campo label="Email" valor={intake.email ?? "—"} />
-        <Campo label="Valor pago" valor={formatarValor(intake.amount_cents)} />
-        <Campo label="Data e hora do pagamento" valor={formatarDataHora(intake.paid_at)} />
-        <Campo label="ID da transacção Stripe" valor={intake.stripe_checkout_session_id ?? "—"} monoespaco />
-      </Seccao>
-
-      <Seccao titulo="Estado">
-        <Campo label="Estado" valor={intake.report_status === "delivered" ? "Entregue" : "Pendente"} />
-        {intake.report_status === "delivered" && <Campo label="Data de entrega" valor={formatarDataHora(intake.delivered_at)} />}
-      </Seccao>
-
-      {mostrarRascunho && <RascunhoRelatorio intakeId={intake.id} rascunhoInicial={rascunho?.texto ?? null} criadoEmInicial={rascunho?.criadoEm ?? null} emailAtual={intake.email} />}
-
-      {intake.report_status === "delivered" ? (
-        <RelatorioEntregue
+      {/* SECÇÃO 6 — ENTREGA (aberta por defeito) */}
+      <AccordionSection titulo="6 · Entrega" defaultOpen>
+        <SeccaoEntrega
           intakeId={intake.id}
           emailAtual={intake.email}
-          temHtml={intake.situacao === "trabalho-quero-mudar" && Boolean(relatorioEntregue?.rascunhoTexto)}
-          podeRegenerar={intake.situacao === "trabalho-quero-mudar"}
-          rascunhoTexto={relatorioEntregue?.rascunhoTexto ?? null}
-          criadoEm={relatorioEntregue?.criadoEm ?? null}
+          jaEntregue={intake.report_status === "delivered"}
+          podeGerarAutomatico={podeGerarAutomatico}
+          temRascunhoParaAprovar={Boolean(rascunho?.texto) && intake.report_status !== "delivered"}
+          temRascunhoNovoPosEntrega={intake.report_status === "delivered" && Boolean(rascunho?.texto)}
           enviadoEm={relatorioEntregue?.enviadoEm ?? null}
           envios={envios}
-          rascunhoNovo={rascunhoNovo}
         />
-      ) : (
-        // Quando há bloco de rascunho, "Aprovar e enviar" já vem embutido nele — só um botão de entrega no ecrã.
-        !(mostrarRascunho && rascunho?.texto) && (
-          <div className="mt-6 flex flex-wrap items-start gap-4">
-            <MarcarEntregueButton intakeId={intake.id} jaEntregue={false} emailAtual={intake.email} />
-          </div>
-        )
-      )}
+      </AccordionSection>
     </main>
   );
 }
@@ -272,7 +348,7 @@ function AreasDestinoChips({ areas }: { areas: string[] }) {
 
 function Seccao({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
-    <section className="mt-6">
+    <section className="mt-6 first:mt-0">
       <p className="text-xs font-bold uppercase tracking-wide text-ink/50">{titulo}</p>
       <dl className="mt-2 divide-y divide-border rounded-lg border border-border">{children}</dl>
     </section>

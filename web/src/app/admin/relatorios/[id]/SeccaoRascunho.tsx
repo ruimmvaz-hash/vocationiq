@@ -2,24 +2,48 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MarcarEntregueButton } from "./MarcarEntregueButton";
 
 function formatarDataHora(iso: string): string {
   return new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
 }
 
-/** Passo 3 (VOCATIONIQ-ADULTO-metodologia.md) — gera/edita/guarda o rascunho antes de "Aprovar e enviar" (MarcarEntregueButton com autoGerarPdf: gera e envia o PDF automaticamente a partir do rascunho aprovado). "Ver relatório em HTML"/"Ver PDF"/"Ver Word" ficam disponíveis para o admin rever o conteúdo ANTES de aprovar — as três geram sempre na hora a partir do rascunho actual (ver obterTextoRelatorioActual em storage.ts), nunca esperam pelo envio. */
-export function RascunhoRelatorio({ intakeId, rascunhoInicial, criadoEmInicial, emailAtual }: { intakeId: string; rascunhoInicial: string | null; criadoEmInicial: string | null; emailAtual: string | null }) {
-  const [texto, setTexto] = useState(rascunhoInicial);
-  const [textoEditado, setTextoEditado] = useState(rascunhoInicial ?? "");
+/**
+ * Secção 3 — "Rascunho" — unifica o antigo RascunhoRelatorio.tsx (antes
+ * da entrega) e a parte de regeneração do antigo RelatorioEntregue.tsx
+ * (depois da entrega): a mesma caixa editável em qualquer estado do
+ * pedido. `temDraftReal` distingue um rascunho de facto por aprovar
+ * (pdf_path nulo) do texto do relatório já entregue mostrado aqui só
+ * como ponto de partida — "Descartar" só aparece quando há mesmo uma
+ * linha de rascunho para apagar (apagarRascunho() nunca toca na linha
+ * entregue).
+ */
+export function SeccaoRascunho({
+  intakeId,
+  podeGerar,
+  textoInicial,
+  criadoEmInicial,
+  temDraftReal,
+}: {
+  intakeId: string;
+  podeGerar: boolean;
+  textoInicial: string | null;
+  criadoEmInicial: string | null;
+  temDraftReal: boolean;
+}) {
+  const [texto, setTexto] = useState(textoInicial);
+  const [textoEditado, setTextoEditado] = useState(textoInicial ?? "");
   const [criadoEm, setCriadoEm] = useState(criadoEmInicial);
   const [loading, setLoading] = useState<"gerar" | "guardar" | "apagar" | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [mensagem, setMensagem] = useState<string | null>(null);
   const router = useRouter();
 
+  if (!podeGerar) {
+    return <p className="text-sm text-ink/60">Este pedido não usa o motor de geração automática — a entrega é feita por upload manual do PDF (secção &quot;Entrega&quot;).</p>;
+  }
+
   async function gerar() {
-    if (texto && !confirm("Isto vai substituir o rascunho actual. O relatório já entregue ao cliente não é alterado. Continuar?")) return;
+    if (texto && !confirm("Isto vai substituir o rascunho actual. O relatório já entregue ao cliente (se houver) não é alterado. Continuar?")) return;
     setLoading("gerar");
     setErro(null);
     setMensagem(null);
@@ -80,9 +104,9 @@ export function RascunhoRelatorio({ intakeId, rascunhoInicial, criadoEmInicial, 
   }
 
   return (
-    <section className="mt-6 rounded-lg border border-border p-5">
+    <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm font-bold text-navy">Rascunho do relatório</p>
+        {criadoEm ? <p className="text-xs text-ink/50">Guardado em {formatarDataHora(criadoEm)}</p> : <p className="text-xs text-ink/50">Ainda sem rascunho gerado.</p>}
         {!texto && (
           <button
             type="button"
@@ -95,11 +119,10 @@ export function RascunhoRelatorio({ intakeId, rascunhoInicial, criadoEmInicial, 
         )}
       </div>
 
-      {criadoEm && <p className="mt-1 text-xs text-ink/50">Guardado em {formatarDataHora(criadoEm)}</p>}
       {erro && <p className="mt-3 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{erro}</p>}
       {mensagem && <p className="mt-3 rounded-md bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{mensagem}</p>}
 
-      {texto ? (
+      {texto && (
         <>
           <textarea
             value={textoEditado}
@@ -108,7 +131,7 @@ export function RascunhoRelatorio({ intakeId, rascunhoInicial, criadoEmInicial, 
               setMensagem(null);
             }}
             rows={18}
-            className="mt-4 w-full rounded-md border border-border bg-paper p-4 font-mono text-sm leading-relaxed text-ink focus:border-navy focus:outline-none focus:ring-1 focus:ring-navy"
+            className="mt-4 w-full rounded-md border border-border bg-white p-4 font-mono text-sm leading-relaxed text-ink focus:border-navy focus:outline-none focus:ring-1 focus:ring-navy"
           />
           <div className="mt-4 flex flex-wrap gap-2">
             <button
@@ -127,39 +150,19 @@ export function RascunhoRelatorio({ intakeId, rascunhoInicial, criadoEmInicial, 
             >
               {loading === "guardar" ? "A guardar…" : "Guardar rascunho"}
             </button>
-            <a
-              href={`/admin/relatorios/${intakeId}/preview`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-md border border-navy px-4 py-2 text-sm font-bold text-navy transition hover:bg-navy hover:text-white"
-            >
-              Ver relatório em HTML
-            </a>
-            <a
-              href={`/api/admin/intakes/${intakeId}/pdf`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-md border border-navy px-4 py-2 text-sm font-bold text-navy transition hover:bg-navy hover:text-white"
-            >
-              Ver PDF
-            </a>
-            <a href={`/api/admin/intakes/${intakeId}/docx`} className="rounded-md border border-navy px-4 py-2 text-sm font-bold text-navy transition hover:bg-navy hover:text-white">
-              Ver Word
-            </a>
-            <MarcarEntregueButton intakeId={intakeId} jaEntregue={false} label="Aprovar e enviar" emailAtual={emailAtual} autoGerarPdf />
-            <button
-              type="button"
-              onClick={descartar}
-              disabled={loading !== null}
-              className="rounded-md border border-red-300 px-4 py-2 text-sm font-bold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loading === "apagar" ? "A apagar…" : "Descartar"}
-            </button>
+            {temDraftReal && (
+              <button
+                type="button"
+                onClick={descartar}
+                disabled={loading !== null}
+                className="rounded-md border border-red-300 px-4 py-2 text-sm font-bold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading === "apagar" ? "A apagar…" : "Descartar"}
+              </button>
+            )}
           </div>
         </>
-      ) : (
-        !loading && <p className="mt-3 text-sm text-ink/60">Ainda sem rascunho gerado — revê e edita o texto aqui antes de aprovar e enviar.</p>
       )}
-    </section>
+    </div>
   );
 }

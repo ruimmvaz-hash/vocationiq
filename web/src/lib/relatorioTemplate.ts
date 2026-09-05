@@ -46,7 +46,7 @@ const VERDE = "#4f7a5c";
 const VERMELHO = "#b4634a";
 const AZUL_CLARO = "#c9d6e8";
 
-const PLANETA_PT: Record<string, string> = {
+export const PLANETA_PT: Record<string, string> = {
   Sun: "Sol",
   Moon: "Lua",
   Mars: "Marte",
@@ -423,7 +423,7 @@ function setorPiePath(cx: number, cy: number, raio: number, anguloInicioDeg: num
   return `M ${cx} ${cy} L ${x1} ${y1} A ${raio} ${raio} 0 0 1 ${x2} ${y2} Z`;
 }
 
-interface DimensaoVida {
+export interface DimensaoVida {
   nome: string;
   descricao: string;
   valor: number;
@@ -456,7 +456,7 @@ function mediaSavCasas(savPorCasa: SavPorCasa[], casas: number[]): number {
  * planeta descreve a significação clássica da casa, não um termo extra
  * a somar (inventar um peso para essa mistura violaria "não inventar").
  */
-function computeRodaDaVida(savPorCasa: SavPorCasa[]): DimensaoVida[] {
+export function computeRodaDaVida(savPorCasa: SavPorCasa[]): DimensaoVida[] {
   return [
     { nome: "Carreira / Propósito", descricao: "A força da sua vocação e direcção profissional", valor: normalizarSav(mediaSavCasas(savPorCasa, [10])) },
     { nome: "Finanças / Recursos", descricao: "A sua relação natural com a geração e gestão de recursos", valor: normalizarSav(mediaSavCasas(savPorCasa, [2])) },
@@ -469,7 +469,7 @@ function computeRodaDaVida(savPorCasa: SavPorCasa[]): DimensaoVida[] {
   ];
 }
 
-function corRodaDaVida(valor: number): string {
+export function corRodaDaVida(valor: number): string {
   if (valor >= 7) return VERDE;
   if (valor >= 4) return AMBAR;
   return VERMELHO;
