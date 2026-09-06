@@ -61,7 +61,7 @@ A sua carta aponta para ganhar pela voz — pela consultoria, pelo ensinar e aco
 ### Consultoria (SAP, RH, gestão, etc.)
 FORÇA: moderada
 INSIGHT: A carta sustenta a consultoria como forma, mas ainda sem uma âncora de sector clara.
-1. A sua carta sustenta ganhar pela voz — a consultoria como formato bate certo com isso, mesmo que "SAP" especificamente não seja o que a carta aponta com mais força.
+1. A sua carta sustenta ganhar pela voz — a consultoria como formato bate certo com isso, mesmo que "SAP" especificamente não seja o que a carta aponta com mais força. Ao contrário da contabilidade, a consultoria de gestão não tem uma única porta de entrada regulada em Portugal — entra-se por portefólio e rede de contactos, não por um exame de acesso a uma ordem profissional.
 2. Vai custar-lhe mais do que a outros nomear o próprio valor com clareza suficiente para cobrar por ele desde o início.
 3. Falta-lhe ainda uma especialização nítida dentro da consultoria — o formato está sustentado, o nicho ainda não.
 4. A sua matéria entra aqui pela capacidade de ver o sistema todo de uma empresa, não só a parte financeira dele.
@@ -156,11 +156,35 @@ async function main() {
 
   const html = gerarHTMLRelatorio(dadosTemplate, TEXTO_EXEMPLO, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
 
+  // Apêndice de depuração — SÓ neste ficheiro de teste, nunca no relatório
+  // real entregue a um cliente. O texto do relatório em si (acima) escreve
+  // os elementos/modalidades e os aspectos em prosa, sem os nomear
+  // literalmente (a mesma convenção usada para todo o resto do jargão
+  // astrológico — Nakshatra, nomes de planetas em sânscrito, "casa X",
+  // etc. — nunca aparecem literalmente no texto real). Este apêndice
+  // existe só para confirmar, sem ambiguidade, que os dados chegaram
+  // correctamente ao pipeline antes de virarem prosa.
+  const apendiceDebug = `
+  <section class="seccao" style="border-top:4px dashed #999;margin-top:40px;padding-top:20px">
+    <h2 class="titulo-seccao">[APÊNDICE DE DEPURAÇÃO — só neste ficheiro de teste, nunca no relatório real]</h2>
+    <p>O texto do relatório acima nunca nomeia elementos/modalidades ou aspectos literalmente (mesma convenção usada para todo o jargão astrológico) — traduz sempre para prosa. Este apêndice mostra os valores brutos calculados pelo pipeline, para confirmar que chegaram até ao texto sem ambiguidade.</p>
+    <p><strong>Elementos e modalidades (computeElementosModalidades):</strong><br>
+    Elemento dominante: ${elementosModalidades.elementoDominante} — Fogo ${elementosModalidades.distribuicaoElementos.Fogo} | Terra ${elementosModalidades.distribuicaoElementos.Terra} | Ar ${elementosModalidades.distribuicaoElementos.Ar} | Água ${elementosModalidades.distribuicaoElementos.Água}<br>
+    Modalidade dominante: ${elementosModalidades.modalidadeDominante} — Cardinal ${elementosModalidades.distribuicaoModalidades.Cardinal} | Fixa ${elementosModalidades.distribuicaoModalidades.Fixa} | Mutável ${elementosModalidades.distribuicaoModalidades.Mutável}</p>
+    <p><strong>Aspectos entre planetas pessoais (computeAspectosPessoais):</strong><br>
+    ${aspectosPessoais.map((a) => `${a.planetaA} ${a.aspecto} ${a.planetaB} (orbe ${a.orbe.toFixed(1)}°)`).join("<br>")}</p>
+    <p><strong>Vias concretas por destino (sugerirCursosParaCatalogo → catalogoCursos.ts):</strong><br>
+    ${Object.entries(cursosPorDestino)
+      .map(([id, c]) => `${id} (${c.cursos[0].nome}, ${c.cursos[0].nivel}, QNQ ${c.cursos[0].qnq ?? "—"}): ${c.entradaMercadoAdulto.join("; ")}`)
+      .join("<br>")}</p>
+  </section>`;
+  const htmlComDebug = html.replace("</body>", `${apendiceDebug}\n</body>`);
+
   const outDir = join(process.cwd(), "..", "docs");
   mkdirSync(outDir, { recursive: true });
   const nomeFicheiro = process.argv[2] || "relatorio-v9.html";
   const outPath = join(outDir, nomeFicheiro);
-  writeFileSync(outPath, html, "utf-8");
+  writeFileSync(outPath, htmlComDebug, "utf-8");
   console.log(`Guardado em: ${outPath}`);
 }
 
