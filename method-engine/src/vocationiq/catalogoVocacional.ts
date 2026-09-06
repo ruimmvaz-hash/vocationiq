@@ -551,9 +551,9 @@ function construirDestinoConvergente(id: string, ctx: ContextoAvaliacao): Destin
 }
 
 export interface CandidataForaDaLista {
-  nome: string | null;
-  /** id do catálogo (TAREFA 5 — correcção do especialista) — permite a `sugerirCursos()` encontrar as vias concretas desta candidata sem ter de re-derivar o id a partir do nome. `null` só quando `nome` também é `null` (nenhuma candidata). */
-  id: string | null;
+  nome: string;
+  /** id do catálogo (TAREFA 5 — correcção do especialista) — permite a `sugerirCursos()` encontrar as vias concretas desta candidata sem ter de re-derivar o id a partir do nome. */
+  id: string;
   camadas: string[];
   convergencia: number;
 }
@@ -567,7 +567,15 @@ export interface IntakeParaCatalogo {
 export interface ResultadoCatalogoVocacional {
   destinosDeAreaActual: DestinoConvergente[];
   destinosAlternativos: DestinoConvergente[];
-  candidataForaDaLista: CandidataForaDaLista;
+  /**
+   * TAREFA 1 (correcção do especialista) — até 3 candidatas, nunca só a
+   * melhor. Array vazio quando 0 destinos atingem a fasquia (≥4 camadas
+   * incluindo o planeta de maior peso). A ORDEM do array é só um artefacto
+   * da ordenação interna usada para escolher QUAIS 3 entram (convergência,
+   * depois a regra permanente de desempate) — nunca implica ranking; as
+   * 3 apresentam-se sempre em pé de igualdade (ver regra no prompt).
+   */
+  candidatasForaDaLista: CandidataForaDaLista[];
   /** Presente só quando a área actual não tem sector específico (ex.: "Empresária", "Gestão") — nota para o prompt citar explicitamente. */
   notaAreaGenerica: string | null;
   /** Correcção do especialista (TAREFA 4a) — a condição 5 de eixo_do_rendimento ("casas 2 e 11 sem ligação à 10") nunca aponta para um destino específico; quando activa, fica aqui para o prompt citar com a `regraDeEscrita` curada (nunca como condenação). `null` quando a condição não se verifica nesta carta. */
@@ -734,22 +742,24 @@ export function catalogarDestinos(
   // "ganha por ser comum, não por ser dela") — só troca QUAL planeta
   // conta como "a peça mais forte".
   const elegveis = destinosAlternativos.filter((d) => d.convergencia >= LIMIAR_MINIMO_CANDIDATA && d.camadas.some((c) => c.startsWith("Planeta de maior peso")));
-  // Regra permanente de desempate (ver bloco acima) — primeiro por
-  // convergência, depois pelos 3 critérios aprovados pelo especialista,
-  // só entre as candidatas empatadas na convergência mais alta.
-  const melhor = elegveis.length
-    ? elegveis.reduce((a, b) => {
-        if (b.convergencia !== a.convergencia) return b.convergencia > a.convergencia ? b : a;
-        return compararCandidatasEmpatadas(a, b) <= 0 ? a : b;
-      })
-    : null;
+  // TAREFA 1 (correcção do especialista) — até 3 candidatas, nunca menos
+  // do que a fasquia exige. A ordenação (convergência desc, depois a
+  // regra permanente de desempate) decide só QUAIS 3 entram quando há mais
+  // de 3 elegíveis — a ordem do array resultante nunca é apresentada como
+  // ranking (ver ResultadoCatalogoVocacional.candidatasForaDaLista e a
+  // regra equivalente no prompt).
+  const ordenadas = [...elegveis].sort((a, b) => {
+    if (b.convergencia !== a.convergencia) return b.convergencia - a.convergencia;
+    return compararCandidatasEmpatadas(a, b);
+  });
+  const candidatasForaDaLista: CandidataForaDaLista[] = ordenadas.slice(0, 3).map((d) => ({ nome: d.nome, id: d.id, camadas: d.camadas, convergencia: d.convergencia }));
 
   const notaCondicao5 = eixoDoRendimentoActivo.find((a) => a.planetas.length === 0);
 
   return {
     destinosDeAreaActual,
     destinosAlternativos,
-    candidataForaDaLista: melhor ? { nome: melhor.nome, id: melhor.id, camadas: melhor.camadas, convergencia: melhor.convergencia } : { nome: null, id: null, camadas: [], convergencia: 0 },
+    candidatasForaDaLista,
     notaAreaGenerica: areaGenerica ? `área actual não tem sector específico ("${intake.areaActual}") — candidatas derivadas só da carta (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações activas)` : null,
     notaEixoDoRendimento: notaCondicao5 ? notaCondicao5.nota : null,
   };

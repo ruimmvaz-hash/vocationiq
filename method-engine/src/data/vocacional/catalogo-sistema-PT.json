@@ -345,7 +345,7 @@
     }
   },
   "regras_de_escrita": {
-    "instituicoes": "NUNCA nomear instituições de ensino. O relatório nomeia a formação e a via, não a escola. As instituições mudam a oferta e encerram cursos.",
+    "instituicoes": "NUNCA nomear instituições de nenhum tipo — nem de ensino, nem ordens profissionais, nem certificações com nome próprio, nem formadores. Concreto na estrutura, genérico no nome da entidade. O relatório nomeia a formação, a via, e o TIPO de entidade (ex.: 'os serviços públicos de emprego e formação do seu país'), nunca o nome próprio (nem 'a escola', nem 'IEFP', nem 'CCP' ou equivalente de outro país). As instituições mudam a oferta, encerram cursos, e mudam de nome ou estatuto.",
     "notas_escolares": "Ter boa nota a uma disciplina NÃO é sinal vocacional — é sinal de Mercúrio funcional e de disciplina de estudo, e serve dezenas de territórios. Confundir nota com vocação é o erro nº 1 da orientação escolar portuguesa e é frequentemente a razão pela qual um jovem de perfil de mãos acaba numa engenharia que não quer.",
     "moldura_obrigatoria": "A lista entrega-se sempre com a moldura explícita, no início e no fim: isto é para reconhecer, não para obedecer. O critério final de decisão é o reconhecimento interno do jovem, não o documento."
   }

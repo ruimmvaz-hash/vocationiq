@@ -109,7 +109,7 @@ async function main() {
     if (cursos) cursosPorDestino[id] = cursos;
     console.log(`- ${opcao} (id "${id}"): ${cursos ? JSON.stringify(cursos.cursos[0]) : "sem correspondência"}`);
   }
-  console.log(`Candidata fora da lista: ${catalogoResultados.candidataForaDaLista.nome ?? "nenhuma"}`);
+  console.log(`Candidatas fora da lista (até 3): ${catalogoResultados.candidatasForaDaLista.length ? catalogoResultados.candidatasForaDaLista.map((c) => c.nome).join(", ") : "nenhuma"}`);
 
   console.log("\n=== 6. Datas reais ===");
   const agora = new Date();

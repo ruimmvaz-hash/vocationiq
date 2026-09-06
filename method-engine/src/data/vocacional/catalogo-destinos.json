@@ -52,7 +52,7 @@
       "pt": "Usar labels.PT. Verificado contra DGES.",
       "outros_paises": "O agente nomeia a formação como ela se chama no país do cliente, a partir de isced_area + isced_nivel + labels.PT como referência de sentido.",
       "regra_de_seguranca": "Se o agente não souber com confiança como se chama a formação nesse país, escreve a DESCRIÇÃO em vez de inventar um nome. 'Formação superior em enfermagem, com prática clínica supervisionada' é preferível a um nome inventado.",
-      "instituicoes": "NUNCA nomear instituições de ensino — nem em Portugal. Mudam de oferta, encerram cursos e alteram designações. O relatório nomeia a formação, não a escola."
+      "instituicoes": "NUNCA nomear instituições de nenhum tipo — nem de ensino, nem ordens profissionais, nem certificações com nome próprio, nem formadores. Concreto na estrutura, genérico no nome da entidade. Mudam de oferta, encerram cursos, mudam de nome ou de estatuto legal. O relatório nomeia a formação e o TIPO de entidade (ex.: 'a ordem profissional da sua área, no seu país'), nunca o nome próprio (nem 'a escola', nem 'a Ordem dos X', nem 'CCP'/'IEFP' ou equivalente de outro país)."
     }
   },
   "destinos": {

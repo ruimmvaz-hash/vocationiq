@@ -259,14 +259,30 @@ function parseLeituraPorOpcao(corpo: string): LeituraOpcao[] {
   });
 }
 
-/** Extrai "CANDIDATA: <nome|nenhuma>" da primeira linha da secção — ver formato exigido em promptAdulto.ts. */
-function parseCandidataForaDaLista(corpo: string): { nome: string | null; texto: string } {
-  const regex = new RegExp(`^${MARCADORES.candidata}\\s*(.*)$`, "m");
-  const match = corpo.match(regex);
-  const valor = match?.[1]?.trim() ?? "";
-  const nome = !valor || valor.toLowerCase() === "nenhuma" ? null : valor;
-  const texto = corpo.replace(regex, "").trim();
-  return { nome, texto };
+/**
+ * TAREFA 1 (correcção do especialista) — até 3 blocos "CANDIDATA: <nome>",
+ * cada um seguido do seu próprio texto até ao próximo marcador (ou ao fim
+ * da secção). Array vazio quando a secção diz "CANDIDATA: nenhuma" ou não
+ * tem nenhum marcador — nesse caso `textoSemCandidata` traz o resto do
+ * corpo (a explicação honesta de que não há candidata), tal como antes.
+ */
+function parseCandidataForaDaLista(corpo: string): { candidatas: { nome: string; texto: string }[]; textoSemCandidata: string } {
+  const regex = new RegExp(`^${MARCADORES.candidata}\\s*(.*)$`, "gm");
+  const matches = [...corpo.matchAll(regex)];
+  const primeiroValor = matches[0]?.[1]?.trim() ?? "";
+  if (!matches.length || !primeiroValor || primeiroValor.toLowerCase() === "nenhuma") {
+    const textoSemCandidata = corpo.replace(new RegExp(`^${MARCADORES.candidata}\\s*(.*)$`, "m"), "").trim();
+    return { candidatas: [], textoSemCandidata };
+  }
+  const candidatas = matches
+    .map((m, i) => {
+      const nome = m[1]?.trim() ?? "";
+      const inicio = m.index! + m[0].length;
+      const fim = i + 1 < matches.length ? matches[i + 1].index! : corpo.length;
+      return { nome, texto: corpo.slice(inicio, fim).trim() };
+    })
+    .filter((c) => c.nome);
+  return { candidatas, textoSemCandidata: "" };
 }
 
 /** Separa a linha "PRIMEIRO PASSO: ..." do resto da secção "O plano". */
@@ -786,9 +802,8 @@ function svgDiagramaConvergencia(nomeCandidata: string, camadas: string[]): stri
   </svg>`;
 }
 
-function blocoDiagramaConvergencia(catalogo: ResultadoCatalogoVocacional | null): string {
-  if (!catalogo?.candidataForaDaLista.nome || catalogo.candidataForaDaLista.camadas.length === 0) return "";
-  const { nome, camadas } = catalogo.candidataForaDaLista;
+function blocoDiagramaConvergencia(nome: string, camadas: string[]): string {
+  if (!camadas.length) return "";
   return `
     <div class="convergencia-wrap">
       <p class="bloco-titulo" style="text-align:center">Porque esta opção não é acidente</p>
@@ -1047,18 +1062,29 @@ function blocoSeccaoQuemE(corpo: string): string {
     </section>`;
 }
 
+/**
+ * TAREFA 1 (correcção do especialista) — até 3 candidatas, cada uma com o
+ * seu próprio diagrama + card, em pé de igualdade (nenhuma numeração ou
+ * destaque visual diferente entre elas — a ordem em que chegam do LLM é
+ * só a ordem em que ele as escreveu, nunca ranking).
+ */
 function blocoCandidataForaDaLista(corpo: string, catalogo: ResultadoCatalogoVocacional | null): string {
-  const { nome, texto } = parseCandidataForaDaLista(corpo);
-  if (nome) {
-    return `
-      ${blocoDiagramaConvergencia(catalogo)}
+  const { candidatas, textoSemCandidata } = parseCandidataForaDaLista(corpo);
+  if (!candidatas.length) {
+    return `<div class="caixa-neutra">${markdownParaHtml(textoSemCandidata || corpo)}</div>`;
+  }
+  return candidatas
+    .map((c) => {
+      const camadas = catalogo?.candidatasForaDaLista.find((cat) => cat.nome === c.nome)?.camadas ?? [];
+      return `
+      ${blocoDiagramaConvergencia(c.nome, camadas)}
       <div class="card-candidata">
         <p class="card-candidata-header">Uma opção que ainda não considerou</p>
-        <p class="card-candidata-nome">${escapeHtml(nome)}</p>
-        ${markdownParaHtml(texto)}
+        <p class="card-candidata-nome">${escapeHtml(c.nome)}</p>
+        ${markdownParaHtml(c.texto)}
       </div>`;
-  }
-  return `<div class="caixa-neutra">${markdownParaHtml(texto || corpo)}</div>`;
+    })
+    .join("\n");
 }
 
 function blocoOPlano(corpo: string, datas: DadosDatas): string {

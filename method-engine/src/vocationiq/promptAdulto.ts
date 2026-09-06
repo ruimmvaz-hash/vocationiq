@@ -339,13 +339,25 @@ export function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional, c
   const listar = (destinos: ResultadoCatalogoVocacional["destinosDeAreaActual"]) =>
     destinos.length ? destinos.map((d) => `- ${d.nome}: convergência ${d.convergencia} (${d.camadas.join("; ") || "sem camada identificada"})${formatarViaConcreta(cursosPorDestino[d.id])}`).join("\n") : "(nenhum destino do catálogo corresponde)";
 
+  // TAREFA 1 (correcção do especialista) — até 3 candidatas, nunca só a
+  // melhor; nenhuma ordem/numeração no texto (nunca "1ª/2ª/3ª", nunca
+  // "menção honrosa" — ver a instrução equivalente na secção "## Candidata
+  // fora da lista" mais abaixo no prompt). Corrigido também o texto do
+  // gate: dizia "inclui sempre o Atmakaraka", desactualizado desde a
+  // Correcção 2 (o portão testa o planeta de maior peso, não o
+  // Atmakaraka — são coisas diferentes, ver comentário em
+  // catalogoVocacional.ts).
+  const candidatasTexto = catalogo.candidatasForaDaLista.length
+    ? catalogo.candidatasForaDaLista
+        .map((c) => `- ${c.nome}: convergência ${c.convergencia} (${c.camadas.join("; ")}).${formatarViaConcreta(cursosPorDestino[c.id])}`)
+        .join("\n")
+    : "nenhuma — nenhum destino reuniu 4 camadas independentes incluindo o planeta de maior peso.";
+
   return [
     catalogo.notaAreaGenerica ? `NOTA: ${catalogo.notaAreaGenerica}.` : null,
     `Derivadas da área actual:\n${listar(catalogo.destinosDeAreaActual)}`,
     `Alternativas pela carta (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações, eixo do rendimento):\n${listar(catalogo.destinosAlternativos)}`,
-    catalogo.candidataForaDaLista.nome
-      ? `Candidata com ≥4 convergências (inclui sempre o Atmakaraka): ${catalogo.candidataForaDaLista.nome} — camadas: ${catalogo.candidataForaDaLista.camadas.join("; ")}.${formatarViaConcreta(catalogo.candidataForaDaLista.id ? cursosPorDestino[catalogo.candidataForaDaLista.id] : undefined)}`
-      : "Candidata com ≥4 convergências: nenhuma — nenhum destino reuniu 4 camadas independentes incluindo o Atmakaraka.",
+    `Candidatas com ≥4 convergências (inclui sempre o planeta de maior peso, até 3, em pé de igualdade — nunca ranking):\n${candidatasTexto}`,
     catalogo.notaEixoDoRendimento
       ? `NOTA sobre o eixo do rendimento (o que dá sentido vs. o que paga): ${catalogo.notaEixoDoRendimento.leitura}.${catalogo.notaEixoDoRendimento.regraDeEscrita ? ` Como escrever isto: ${catalogo.notaEixoDoRendimento.regraDeEscrita}` : ""}`
       : null,
@@ -545,7 +557,14 @@ ${MARCADORES.insight} <uma frase que resume a leitura desta opção em menos de 
 Repete o bloco "### <nome> / ${MARCADORES.forca} / ${MARCADORES.insight} / 1. / 2. / 3. / 4." para cada opção candidata, uma a seguir à outra.
 
 ## ${SECCAO_TITULOS.candidataForaDaLista}
-A candidata já vem calculada deterministicamente na secção "Candidatas do catálogo" acima — NÃO calcules a tua própria convergência, NÃO inventes uma candidata diferente. Se essa secção diz "nenhuma", a primeira linha é "${MARCADORES.candidata} nenhuma" e escreves isso explicitamente — "a sua carta não aponta a nada fora do que já pensava" é uma resposta válida e completa, não a evites. Se essa secção nomeia uma candidata concreta, a primeira linha é "${MARCADORES.candidata} <esse nome exacto>", seguida do texto explicativo usando as camadas exactas já listadas (nunca inventes camadas novas nem omitas as que vêm calculadas). A primeira linha é sempre obrigatória e machine-readable, não a omitas.
+As candidatas já vêm calculadas deterministicamente na secção "Candidatas do catálogo" acima (até 3) — NÃO calcules a tua própria convergência, NÃO inventes nenhuma candidata diferente das listadas lá.
+
+Se essa secção diz "nenhuma", a primeira e única linha é "${MARCADORES.candidata} nenhuma" — "a sua carta não aponta a nada fora do que já pensava" é uma resposta válida e completa, não a evites.
+
+Se essa secção lista 1, 2 ou 3 candidatas, escreve um bloco próprio para CADA UMA, nesta ordem de aparição no texto (a ordem em que aparecem na secção "Candidatas do catálogo" NÃO é ranking — ver regra abaixo):
+"${MARCADORES.candidata} <nome exacto>" seguido do texto explicativo dessa candidata, usando só as camadas exactas já listadas para ela (nunca inventes camadas novas nem omitas as que vêm calculadas). Repete "${MARCADORES.candidata} <nome exacto>" uma vez por candidata — nunca um marcador só com a primeira e as outras sem.
+
+REGRA ABSOLUTA — SEM RANKING ENTRE CANDIDATAS (correcção do especialista, TAREFA 1): quando há 2 ou 3 candidatas, apresentam-se sempre em PÉ DE IGUALDADE. PROIBIDO: "1ª escolha", "2ª escolha", "3ª opção", "a mais forte", "a mais provável", "em primeiro lugar", qualquer numeração ordinal, ou tratar uma delas como "menção honrosa"/"nota à parte"/candidata de segunda categoria. Cada candidata tem a sua própria justificação, completa e independente das outras — nunca comparar uma candidata com outra dentro do texto.
 
 REGRA ABSOLUTA — CANDIDATA FORA DA LISTA (correcção do especialista): PROIBIDO nomear qualquer candidata, mesmo como pista abaixo do limiar, sem que venha explicitamente da secção "Candidatas do catálogo" acima. Se nenhuma candidata do catálogo atingiu ≥4 camadas, a resposta é "${MARCADORES.candidata} nenhuma" — explica honestamente que a carta não aponta a nada fora do que já foi pensado. NUNCA preenchas com estereótipos de profissão ou associações livres a arquétipos abstractos. Exemplo do que NÃO fazer: sugerir "engenharia, auditoria, saúde pública" por associação livre a "Saturno = estrutura/rigor" — essas profissões não vieram do catálogo, vieram de associação livre; isto é invenção, não leitura, e é exactamente o que esta regra proíbe.
 

@@ -60,7 +60,13 @@ INSIGHT: A estrutura para liderar já existe — falta ainda o canal para a expr
 
 ## Candidata fora da lista
 CANDIDATA: Ciências da Informação e Documentação
-Seis camadas independentes da sua carta convergem nesta área, incluindo o planeta mais forte que tem — é uma força estrutural que ainda não tinha nomeado.
+Quatro camadas independentes da sua carta convergem nesta área, incluindo o planeta mais forte que tem e a casa que mais sustenta ensino e escrita de fundo — é uma força estrutural que ainda não tinha nomeado.
+
+CANDIDATA: Contabilidade e Fiscalidade
+A mesma força estrutural do planeta mais forte da sua carta, ligada aqui à forma como ganha melhor e a sinais próprios desta área — o dom converte-se em dinheiro sem precisar de exposição pública.
+
+CANDIDATA: História
+A terceira convergência independente: o mesmo planeta forte, a mesma forma como ganha melhor, e a mesma casa de fundo intelectual — desta vez ligada à leitura de longo prazo em vez da estrutura documental.
 
 ## O plano
 O período actual pede que prepare e feche o que já não serve, antes de colher o que vem a seguir — não é o momento de anunciar em grande, é o de organizar por dentro.
@@ -129,19 +135,21 @@ async function main() {
   // explicitamente "relatorio-v8.html" — nos outros nomes de ficheiro o
   // resultado real do catálogo continua a mandar.
   if (process.argv[2] === "relatorio-v8.html") {
-    catalogoResultados.candidataForaDaLista = {
-      nome: "Ciências da Informação e Documentação",
-      id: "biblioteconomia",
-      convergencia: 6,
-      camadas: [
-        "Planeta de maior peso (Saturn, peso 1.76) aponta para este destino",
-        "Regente do Modo de Ganho dominante (Saturn, casa 10) — eixo do rendimento aponta para este destino",
-        "Casa temática forte (casa 9): dharma, ensino superior, filosofia, publicação, teologia, direito internacional, viagem, tradução académica, ética, ciências da religião, escrita de não-ficção",
-        "Ideia concreta partilhada aponta para este destino",
-        `Sinais estruturados da área "Ciências da Informação e Documentação" confirmam (índice inverso)`,
-        "Combinação sol+vénus (mesma casa) aponta para este destino",
-      ],
-    };
+    catalogoResultados.candidatasForaDaLista = [
+      {
+        nome: "Ciências da Informação e Documentação",
+        id: "biblioteconomia",
+        convergencia: 6,
+        camadas: [
+          "Planeta de maior peso (Saturn, peso 1.76) aponta para este destino",
+          "Regente do Modo de Ganho dominante (Saturn, casa 10) — eixo do rendimento aponta para este destino",
+          "Casa temática forte (casa 9): dharma, ensino superior, filosofia, publicação, teologia, direito internacional, viagem, tradução académica, ética, ciências da religião, escrita de não-ficção",
+          "Ideia concreta partilhada aponta para este destino",
+          `Sinais estruturados da área "Ciências da Informação e Documentação" confirmam (índice inverso)`,
+          "Combinação sol+vénus (mesma casa) aponta para este destino",
+        ],
+      },
+    ];
   }
 
   const html = gerarHTMLRelatorio(dadosTemplate, TEXTO_EXEMPLO, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);

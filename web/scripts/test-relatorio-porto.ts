@@ -38,8 +38,8 @@ const PONTO_LABEL: Record<string, string> = { Sun: "Sol natal", Moon: "Lua natal
 // Placeholder da leitura do LLM — escrito à mão, integrando deliberadamente
 // o elemento dominante (Ar) e o aspecto Vénus-Marte (trígono) na narrativa
 // de "Quem é" (nunca como lista à parte, per a instrução do prompt), e
-// citando a via concreta ("Ordem dos Contabilistas Certificados") na
-// leitura da opção "Finanças / contabilidade".
+// citando a via concreta (TIPO de entidade, nunca nome próprio — TAREFA 2
+// desta ronda) na leitura da opção "Finanças / contabilidade".
 const TEXTO_EXEMPLO = `
 FRASE_ABERTURA: Processar os números de outra pessoa já lhe ensinou tudo menos a assinar por baixo deles.
 IDENTIDADE: Estratega que pensa em rede e persegue o que deseja sem hesitar
@@ -69,7 +69,7 @@ INSIGHT: A carta sustenta a consultoria como forma, mas ainda sem uma âncora de
 ### Finanças / contabilidade
 FORÇA: forte
 INSIGHT: A área onde já está é também a que a carta mais sustenta tecnicamente.
-1. Duas fontes independentes convergem aqui: a experiência já acumulada nesta área, e a forma como a sua carta liga naturalmente a esta função — a via concreta de entrada nesta área em Portugal passa pela Ordem dos Contabilistas Certificados, que já lhe é familiar.
+1. Duas fontes independentes convergem aqui: a experiência já acumulada nesta área, e a forma como a sua carta liga naturalmente a esta função — a via concreta de entrada nesta área passa pela ordem profissional da sua área, que já lhe é familiar.
 2. O custo aqui não é técnico — é de significado: continuar a processar números para a decisão de outra pessoa, sem nunca assinar por baixo dela.
 3. O que falta não é competência, é posição — mudar de processar para decidir, dentro do mesmo território técnico.
 4. A sua matéria entra pela profundidade técnica já construída, não por uma reinvenção completa.
