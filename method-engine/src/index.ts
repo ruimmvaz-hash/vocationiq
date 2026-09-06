@@ -120,11 +120,13 @@ export {
 } from "./vocationiq/pesosPlanetas";
 export {
   catalogarDestinos,
+  depurarCamadasDestino,
   type ResultadoCatalogoVocacional,
   type DestinoConvergente,
   type CandidataForaDaLista,
   type IntakeParaCatalogo,
   type AtmakarakaInfo,
+  type NotaEixoRendimento,
 } from "./vocationiq/catalogoVocacional";
 export { computeRodaDaVida, type DimensaoVida } from "./vocationiq/rodaDaVida";
 export {

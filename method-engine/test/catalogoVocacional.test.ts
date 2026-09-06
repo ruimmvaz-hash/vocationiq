@@ -121,7 +121,21 @@ describe("catalogarDestinos — caso sintético de convergência forte (não é 
     { planeta: "Saturn", casa: 11, signo: "Aquarius", estado: "Own", savCasa: 30, savMedia: 28, peso: 1.25 },
   ];
   const savPorCasa: SavPorCasa[] = Array.from({ length: 12 }, (_, i) => ({ casa: i + 1, pontuacao: 26, media: 28, classificacao: "medio" as const }));
-  const axes = { amatyakaraka: "Saturn", earningMode: { house: 2, lord: "Venus" } } as unknown as VocationIQAxes;
+  // regentesCasas/drishtiEmitidoPorPlaneta/earningModeDominante — campos
+  // acrescentados por correcções desta ronda (eixo_do_rendimento, TAREFA
+  // 4a/4b), preenchidos aqui com valores plausíveis só para o motor não
+  // rebentar a ler `undefined` — este caso sintético nunca testou (nem
+  // testa agora) as condições de eixo_do_rendimento em si, só o caminho
+  // positivo original das 4 camadas.
+  const regentesCasasSintetico = { 1: "Mars", 2: "Venus", 3: "Mercury", 4: "Moon", 5: "Sun", 6: "Mercury", 7: "Venus", 8: "Mars", 9: "Jupiter", 10: "Saturn", 11: "Saturn", 12: "Jupiter" };
+  const drishtiVazio = { Sun: [], Moon: [], Mars: [], Mercury: [], Jupiter: [], Venus: [], Saturn: [] };
+  const axes = {
+    amatyakaraka: "Saturn",
+    earningMode: { house: 2, lord: "Venus" },
+    earningModeDominante: [{ house: 2, lord: "Venus", label: "", score: 3, camadasConvergentes: 2, signals: [], planetsInHouse: [] }],
+    regentesCasas: regentesCasasSintetico,
+    drishtiEmitidoPorPlaneta: drishtiVazio,
+  } as unknown as VocationIQAxes;
   const atmakarakaInfo: AtmakarakaInfo = { planeta: "Jupiter", nakshatra: "Punarvasu" };
 
   it("encontra 'Formação de Professores' como candidata fora da lista, com as 4 camadas esperadas", () => {

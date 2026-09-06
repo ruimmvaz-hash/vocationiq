@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { hasSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { obterIntake } from "@/lib/store";
-import { obterTextoRelatorioActual } from "@/lib/storage";
+import { obterTextoRelatorioActual, atualizarCoordenadasNascimento } from "@/lib/storage";
 import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTemplate";
 import { calcularDadosAstrologicos, GeocodeError } from "@/lib/relatorioAdultoCompute";
 import { htmlParaPdf } from "@/lib/htmlToPdf";
@@ -34,7 +34,14 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   if (!actual) return NextResponse.json({ error: "Sem rascunho nem relatório entregue para este pedido." }, { status: 404 });
 
   try {
-    const { axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, horaAproximada, catalogoResultados } = await calcularDadosAstrologicos(intake);
+    const { axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, horaAproximada, catalogoResultados, coordenadasNascimento } = await calcularDadosAstrologicos(intake, actual.coordenadasNascimento);
+    // RISCO ARQUITECTURAL 7 — auto-cura: esta linha ainda não tinha
+    // coordenadas guardadas (rascunho de antes da migração 0018) e acabou
+    // de geocodificar de novo por não ter escolha — grava agora, para
+    // nunca mais precisar. Nunca bloqueia "Ver PDF" se falhar.
+    if (!actual.coordenadasNascimento) {
+      await atualizarCoordenadasNascimento(actual.id, coordenadasNascimento).catch((err) => console.error("[pdf] falha ao gravar coordenadas de nascimento (não bloqueante):", err));
+    }
     const dadosTemplate: DadosParaTemplate = {
       nome: intake.nome,
       dataNascimento: intake.data_nascimento,

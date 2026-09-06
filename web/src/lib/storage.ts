@@ -1,6 +1,7 @@
 import "server-only";
 import { getSupabaseAdmin } from "./supabaseAdmin";
 import type { VocationIQAxes, PesoPlaneta, EarningMode, SavPorCasa, DadosDatas } from "@naveya/method-engine";
+import type { CoordenadasNascimento } from "./relatorioAdultoCompute";
 
 const BUCKET = "viq-relatorios";
 
@@ -113,6 +114,8 @@ export interface RelatorioEntregue {
   criticaCriadaEm: string | null;
   rascunhoReescrito: string | null;
   rascunhoVersao: number;
+  /** RISCO ARQUITECTURAL 7 — coordenadas geocodificadas uma única vez para este pedido; `null` em linhas anteriores à migração 0018. */
+  coordenadasNascimento: CoordenadasNascimento | null;
 }
 
 /**
@@ -128,7 +131,7 @@ export async function obterRelatorioEntregue(intakeId: string): Promise<Relatori
   const sb = await getSupabaseAdmin();
   const { data, error } = await sb
     .from("viq_relatorios")
-    .select("id, pdf_path, pdf_filename, rascunho_texto, enviado_em, created_at, dados_tecnicos, prompt_completo, auditoria_llm, auditoria_criada_em, critica_llm, critica_criada_em, rascunho_reescrito, rascunho_versao")
+    .select("id, pdf_path, pdf_filename, rascunho_texto, enviado_em, created_at, dados_tecnicos, prompt_completo, auditoria_llm, auditoria_criada_em, critica_llm, critica_criada_em, rascunho_reescrito, rascunho_versao, coordenadas_nascimento")
     .eq("intake_id", intakeId)
     .not("pdf_path", "is", null)
     .order("created_at", { ascending: false })
@@ -150,6 +153,7 @@ export async function obterRelatorioEntregue(intakeId: string): Promise<Relatori
     criticaCriadaEm: (data.critica_criada_em as string | null) ?? null,
     rascunhoReescrito: (data.rascunho_reescrito as string | null) ?? null,
     rascunhoVersao: (data.rascunho_versao as number | null) ?? 1,
+    coordenadasNascimento: (data.coordenadas_nascimento as CoordenadasNascimento | null) ?? null,
   };
 }
 
@@ -206,7 +210,14 @@ export interface DadosCriticaParaGuardar {
  * é `null` (uma reescrita de facto aconteceu nesta geração) — nunca a
  * cada geração/edição em si (Parte 3, pedido explícito).
  */
-export async function guardarRascunho(intakeId: string, texto: string, dadosTecnicos?: DadosTecnicosParaGuardar, promptCompleto?: string, critica?: DadosCriticaParaGuardar): Promise<{ id: string }> {
+export async function guardarRascunho(
+  intakeId: string,
+  texto: string,
+  dadosTecnicos?: DadosTecnicosParaGuardar,
+  promptCompleto?: string,
+  critica?: DadosCriticaParaGuardar,
+  coordenadasNascimento?: CoordenadasNascimento,
+): Promise<{ id: string }> {
   const sb = await getSupabaseAdmin();
   const agora = new Date().toISOString();
   const houveReescrita = critica !== undefined && critica.rascunhoReescrito !== null;
@@ -214,6 +225,11 @@ export async function guardarRascunho(intakeId: string, texto: string, dadosTecn
     ...(dadosTecnicos !== undefined ? { dados_tecnicos: dadosTecnicos } : {}),
     ...(promptCompleto !== undefined ? { prompt_completo: promptCompleto } : {}),
     ...(critica !== undefined ? { critica_llm: critica.criticaLlm, critica_criada_em: agora, rascunho_reescrito: critica.rascunhoReescrito } : {}),
+    // RISCO ARQUITECTURAL 7 — só escrito quando quem chama acabou de
+    // geocodificar de facto (POST /api/relatorio); nas outras rotas,
+    // que já leem coordenadas existentes, este parâmetro nunca é passado
+    // aqui — o backfill delas usa `atualizarCoordenadasNascimento` directamente.
+    ...(coordenadasNascimento !== undefined ? { coordenadas_nascimento: coordenadasNascimento } : {}),
   };
 
   const { data: existente, error: buscaError } = await sb.from("viq_relatorios").select("id, rascunho_versao").eq("intake_id", intakeId).is("pdf_path", null).maybeSingle();
@@ -251,6 +267,8 @@ export interface RascunhoRelatorio {
   criticaCriadaEm: string | null;
   rascunhoReescrito: string | null;
   rascunhoVersao: number;
+  /** RISCO ARQUITECTURAL 7 — coordenadas geocodificadas uma única vez para este pedido; `null` em linhas anteriores à migração 0018. */
+  coordenadasNascimento: CoordenadasNascimento | null;
 }
 
 /** Último rascunho por gerar/aprovar (pdf_path ainda nulo) para este intake, se existir. */
@@ -258,7 +276,7 @@ export async function obterRascunho(intakeId: string): Promise<RascunhoRelatorio
   const sb = await getSupabaseAdmin();
   const { data, error } = await sb
     .from("viq_relatorios")
-    .select("id, rascunho_texto, rascunho_criado_em, dados_tecnicos, prompt_completo, auditoria_llm, auditoria_criada_em, critica_llm, critica_criada_em, rascunho_reescrito, rascunho_versao")
+    .select("id, rascunho_texto, rascunho_criado_em, dados_tecnicos, prompt_completo, auditoria_llm, auditoria_criada_em, critica_llm, critica_criada_em, rascunho_reescrito, rascunho_versao, coordenadas_nascimento")
     .eq("intake_id", intakeId)
     .is("pdf_path", null)
     .not("rascunho_texto", "is", null)
@@ -276,7 +294,22 @@ export async function obterRascunho(intakeId: string): Promise<RascunhoRelatorio
     criticaCriadaEm: (data.critica_criada_em as string | null) ?? null,
     rascunhoReescrito: (data.rascunho_reescrito as string | null) ?? null,
     rascunhoVersao: (data.rascunho_versao as number | null) ?? 1,
+    coordenadasNascimento: (data.coordenadas_nascimento as CoordenadasNascimento | null) ?? null,
   };
+}
+
+/**
+ * RISCO ARQUITECTURAL 7 — grava as coordenadas geocodificadas na linha já
+ * existente (auto-cura: chamado pelas rotas de regeneração quando
+ * encontram `coordenadas_nascimento` nulo, depois de geocodificarem de
+ * novo por não terem outra escolha) — nunca bloqueia a operação principal
+ * se falhar (ver uso nas rotas: sempre dentro de try/catch que só regista
+ * o erro).
+ */
+export async function atualizarCoordenadasNascimento(relatorioId: string, coordenadas: CoordenadasNascimento): Promise<void> {
+  const sb = await getSupabaseAdmin();
+  const { error } = await sb.from("viq_relatorios").update({ coordenadas_nascimento: coordenadas }).eq("id", relatorioId);
+  if (error) throw new Error(`Falha ao guardar coordenadas de nascimento: ${error.message}`);
 }
 
 /** Guarda o resultado do botão "Analisar raciocínio do LLM" numa linha específica de viq_relatorios (a mesma que já guarda o rascunho/prompt que foi auditado). */
@@ -307,6 +340,8 @@ export interface TextoRelatorioActual {
   criticaCriadaEm: string | null;
   rascunhoReescrito: string | null;
   rascunhoVersao: number;
+  /** RISCO ARQUITECTURAL 7 — coordenadas geocodificadas uma única vez para este pedido; `null` em linhas anteriores à migração 0018. */
+  coordenadasNascimento: CoordenadasNascimento | null;
 }
 
 /**
@@ -335,6 +370,7 @@ export async function obterTextoRelatorioActual(intakeId: string): Promise<Texto
       criticaCriadaEm: rascunho.criticaCriadaEm,
       rascunhoReescrito: rascunho.rascunhoReescrito,
       rascunhoVersao: rascunho.rascunhoVersao,
+      coordenadasNascimento: rascunho.coordenadasNascimento,
     };
   }
   const entregue = await obterRelatorioEntregue(intakeId);
@@ -351,6 +387,7 @@ export async function obterTextoRelatorioActual(intakeId: string): Promise<Texto
       criticaCriadaEm: entregue.criticaCriadaEm,
       rascunhoReescrito: entregue.rascunhoReescrito,
       rascunhoVersao: entregue.rascunhoVersao,
+      coordenadasNascimento: entregue.coordenadasNascimento,
     };
   }
   return null;

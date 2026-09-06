@@ -333,18 +333,21 @@ function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional): string 
   return [
     catalogo.notaAreaGenerica ? `NOTA: ${catalogo.notaAreaGenerica}.` : null,
     `Derivadas da área actual:\n${listar(catalogo.destinosDeAreaActual)}`,
-    `Alternativas pela carta (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações):\n${listar(catalogo.destinosAlternativos)}`,
+    `Alternativas pela carta (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações, eixo do rendimento):\n${listar(catalogo.destinosAlternativos)}`,
     catalogo.candidataForaDaLista.nome
       ? `Candidata com ≥4 convergências (inclui sempre o Atmakaraka): ${catalogo.candidataForaDaLista.nome} — camadas: ${catalogo.candidataForaDaLista.camadas.join("; ")}.`
       : "Candidata com ≥4 convergências: nenhuma — nenhum destino reuniu 4 camadas independentes incluindo o Atmakaraka.",
+    catalogo.notaEixoDoRendimento
+      ? `NOTA sobre o eixo do rendimento (o que dá sentido vs. o que paga): ${catalogo.notaEixoDoRendimento.leitura}.${catalogo.notaEixoDoRendimento.regraDeEscrita ? ` Como escrever isto: ${catalogo.notaEixoDoRendimento.regraDeEscrita}` : ""}`
+      : null,
   ]
     .filter(Boolean)
     .join("\n\n");
 }
 
 /** Redesenho do motor (Parte 5A) — o LLM nunca via a Roda da Vida antes disto (só o template a desenhava, depois de o texto já estar escrito), por isso não podia cumprir a instrução de referenciar valores extremos. Calculada aqui com a mesma função que o template usa (`computeRodaDaVida`, movida para o method-engine), nunca inventada de novo. */
-function blocoRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[]): string {
-  const dimensoes = computeRodaDaVida(savPorCasa, pesos);
+function blocoRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], regentesCasas: Record<number, ClassicalGraha>): string {
+  const dimensoes = computeRodaDaVida(savPorCasa, pesos, regentesCasas);
   return dimensoes.map((d) => `${d.nome}: ${d.valor.toFixed(1)}/10${d.valor <= 4 || d.valor >= 7 ? " — EXTREMO, tem de ser referenciado no texto" : ""}`).join("\n");
 }
 
@@ -428,7 +431,7 @@ ${blocoDatas(datas)}
 ${blocoCatalogoVocacional(catalogo)}
 
 -- Roda da Vida (8 dimensões, 0-10) --
-${blocoRodaDaVida(savPorCasa, pesosPlanetas)}
+${blocoRodaDaVida(savPorCasa, pesosPlanetas, axes.regentesCasas)}
 Para cada dimensão marcada EXTREMO (≤4 ou ≥7), o texto tem de ter pelo menos uma frase que explique o que esse valor significa para esta pessoa especificamente — nunca deixar um extremo sem menção.
 
 -- Opções declaradas --

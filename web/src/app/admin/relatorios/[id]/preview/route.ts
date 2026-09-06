@@ -1,6 +1,6 @@
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { obterIntake } from "@/lib/store";
-import { obterTextoRelatorioActual } from "@/lib/storage";
+import { obterTextoRelatorioActual, atualizarCoordenadasNascimento } from "@/lib/storage";
 import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTemplate";
 import { calcularDadosAstrologicos, GeocodeError } from "@/lib/relatorioAdultoCompute";
 
@@ -28,7 +28,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (!actual) return paginaSimples("Ainda sem rascunho", "Gera o rascunho no backoffice antes de pré-visualizar o relatório.");
 
   try {
-    const { axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, horaAproximada, catalogoResultados } = await calcularDadosAstrologicos(intake);
+    const { axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, horaAproximada, catalogoResultados, coordenadasNascimento } = await calcularDadosAstrologicos(intake, actual.coordenadasNascimento);
+    if (!actual.coordenadasNascimento) {
+      await atualizarCoordenadasNascimento(actual.id, coordenadasNascimento).catch((err) => console.error("[preview] falha ao gravar coordenadas de nascimento (não bloqueante):", err));
+    }
 
     const dadosTemplate: DadosParaTemplate = {
       nome: intake.nome,

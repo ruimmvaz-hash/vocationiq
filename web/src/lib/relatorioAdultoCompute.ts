@@ -13,6 +13,7 @@ import {
   catalogarDestinos,
   ELEMENTO_PLANETA,
   MAHADASHA_CLASSIFICACAO,
+  normalizarTextoLivre,
   type VocationiqIntakeAdulto,
   type DadosDatas,
   type BirthInput,
@@ -39,9 +40,40 @@ const PONTO_LABEL: Record<string, string> = { Sun: "Sol natal", Moon: "Lua natal
 
 export class GeocodeError extends Error {}
 
-async function resolverNascimento(localNascimento: string, dataNascimento: string, horaNascimento: string | null): Promise<{ birth: BirthInput; horaAproximada: boolean }> {
-  const geo = await geocodeCityCountry(localNascimento);
-  if (!geo) throw new GeocodeError(`Não consegui geocodificar "${localNascimento}".`);
+/**
+ * Correcção do especialista (RISCO ARQUITECTURAL 7) — antes desta
+ * correcção, `resolverNascimento` chamava `geocodeCityCountry` (API
+ * externa, ao vivo, nunca cacheada) sempre, em toda e qualquer chamada a
+ * `calcularDadosAstrologicos` — "Gerar rascunho", "Ver PDF", "Aprovar e
+ * enviar/reenviar" recalculavam a geocodificação do zero, sem nenhuma
+ * garantia de que o resultado seria sempre o mesmo (o fornecedor pode
+ * mudar de resposta; nada no código fixava a latitude/longitude
+ * resolvidas ao pedido). `coordenadasExistentes`, quando fornecido pelo
+ * chamador (lido de `viq_relatorios.coordenadas_nascimento`), salta a
+ * geocodificação por completo — o pedido passa a ter sempre as MESMAS
+ * coordenadas em toda a sua vida, geocodificadas uma única vez.
+ */
+export interface CoordenadasNascimento {
+  latitude: number;
+  longitude: number;
+  timezone: string;
+  localNormalizado: string;
+}
+
+async function resolverNascimento(
+  localNascimento: string,
+  dataNascimento: string,
+  horaNascimento: string | null,
+  coordenadasExistentes?: CoordenadasNascimento | null,
+): Promise<{ birth: BirthInput; horaAproximada: boolean; coordenadas: CoordenadasNascimento }> {
+  let coordenadas: CoordenadasNascimento;
+  if (coordenadasExistentes) {
+    coordenadas = coordenadasExistentes;
+  } else {
+    const geo = await geocodeCityCountry(localNascimento);
+    if (!geo) throw new GeocodeError(`Não consegui geocodificar "${localNascimento}".`);
+    coordenadas = { latitude: geo.latitude, longitude: geo.longitude, timezone: geo.timezone, localNormalizado: geo.resolvedName };
+  }
 
   const [year, month, day] = dataNascimento.split("-").map(Number);
   // Sem hora de nascimento (campo opcional no intake), usa-se meio-dia
@@ -49,10 +81,10 @@ async function resolverNascimento(localNascimento: string, dataNascimento: strin
   // real; `horaAproximada` avisa o prompt para tratar os elementos
   // sensíveis ao Ascendente com mais cautela.
   const horaAproximada = !horaNascimento;
-  const utcDate = localBirthTimeToUtc({ day, month, year }, horaNascimento || "12:00", geo.timezone);
+  const utcDate = localBirthTimeToUtc({ day, month, year }, horaNascimento || "12:00", coordenadas.timezone);
   if (!utcDate) throw new GeocodeError(`Data/hora de nascimento inválida (${dataNascimento} ${horaNascimento ?? "12:00"}).`);
 
-  return { birth: { utcDate, latitude: geo.latitude, longitude: geo.longitude }, horaAproximada };
+  return { birth: { utcDate, latitude: coordenadas.latitude, longitude: coordenadas.longitude }, horaAproximada, coordenadas };
 }
 
 function construirDadosDatas(birth: BirthInput, agora: Date): DadosDatas {
@@ -85,7 +117,15 @@ function construirIntakeAdulto(intake: IntakeRow): VocationiqIntakeAdulto {
     tipoMudanca: (intake.tipo_mudanca ?? []).map((t) => TIPO_MUDANCA_LABEL[t] ?? t),
     areasDestino: (intake.areas_destino ?? []).filter((a) => a !== "outra" && a !== "ainda-nao-sei").map((a) => AREA_DESTINO_LABEL[a] ?? a),
     areasDestinoIncluiOutra: (intake.areas_destino ?? []).includes("outra"),
-    areasDestinoOutra: intake.areas_destino_outra ?? undefined,
+    // Correcção do especialista (TAREFA 5) — `areasDestinoOutra` é texto
+    // livre da pessoa (a única entrada de "outra" no formulário), tal como
+    // oQueNaoFunciona/ideiaConcreta/perguntaEspecifica — mas tem DOIS
+    // consumidores (candidatasDeclaradas() no prompt, e opcoesConsideradas
+    // em 5 rotas diferentes que geram o template), por isso normaliza-se
+    // aqui, na única origem, em vez de em cada um dos 6 sítios onde entra
+    // depois (evita repetir a chamada, e evita esquecê-la nalgum deles —
+    // exactamente o que tinha acontecido até esta correcção).
+    areasDestinoOutra: intake.areas_destino_outra ? normalizarTextoLivre(intake.areas_destino_outra) : undefined,
     areasDestinoIncluiAindaNaoSei: (intake.areas_destino ?? []).includes("ainda-nao-sei"),
   };
 }
@@ -116,6 +156,8 @@ export interface DadosAstrologicos {
   intakeAdulto: VocationiqIntakeAdulto;
   dadosRicos: DadosRicos;
   catalogoResultados: ResultadoCatalogoVocacional;
+  /** Correcção do especialista (RISCO ARQUITECTURAL 7) — as coordenadas efectivamente usadas nesta chamada: as que vieram de `coordenadasExistentes`, ou as recém-geocodificadas quando não havia nenhuma guardada ainda. O chamador persiste este valor (`guardarRascunho`/backfill nas rotas de regeneração) para nunca mais precisar de geocodificar este pedido. */
+  coordenadasNascimento: CoordenadasNascimento;
 }
 
 /**
@@ -131,9 +173,13 @@ export interface DadosAstrologicos {
  * ronda) — e porque os pesos já vêm com Neecha Bhanga Raja Yoga
  * verificado (Parte 1A), por isso o Modo de Ganho herda a correcção
  * automaticamente.
+ *
+ * `coordenadasExistentes` (RISCO ARQUITECTURAL 7) — quando o chamador já
+ * tem `viq_relatorios.coordenadas_nascimento` guardadas para este pedido,
+ * passa-as aqui para saltar a geocodificação ao vivo por completo.
  */
-export async function calcularDadosAstrologicos(intake: IntakeRow): Promise<DadosAstrologicos> {
-  const { birth, horaAproximada } = await resolverNascimento(intake.local_nascimento, intake.data_nascimento, intake.hora_nascimento);
+export async function calcularDadosAstrologicos(intake: IntakeRow, coordenadasExistentes?: CoordenadasNascimento | null): Promise<DadosAstrologicos> {
+  const { birth, horaAproximada, coordenadas } = await resolverNascimento(intake.local_nascimento, intake.data_nascimento, intake.hora_nascimento, coordenadasExistentes);
 
   const d1 = computeD1Table(birth);
   const pesosPlanetas = computePesosPlanetas(d1);
@@ -159,5 +205,5 @@ export async function calcularDadosAstrologicos(intake: IntakeRow): Promise<Dado
     { planeta: atmakaraka, nakshatra: d1.rows[atmakaraka].nakshatra },
   );
 
-  return { horaAproximada, axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, dadosRicos, catalogoResultados };
+  return { horaAproximada, axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, dadosRicos, catalogoResultados, coordenadasNascimento: coordenadas };
 }

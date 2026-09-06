@@ -84,3 +84,24 @@ Reaproveita sem alterações: zero jargão astrológico visível (mesma lista de
 
 - Não decide se o campo de opções declaradas deve ser acrescentado ao formulário — fica registado como recomendação (secção 1.4), decisão do Code/Alice.
 - Não inclui o ramo jovem/universitário deste produto — só o ramo `trabalho-quero-mudar`, por ser a prioridade desta semana. Os outros ramos (estudante, universitário) reaproveitam mais directamente o que já existe no motor da Naveya para jovens, com ajustes menores — spec separada quando for a vez.
+
+### NEECHA BHANGA RAJA YOGA — IMPLEMENTAÇÃO E LIMITAÇÕES
+
+O motor testa **3 condições**, em `detectarNeechaBhanga()` (`method-engine/src/vocationiq/pesosPlanetas.ts`) — confirmadas por leitura directa do código, cada uma testando uma relação clássica distinta (nunca a mesma verificação repetida com nomes diferentes):
+
+1. **Regente do signo de debilidade forte** — o regente do SIGNO ONDE O PLANETA ESTÁ DEBILITADO está exaltado, em signo próprio, ou em Moolatrikona.
+2. **Planeta exaltado nesse signo, bem colocado** — o planeta que seria exaltado NESSE MESMO SIGNO (não o planeta debilitado, nem o seu regente — um terceiro planeta) está em Kendra (casa 1/4/7/10) do Ascendente ou da Lua.
+3. **Regente da exaltação do próprio planeta, angular** — o regente do SIGNO DE EXALTAÇÃO DO PRÓPRIO PLANETA DEBILITADO (um signo diferente do signo de debilidade) está em Kendra do Ascendente.
+
+As condições 1 e 3 testam planetas diferentes em signos diferentes (o regente da debilidade vs. o regente da exaltação — para a Lua, Marte vs. Vénus) — não é a mesma condição contada duas vezes.
+
+**Condições deliberadamente fora do âmbito**, confirmadas por leitura do código:
+
+- **Cancelação por conjunção/aspecto com planeta benéfico** (Júpiter/Vénus, especialmente em Kendra) — não implementada. `detectarNeechaBhanga()` não testa nenhuma relação de conjunção ou Drishti entre o planeta debilitado e um benéfico.
+- **Exaltação de Ketu em Escorpião** — não implementada, e não por omissão: `DIGNITY_TABLE` (`method-engine/src/data/dignity.ts`) inclui só os 7 grahas clássicos + Rahu; Ketu foi deliberadamente removido desta tabela numa correcção anterior (SPEC-003 v2, Decisão 2) por não haver consenso clássico único sobre a sua exaltação entre escolas — Ketu herda antes a dignidade do regente clássico do signo que ocupa (convenção do dispositor). Nota adicional: mesmo Rahu, que está na tabela, está **debilitado** (não exaltado) em Escorpião nesta convenção — incluí-lo não mudaria o resultado.
+
+**Para a Lua debilitada em Escorpião** (caso testado com dados reais da Nádia — 10/01/1983, 15:02, Luanda): a condição 2 é **estruturalmente impossível** com este motor — nenhum dos 8 planetas com tabela de dignidade (7 clássicos + Rahu) exalta em Escorpião, por isso essa condição falha sempre, para qualquer carta, independentemente da hora de nascimento. Só se verificaria com uma formulação de exaltação de Ketu em Escorpião, deliberadamente excluída pela decisão SPEC-003 v2 acima. As condições 1 e 3 testadas com os dados reais da Nádia também falham (Marte em dignidade Neutra; Vénus fora de Kendra).
+
+**Esta é uma limitação documentada com critério definido — não uma falha de detecção.** Se o especialista quiser incluir a cancelação por benéfico e/ou uma formulação de Ketu aceite pela escola que segue, é uma decisão de metodologia (spec separada), não uma correcção de bug.
+
+Se existem condições adicionais de Neecha Bhanga não implementadas aqui (ex.: uma 4ª condição por disposição mútua entre planetas, ou variantes reconhecidas por outra escola clássica), estas estão fora do âmbito actual do motor — ficam para sessão dedicada com o especialista, para decidir se e como as acrescentar sem alterar as 3 já verificadas.

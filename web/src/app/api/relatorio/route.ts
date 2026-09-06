@@ -81,7 +81,7 @@ export async function POST(request: Request) {
   if (!apiKey) return NextResponse.json({ error: "ANTHROPIC_API_KEY não configurada." }, { status: 503 });
 
   try {
-    const { horaAproximada, axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, catalogoResultados, dadosRicos } = await calcularDadosAstrologicos(intake);
+    const { horaAproximada, axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, catalogoResultados, dadosRicos, coordenadasNascimento } = await calcularDadosAstrologicos(intake);
 
     const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, !horaAproximada, catalogoResultados, savPorCasa);
 
@@ -116,7 +116,7 @@ export async function POST(request: Request) {
     // calculados agora, para essas secções nunca terem de recalcular nem
     // chamar a Anthropic outra vez.
     const dadosTecnicosParaGuardar = { axes, pesos: pesosPlanetas, earningModes: axes.earningModeAll, earningModeDominante: axes.earningModeDominante, datas, savPorCasa, classificacaoMahadashaAtual: dadosRicos.classificacaoMahadashaAtual };
-    const rascunho = await guardarRascunho(intakeId, textoFinal, dadosTecnicosParaGuardar, prompt, { criticaLlm: textoCritica, rascunhoReescrito });
+    const rascunho = await guardarRascunho(intakeId, textoFinal, dadosTecnicosParaGuardar, prompt, { criticaLlm: textoCritica, rascunhoReescrito }, coordenadasNascimento);
 
     // Passa os dados técnicos já calculados ao template — os gráficos
     // (SVG) são sempre gerados a partir destes, nunca do texto do LLM.

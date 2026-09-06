@@ -125,7 +125,7 @@ export function MapaTecnico({ dadosTecnicos, areaActual }: { dadosTecnicos: Dado
   const { axes, pesos, datas, savPorCasa } = dadosTecnicos;
   const pesosOrdenados = [...pesos].sort((a, b) => b.peso - a.peso);
   const tensoes = detectarTensoes(dadosTecnicos, areaActual);
-  const rodaDaVida = computeRodaDaVida(savPorCasa, pesos);
+  const rodaDaVida = computeRodaDaVida(savPorCasa, pesos, axes.regentesCasas);
   const m = axes.missionAxis;
   const casa11 = axes.marketShowcase.house11FromAL;
 

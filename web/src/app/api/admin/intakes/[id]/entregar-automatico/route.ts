@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { hasSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { obterIntake, marcarIntakeEntregue, atualizarEmailIntake } from "@/lib/store";
-import { obterRascunho, guardarRelatorioPdf, marcarRelatorioEnviado, registarEnvio } from "@/lib/storage";
+import { obterRascunho, guardarRelatorioPdf, marcarRelatorioEnviado, registarEnvio, atualizarCoordenadasNascimento } from "@/lib/storage";
 import { sendReportEmail } from "@/lib/email";
 import { registarEventoServidor } from "@/lib/eventLogServer";
 import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTemplate";
@@ -46,7 +46,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!rascunho) return NextResponse.json({ error: "não há rascunho gerado para este pedido" }, { status: 400 });
 
   try {
-    const { axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, horaAproximada, catalogoResultados } = await calcularDadosAstrologicos(intake);
+    const { axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, horaAproximada, catalogoResultados, coordenadasNascimento } = await calcularDadosAstrologicos(intake, rascunho.coordenadasNascimento);
+    if (!rascunho.coordenadasNascimento) {
+      await atualizarCoordenadasNascimento(rascunho.id, coordenadasNascimento).catch((err) => console.error("[entregar-automatico] falha ao gravar coordenadas de nascimento (não bloqueante):", err));
+    }
 
     const dadosTemplate: DadosParaTemplate = {
       nome: intake.nome,

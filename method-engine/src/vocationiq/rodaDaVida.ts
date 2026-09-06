@@ -8,6 +8,7 @@
 // vermelho) fica no template — é apresentação, não dado.
 
 import type { SavPorCasa, PesoPlaneta } from "./pesosPlanetas";
+import type { ClassicalGraha } from "../lifeReport/types";
 
 export interface DimensaoVida {
   nome: string;
@@ -23,13 +24,28 @@ const SAV_MAX = 42;
 /**
  * Valor 0-10 de uma dimensão da Roda da Vida (redesenho do motor, Parte
  * 1C): valor = (SAV_da_casa / SAV_max) * 6 + soma(peso de cada planeta
- * presente na casa) * 0.67. Para dimensões com mais de uma casa, calcula
- * casa a casa e faz a média. Capado a [0,10] só por segurança.
+ * presente na casa, MAIS o peso do regente real dessa casa quando ele não
+ * está fisicamente presente) * 0.67. Para dimensões com mais de uma casa,
+ * calcula casa a casa e faz a média. Capado a [0,10] só por segurança.
+ *
+ * Correcção do especialista (TAREFA 5) — antes desta correcção, a soma só
+ * contava planetas fisicamente presentes na casa, ignorando por completo
+ * QUEM A REGE quando esse regente está sentado noutra casa (o caso comum:
+ * a força de uma casa vem tanto de quem lá está como de quem a governa).
+ * Isto produzia contradições reais entre esta roda e o Modo de Ganho — uma
+ * casa podia ser "dominante" por causa de um regente forte algures, e
+ * aparecer fraca aqui só porque, fisicamente, ninguém a ocupa. Nunca soma
+ * o peso do regente em duplicado quando ele já está fisicamente presente
+ * (nesse caso o peso dele já entra pela soma de ocupantes).
  */
-function valorDimensao(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], casas: number[]): number {
+function valorDimensao(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], casas: number[], regentesCasas: Record<number, ClassicalGraha>): number {
   const valoresPorCasa = casas.map((casa) => {
     const sav = savPorCasa.find((h) => h.casa === casa)?.pontuacao ?? SAV_MIN;
-    const somaPesos = pesos.filter((p) => p.casa === casa).reduce((soma, p) => soma + p.peso, 0);
+    const ocupantes = pesos.filter((p) => p.casa === casa);
+    const regente = regentesCasas[casa];
+    const regenteJaOcupa = ocupantes.some((p) => p.planeta === regente);
+    const pesoRegente = regenteJaOcupa ? 0 : (pesos.find((p) => p.planeta === regente)?.peso ?? 0);
+    const somaPesos = ocupantes.reduce((soma, p) => soma + p.peso, 0) + pesoRegente;
     return (sav / SAV_MAX) * 6 + somaPesos * 0.67;
   });
   const media = valoresPorCasa.reduce((a, b) => a + b, 0) / valoresPorCasa.length;
@@ -38,19 +54,19 @@ function valorDimensao(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], casas: nu
 
 /**
  * Roda da Vida — 8 dimensões universais (não astrológicas no nome), cada
- * uma calculada a partir do SAV E do peso real dos planetas presentes
- * na(s) casa(s) clássica(s) que a sustentam. Sempre determinística —
- * nunca o LLM.
+ * uma calculada a partir do SAV, do peso dos planetas presentes, E do
+ * peso do regente real da(s) casa(s) clássica(s) que a sustentam. Sempre
+ * determinística — nunca o LLM.
  */
-export function computeRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[]): DimensaoVida[] {
+export function computeRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], regentesCasas: Record<number, ClassicalGraha>): DimensaoVida[] {
   return [
-    { nome: "Carreira / Propósito", descricao: "A força da sua vocação e direcção profissional", valor: valorDimensao(savPorCasa, pesos, [10]) },
-    { nome: "Finanças / Recursos", descricao: "A sua relação natural com a geração e gestão de recursos", valor: valorDimensao(savPorCasa, pesos, [2]) },
-    { nome: "Desenvolvimento Pessoal", rotulo: "Desenv. Pessoal", descricao: "A sua capacidade de crescer e expandir o seu mundo", valor: valorDimensao(savPorCasa, pesos, [1, 9]) },
-    { nome: "Saúde / Energia", descricao: "A sua reserva de energia e capacidade de acção", valor: valorDimensao(savPorCasa, pesos, [6]) },
-    { nome: "Relações / Rede", descricao: "A força das suas ligações e do seu círculo", valor: valorDimensao(savPorCasa, pesos, [7, 11]) },
-    { nome: "Criatividade / Expressão", descricao: "A sua capacidade de criar e de se expressar", valor: valorDimensao(savPorCasa, pesos, [5]) },
-    { nome: "Ambiente / Estilo de vida", descricao: "O que a sua carta pede em termos de base e de raízes", valor: valorDimensao(savPorCasa, pesos, [4]) },
-    { nome: "Contribuição / Impacto", descricao: "O que deixa para além de si — a marca que fica nas pessoas e nos sistemas que toca", valor: valorDimensao(savPorCasa, pesos, [9, 11]) },
+    { nome: "Carreira / Propósito", descricao: "A força da sua vocação e direcção profissional", valor: valorDimensao(savPorCasa, pesos, [10], regentesCasas) },
+    { nome: "Finanças / Recursos", descricao: "A sua relação natural com a geração e gestão de recursos", valor: valorDimensao(savPorCasa, pesos, [2], regentesCasas) },
+    { nome: "Desenvolvimento Pessoal", rotulo: "Desenv. Pessoal", descricao: "A sua capacidade de crescer e expandir o seu mundo", valor: valorDimensao(savPorCasa, pesos, [1, 9], regentesCasas) },
+    { nome: "Saúde / Energia", descricao: "A sua reserva de energia e capacidade de acção", valor: valorDimensao(savPorCasa, pesos, [6], regentesCasas) },
+    { nome: "Relações / Rede", descricao: "A força das suas ligações e do seu círculo", valor: valorDimensao(savPorCasa, pesos, [7, 11], regentesCasas) },
+    { nome: "Criatividade / Expressão", descricao: "A sua capacidade de criar e de se expressar", valor: valorDimensao(savPorCasa, pesos, [5], regentesCasas) },
+    { nome: "Ambiente / Estilo de vida", descricao: "O que a sua carta pede em termos de base e de raízes", valor: valorDimensao(savPorCasa, pesos, [4], regentesCasas) },
+    { nome: "Contribuição / Impacto", descricao: "O que deixa para além de si — a marca que fica nas pessoas e nos sistemas que toca", valor: valorDimensao(savPorCasa, pesos, [9, 11], regentesCasas) },
   ];
 }

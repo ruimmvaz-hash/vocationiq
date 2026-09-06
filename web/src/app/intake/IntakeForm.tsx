@@ -516,7 +516,12 @@ const selectHoraClass =
   "w-full rounded-md border border-border bg-paper px-4 py-2.5 text-navy focus:border-navy focus:outline-none focus:ring-1 focus:ring-navy";
 
 const HORAS = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, "0"));
-const MINUTOS = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0"));
+// Correcção do especialista — minutos de 5 em 5 introduzia um erro de até
+// 4 minutos na hora de nascimento, suficiente para mudar o Ascendente em
+// cartas limítrofes (confirmado com dados reais: um erro deste tamanho
+// pode mudar o signo do Ascendente perto de uma cúspide). Minuto a minuto,
+// igual à granularidade do <input type="time"> nativo do desktop.
+const MINUTOS = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
 
 function Campo({ label, hint, required, children }: { label: string; hint?: string; required?: boolean; children: React.ReactNode }) {
   return (

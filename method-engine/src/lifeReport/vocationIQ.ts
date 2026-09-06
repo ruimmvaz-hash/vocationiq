@@ -85,8 +85,10 @@ export interface VocationIQAxes {
   stelliumD1: StelliumHit[];
   /** Bloco 2 — REGRA 2: idem, no D10. */
   stelliumD10: StelliumHit[];
-  /** Regente de cada uma das 12 casas a partir do Ascendente (1-12) — acrescento desta ronda, para o catálogo vocacional poder testar ligações de regência (ex.: "regente da 2 ligado ao regente da 10") sem precisar de acesso ao D1 em bruto. */
+  /** Regente de cada uma das 12 casas a partir do Ascendente (1-12) — acrescento de uma ronda anterior, para o catálogo vocacional poder testar ligações de regência (ex.: "regente da 2 ligado ao regente da 10") sem precisar de acesso ao D1 em bruto. */
   regentesCasas: Record<number, ClassicalGraha>;
+  /** Correcção do especialista (eixo_do_rendimento, TAREFA 4a) — casas (1-12) para onde cada planeta clássico lança Drishti (aspecto), a partir do D1. Acrescentado para `catalogoVocacional.ts` poder testar "regente X em aspecto com regente Y" sem importar `D1TableResult` directamente (mantém vocationiq/ a depender só de lifeReport/, nunca o contrário). */
+  drishtiEmitidoPorPlaneta: Record<ClassicalGraha, number[]>;
 }
 
 /**
@@ -287,6 +289,15 @@ function computeRegentesCasas(d1: D1TableResult): Record<number, ClassicalGraha>
   return regentes;
 }
 
+/** Correcção do especialista (eixo_do_rendimento, TAREFA 4a) — casas para onde cada um dos 7 planetas clássicos lança Drishti (aspecto), lido directamente de `d1.rows`. */
+function computeDrishtiEmitidoPorPlaneta(d1: D1TableResult): Record<ClassicalGraha, number[]> {
+  const resultado = {} as Record<ClassicalGraha, number[]>;
+  for (const g of CLASSICAL_GRAHAS) {
+    resultado[g] = d1.rows[g].drishtiEmittedTargets.map((t) => t.targetHouse);
+  }
+  return resultado;
+}
+
 /**
  * VocationIQ — os 3 eixos obrigatórios (Passos 1-3) + os dados da REGRA
  * 1/2/3 do algoritmo de síntese (Bloco 2). `pesos` é opcional e, quando
@@ -314,5 +325,6 @@ export function computeVocationIQAxes(d1: D1TableResult, pesos?: PesoPlanetaPara
       Object.fromEntries(Object.entries(d10.rows).map(([g, row]) => [g, { sign: row.d10Sign, house: row.d10House }])) as Record<Graha, { sign: ZodiacSign; house: number }>,
     ),
     regentesCasas: computeRegentesCasas(d1),
+    drishtiEmitidoPorPlaneta: computeDrishtiEmitidoPorPlaneta(d1),
   };
 }

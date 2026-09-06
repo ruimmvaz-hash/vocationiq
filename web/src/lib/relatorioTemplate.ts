@@ -4,6 +4,7 @@ import {
   computeRodaDaVida,
   MAHADASHA_CLASSIFICACAO,
   normalizarTextoLivre,
+  type ClassicalGraha,
   type VocationIQAxes,
   type PesoPlaneta,
   type EarningMode,
@@ -559,21 +560,32 @@ interface EixoCompetencia {
  * Radar de competências (melhorias visuais, Parte 2A) — 6 eixos, fórmula
  * exacta pedida: (peso do planeta + SAV_da_casa/SAV_max*10) / 2, capado
  * a [0,10] só por segurança (a mesma cautela já aplicada à Roda da Vida).
+ *
+ * Correcção do especialista (TAREFA 5) — antes desta correcção, cada eixo
+ * usava um planeta clássico FIXO (Mercúrio para "Comunicação", Sol para
+ * "Liderança", etc.), nunca o regente real da casa. Isto podia contradizer
+ * directamente o Modo de Ganho: uma casa podia ser dominante por causa de
+ * um regente forte (ex.: Vénus a reger a casa 10), mas "Liderança"
+ * continuava a perguntar sempre ao Sol, ignorando por completo quem
+ * realmente rege essa casa nesta carta. Agora cada eixo usa
+ * `regentesCasas[casa]` — o planeta correcto muda de pessoa para pessoa,
+ * a casa (e o significado do eixo) não.
  */
-function computeRadarCompetencias(pesos: PesoPlaneta[], savPorCasa: SavPorCasa[]): EixoCompetencia[] {
+function computeRadarCompetencias(pesos: PesoPlaneta[], savPorCasa: SavPorCasa[], regentesCasas: Record<number, ClassicalGraha>): EixoCompetencia[] {
   const pesoDe = (planeta: string) => pesos.find((p) => p.planeta === planeta)?.peso ?? 0;
   const savDe = (casa: number) => savPorCasa.find((h) => h.casa === casa)?.pontuacao ?? 0;
-  const valor = (planeta: string, casa: number) => {
-    const bruto = (pesoDe(planeta) + (savDe(casa) / SAV_MAX_RADAR) * 10) / 2;
+  const valor = (casa: number) => {
+    const regente = regentesCasas[casa];
+    const bruto = (pesoDe(regente) + (savDe(casa) / SAV_MAX_RADAR) * 10) / 2;
     return Math.round(Math.min(10, Math.max(0, bruto)) * 10) / 10;
   };
   return [
-    { nome: "Comunicação", valor: valor("Mercury", 2) },
-    { nome: "Liderança", valor: valor("Sun", 10) },
-    { nome: "Criatividade", valor: valor("Venus", 5) },
-    { nome: "Estrutura", valor: valor("Saturn", 6) },
-    { nome: "Relação", valor: valor("Moon", 7) },
-    { nome: "Execução", valor: valor("Mars", 1) },
+    { nome: "Comunicação", valor: valor(2) },
+    { nome: "Liderança", valor: valor(10) },
+    { nome: "Criatividade", valor: valor(5) },
+    { nome: "Estrutura", valor: valor(6) },
+    { nome: "Relação", valor: valor(7) },
+    { nome: "Execução", valor: valor(1) },
   ];
 }
 
@@ -637,8 +649,8 @@ function svgRadarCompetencias(eixos: EixoCompetencia[]): string {
   </svg>`;
 }
 
-function blocoRadarCompetencias(pesos: PesoPlaneta[], savPorCasa: SavPorCasa[]): string {
-  const eixos = computeRadarCompetencias(pesos, savPorCasa);
+function blocoRadarCompetencias(pesos: PesoPlaneta[], savPorCasa: SavPorCasa[], regentesCasas: Record<number, ClassicalGraha>): string {
+  const eixos = computeRadarCompetencias(pesos, savPorCasa, regentesCasas);
   return `
     <div class="radar-wrap">
       <p class="bloco-titulo" style="text-align:center">O seu perfil de competências</p>
@@ -787,8 +799,8 @@ function blocoDiagramaIdentidade(pesos: PesoPlaneta[], identidade: string | null
     </section>`;
 }
 
-function blocoRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[]): string {
-  const dimensoes = computeRodaDaVida(savPorCasa, pesos);
+function blocoRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], regentesCasas: Record<number, ClassicalGraha>): string {
+  const dimensoes = computeRodaDaVida(savPorCasa, pesos, regentesCasas);
   const lista = dimensoes
     .map(
       (d) => `
@@ -1322,9 +1334,9 @@ export function gerarHTMLRelatorio(
         <p class="grafico-legenda">Verde = a carta apoia com força · Âmbar = suporte moderado · Vermelho = suporte fraco</p>
       </div>
 
-      <div class="subseccao">${blocoRadarCompetencias(pesos, savPorCasa)}</div>
+      <div class="subseccao">${blocoRadarCompetencias(pesos, savPorCasa, axes.regentesCasas)}</div>
 
-      ${blocoRodaDaVida(savPorCasa, pesos)}
+      ${blocoRodaDaVida(savPorCasa, pesos, axes.regentesCasas)}
 
       <div class="subseccao">${tabelaTensoes(pesos, axes.earningModeDominante.map((e) => e.house))}</div>
     </section>
