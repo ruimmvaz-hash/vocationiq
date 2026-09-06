@@ -722,39 +722,65 @@ function blocoDiagramaPonte(dados: DadosParaTemplate, pesos: PesoPlaneta[], axes
  * quando há candidata (ver blocoCandidataForaDaLista).
  */
 function svgDiagramaConvergencia(nomeCandidata: string, camadas: string[]): string {
-  const largura = 640;
-  const cx = largura / 2;
+  const largura = 760;
   const raioCentro = 80;
-  const gapNo = 30;
-  const alturaNos = camadas.length * gapNo;
+  const lineHeight = 15;
+  const gapEntreNos = 14;
   const topo = 20;
+  const maxCarLinhaRotulo = 34;
+  // O círculo fica encostado à direita (não ao centro) — a coluna de
+  // rótulos, à esquerda, precisa de ficar toda FORA da faixa horizontal
+  // do círculo, ou o círculo (pintado por cima) tapa o texto sempre que
+  // um nó cai na sua faixa vertical.
+  const cx = largura - raioCentro - 30;
+  const margemTexto = cx - raioCentro - 40;
+  const pontoDeEntrada = cx - raioCentro - 8;
+
+  // Dois bugs corrigidos (relatório impresso, pág. 16 — diagrama de
+  // convergência da candidata fora da lista):
+  // 1. O rótulo de uma camada sem "(" nem ":" perto do início (ex.:
+  //    "Ideia concreta partilhada aponta para este destino") usava a
+  //    FRASE INTEIRA como rótulo, numa só linha sem quebra — saía dos
+  //    limites do SVG à esquerda. Corrigido com `quebrarLinhas` + altura
+  //    de cada nó calculada a partir do nº real de linhas (antes era um
+  //    espaçamento fixo de 30px que não sabia quantas linhas ia ocupar).
+  // 2. O círculo da candidata ficava no centro do SVG (cx = largura/2) e
+  //    a coluna de texto acabava perto o suficiente do centro para o
+  //    círculo (pintado por cima, depois do texto) tapar metade dos
+  //    rótulos sempre que a sua altura calhava dentro da faixa vertical
+  //    do círculo — a causa mais provável do "sobreposto e ilegível".
+  //    Corrigido movendo o círculo para a direita e definindo
+  //    `margemTexto` com folga (40px) à esquerda da borda do círculo.
+  let cursorY = topo;
+  const nos = camadas.map((c) => {
+    const separador = c.search(/[(:]/);
+    const rotulo = (separador > 0 ? c.slice(0, separador) : c).trim();
+    const linhasRotulo = quebrarLinhas(rotulo, maxCarLinhaRotulo);
+    const blocoAltura = linhasRotulo.length * lineHeight;
+    const centroY = cursorY + blocoAltura / 2;
+    cursorY += blocoAltura + gapEntreNos;
+    const primeiraLinhaY = centroY - ((linhasRotulo.length - 1) * lineHeight) / 2 + 4;
+    const textoTspans = linhasRotulo.map((l, i) => `<tspan x="${margemTexto - 8}" y="${primeiraLinhaY + i * lineHeight}">${escapeHtml(l)}</tspan>`).join("");
+    return { centroY, textoTspans };
+  });
+
+  const alturaNos = cursorY - gapEntreNos - topo;
   const cy = Math.max(topo + alturaNos / 2, raioCentro + 20);
   const altura = Math.max(cy + raioCentro + 20, topo + alturaNos + 20);
-  const margemTexto = largura - 260;
-
-  const nos = camadas
-    .map((c, i) => {
-      // A camada já vem como "Rótulo (detalhe) resto da frase" — separa só o rótulo (antes do primeiro parêntese ou dois-pontos) do resto, para o nó não ficar com uma frase inteira.
-      const separador = c.search(/[(:]/);
-      const rotulo = (separador > 0 ? c.slice(0, separador) : c).trim();
-      const detalhe = (separador > 0 ? c.slice(separador) : "").replace(/^[:(]\s*/, "").trim();
-      const y = topo + i * gapNo + gapNo / 2;
-      const linhasDetalhe = quebrarLinhas(detalhe, 46);
-      return {
-        svg: `
-        <text x="${margemTexto - 10}" y="${y + 4}" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="${AZUL}">${escapeHtml(rotulo)}</text>
-        <path d="M ${margemTexto} ${y} L ${cx + raioCentro + 6} ${cy}" stroke="${AMBAR}" stroke-width="2" fill="none" opacity="0.8" />
-        <circle cx="${margemTexto}" cy="${y}" r="3" fill="${AMBAR}" />`,
-        legenda: `${rotulo}${linhasDetalhe.length ? " — " + linhasDetalhe.join(" ") : ""}`,
-      };
-    });
 
   const linhasCandidata = quebrarLinhas(nomeCandidata, 16);
   const inicioY = cy - ((linhasCandidata.length - 1) * 10) / 2;
   const tspans = linhasCandidata.map((l, i) => `<tspan x="${cx}" y="${inicioY + i * 20}">${escapeHtml(l)}</tspan>`).join("");
 
   return `<svg viewBox="0 0 ${largura} ${altura}" width="100%" style="max-width:${largura}px;height:auto" xmlns="http://www.w3.org/2000/svg">
-    ${nos.map((n) => n.svg).join("")}
+    ${nos
+      .map(
+        (n) => `
+      <text text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="${AZUL}">${n.textoTspans}</text>
+      <path d="M ${margemTexto} ${n.centroY} L ${pontoDeEntrada} ${cy}" stroke="${AMBAR}" stroke-width="2" fill="none" opacity="0.8" />
+      <circle cx="${margemTexto}" cy="${n.centroY}" r="3" fill="${AMBAR}" />`,
+      )
+      .join("")}
     <circle cx="${cx}" cy="${cy}" r="${raioCentro}" fill="${AZUL}" />
     <text text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#FFFFFF">${tspans}</text>
   </svg>`;

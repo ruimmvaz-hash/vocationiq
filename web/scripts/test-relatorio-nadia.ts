@@ -19,6 +19,7 @@ import {
   computeSavPorCasa,
   currentDasha,
   computeTransits,
+  computeWesternTable,
   catalogarDestinos,
   type DadosDatas,
   type BirthInput,
@@ -58,8 +59,8 @@ INSIGHT: A estrutura para liderar já existe — falta ainda o canal para a expr
 4. A sua matéria entra aqui pela forma como estrutura e sustenta, não pela rapidez com que comunica — a liderança que a sua carta aponta é de fundo, não de palco.
 
 ## Candidata fora da lista
-CANDIDATA: nenhuma
-Para uma candidata fora da lista precisava de convergirem pelo menos quatro camadas independentes incluindo a peça mais forte da sua carta — isso não acontece aqui. "A sua carta não aponta a nada fora do que já pensava" é a resposta honesta desta secção.
+CANDIDATA: Ciências da Informação e Documentação
+Seis camadas independentes da sua carta convergem nesta área, incluindo o planeta mais forte que tem — é uma força estrutural que ainda não tinha nomeado.
 
 ## O plano
 O período actual pede que prepare e feche o que já não serve, antes de colher o que vem a seguir — não é o momento de anunciar em grande, é o de organizar por dentro.
@@ -111,13 +112,37 @@ async function main() {
     opcoesConsideradas: [], // areasDestino: [] — caso "sem opções declaradas" (SPEC 1.3)
   };
 
+  const regenteAscendenteOcidental = computeWesternTable(birth).ascendant.ruler;
   const catalogoResultados = catalogarDestinos(
     axes,
     pesosPlanetas,
     savPorCasa,
     { areaActual: dadosTemplate.areaActual, anosExperiencia: dadosTemplate.anosExperiencia },
     { planeta: axes.missionAxis.atmakaraka, nakshatra: d1.rows[axes.missionAxis.atmakaraka].nakshatra },
+    regenteAscendenteOcidental,
   );
+  // Correcção visual do diagrama de convergência (relatório impresso, pág.
+  // 16) — força um caso de teste com 6 camadas, incluindo deliberadamente
+  // os 2 rótulos mais longos que causavam a sobreposição/corte no SVG
+  // (frases sem "(" nem ":" perto do início, que antes viravam um único
+  // rótulo por inteiro sem quebra de linha). Só activo quando se pede
+  // explicitamente "relatorio-v8.html" — nos outros nomes de ficheiro o
+  // resultado real do catálogo continua a mandar.
+  if (process.argv[2] === "relatorio-v8.html") {
+    catalogoResultados.candidataForaDaLista = {
+      nome: "Ciências da Informação e Documentação",
+      convergencia: 6,
+      camadas: [
+        "Planeta de maior peso (Saturn, peso 1.76) aponta para este destino",
+        "Regente do Modo de Ganho dominante (Saturn, casa 10) — eixo do rendimento aponta para este destino",
+        "Casa temática forte (casa 9): dharma, ensino superior, filosofia, publicação, teologia, direito internacional, viagem, tradução académica, ética, ciências da religião, escrita de não-ficção",
+        "Ideia concreta partilhada aponta para este destino",
+        `Sinais estruturados da área "Ciências da Informação e Documentação" confirmam (índice inverso)`,
+        "Combinação sol+vénus (mesma casa) aponta para este destino",
+      ],
+    };
+  }
+
   const html = gerarHTMLRelatorio(dadosTemplate, TEXTO_EXEMPLO, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
 
   const outDir = join(process.cwd(), "..", "docs");
