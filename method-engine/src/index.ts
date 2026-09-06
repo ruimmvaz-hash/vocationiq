@@ -110,10 +110,13 @@ export { computeAshtaKuta, type AshtaKutaResult, type AshtaKutaScore } from "./l
 export {
   computePesosPlanetas,
   computeSavPorCasa,
+  computeApoioPorAreaDeVida,
+  valorCasaUnificado,
   detectarNeechaBhanga,
   ESTADO_PESO,
   type PesoPlaneta,
   type SavPorCasa,
+  type ApoioPorAreaDeVida,
   type ClassificacaoApoio,
   type EstadoPlaneta,
   type NeechaBhangaResultado,

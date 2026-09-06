@@ -30,6 +30,8 @@ import catalogoIndicePlanetasJson from "../data/vocacional/catalogo-indice-plane
 import catalogoIndiceNakshatrasJson from "../data/vocacional/catalogo-indice-nakshatras.json";
 import catalogoIndiceCombinacoesJson from "../data/vocacional/catalogo-indice-combinacoes.json";
 import catalogoIndiceInversoJson from "../data/vocacional/catalogo-indice-inverso.json";
+import catalogoIndiceCasasJson from "../data/vocacional/catalogo-indice-casas.json";
+import catalogoRaridadeJson from "../data/vocacional/catalogo-raridade.json";
 
 import type { VocationIQAxes } from "../lifeReport/vocationIQ";
 import type { PesoPlaneta } from "./pesosPlanetas";
@@ -249,6 +251,60 @@ function avaliarEixoDoRendimento(axes: VocationIQAxes, pesos: PesoPlaneta[]): { 
   return ativas;
 }
 
+// ---------- Casa temática forte (correcção do especialista) ----------
+
+/**
+ * Correcção do especialista — `catalogo-indice-casas.json`: cada uma das
+ * 12 casas liga directamente a um cluster de destinos curado
+ * (`catalogo-destinos.json`), independente de quem a rege nesta carta
+ * específica. Substitui o mecanismo anterior (via `destinosDoPlaneta` do
+ * regente) — antes, "casa temática forte" só conseguia apontar para os
+ * destinos já indexados sob o PLANETA regente (ex.: Saturno nunca aponta
+ * para ensino/dharma, por mais forte que a casa 9 seja); agora aponta
+ * directamente para o TEMA da casa em si.
+ */
+interface EntradaCasaTematica {
+  tema: string;
+  destinos: string[];
+}
+const catalogoIndiceCasas = catalogoIndiceCasasJson.casas as unknown as Record<string, EntradaCasaTematica>;
+
+/** `raridade(destino) = log(total_de_fontes / nº_de_fontes_que_o_nomeiam)` (SPEC-pontuacao-catalogo.md) — maior valor = mais raro (nomeado por menos fontes). Usado só no 3º critério de desempate entre candidatas (ver `escolherMelhorCandidata`). */
+const catalogoRaridade = catalogoRaridadeJson as unknown as Record<string, number>;
+
+/** As 12 casas — todas têm tema atribuído em `catalogo-indice-casas.json`. Não é uma tabela de destinos em si — só a lista de quais casas avaliar; o cruzamento com o catálogo vem sempre de `catalogoIndiceCasas`. */
+const CASAS_TEMATICAS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
+
+/**
+ * Uma casa qualifica como "temática forte" com ≥2 dos 3 sinais internos
+ * independentes pedidos — o 3º sinal ("regente do Ascendente nesta
+ * casa") conta uma vez só mesmo que TANTO o regente védico COMO o
+ * ocidental estejam lá (é um sinal, "o Ascendente está representado
+ * aqui", não dois). `regenteAscendenteOcidental` é opcional — quando
+ * ausente (chamador ainda não calculou o D1 ocidental), este sinal cai
+ * de volta a testar só o regente védico.
+ */
+function casaTematicaForte(casa: number, axes: VocationIQAxes, pesos: PesoPlaneta[], regenteAscendenteOcidental?: ClassicalGraha): boolean {
+  let sinais = 0;
+
+  const regenteDaCasa = axes.regentesCasas[casa];
+  if (pesoDoPlaneta(pesos, regenteDaCasa) >= 1.3) sinais += 1;
+
+  if (axes.missionAxis.karakamshaHouse === casa) sinais += 1;
+
+  const regenteAscVedico = axes.regentesCasas[1];
+  const regenteAscVedicoNaCasa = casaDe(pesos, regenteAscVedico) === casa;
+  const regenteAscOcidentalNaCasa = regenteAscendenteOcidental !== undefined && casaDe(pesos, regenteAscendenteOcidental) === casa;
+  if (regenteAscVedicoNaCasa || regenteAscOcidentalNaCasa) sinais += 1;
+
+  return sinais >= 2;
+}
+
+/** As casas temáticas que qualificam como "fortes" nesta carta — avaliado uma vez por pedido (nunca recalculado por destino), mesmo padrão de `avaliarEixoDoRendimento`. */
+function avaliarCasasTematicasFortes(axes: VocationIQAxes, pesos: PesoPlaneta[], regenteAscendenteOcidental?: ClassicalGraha): number[] {
+  return CASAS_TEMATICAS.filter((casa) => casaTematicaForte(casa, axes, pesos, regenteAscendenteOcidental));
+}
+
 // ---------- Camadas independentes por destino ----------
 
 export interface AtmakarakaInfo {
@@ -265,14 +321,44 @@ interface ContextoAvaliacao {
   palavrasIdeiaConcreta: string[];
   /** Correcção do especialista (TAREFA 4a) — as condições de eixo_do_rendimento já avaliadas uma vez por pedido (nunca recalculadas por destino). */
   eixoDoRendimentoActivo: { planetas: ClassicalGraha[]; nota: NotaEixoRendimento }[];
+  /** Correcção do especialista (Correcção 3) — as casas temáticas que qualificam como "fortes" nesta carta, já avaliadas uma vez por pedido. */
+  casasTematicasFortes: number[];
+  /** Correcção do especialista — o planeta com maior `peso_planeta` desta carta, usado (Correcção 2) como portão da candidata fora da lista em vez do Atmakaraka. */
+  planetaDeMaiorPeso: ClassicalGraha;
+}
+
+/** Correcção do especialista (Correcção 2) — "peça mais forte da carta" ≠ Atmakaraka (posição técnica, maior grau) — é o planeta com maior `peso_planeta` (estado × SAV/média), a mesma força já usada em todo o resto do motor (Modo de Ganho, Roda da Vida, Radar). */
+function planetaDeMaiorPeso(pesos: PesoPlaneta[]): ClassicalGraha {
+  return pesos.reduce((a, b) => (b.peso > a.peso ? b : a)).planeta;
 }
 
 /** As camadas independentes que sustentam UM destino específico — nunca duas vezes o mesmo sistema (ver DESVIO no topo do ficheiro). */
 function camadasParaDestino(destinoId: string, ctx: ContextoAvaliacao): string[] {
   const camadas: string[] = [];
 
-  if (destinosDoPlaneta(ctx.atmakarakaInfo.planeta).includes(destinoId)) camadas.push(`Atmakaraka (${ctx.atmakarakaInfo.planeta}) aponta para este destino`);
+  // Correcção do especialista (Correcção 2) — quando o Atmakaraka TAMBÉM
+  // é o planeta de maior peso (mesmo planeta), a camada tem de citar
+  // explicitamente "Planeta de maior peso" — é essa etiqueta, não
+  // "Atmakaraka", que `catalogarDestinos` usa como portão da candidata
+  // fora da lista. Nunca as duas camadas ao mesmo tempo para o mesmo
+  // facto (violaria "nunca duas vezes o mesmo sistema").
+  const atmakarakaEhTambemMaiorPeso = ctx.atmakarakaInfo.planeta === ctx.planetaDeMaiorPeso;
+  if (destinosDoPlaneta(ctx.atmakarakaInfo.planeta).includes(destinoId)) {
+    if (atmakarakaEhTambemMaiorPeso) {
+      camadas.push(`Planeta de maior peso — também o Atmakaraka (${ctx.planetaDeMaiorPeso}, peso ${pesoDoPlaneta(ctx.pesos, ctx.planetaDeMaiorPeso).toFixed(2)}) aponta para este destino`);
+    } else {
+      camadas.push(`Atmakaraka (${ctx.atmakarakaInfo.planeta}) aponta para este destino`);
+    }
+  }
   if (destinosDoPlaneta(ctx.axes.amatyakaraka).includes(destinoId)) camadas.push(`Amatyakaraka (${ctx.axes.amatyakaraka}) aponta para este destino`);
+
+  // Camada própria para o planeta de maior peso — portão da candidata
+  // fora da lista (ver `catalogarDestinos`). Só entra aqui quando NÃO
+  // coincide com o Atmakaraka (esse caso já foi coberto acima, com a
+  // etiqueta certa, sem duplicar o facto).
+  if (!atmakarakaEhTambemMaiorPeso && destinosDoPlaneta(ctx.planetaDeMaiorPeso).includes(destinoId)) {
+    camadas.push(`Planeta de maior peso (${ctx.planetaDeMaiorPeso}, peso ${pesoDoPlaneta(ctx.pesos, ctx.planetaDeMaiorPeso).toFixed(2)}) aponta para este destino`);
+  }
 
   const entradaNakshatra = catalogoIndiceNakshatras[nakshatraParaChave(ctx.atmakarakaInfo.nakshatra)];
   if (entradaNakshatra?.destinos.includes(destinoId)) camadas.push(`Nakshatra do Atmakaraka (${ctx.atmakarakaInfo.nakshatra}) aponta para este destino`);
@@ -322,6 +408,26 @@ function camadasParaDestino(destinoId: string, ctx: ContextoAvaliacao): string[]
     camadas.push(`Eixo do rendimento: ${condicaoEixoActiva.nota.leitura}`);
   }
 
+  // Correcção do especialista — "casa temática forte": uma camada por
+  // CASA que qualifica (≥2 sinais internos, ver `casaTematicaForte`) E
+  // cujo CLUSTER TEMÁTICO (catalogo-indice-casas.json — independente de
+  // quem rege a casa nesta carta) inclui este destino — nunca mais do que
+  // 1 camada por casa (os sinais internos decidem SE a casa qualifica,
+  // não quantas camadas ela dá), mas casas temáticas DIFERENTES que ambas
+  // qualifiquem e apontem para o mesmo destino contam como camadas
+  // independentes (o mesmo princípio já usado para co-dominância no Modo
+  // de Ganho). Substitui a 1ª versão desta correcção (que usava
+  // `destinosDoPlaneta(regente)` — por isso Saturno, regente forte da
+  // casa 9 da Nádia, nunca conseguia apontar para ensino/dharma: o índice
+  // de planetas nunca liga Saturno a esses destinos, só o índice de
+  // casas, novo, o faz).
+  for (const casa of ctx.casasTematicasFortes) {
+    const entradaCasa = catalogoIndiceCasas[String(casa)];
+    if (entradaCasa?.destinos.includes(destinoId)) {
+      camadas.push(`Casa temática forte (casa ${casa}): ${entradaCasa.tema}`);
+    }
+  }
+
   const areaTabelada = catalogoIndiceInverso.find((a) => a.destinos.includes(destinoId));
   if (areaTabelada && areaTabeladaConfirma(areaTabelada, ctx.pesos, ctx.savPorCasa)) {
     camadas.push(`Sinais estruturados da área "${areaTabelada.label}" confirmam (índice inverso)`);
@@ -339,22 +445,107 @@ function camadasParaDestino(destinoId: string, ctx: ContextoAvaliacao): string[]
   return camadas;
 }
 
+// ========================================================================
+// REGRA PERMANENTE DE DESEMPATE ENTRE CANDIDATAS — aprovada pelo
+// especialista. NÃO ALTERAR SEM APROVAÇÃO DO ESPECIALISTA.
+//
+// Quando mais do que uma candidata atinge ≥4 camadas e passa o portão do
+// planeta de maior peso (ver `catalogarDestinos`), o desempate segue,
+// nesta ordem, o primeiro critério que não empatar:
+//
+// 1º — soma dos pesos das camadas (peso do planeta que originou cada
+//      camada, quando aplicável; 1,0 para camadas sem planeta específico
+//      — ex.: "Casa temática forte", "Sinais estruturados da área").
+// 2º — nº de subsistemas distintos entre as camadas: D-1/casa (posição
+//      na carta natal), D-9/Karakamsha (via Nakshatra do Atmakaraka),
+//      Dasha (período temporal — nenhuma camada actual usa este
+//      subsistema, ver nota em `analisarCamada`), Índice do catálogo
+//      (eixo do rendimento, área tabelada, área actual, ideia concreta).
+// 3º — `catalogo-raridade.json`: o destino mais raro (maior valor) vence.
+//
+// Se os 3 critérios empatarem por completo (nunca observado com dados
+// reais até à data), a ordem de inserção em `idsCarta` decide — o mesmo
+// comportamento residual já documentado para o Modo de Ganho.
+// ========================================================================
+
+type SubsistemaCamada = "d1_posicao" | "d9_karakamsha" | "dasha" | "indice_catalogo";
+
+/**
+ * Extrai o peso associado a uma camada e o subsistema de onde vem — nunca
+ * por regex genérica: por prefixos exactos das strings que
+ * `camadasParaDestino` produz (controladas neste mesmo ficheiro, nunca
+ * texto do LLM nem de outra fonte externa).
+ *
+ * DESVIO — nenhuma camada actual usa dados de Dasha (Mahadasha/
+ * Antardasha); o subsistema "dasha" existe na regra de desempate porque o
+ * especialista o pediu explicitamente, mas nunca é atribuído na prática
+ * até o motor ganhar uma camada ligada a períodos — não inventado aqui.
+ */
+function analisarCamada(camada: string, ctx: ContextoAvaliacao): { pesoAssociado: number; subsistema: SubsistemaCamada } {
+  if (camada.startsWith("Atmakaraka")) return { pesoAssociado: pesoDoPlaneta(ctx.pesos, ctx.atmakarakaInfo.planeta), subsistema: "d1_posicao" };
+  if (camada.startsWith("Amatyakaraka")) return { pesoAssociado: pesoDoPlaneta(ctx.pesos, ctx.axes.amatyakaraka), subsistema: "d1_posicao" };
+  if (camada.startsWith("Planeta de maior peso")) return { pesoAssociado: pesoDoPlaneta(ctx.pesos, ctx.planetaDeMaiorPeso), subsistema: "d1_posicao" };
+  if (camada.startsWith("Nakshatra do Atmakaraka")) return { pesoAssociado: pesoDoPlaneta(ctx.pesos, ctx.atmakarakaInfo.planeta), subsistema: "d9_karakamsha" };
+  if (camada.startsWith("Combinação")) {
+    const match = camada.match(/^Combinação ([a-z]+)\+([a-z]+) /);
+    if (match) {
+      const a = (PLANETA_PT_PARA_GRAHA[match[1]] ?? match[1]) as ClassicalGraha;
+      const b = (PLANETA_PT_PARA_GRAHA[match[2]] ?? match[2]) as ClassicalGraha;
+      return { pesoAssociado: (pesoDoPlaneta(ctx.pesos, a) + pesoDoPlaneta(ctx.pesos, b)) / 2, subsistema: "d1_posicao" };
+    }
+    return { pesoAssociado: 1.0, subsistema: "d1_posicao" };
+  }
+  if (camada.startsWith("Regente do Modo de Ganho dominante")) {
+    const match = camada.match(/^Regente do Modo de Ganho dominante \(([A-Za-z]+),/);
+    const planeta = match ? (match[1] as ClassicalGraha) : undefined;
+    return { pesoAssociado: planeta ? pesoDoPlaneta(ctx.pesos, planeta) : 1.0, subsistema: "d1_posicao" };
+  }
+  if (camada.startsWith("Casa temática forte")) return { pesoAssociado: 1.0, subsistema: "d1_posicao" };
+  // Eixo do rendimento, Sinais estruturados da área, Área actual declarada,
+  // Ideia concreta partilhada — sinais do índice do catálogo, sem um único
+  // planeta a que se possa atribuir o peso.
+  return { pesoAssociado: 1.0, subsistema: "indice_catalogo" };
+}
+
+/**
+ * Compara duas candidatas EMPATADAS em convergência pelos 3 critérios da
+ * regra permanente — devolve negativo se `a` vence, positivo se `b`
+ * vence, 0 só no empate total residual (decidido depois por ordem de
+ * inserção, nunca aqui).
+ */
+function compararCandidatasEmpatadas(a: DestinoConvergente, b: DestinoConvergente): number {
+  if (a.somaPesoCamadas !== b.somaPesoCamadas) return b.somaPesoCamadas - a.somaPesoCamadas;
+  if (a.subsistemasDistintos !== b.subsistemasDistintos) return b.subsistemasDistintos - a.subsistemasDistintos;
+  const raridadeA = catalogoRaridade[a.id] ?? 0;
+  const raridadeB = catalogoRaridade[b.id] ?? 0;
+  return raridadeB - raridadeA;
+}
+
 export interface DestinoConvergente {
   id: string;
   nome: string;
   descricao: string;
   convergencia: number;
   camadas: string[];
+  /** Regra permanente de desempate, 1º critério — soma dos pesos das camadas. */
+  somaPesoCamadas: number;
+  /** Regra permanente de desempate, 2º critério — nº de subsistemas distintos entre as camadas. */
+  subsistemasDistintos: number;
 }
 
 function construirDestinoConvergente(id: string, ctx: ContextoAvaliacao): DestinoConvergente {
   const destino = catalogoDestinos[id];
   const camadas = camadasParaDestino(id, ctx);
+  const analisadas = camadas.map((c) => analisarCamada(c, ctx));
+  const somaPesoCamadas = Math.round(analisadas.reduce((soma, a) => soma + a.pesoAssociado, 0) * 1000) / 1000;
+  const subsistemasDistintos = new Set(analisadas.map((a) => a.subsistema)).size;
   return {
     id,
     nome: destino?.labels.PT ?? id,
     descricao: destino ? `Via ${destino.camada === "superior" ? "ensino superior" : destino.camada === "tecnico" ? "técnica/profissional" : "fora do sistema formal"}.` : "",
     convergencia: camadas.length,
+    somaPesoCamadas,
+    subsistemasDistintos,
     camadas,
   };
 }
@@ -404,7 +595,15 @@ function areaActualEGenerica(areaActual: string): boolean {
  * `catalogarDestinos` aplica às alternativas. Útil para responder "porque
  * é que X não apareceu?" sem ter de repetir a lógica de contexto.
  */
-export function depurarCamadasDestino(destinoId: string, axes: VocationIQAxes, pesos: PesoPlaneta[], savPorCasa: SavPorCasa[], intake: IntakeParaCatalogo, atmakarakaInfo: AtmakarakaInfo): string[] {
+export function depurarCamadasDestino(
+  destinoId: string,
+  axes: VocationIQAxes,
+  pesos: PesoPlaneta[],
+  savPorCasa: SavPorCasa[],
+  intake: IntakeParaCatalogo,
+  atmakarakaInfo: AtmakarakaInfo,
+  regenteAscendenteOcidental?: ClassicalGraha,
+): string[] {
   const ctx: ContextoAvaliacao = {
     axes,
     pesos,
@@ -413,12 +612,23 @@ export function depurarCamadasDestino(destinoId: string, axes: VocationIQAxes, p
     palavrasAreaActual: palavrasSignificativas(intake.areaActual),
     palavrasIdeiaConcreta: intake.ideiaConcreta ? palavrasSignificativas(intake.ideiaConcreta) : [],
     eixoDoRendimentoActivo: avaliarEixoDoRendimento(axes, pesos),
+    casasTematicasFortes: avaliarCasasTematicasFortes(axes, pesos, regenteAscendenteOcidental),
+    planetaDeMaiorPeso: planetaDeMaiorPeso(pesos),
   };
   return camadasParaDestino(destinoId, ctx);
 }
 
-export function catalogarDestinos(axes: VocationIQAxes, pesos: PesoPlaneta[], savPorCasa: SavPorCasa[], intake: IntakeParaCatalogo, atmakarakaInfo: AtmakarakaInfo): ResultadoCatalogoVocacional {
+export function catalogarDestinos(
+  axes: VocationIQAxes,
+  pesos: PesoPlaneta[],
+  savPorCasa: SavPorCasa[],
+  intake: IntakeParaCatalogo,
+  atmakarakaInfo: AtmakarakaInfo,
+  regenteAscendenteOcidental?: ClassicalGraha,
+): ResultadoCatalogoVocacional {
   const eixoDoRendimentoActivo = avaliarEixoDoRendimento(axes, pesos);
+  const casasTematicasFortes = avaliarCasasTematicasFortes(axes, pesos, regenteAscendenteOcidental);
+  const maiorPeso = planetaDeMaiorPeso(pesos);
   const ctx: ContextoAvaliacao = {
     axes,
     pesos,
@@ -427,6 +637,8 @@ export function catalogarDestinos(axes: VocationIQAxes, pesos: PesoPlaneta[], sa
     palavrasAreaActual: palavrasSignificativas(intake.areaActual),
     palavrasIdeiaConcreta: intake.ideiaConcreta ? palavrasSignificativas(intake.ideiaConcreta) : [],
     eixoDoRendimentoActivo,
+    casasTematicasFortes,
+    planetaDeMaiorPeso: maiorPeso,
   };
 
   const areaGenerica = areaActualEGenerica(intake.areaActual);
@@ -451,6 +663,13 @@ export function catalogarDestinos(axes: VocationIQAxes, pesos: PesoPlaneta[], sa
     ...destinosDoPlaneta(axes.amatyakaraka),
     ...(catalogoIndiceNakshatras[nakshatraParaChave(atmakarakaInfo.nakshatra)]?.destinos ?? []),
     ...axes.earningModeDominante.flatMap((e) => destinosDoPlaneta(e.lord)),
+    // Correcção do especialista — "casa temática forte" É destino-
+    // específica por natureza (liga-se sempre ao cluster de
+    // catalogo-indice-casas.json, mesmo padrão de Atmakaraka/
+    // Amatyakaraka), ao contrário do eixo_do_rendimento (facto do nível
+    // da carta) — por isso, ao contrário daquele, entra legitimamente
+    // aqui.
+    ...casasTematicasFortes.flatMap((casa) => catalogoIndiceCasas[String(casa)]?.destinos ?? []),
     ...catalogoIndiceCombinacoes
       .filter((c) => {
         const [a, b] = c.par.map((p) => PLANETA_PT_PARA_GRAHA[p] ?? p);
@@ -496,19 +715,32 @@ export function catalogarDestinos(axes: VocationIQAxes, pesos: PesoPlaneta[], sa
 
   // Passo 4 — candidata fora da lista: só entre as ALTERNATIVAS (nunca
   // repete uma opção que a área actual já descreve), só se ≥4 camadas
-  // independentes convergirem, E só se o Atmakaraka (a peça mais forte
-  // da carta) for uma delas.
+  // independentes convergirem, E só se o PLANETA DE MAIOR PESO (a peça
+  // mais forte da carta) for uma delas.
   //
-  // Este último critério não estava no pedido original à letra, mas é a
-  // correcção directa ao bug que motivou toda a SPEC-vocacional.md: no
-  // mapa da Melina, testado aqui com dados reais, "Direito" acumulava 4
-  // camadas (Amatyakaraka, Nakshatra, uma combinação, e a área tabelada)
-  // SEM NENHUMA vir do Atmakaraka (Saturno) — exactamente o padrão
-  // "ganha por ser comum, não por ser dela" que a spec documenta ter
-  // acontecido no catálogo antigo. Exigir a camada do Atmakaraka é o
-  // mínimo estrutural para nunca reproduzir esse padrão.
-  const elegveis = destinosAlternativos.filter((d) => d.convergencia >= LIMIAR_MINIMO_CANDIDATA && d.camadas.some((c) => c.startsWith("Atmakaraka")));
-  const melhor = elegveis.length ? elegveis.reduce((a, b) => (b.convergencia > a.convergencia ? b : a)) : null;
+  // Correcção do especialista (Correcção 2) — o portão usava o Atmakaraka
+  // como proxy para "peça mais forte da carta", mas são coisas diferentes:
+  // Atmakaraka é uma posição TÉCNICA (maior grau, ligado ao propósito da
+  // alma), nunca uma medida de força. Confirmado com a carta real da
+  // Nádia: o Atmakaraka é o Sol (peso 1,02), mas Saturno (exaltado,
+  // regente de duas casas) tem peso 1,76 — muito mais forte. O portão
+  // original deixava "Direito" passar por uma ligação genérica e
+  // arquetípica do Sol (materia_prima "decidir e responder pela decisão"
+  // → Direito/Política, independente da casa onde o Sol está), enquanto
+  // ignorava sinais muito mais específicos da carta ligados a Saturno.
+  // Mantém a mesma lógica estrutural da correcção anterior (evitar
+  // "ganha por ser comum, não por ser dela") — só troca QUAL planeta
+  // conta como "a peça mais forte".
+  const elegveis = destinosAlternativos.filter((d) => d.convergencia >= LIMIAR_MINIMO_CANDIDATA && d.camadas.some((c) => c.startsWith("Planeta de maior peso")));
+  // Regra permanente de desempate (ver bloco acima) — primeiro por
+  // convergência, depois pelos 3 critérios aprovados pelo especialista,
+  // só entre as candidatas empatadas na convergência mais alta.
+  const melhor = elegveis.length
+    ? elegveis.reduce((a, b) => {
+        if (b.convergencia !== a.convergencia) return b.convergencia > a.convergencia ? b : a;
+        return compararCandidatasEmpatadas(a, b) <= 0 ? a : b;
+      })
+    : null;
 
   const notaCondicao5 = eixoDoRendimentoActivo.find((a) => a.planetas.length === 0);
 

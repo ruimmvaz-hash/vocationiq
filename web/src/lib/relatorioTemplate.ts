@@ -4,6 +4,8 @@ import {
   computeRodaDaVida,
   MAHADASHA_CLASSIFICACAO,
   normalizarTextoLivre,
+  computeApoioPorAreaDeVida,
+  valorCasaUnificado,
   type ClassicalGraha,
   type VocationIQAxes,
   type PesoPlaneta,
@@ -548,37 +550,23 @@ function svgRodaDaVida(dimensoes: DimensaoVida[]): string {
 
 // ---------- Melhorias visuais ao template (Parte 2) ----------
 
-/** Mesmo tecto usado por rodaDaVida.ts para normalizar SAV para 0-10 — não exportado de lá (é interno àquele módulo), por isso o mesmo valor (337 pontos totais / 12 casas ≈ 42 no limiar superior típico) é repetido aqui, nunca reinventado com outro número. */
-const SAV_MAX_RADAR = 42;
-
 interface EixoCompetencia {
   nome: string;
   valor: number;
 }
 
 /**
- * Radar de competências (melhorias visuais, Parte 2A) — 6 eixos, fórmula
- * exacta pedida: (peso do planeta + SAV_da_casa/SAV_max*10) / 2, capado
- * a [0,10] só por segurança (a mesma cautela já aplicada à Roda da Vida).
- *
- * Correcção do especialista (TAREFA 5) — antes desta correcção, cada eixo
- * usava um planeta clássico FIXO (Mercúrio para "Comunicação", Sol para
- * "Liderança", etc.), nunca o regente real da casa. Isto podia contradizer
- * directamente o Modo de Ganho: uma casa podia ser dominante por causa de
- * um regente forte (ex.: Vénus a reger a casa 10), mas "Liderança"
- * continuava a perguntar sempre ao Sol, ignorando por completo quem
- * realmente rege essa casa nesta carta. Agora cada eixo usa
- * `regentesCasas[casa]` — o planeta correcto muda de pessoa para pessoa,
- * a casa (e o significado do eixo) não.
+ * Radar de competências — cada eixo usa `valorCasaUnificado`
+ * (method-engine), a fórmula final aprovada pelo especialista após 3
+ * rondas de diagnóstico com dados reais, partilhada com a Roda da Vida e
+ * o Anexo "Apoio por área de vida" para os 3 nunca divergirem entre si
+ * (exigência explícita: mesma fórmula, mesmos cortes, nos 3 sítios).
+ * Cada eixo continua ligado a UMA casa fixa (2/10/5/6/7/1) — só o
+ * planeta que a rege muda de pessoa para pessoa, via `regentesCasas`.
  */
 function computeRadarCompetencias(pesos: PesoPlaneta[], savPorCasa: SavPorCasa[], regentesCasas: Record<number, ClassicalGraha>): EixoCompetencia[] {
-  const pesoDe = (planeta: string) => pesos.find((p) => p.planeta === planeta)?.peso ?? 0;
   const savDe = (casa: number) => savPorCasa.find((h) => h.casa === casa)?.pontuacao ?? 0;
-  const valor = (casa: number) => {
-    const regente = regentesCasas[casa];
-    const bruto = (pesoDe(regente) + (savDe(casa) / SAV_MAX_RADAR) * 10) / 2;
-    return Math.round(Math.min(10, Math.max(0, bruto)) * 10) / 10;
-  };
+  const valor = (casa: number) => valorCasaUnificado(savDe(casa), casa, pesos, regentesCasas).valor;
   return [
     { nome: "Comunicação", valor: valor(2) },
     { nome: "Liderança", valor: valor(10) },
@@ -1057,23 +1045,54 @@ function blocoOPlano(corpo: string, datas: DadosDatas): string {
     ${primeiroPasso ? `<div class="caixa-primeiro-passo"><p class="caixa-primeiro-passo-label">O seu primeiro passo esta semana</p><p>${escapeHtml(primeiroPasso)}</p></div>` : ""}`;
 }
 
-function tabelaApoioPorAreaDeVida(savPorCasa: SavPorCasa[]): string {
-  const linhas = [...savPorCasa]
+/**
+ * Correcção do especialista — a classificação já não vem só do SAV bruto
+ * (`h.classificacao`, que ainda existe e é usada por
+ * `catalogoVocacional.ts` para o sinal "casa_activa", nunca alterada
+ * aqui): agora usa `computeApoioPorAreaDeVida` (SAV + peso do regente
+ * real, mesma família de fórmula já aplicada à Roda da Vida e ao Radar —
+ * Bug 5 estendido ao 3º e último sítio que ainda usava SAV isolado). O
+ * número "Apoio" mostrado continua a ser o SAV bruto (o dado clássico
+ * citável) — só a cor/rótulo da classificação muda.
+ */
+/**
+ * As casas que sustentam a tese central do relatório — o Eixo da Missão
+ * (Atmakaraka + Karakamsha) e o Modo de Ganho dominante (pode ser 2 casas
+ * em caso de co-dominância). Usado só para decidir se uma casa "Forte" no
+ * Anexo precisa da nota de contexto abaixo — nunca afecta a pontuação.
+ */
+function casasCentraisDaTese(axes: VocationIQAxes): Set<number> {
+  return new Set<number>([axes.missionAxis.akHouse, axes.missionAxis.karakamshaHouse, ...axes.earningModeDominante.map((e) => e.house)]);
+}
+
+function tabelaApoioPorAreaDeVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], axes: VocationIQAxes): string {
+  const apoioCombinado = computeApoioPorAreaDeVida(savPorCasa, pesos, axes.regentesCasas);
+  const casasCentrais = casasCentraisDaTese(axes);
+  const linhas = [...apoioCombinado]
     .sort((a, b) => a.casa - b.casa)
     .map(
       (h) => `
       <tr>
         <td>${escapeHtml(AREA_VIDA_PT[h.casa] ?? `Área ${h.casa}`)}</td>
-        <td class="col-numero">${h.pontuacao}</td>
+        <td class="col-numero">${h.pontuacaoSav}</td>
         <td><span class="badge-classificacao" style="background:${corClassificacao(h.classificacao)}">${CLASSIFICACAO_LABEL[h.classificacao]}</span></td>
       </tr>`,
     )
     .join("");
+  // Correcção do especialista (verificação Casa 6) — uma casa "Forte" que
+  // não sustenta a tese central (fora do Eixo da Missão e do Modo de
+  // Ganho) pode estar assim só porque o planeta mais forte da carta está
+  // fisicamente lá, não porque é o tema mais importante da vida da
+  // pessoa. Nota só aparece quando esse caso realmente ocorre.
+  const forteForaDaTese = apoioCombinado.filter((h) => h.classificacao === "forte" && !casasCentrais.has(h.casa));
+  const nota = forteForaDaTese.length
+    ? `<p class="anexo-nota">Nota: ${forteForaDaTese.map((h) => escapeHtml(AREA_VIDA_PT[h.casa] ?? `Área ${h.casa}`)).join(", ")} aparece com apoio Forte, mas não é uma das casas centrais desta leitura (Eixo da Missão / Modo de Ganho) — reflecte sobretudo onde a força física da carta está posicionada, não o tema principal da sua vocação.</p>`
+    : "";
   return `
     <table class="tabela-anexo">
       <thead><tr><th>Área de vida</th><th class="col-numero">Apoio</th><th>Classificação</th></tr></thead>
       <tbody>${linhas}</tbody>
-    </table>`;
+    </table>${nota}`;
 }
 
 function tabelaOsTeusPeriodos(datas: DadosDatas): string {
@@ -1236,6 +1255,7 @@ export function gerarHTMLRelatorio(
   .tabela-anexo th { text-align: left; font-weight: 700; color: var(--azul); padding: 8px 10px; border-bottom: 2px solid var(--ambar); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
   .tabela-anexo td { padding: 8px 10px; border-bottom: 1px solid #E6E6E6; vertical-align: top; }
   .tabela-anexo .col-numero { text-align: right; font-weight: 600; }
+  .anexo-nota { font-size: 12px; color: #666; margin: 8px 0 0; font-style: italic; }
   .badge-classificacao { display: inline-block; font-size: 11px; font-weight: 700; color: #FFFFFF; padding: 3px 10px; border-radius: 999px; }
   .caixa-neutra p { font-size: 14px; margin: 0 0 12px; }
   .caixa-neutra p:last-child { margin-bottom: 0; }
@@ -1369,7 +1389,7 @@ export function gerarHTMLRelatorio(
       ${seccaoComoLer()}
 
       <p class="rotulo-pequeno anexo-espaco">Apoio por área de vida</p>
-      ${tabelaApoioPorAreaDeVida(savPorCasa)}
+      ${tabelaApoioPorAreaDeVida(savPorCasa, pesos, axes)}
 
       <p class="rotulo-pequeno anexo-espaco">Os seus períodos</p>
       ${tabelaOsTeusPeriodos(datas)}

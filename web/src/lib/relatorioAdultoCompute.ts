@@ -10,6 +10,7 @@ import {
   computeSavPorCasa,
   currentDasha,
   computeTransits,
+  computeWesternTable,
   catalogarDestinos,
   ELEMENTO_PLANETA,
   MAHADASHA_CLASSIFICACAO,
@@ -197,12 +198,20 @@ export async function calcularDadosAstrologicos(intake: IntakeRow, coordenadasEx
   // `catalogarDestinos` recebe só axes/pesos/savPorCasa/intake/atmakarakaInfo,
   // nunca o D1 em bruto (ver DESVIO em catalogoVocacional.ts).
   const atmakaraka = axes.missionAxis.atmakaraka;
+  // Correcção do especialista (Correcção 3) — regente do Ascendente
+  // ocidental/tropical, para o sinal "casa temática forte" (o Ascendente
+  // pode estar representado por qualquer um dos dois sistemas). Calculado
+  // aqui e não no method-engine porque `catalogarDestinos` nunca recebeu
+  // o D1 em bruto (ver DESVIO em catalogoVocacional.ts) — este é o mesmo
+  // padrão de `atmakarakaInfo` acima, resolvido pelo chamador.
+  const regenteAscendenteOcidental = computeWesternTable(birth).ascendant.ruler;
   const catalogoResultados = catalogarDestinos(
     axes,
     pesosPlanetas,
     savPorCasa,
     { areaActual: intakeAdulto.areaActual, anosExperiencia: intakeAdulto.anosExperiencia, ideiaConcreta: intakeAdulto.ideiaConcreta },
     { planeta: atmakaraka, nakshatra: d1.rows[atmakaraka].nakshatra },
+    regenteAscendenteOcidental,
   );
 
   return { horaAproximada, axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, dadosRicos, catalogoResultados, coordenadasNascimento: coordenadas };

@@ -36,22 +36,24 @@ describe("catalogarDestinos — carta real da Melina (São Paulo, 11/12/1984 08:
     expect(atmakarakaInfo.planeta).toBe("Saturn");
   });
 
-  it("NUNCA propõe 'Direito' como candidata fora da lista sem camada do Atmakaraka — regressão directa ao bug documentado", () => {
+  it("NUNCA propõe 'Direito' como candidata fora da lista sem camada do planeta de maior peso — regressão directa ao bug documentado", () => {
     const { axes, pesos, savPorCasa, atmakarakaInfo } = carregarMelina();
     for (const areaActual of ["Estética", "Gestora", "Contabilidade", "Empresária"]) {
       const resultado = catalogarDestinos(axes, pesos, savPorCasa, { areaActual, anosExperiencia: "5 a 10 anos" }, atmakarakaInfo);
       if (resultado.candidataForaDaLista.nome === "Direito") {
-        expect(resultado.candidataForaDaLista.camadas.some((c) => c.startsWith("Atmakaraka"))).toBe(true);
+        expect(resultado.candidataForaDaLista.camadas.some((c) => c.startsWith("Planeta de maior peso"))).toBe(true);
       }
     }
   });
 
-  it("toda candidata fora da lista inclui sempre uma camada do Atmakaraka (gate estrutural)", () => {
+  it("toda candidata fora da lista inclui sempre uma camada do planeta de maior peso (gate estrutural — Correcção 2: Atmakaraka é posição técnica, não força; para a Melina os dois coincidem em Saturno, mas o portão agora testa explicitamente o peso, não a posição)", () => {
     const { axes, pesos, savPorCasa, atmakarakaInfo } = carregarMelina();
+    const maisForte = [...pesos].sort((a, b) => b.peso - a.peso)[0];
+    expect(maisForte.planeta).toBe("Saturn");
     const resultado = catalogarDestinos(axes, pesos, savPorCasa, { areaActual: "Estética", anosExperiencia: "5 a 10 anos" }, atmakarakaInfo);
     if (resultado.candidataForaDaLista.nome) {
       expect(resultado.candidataForaDaLista.convergencia).toBeGreaterThanOrEqual(4);
-      expect(resultado.candidataForaDaLista.camadas.some((c) => c.startsWith("Atmakaraka"))).toBe(true);
+      expect(resultado.candidataForaDaLista.camadas.some((c) => c.startsWith("Planeta de maior peso"))).toBe(true);
     }
   });
 
@@ -135,6 +137,11 @@ describe("catalogarDestinos — caso sintético de convergência forte (não é 
     earningModeDominante: [{ house: 2, lord: "Venus", label: "", score: 3, camadasConvergentes: 2, signals: [], planetsInHouse: [] }],
     regentesCasas: regentesCasasSintetico,
     drishtiEmitidoPorPlaneta: drishtiVazio,
+    // missionAxis.karakamshaHouse — campo lido por "casa temática forte"
+    // (Correcção 3); casa 1 nunca está na lista de casas temáticas
+    // avaliadas, por isso nunca acrescenta um sinal a nenhuma delas —
+    // este caso sintético continua a não testar essa camada nova.
+    missionAxis: { karakamshaHouse: 1 },
   } as unknown as VocationIQAxes;
   const atmakarakaInfo: AtmakarakaInfo = { planeta: "Jupiter", nakshatra: "Punarvasu" };
 
@@ -142,7 +149,7 @@ describe("catalogarDestinos — caso sintético de convergência forte (não é 
     const resultado = catalogarDestinos(axes, pesos, savPorCasa, { areaActual: "Gestão", anosExperiencia: "5 a 10 anos" }, atmakarakaInfo);
     expect(resultado.candidataForaDaLista.nome).toBe("Formação de Professores");
     expect(resultado.candidataForaDaLista.convergencia).toBeGreaterThanOrEqual(4);
-    expect(resultado.candidataForaDaLista.camadas.some((c) => c.startsWith("Atmakaraka"))).toBe(true);
+    expect(resultado.candidataForaDaLista.camadas.some((c) => c.startsWith("Planeta de maior peso"))).toBe(true);
     expect(resultado.candidataForaDaLista.camadas.some((c) => c.includes("Nakshatra"))).toBe(true);
     expect(resultado.candidataForaDaLista.camadas.some((c) => c.includes("Combinação"))).toBe(true);
     expect(resultado.candidataForaDaLista.camadas.some((c) => c.includes("Ensino"))).toBe(true);

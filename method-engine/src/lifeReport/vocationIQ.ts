@@ -112,7 +112,7 @@ export interface PesoPlanetaParaModoDeGanho {
    * o bloco de dignidade do regente cai de volta à dignidade clássica em
    * bruto (`d1.rows[lord].dignity`), tal como antes desta correcção.
    */
-  estado?: DignityDetail | "NeechaBhanga";
+  estado?: DignityDetail | "NeechaBhanga" | "NeechaBhanga_Conjuncao";
 }
 
 /** Passo 2 — avalia a força de cada Artha Trikona (casas 2, 6, 10) e devolve o Modo de Ganho dominante. `pesos`, quando fornecido, acrescenta a força REAL (peso já corrigido por Neecha Bhanga) dos planetas envolvidos, E substitui a fonte de dignidade do regente pelo `estado` já corrigido (TAREFA 1 — antes desta correcção, o bloco de dignidade lia sempre `d1.rows[lord].dignity` em bruto, nunca sabendo do cancelamento, o que podia aplicar a penalização de "debilitado" ao mesmo tempo que o bónus de força real já tratava o planeta como forte). Sem `pesos`, mantém-se o comportamento anterior (só dignidade clássica em bruto/presença/Drishti). */
@@ -137,14 +137,15 @@ function computeEarningModes(d1: D1TableResult, pesos?: PesoPlanetaParaModoDeGan
       // corrigido por Neecha Bhanga quando os pesos estão disponíveis;
       // sem pesos, cai de volta à dignidade clássica em bruto. Moolatrikona
       // incluído (SPEC-003) — escala 0-6 coloca-o acima de "Own".
-      // NeechaBhanga conta como dignidade forte (é debilidade cancelada,
-      // lida como força) — nunca aplica a penalização de "debilitado".
+      // NeechaBhanga (clássico ou por conjunção de benéfico) conta como
+      // dignidade forte (é debilidade cancelada, lida como força) — nunca
+      // aplica a penalização de "debilitado".
       const lordRow = rows[lord];
       const lordEstado = infoDe(lord)?.estado ?? lordRow.dignity;
-      if (lordEstado === "Exalted" || lordEstado === "Own" || lordEstado === "Moolatrikona" || lordEstado === "NeechaBhanga") {
+      if (lordEstado === "Exalted" || lordEstado === "Own" || lordEstado === "Moolatrikona" || lordEstado === "NeechaBhanga" || lordEstado === "NeechaBhanga_Conjuncao") {
         score += 2;
         camadasConvergentes += 1;
-        signals.push(`regente da casa ${house} (${lord}) em dignidade forte (${lordEstado === "NeechaBhanga" ? "debilitado com cancelação, lido como força" : lordEstado})`);
+        signals.push(`regente da casa ${house} (${lord}) em dignidade forte (${lordEstado === "NeechaBhanga" || lordEstado === "NeechaBhanga_Conjuncao" ? "debilitado com cancelação, lido como força" : lordEstado})`);
       } else if (lordEstado === "Debilitated") {
         score -= 1;
       }

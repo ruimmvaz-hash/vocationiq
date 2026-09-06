@@ -7,7 +7,7 @@
 // nenhuma frase a explicar um valor extremo). A cor (verde/âmbar/
 // vermelho) fica no template — é apresentação, não dado.
 
-import type { SavPorCasa, PesoPlaneta } from "./pesosPlanetas";
+import { valorCasaUnificado, type SavPorCasa, type PesoPlaneta } from "./pesosPlanetas";
 import type { ClassicalGraha } from "../lifeReport/types";
 
 export interface DimensaoVida {
@@ -19,37 +19,21 @@ export interface DimensaoVida {
 }
 
 const SAV_MIN = 18;
-const SAV_MAX = 42;
 
 /**
- * Valor 0-10 de uma dimensão da Roda da Vida (redesenho do motor, Parte
- * 1C): valor = (SAV_da_casa / SAV_max) * 6 + soma(peso de cada planeta
- * presente na casa, MAIS o peso do regente real dessa casa quando ele não
- * está fisicamente presente) * 0.67. Para dimensões com mais de uma casa,
- * calcula casa a casa e faz a média. Capado a [0,10] só por segurança.
- *
- * Correcção do especialista (TAREFA 5) — antes desta correcção, a soma só
- * contava planetas fisicamente presentes na casa, ignorando por completo
- * QUEM A REGE quando esse regente está sentado noutra casa (o caso comum:
- * a força de uma casa vem tanto de quem lá está como de quem a governa).
- * Isto produzia contradições reais entre esta roda e o Modo de Ganho — uma
- * casa podia ser "dominante" por causa de um regente forte algures, e
- * aparecer fraca aqui só porque, fisicamente, ninguém a ocupa. Nunca soma
- * o peso do regente em duplicado quando ele já está fisicamente presente
- * (nesse caso o peso dele já entra pela soma de ocupantes).
+ * Valor 0-10 de uma dimensão da Roda da Vida — usa `valorCasaUnificado`
+ * (`pesosPlanetas.ts`), a fórmula final aprovada pelo especialista após 3
+ * rondas de diagnóstico, partilhada com o Anexo "Apoio por área de vida"
+ * e o Radar de competências para os 3 nunca divergirem entre si. Para
+ * dimensões com mais de uma casa, calcula casa a casa e faz a média.
  */
 function valorDimensao(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], casas: number[], regentesCasas: Record<number, ClassicalGraha>): number {
   const valoresPorCasa = casas.map((casa) => {
     const sav = savPorCasa.find((h) => h.casa === casa)?.pontuacao ?? SAV_MIN;
-    const ocupantes = pesos.filter((p) => p.casa === casa);
-    const regente = regentesCasas[casa];
-    const regenteJaOcupa = ocupantes.some((p) => p.planeta === regente);
-    const pesoRegente = regenteJaOcupa ? 0 : (pesos.find((p) => p.planeta === regente)?.peso ?? 0);
-    const somaPesos = ocupantes.reduce((soma, p) => soma + p.peso, 0) + pesoRegente;
-    return (sav / SAV_MAX) * 6 + somaPesos * 0.67;
+    return valorCasaUnificado(sav, casa, pesos, regentesCasas).valor;
   });
   const media = valoresPorCasa.reduce((a, b) => a + b, 0) / valoresPorCasa.length;
-  return Math.round(Math.min(10, Math.max(0, media)) * 10) / 10;
+  return Math.round(media * 10) / 10;
 }
 
 /**

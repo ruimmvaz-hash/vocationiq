@@ -1,0 +1,53 @@
+{
+  "_nota": "Correcção do especialista — 'casa temática forte'. Cada casa liga directamente a um cluster de destinos de catalogo-destinos.json, independente de quem a rege nesta carta específica (ao contrário de destinosDoPlaneta, que segue o regente). Todos os IDs abaixo foram verificados contra catalogo-destinos.json — nenhum é inventado. Um destino pode aparecer em mais do que uma casa quando o tema genuinamente se sobrepõe (ex.: ensino aparece na casa 2 e na casa 9 — voz/consultoria vs. dharma/ensino superior são leituras diferentes do mesmo destino).",
+  "casas": {
+    "1": {
+      "tema": "identidade, marca própria, liderança pessoal, coaching, imagem pessoal, desporto",
+      "destinos": ["f_marca_pessoal", "f_lideranca_projeto", "f_presenca_publica", "ciencias_desporto", "t_treinador", "f_desporto_competicao", "f_consultoria_imagem", "f_artes_marciais"]
+    },
+    "2": {
+      "tema": "consultoria, ensino, comunicação, oratória, vendas, finanças pessoais, banca, contabilidade, fiscalidade",
+      "destinos": ["contabilidade", "t_contabilidade", "financas_banca", "auditoria", "economia", "comercio", "t_vendas", "t_seguros", "secretariado", "f_formacao_online", "t_formacao_tecnica"]
+    },
+    "3": {
+      "tema": "comunicação, jornalismo, escrita, publicação, media, relações públicas, marketing, tradução, literatura",
+      "destinos": ["jornalismo", "marketing", "publicidade", "literatura_linguistica", "linguas", "linguas_classicas", "traducao", "audiovisual", "t_redes_sociais", "f_escrita_propria", "f_edicao", "f_traducao_independente", "t_conteudo_digital", "t_editorial", "f_publicacao"]
+    },
+    "4": {
+      "tema": "educação, psicologia, nutrição, imobiliário, arquitectura de interiores, arqueologia, história, trabalho social",
+      "destinos": ["psicologia", "nutricao", "design_interiores", "arqueologia", "historia", "servico_social", "educacao_infancia", "ciencias_educacao", "f_imobiliario_proprio", "t_imobiliario", "t_decoracao", "apoio_criancas_jovens"]
+    },
+    "5": {
+      "tema": "criação, autoria, artes, design, entretenimento, cinema, moda, fotografia, jogos, especulação",
+      "destinos": ["belas_artes", "design_moda", "design_grafico", "design_industrial", "musica", "artes_espetaculo", "t_fotografia", "t_design_grafico", "f_curadoria", "f_atelier", "artesanato_superior", "historia_arte", "t_video"]
+    },
+    "6": {
+      "tema": "saúde, medicina, enfermagem, nutrição clínica, fisioterapia, direito, serviço social, resolução de conflitos, militares",
+      "destinos": ["medicina", "enfermagem", "fisioterapia", "terapia_reabilitacao", "direito", "ciencias_militares", "t_forcas_seguranca", "analises_clinicas", "tecnologias_diagnostico", "t_analises", "t_emergencia", "protecao_civil", "t_protecao_pessoas", "f_mediacao_relacional", "f_negociacao"]
+    },
+    "7": {
+      "tema": "parceria, negociação, diplomacia, direito internacional, comércio, mediação, relações externas, consultoria de gestão",
+      "destinos": ["relacoes_internacionais", "gestao", "comercio", "t_comercio_internacional", "f_negociacao", "f_mediacao_relacional", "ciencia_politica"]
+    },
+    "8": {
+      "tema": "investigação, psicologia profunda, medicina alternativa, seguros, heranças, gestão de crise, terapia, espiritualidade aplicada",
+      "destinos": ["psicologia", "medicina_complementar", "t_terapias_complementares", "financas_banca", "t_seguros", "f_terapia_espiritual", "f_hermeneutica", "f_investigacao_livre", "antropologia", "sociologia", "gerontologia", "t_funeraria"]
+    },
+    "9": {
+      "tema": "dharma, ensino superior, filosofia, publicação, teologia, direito internacional, viagem, tradução académica, ética, ciências da religião, escrita de não-ficção",
+      "destinos": ["filosofia", "teologia", "ciencias_religiao", "ciencias_educacao", "formacao_professores", "relacoes_internacionais", "traducao", "linguas_classicas", "f_escrita_ensaio", "f_publicacao", "f_ensino_proprio", "f_direcao_espiritual", "f_vida_religiosa", "f_astrologia", "f_investigacao_livre", "t_guia", "f_estrangeiro", "historia", "biblioteconomia", "sociologia", "antropologia"]
+    },
+    "10": {
+      "tema": "carreira pública, liderança, governo, política, administração pública, gestão executiva, autoridade institucional",
+      "destinos": ["ciencia_politica", "administracao_publica", "gestao", "f_lideranca_projeto", "f_politica_local", "t_direcao_equipa", "relacoes_internacionais"]
+    },
+    "11": {
+      "tema": "tecnologia, rede, associações, causas sociais, empreendedorismo, economia, consultoria estratégica, inovação",
+      "destinos": ["engenharia_informatica", "sistemas_redes", "t_programacao", "t_cibersseguranca", "economia", "f_empreendedorismo_digital", "f_comunidade", "servico_social", "apoio_criancas_jovens", "sociologia"]
+    },
+    "12": {
+      "tema": "espiritualidade, meditação, retiro, saúde mental, hospitais, trabalho humanitário, arte contemplativa, filosofia oriental",
+      "destinos": ["f_pratica_contemplativa", "f_direcao_espiritual", "f_vida_religiosa", "f_terapia_espiritual", "psicologia", "t_geriatria", "f_cuidado_oficio", "f_hermeneutica", "ciencias_religiao", "teologia", "f_astrologia"]
+    }
+  }
+}

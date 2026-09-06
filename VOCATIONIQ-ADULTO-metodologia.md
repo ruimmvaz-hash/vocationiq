@@ -87,21 +87,36 @@ Reaproveita sem alterações: zero jargão astrológico visível (mesma lista de
 
 ### NEECHA BHANGA RAJA YOGA — IMPLEMENTAÇÃO E LIMITAÇÕES
 
-O motor testa **3 condições**, em `detectarNeechaBhanga()` (`method-engine/src/vocationiq/pesosPlanetas.ts`) — confirmadas por leitura directa do código, cada uma testando uma relação clássica distinta (nunca a mesma verificação repetida com nomes diferentes):
+O motor testa **4 condições**, em `detectarNeechaBhanga()` (`method-engine/src/vocationiq/pesosPlanetas.ts`) — confirmadas por leitura directa do código, cada uma testando uma relação clássica distinta (nunca a mesma verificação repetida com nomes diferentes):
 
 1. **Regente do signo de debilidade forte** — o regente do SIGNO ONDE O PLANETA ESTÁ DEBILITADO está exaltado, em signo próprio, ou em Moolatrikona.
 2. **Planeta exaltado nesse signo, bem colocado** — o planeta que seria exaltado NESSE MESMO SIGNO (não o planeta debilitado, nem o seu regente — um terceiro planeta) está em Kendra (casa 1/4/7/10) do Ascendente ou da Lua.
 3. **Regente da exaltação do próprio planeta, angular** — o regente do SIGNO DE EXALTAÇÃO DO PRÓPRIO PLANETA DEBILITADO (um signo diferente do signo de debilidade) está em Kendra do Ascendente.
+4. **Cancelação por conjunção com benéfico em Kendra** (correcção do especialista, implementada nesta ronda) — o planeta debilitado está na MESMA CASA (mesmo signo/rashi, não orbe de grau) que Júpiter ou Vénus, E essa casa é Kendra (1/4/7/10) do Ascendente. Lida como cancelação mais fraca que as condições 1-3: `estado = "NeechaBhanga_Conjuncao"`, peso 1,1 (vs. 1,2 para as condições 1-3) — força moderada, não plena.
 
-As condições 1 e 3 testam planetas diferentes em signos diferentes (o regente da debilidade vs. o regente da exaltação — para a Lua, Marte vs. Vénus) — não é a mesma condição contada duas vezes.
+As condições 1 e 3 testam planetas diferentes em signos diferentes (o regente da debilidade vs. o regente da exaltação — para a Lua, Marte vs. Vénus) — não é a mesma condição contada duas vezes. A condição 4 é independente das 3 anteriores — testa conjunção física, não dignidade de um terceiro planeta — e só é avaliada se nenhuma das condições 1-3 já tiver cancelado a debilidade.
 
-**Condições deliberadamente fora do âmbito**, confirmadas por leitura do código:
+**Confirmado com dados reais da Nádia** (10/01/1983, 15:02, Luanda) — Lua debilitada em Escorpião: as condições 1-3 continuam a falhar (Marte, o dispositor, em dignidade Neutra; Vénus fora de Kendra; condição 2 estruturalmente impossível — ver abaixo). A condição 4 cancela: Júpiter está conjunto à Lua na casa 7 (ambos em Escorpião, 7,46° de distância), e a casa 7 é Kendra do Ascendente — `estado = "NeechaBhanga_Conjuncao"`.
 
-- **Cancelação por conjunção/aspecto com planeta benéfico** (Júpiter/Vénus, especialmente em Kendra) — não implementada. `detectarNeechaBhanga()` não testa nenhuma relação de conjunção ou Drishti entre o planeta debilitado e um benéfico.
-- **Exaltação de Ketu em Escorpião** — não implementada, e não por omissão: `DIGNITY_TABLE` (`method-engine/src/data/dignity.ts`) inclui só os 7 grahas clássicos + Rahu; Ketu foi deliberadamente removido desta tabela numa correcção anterior (SPEC-003 v2, Decisão 2) por não haver consenso clássico único sobre a sua exaltação entre escolas — Ketu herda antes a dignidade do regente clássico do signo que ocupa (convenção do dispositor). Nota adicional: mesmo Rahu, que está na tabela, está **debilitado** (não exaltado) em Escorpião nesta convenção — incluí-lo não mudaria o resultado.
+**Condição 2 continua estruturalmente impossível para a Lua em Escorpião**, independentemente da hora de nascimento: nenhum dos 8 planetas com tabela de dignidade (7 clássicos + Rahu) exalta em Escorpião. Só se verificaria com uma formulação de exaltação de Ketu em Escorpião.
 
-**Para a Lua debilitada em Escorpião** (caso testado com dados reais da Nádia — 10/01/1983, 15:02, Luanda): a condição 2 é **estruturalmente impossível** com este motor — nenhum dos 8 planetas com tabela de dignidade (7 clássicos + Rahu) exalta em Escorpião, por isso essa condição falha sempre, para qualquer carta, independentemente da hora de nascimento. Só se verificaria com uma formulação de exaltação de Ketu em Escorpião, deliberadamente excluída pela decisão SPEC-003 v2 acima. As condições 1 e 3 testadas com os dados reais da Nádia também falham (Marte em dignidade Neutra; Vénus fora de Kendra).
+**Exaltação de Ketu em Escorpião — continua deliberadamente fora do âmbito**: `DIGNITY_TABLE` (`method-engine/src/data/dignity.ts`) inclui só os 7 grahas clássicos + Rahu; Ketu foi deliberadamente removido desta tabela numa correcção anterior (SPEC-003 v2, Decisão 2) por não haver consenso clássico único sobre a sua exaltação entre escolas — Ketu herda antes a dignidade do regente clássico do signo que ocupa (convenção do dispositor). Nota adicional: mesmo Rahu, que está na tabela, está **debilitado** (não exaltado) em Escorpião nesta convenção — incluí-lo não mudaria o resultado.
 
-**Esta é uma limitação documentada com critério definido — não uma falha de detecção.** Se o especialista quiser incluir a cancelação por benéfico e/ou uma formulação de Ketu aceite pela escola que segue, é uma decisão de metodologia (spec separada), não uma correcção de bug.
+**Esta é uma limitação documentada com critério definido — não uma falha de detecção.** Se o especialista quiser incluir uma formulação de Ketu aceite pela escola que segue, é uma decisão de metodologia (spec separada), não uma correcção de bug.
 
-Se existem condições adicionais de Neecha Bhanga não implementadas aqui (ex.: uma 4ª condição por disposição mútua entre planetas, ou variantes reconhecidas por outra escola clássica), estas estão fora do âmbito actual do motor — ficam para sessão dedicada com o especialista, para decidir se e como as acrescentar sem alterar as 3 já verificadas.
+Se existem condições adicionais de Neecha Bhanga não implementadas aqui (ex.: uma 5ª condição por disposição mútua entre planetas, ou variantes reconhecidas por outra escola clássica), estas estão fora do âmbito actual do motor — ficam para sessão dedicada com o especialista, para decidir se e como as acrescentar sem alterar as 4 já verificadas.
+
+### SAV (SARVASHTAKAVARGA) — LIMITAÇÃO CONHECIDA
+
+O Sarvashtakavarga conta bindus por casa (0-56 por casa, média ~28). Um bindu alto indica suporte geral dos planetas para essa casa. Um bindu baixo indica menos suporte.
+
+MAS o SAV não mede:
+- A dignidade do regente da casa (exaltado, próprio, debilitado).
+- A força dos planetas que ocupam a casa.
+- A qualidade do suporte — só a quantidade.
+
+Resultado: uma casa com SAV baixo mas regente exaltado (ex.: Casa 9/10 da Nádia, SAV 22/25 — "Fraco" — com Saturno exaltado como regente de ambas) pode ser classificada como "Fraco" no SAV mas ser genuinamente forte na carta — o regente compensa o SAV baixo.
+
+A correcção já implementada para a Roda da Vida e para o Radar de competências (usar o peso do regente real de `axes.regentesCasas`, não só o SAV bruto ou um planeta clássico fixo) mitiga esta limitação nesses dois elementos visuais, mas **não elimina a limitação do sistema clássico em si** — e, à data desta nota, ainda não foi estendida ao anexo "Apoio por área de vida" (`tabelaApoioPorAreaDeVida`/`computeSavPorCasa`), que continua a classificar só por SAV bruto.
+
+Para interpretação completa: ler sempre o SAV em conjunto com a dignidade do regente da casa — nunca um sozinho.
