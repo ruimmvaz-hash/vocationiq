@@ -29,6 +29,9 @@ interface FormState {
   areasConsideradas: AreaConsiderada[];
   areasConsideradasOutra: string;
   preferenciaFamilia: string;
+  /** TAREFA 3 (correcção do especialista) — 2 a 4 opções em texto livre, uma por linha (SPEC-vocacional.md). */
+  opcoesAdolescente: string;
+  opcaoMaisProvavel: string;
 
   cursoActual: string;
   satisfacaoCurso: string;
@@ -59,6 +62,8 @@ const ESTADO_INICIAL: FormState = {
   areasConsideradas: [],
   areasConsideradasOutra: "",
   preferenciaFamilia: "",
+  opcoesAdolescente: "",
+  opcaoMaisProvavel: "",
   cursoActual: "",
   satisfacaoCurso: "",
   areaTrabalhoActual: "",
@@ -169,6 +174,11 @@ export function IntakeForm() {
       areasConsideradas: f.areasConsideradas,
       areasConsideradasOutra: f.areasConsideradasOutra,
       preferenciaFamilia: f.preferenciaFamilia,
+      opcoesAdolescente: f.opcoesAdolescente
+        .split("\n")
+        .map((o) => o.trim())
+        .filter(Boolean),
+      opcaoMaisProvavel: f.opcaoMaisProvavel,
       cursoActual: f.cursoActual,
       satisfacaoCurso: f.satisfacaoCurso,
       areaTrabalhoActual: f.areaTrabalhoActual,
@@ -316,6 +326,26 @@ export function IntakeForm() {
                   rows={3}
                   value={f.preferenciaFamilia}
                   onChange={(e) => set("preferenciaFamilia", e.target.value)}
+                  className={inputClass}
+                />
+              </Campo>
+
+              <Campo label="Opções em cima da mesa" hint="Opcional. Uma por linha — 2 a 4 chegam.">
+                <textarea
+                  placeholder={"Ex: medicina\nengenharia\ndesign"}
+                  rows={4}
+                  value={f.opcoesAdolescente}
+                  onChange={(e) => set("opcoesAdolescente", e.target.value)}
+                  className={inputClass}
+                />
+              </Campo>
+
+              <Campo label="Qual delas te parece a mais provável hoje?" hint="Opcional. Não decide nada — só ajuda o relatório a testar essa hipótese.">
+                <input
+                  type="text"
+                  placeholder="A que mais pensas neste momento..."
+                  value={f.opcaoMaisProvavel}
+                  onChange={(e) => set("opcaoMaisProvavel", e.target.value)}
                   className={inputClass}
                 />
               </Campo>

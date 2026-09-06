@@ -552,6 +552,8 @@ function construirDestinoConvergente(id: string, ctx: ContextoAvaliacao): Destin
 
 export interface CandidataForaDaLista {
   nome: string | null;
+  /** id do catálogo (TAREFA 5 — correcção do especialista) — permite a `sugerirCursos()` encontrar as vias concretas desta candidata sem ter de re-derivar o id a partir do nome. `null` só quando `nome` também é `null` (nenhuma candidata). */
+  id: string | null;
   camadas: string[];
   convergencia: number;
 }
@@ -747,7 +749,7 @@ export function catalogarDestinos(
   return {
     destinosDeAreaActual,
     destinosAlternativos,
-    candidataForaDaLista: melhor ? { nome: melhor.nome, camadas: melhor.camadas, convergencia: melhor.convergencia } : { nome: null, camadas: [], convergencia: 0 },
+    candidataForaDaLista: melhor ? { nome: melhor.nome, id: melhor.id, camadas: melhor.camadas, convergencia: melhor.convergencia } : { nome: null, id: null, camadas: [], convergencia: 0 },
     notaAreaGenerica: areaGenerica ? `área actual não tem sector específico ("${intake.areaActual}") — candidatas derivadas só da carta (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações activas)` : null,
     notaEixoDoRendimento: notaCondicao5 ? notaCondicao5.nota : null,
   };

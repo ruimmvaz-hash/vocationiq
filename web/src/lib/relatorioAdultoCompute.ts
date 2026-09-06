@@ -12,6 +12,9 @@ import {
   computeTransits,
   computeWesternTable,
   catalogarDestinos,
+  computeElementosModalidades,
+  computeAspectosPessoais,
+  sugerirCursosParaCatalogo,
   ELEMENTO_PLANETA,
   MAHADASHA_CLASSIFICACAO,
   normalizarTextoLivre,
@@ -24,6 +27,9 @@ import {
   type Elemento,
   type ClassificacaoMahadashaEntry,
   type ResultadoCatalogoVocacional,
+  type PerfilElementosModalidades,
+  type AspectoPessoal,
+  type CursosSugeridos,
 } from "@naveya/method-engine";
 
 // Pipeline de cálculo astrológico partilhada entre /api/relatorio (gera o
@@ -159,6 +165,11 @@ export interface DadosAstrologicos {
   catalogoResultados: ResultadoCatalogoVocacional;
   /** Correcção do especialista (RISCO ARQUITECTURAL 7) — as coordenadas efectivamente usadas nesta chamada: as que vieram de `coordenadasExistentes`, ou as recém-geocodificadas quando não havia nenhuma guardada ainda. O chamador persiste este valor (`guardarRascunho`/backfill nas rotas de regeneração) para nunca mais precisar de geocodificar este pedido. */
   coordenadasNascimento: CoordenadasNascimento;
+  /** TAREFA 4 (correcção do especialista) — elementos/modalidades tropicais e aspectos entre planetas pessoais, ambos lidos de `computeWesternTable` (já calculada aqui para `regenteAscendenteOcidental` — nunca uma segunda chamada). */
+  elementosModalidades: PerfilElementosModalidades;
+  aspectosPessoais: AspectoPessoal[];
+  /** TAREFA 5 (correcção do especialista) — vias concretas de entrada por destino, para todos os destinos que `catalogarDestinos` já resolveu com id. */
+  cursosPorDestino: Record<string, CursosSugeridos>;
 }
 
 /**
@@ -204,7 +215,14 @@ export async function calcularDadosAstrologicos(intake: IntakeRow, coordenadasEx
   // aqui e não no method-engine porque `catalogarDestinos` nunca recebeu
   // o D1 em bruto (ver DESVIO em catalogoVocacional.ts) — este é o mesmo
   // padrão de `atmakarakaInfo` acima, resolvido pelo chamador.
-  const regenteAscendenteOcidental = computeWesternTable(birth).ascendant.ruler;
+  //
+  // TAREFA 4 (correcção do especialista) — a mesma `westernTable` já
+  // trazia, sem consumidor, a grelha completa de posições/aspectos
+  // (`planets`) que os elementos/modalidades e os aspectos entre
+  // planetas pessoais precisam — antes desta correcção só se lia
+  // `.ascendant.ruler` e o resto era descartado.
+  const westernTable = computeWesternTable(birth);
+  const regenteAscendenteOcidental = westernTable.ascendant.ruler;
   const catalogoResultados = catalogarDestinos(
     axes,
     pesosPlanetas,
@@ -213,6 +231,25 @@ export async function calcularDadosAstrologicos(intake: IntakeRow, coordenadasEx
     { planeta: atmakaraka, nakshatra: d1.rows[atmakaraka].nakshatra },
     regenteAscendenteOcidental,
   );
+  const elementosModalidades = computeElementosModalidades(westernTable.planets);
+  const aspectosPessoais = computeAspectosPessoais(westernTable.planets);
+  // TAREFA 5 (correcção do especialista) — vias concretas por destino,
+  // derivadas do próprio catálogo (nunca de texto livre — ver DESVIO em
+  // catalogoCursos.ts).
+  const cursosPorDestino = sugerirCursosParaCatalogo(catalogoResultados);
 
-  return { horaAproximada, axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, dadosRicos, catalogoResultados, coordenadasNascimento: coordenadas };
+  return {
+    horaAproximada,
+    axes,
+    pesosPlanetas,
+    savPorCasa,
+    datas,
+    intakeAdulto,
+    dadosRicos,
+    catalogoResultados,
+    coordenadasNascimento: coordenadas,
+    elementosModalidades,
+    aspectosPessoais,
+    cursosPorDestino,
+  };
 }

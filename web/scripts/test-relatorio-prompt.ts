@@ -12,6 +12,10 @@ import {
   computeSavPorCasa,
   currentDasha,
   computeTransits,
+  computeWesternTable,
+  computeElementosModalidades,
+  computeAspectosPessoais,
+  sugerirCursosParaCatalogo,
   construirPromptAdulto,
   catalogarDestinos,
   type VocationiqIntakeAdulto,
@@ -77,15 +81,20 @@ async function main() {
   };
 
   const savPorCasa = computeSavPorCasa(d1);
+  const westernTable = computeWesternTable(birth);
   const catalogoResultados = catalogarDestinos(
     axes,
     pesosPlanetas,
     savPorCasa,
     { areaActual: intakeAdulto.areaActual, anosExperiencia: intakeAdulto.anosExperiencia, ideiaConcreta: intakeAdulto.ideiaConcreta },
     { planeta: axes.missionAxis.atmakaraka, nakshatra: d1.rows[axes.missionAxis.atmakaraka].nakshatra },
+    westernTable.ascendant.ruler,
   );
+  const elementosModalidades = computeElementosModalidades(westernTable.planets);
+  const aspectosPessoais = computeAspectosPessoais(westernTable.planets);
+  const cursosPorDestino = sugerirCursosParaCatalogo(catalogoResultados);
 
-  const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, true, catalogoResultados, savPorCasa);
+  const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, true, catalogoResultados, savPorCasa, elementosModalidades, aspectosPessoais, cursosPorDestino);
 
   console.log("=".repeat(80));
   console.log("PROMPT GERADO (caso de teste) — nunca enviado à Anthropic neste script");
@@ -121,14 +130,30 @@ async function main() {
   };
 
   const savPorCasaSemHora = computeSavPorCasa(d1SemHora);
+  const westernTableSemHora = computeWesternTable(birthSemHora);
   const catalogoResultadosSemHora = catalogarDestinos(
     axesSemHora,
     pesosSemHora,
     savPorCasaSemHora,
     { areaActual: intakeAdulto.areaActual, anosExperiencia: intakeAdulto.anosExperiencia, ideiaConcreta: intakeAdulto.ideiaConcreta },
     { planeta: axesSemHora.missionAxis.atmakaraka, nakshatra: d1SemHora.rows[axesSemHora.missionAxis.atmakaraka].nakshatra },
+    westernTableSemHora.ascendant.ruler,
   );
-  const promptSemHora = construirPromptAdulto(intakeAdulto, axesSemHora, pesosSemHora, datasSemHora, !horaAproximada, catalogoResultadosSemHora, savPorCasaSemHora);
+  const elementosModalidadesSemHora = computeElementosModalidades(westernTableSemHora.planets);
+  const aspectosPessoaisSemHora = computeAspectosPessoais(westernTableSemHora.planets);
+  const cursosPorDestinoSemHora = sugerirCursosParaCatalogo(catalogoResultadosSemHora);
+  const promptSemHora = construirPromptAdulto(
+    intakeAdulto,
+    axesSemHora,
+    pesosSemHora,
+    datasSemHora,
+    !horaAproximada,
+    catalogoResultadosSemHora,
+    savPorCasaSemHora,
+    elementosModalidadesSemHora,
+    aspectosPessoaisSemHora,
+    cursosPorDestinoSemHora,
+  );
   const indiceNota = promptSemHora.indexOf("NOTA INTERNA");
   console.log("\n" + "=".repeat(80));
   console.log('CASO 2 — hora_nascimento="" (mesmo fallback de meio-dia da rota real) — excerto com a nota do Ascendente:');

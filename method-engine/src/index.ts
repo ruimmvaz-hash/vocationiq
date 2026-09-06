@@ -132,6 +132,10 @@ export {
   type NotaEixoRendimento,
 } from "./vocationiq/catalogoVocacional";
 export { computeRodaDaVida, type DimensaoVida } from "./vocationiq/rodaDaVida";
+// TAREFA 4 (correcção do especialista) — elementos/modalidades tropicais e aspectos entre planetas pessoais, lidos de computeWesternTable.
+export { computeElementosModalidades, computeAspectosPessoais, type PerfilElementosModalidades, type AspectoPessoal } from "./vocationiq/elementosEAspectos";
+// TAREFA 5 (correcção do especialista) — vias concretas de entrada (curso/nível/QNQ/duração/tipo de instituição) por destino do catálogo.
+export { sugerirCursos, sugerirCursosParaCatalogo, type CursoSugerido, type CursosSugeridos, type NivelCurso } from "./vocationiq/catalogoCursos";
 export {
   construirPromptAdulto,
   normalizarTextoLivre,
@@ -140,9 +144,21 @@ export {
   FORCA_VALORES,
   ELEMENTO_PLANETA,
   MAHADASHA_CLASSIFICACAO,
+  ESTADO_PT,
+  TERMOS_PROIBIDOS,
+  planetaPt,
+  blocoEixoMissao,
+  blocoModoDeGanho,
+  blocoPesos,
+  blocoDatas,
+  blocoCatalogoVocacional,
+  blocoElementosModalidades,
+  blocoAspectosPessoais,
   type VocationiqIntakeAdulto,
   type DadosDatas,
   type ForcaValor,
   type Elemento,
   type ClassificacaoMahadashaEntry,
 } from "./vocationiq/promptAdulto";
+// TAREFA 6 (correcção do especialista) — RASCUNHO, ver aviso no topo de promptAdolescente.ts: nunca revisto ao mesmo nível do prompt adulto, não usar com clientes reais sem ronda dedicada.
+export { construirPromptAdolescente, type VocationiqIntakeAdolescente } from "./vocationiq/promptAdolescente";

@@ -81,9 +81,10 @@ export async function POST(request: Request) {
   if (!apiKey) return NextResponse.json({ error: "ANTHROPIC_API_KEY não configurada." }, { status: 503 });
 
   try {
-    const { horaAproximada, axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, catalogoResultados, dadosRicos, coordenadasNascimento } = await calcularDadosAstrologicos(intake);
+    const { horaAproximada, axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, catalogoResultados, dadosRicos, coordenadasNascimento, elementosModalidades, aspectosPessoais, cursosPorDestino } =
+      await calcularDadosAstrologicos(intake);
 
-    const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, !horaAproximada, catalogoResultados, savPorCasa);
+    const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, !horaAproximada, catalogoResultados, savPorCasa, elementosModalidades, aspectosPessoais, cursosPorDestino);
 
     const client = new Anthropic({ apiKey });
 

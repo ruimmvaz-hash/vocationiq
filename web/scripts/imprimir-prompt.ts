@@ -20,6 +20,10 @@ import {
   computeSavPorCasa,
   currentDasha,
   computeTransits,
+  computeWesternTable,
+  computeElementosModalidades,
+  computeAspectosPessoais,
+  sugerirCursosParaCatalogo,
   construirPromptAdulto,
   catalogarDestinos,
   type DadosDatas,
@@ -140,15 +144,20 @@ async function main() {
   const datas = await construirDadosDatas(birth, new Date());
   const intakeAdulto = construirIntakeAdulto(intake);
   const savPorCasa = computeSavPorCasa(d1);
+  const westernTable = computeWesternTable(birth);
   const catalogoResultados = catalogarDestinos(
     axes,
     pesosPlanetas,
     savPorCasa,
     { areaActual: intakeAdulto.areaActual, anosExperiencia: intakeAdulto.anosExperiencia, ideiaConcreta: intakeAdulto.ideiaConcreta },
     { planeta: axes.missionAxis.atmakaraka, nakshatra: d1.rows[axes.missionAxis.atmakaraka].nakshatra },
+    westernTable.ascendant.ruler,
   );
+  const elementosModalidades = computeElementosModalidades(westernTable.planets);
+  const aspectosPessoais = computeAspectosPessoais(westernTable.planets);
+  const cursosPorDestino = sugerirCursosParaCatalogo(catalogoResultados);
 
-  const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, !horaAproximada, catalogoResultados, savPorCasa);
+  const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, !horaAproximada, catalogoResultados, savPorCasa, elementosModalidades, aspectosPessoais, cursosPorDestino);
 
   console.error("\n=== PROMPT COMPLETO (nunca enviado à Anthropic por este script) ===\n");
   console.log(prompt);

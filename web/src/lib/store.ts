@@ -18,6 +18,8 @@ export async function criarIntake(dados: IntakePayload, referralCode?: string): 
       areas_consideradas: dados.areasConsideradas ?? null,
       areas_consideradas_outra: dados.areasConsideradasOutra ?? null,
       preferencia_familia: dados.preferenciaFamilia ?? null,
+      opcoes_adolescente: dados.opcoesAdolescente ?? null,
+      opcao_mais_provavel: dados.opcaoMaisProvavel ?? null,
 
       curso_actual: dados.cursoActual ?? null,
       satisfacao_curso: dados.satisfacaoCurso ?? null,
@@ -89,6 +91,8 @@ export interface IntakeRow {
   areas_consideradas: string[] | null;
   areas_consideradas_outra: string | null;
   preferencia_familia: string | null;
+  opcoes_adolescente: string[] | null;
+  opcao_mais_provavel: string | null;
 
   curso_actual: string | null;
   satisfacao_curso: string | null;

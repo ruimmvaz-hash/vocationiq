@@ -8,6 +8,8 @@ import type { PesoPlaneta, SavPorCasa } from "./pesosPlanetas";
 import type { ClassicalGraha } from "../lifeReport/types";
 import type { ResultadoCatalogoVocacional } from "./catalogoVocacional";
 import { computeRodaDaVida } from "./rodaDaVida";
+import type { PerfilElementosModalidades, AspectoPessoal } from "./elementosEAspectos";
+import type { CursosSugeridos } from "./catalogoCursos";
 
 /**
  * Dados já resolvidos para texto humano pelo chamador (o site) — os
@@ -149,7 +151,7 @@ export const MAHADASHA_CLASSIFICACAO: Record<string, ClassificacaoMahadashaEntry
   Mercury: { tema: "comunicação/adaptação/aprendizagem", abertura: "aprenda e comunique" },
 };
 
-const ESTADO_PT: Record<string, string> = {
+export const ESTADO_PT: Record<string, string> = {
   Exalted: "exaltado",
   Own: "próprio",
   Moolatrikona: "próprio (Moolatrikona)",
@@ -167,7 +169,7 @@ const ESTADO_PT: Record<string, string> = {
  * FORBIDDEN_TERMS do motor da Naveya, mas escrita como enumeração em
  * português corrente para o LLM ler como instrução, não como regex).
  */
-const TERMOS_PROIBIDOS = [
+export const TERMOS_PROIBIDOS = [
   "Atmakaraka",
   "Karakamsha",
   "Amatyakaraka",
@@ -209,7 +211,7 @@ function formatarData(d: Date): string {
   return d.toLocaleDateString("pt-PT", { year: "numeric", month: "long" });
 }
 
-function planetaPt(g: ClassicalGraha | string): string {
+export function planetaPt(g: ClassicalGraha | string): string {
   return GLOSA_TECNICA[g] ?? g;
 }
 
@@ -251,7 +253,7 @@ function blocoAbertura(intake: VocationiqIntakeAdulto): string {
   return linhas.join("\n");
 }
 
-function blocoEixoMissao(axes: VocationIQAxes): string {
+export function blocoEixoMissao(axes: VocationIQAxes): string {
   const m = axes.missionAxis;
   return [
     `Atmakaraka (o planeta que representa a vontade/missão mais forte da pessoa nesta carta): ${planetaPt(m.atmakaraka)}, na casa ${m.akHouse}, em ${m.akSign}, estado ${ESTADO_PT[m.akDignity ?? "Neutral"] ?? m.akDignity}.`,
@@ -260,7 +262,7 @@ function blocoEixoMissao(axes: VocationIQAxes): string {
   ].join("\n");
 }
 
-function blocoModoDeGanho(axes: VocationIQAxes): string {
+export function blocoModoDeGanho(axes: VocationIQAxes): string {
   const dominantes = axes.earningModeDominante;
   const ROTULO_HUMANO: Record<number, string> = {
     2: "ganha pela voz — consultoria, ensino, comunicação directa do que sabe",
@@ -297,7 +299,7 @@ function blocoMontraMercado(axes: VocationIQAxes): string {
   ].join("\n");
 }
 
-function blocoPesos(pesos: PesoPlaneta[]): string {
+export function blocoPesos(pesos: PesoPlaneta[]): string {
   const linhas = pesos
     .slice()
     .sort((a, b) => b.peso - a.peso)
@@ -308,7 +310,7 @@ function blocoPesos(pesos: PesoPlaneta[]): string {
   return linhas.join("\n");
 }
 
-function blocoDatas(datas: DadosDatas): string {
+export function blocoDatas(datas: DadosDatas): string {
   const classificacao = MAHADASHA_CLASSIFICACAO[datas.mahadashaAtual.senhor];
   return [
     `Mahadasha actual: ${planetaPt(datas.mahadashaAtual.senhor)}, de ${formatarData(datas.mahadashaAtual.inicio)} a ${formatarData(datas.mahadashaAtual.fim)}.`,
@@ -326,17 +328,23 @@ function blocoDatas(datas: DadosDatas): string {
     .join("\n");
 }
 
+/** TAREFA 5 (correcção do especialista) — formata a via concreta de entrada de um destino, para adultos ("entrada no mercado", nunca cursos — ver `catalogoCursos.ts`). `undefined` quando o destino não está no catálogo de cursos (não deveria acontecer para um id vindo de `catalogarDestinos`, mas protege). */
+function formatarViaConcreta(cursos: CursosSugeridos | undefined): string {
+  if (!cursos) return "";
+  return ` [Entrada no mercado: ${cursos.entradaMercadoAdulto.join("; ")}]`;
+}
+
 /** Redesenho do motor (Parte 2C) — traduz o resultado de `catalogarDestinos()` para o formato de dados técnicos pedido. Nunca lista mais do que o catálogo devolveu, nunca ordena por "força" (SPEC-vocacional.md: o catálogo descreve, não escolhe). */
-function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional): string {
+export function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional, cursosPorDestino: Record<string, CursosSugeridos>): string {
   const listar = (destinos: ResultadoCatalogoVocacional["destinosDeAreaActual"]) =>
-    destinos.length ? destinos.map((d) => `- ${d.nome}: convergência ${d.convergencia} (${d.camadas.join("; ") || "sem camada identificada"})`).join("\n") : "(nenhum destino do catálogo corresponde)";
+    destinos.length ? destinos.map((d) => `- ${d.nome}: convergência ${d.convergencia} (${d.camadas.join("; ") || "sem camada identificada"})${formatarViaConcreta(cursosPorDestino[d.id])}`).join("\n") : "(nenhum destino do catálogo corresponde)";
 
   return [
     catalogo.notaAreaGenerica ? `NOTA: ${catalogo.notaAreaGenerica}.` : null,
     `Derivadas da área actual:\n${listar(catalogo.destinosDeAreaActual)}`,
     `Alternativas pela carta (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações, eixo do rendimento):\n${listar(catalogo.destinosAlternativos)}`,
     catalogo.candidataForaDaLista.nome
-      ? `Candidata com ≥4 convergências (inclui sempre o Atmakaraka): ${catalogo.candidataForaDaLista.nome} — camadas: ${catalogo.candidataForaDaLista.camadas.join("; ")}.`
+      ? `Candidata com ≥4 convergências (inclui sempre o Atmakaraka): ${catalogo.candidataForaDaLista.nome} — camadas: ${catalogo.candidataForaDaLista.camadas.join("; ")}.${formatarViaConcreta(catalogo.candidataForaDaLista.id ? cursosPorDestino[catalogo.candidataForaDaLista.id] : undefined)}`
       : "Candidata com ≥4 convergências: nenhuma — nenhum destino reuniu 4 camadas independentes incluindo o Atmakaraka.",
     catalogo.notaEixoDoRendimento
       ? `NOTA sobre o eixo do rendimento (o que dá sentido vs. o que paga): ${catalogo.notaEixoDoRendimento.leitura}.${catalogo.notaEixoDoRendimento.regraDeEscrita ? ` Como escrever isto: ${catalogo.notaEixoDoRendimento.regraDeEscrita}` : ""}`
@@ -352,6 +360,32 @@ function blocoRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], regente
   return dimensoes.map((d) => `${d.nome}: ${d.valor.toFixed(1)}/10${d.valor <= 4 || d.valor >= 7 ? " — EXTREMO, tem de ser referenciado no texto" : ""}`).join("\n");
 }
 
+const ASPECTO_PT: Record<string, string> = {
+  Conjuncao: "conjunção",
+  Sextil: "sextil",
+  Quadratura: "quadratura",
+  Trigono: "trígono",
+  Oposicao: "oposição",
+};
+
+/** TAREFA 4 (correcção do especialista) — traduz `computeElementosModalidades` para o formato de dados técnicos pedido. */
+export function blocoElementosModalidades(perfil: PerfilElementosModalidades): string {
+  const el = perfil.distribuicaoElementos;
+  const mod = perfil.distribuicaoModalidades;
+  return [
+    `Elemento dominante: ${perfil.elementoDominante}`,
+    `Distribuição de elementos: Fogo ${el.Fogo} | Terra ${el.Terra} | Ar ${el.Ar} | Água ${el.Água}`,
+    `Modalidade dominante: ${perfil.modalidadeDominante}`,
+    `Distribuição de modalidades: Cardinal ${mod.Cardinal} | Fixa ${mod.Fixa} | Mutável ${mod.Mutável}`,
+  ].join("\n");
+}
+
+/** TAREFA 4 (correcção do especialista) — traduz `computeAspectosPessoais` para o formato de dados técnicos pedido. */
+export function blocoAspectosPessoais(aspectos: AspectoPessoal[]): string {
+  if (!aspectos.length) return "(nenhum aspecto relevante entre os 5 planetas pessoais nesta carta)";
+  return aspectos.map((a) => `${planetaPt(a.planetaA)} ${ASPECTO_PT[a.aspecto]} ${planetaPt(a.planetaB)}: ${a.significado}`).join("\n");
+}
+
 export function construirPromptAdulto(
   intake: VocationiqIntakeAdulto,
   axes: VocationIQAxes,
@@ -360,6 +394,9 @@ export function construirPromptAdulto(
   horaNascimentoFornecida: boolean,
   catalogo: ResultadoCatalogoVocacional,
   savPorCasa: SavPorCasa[],
+  elementosModalidades: PerfilElementosModalidades,
+  aspectosPessoais: AspectoPessoal[],
+  cursosPorDestino: Record<string, CursosSugeridos>,
 ): string {
   const candidatas = candidatasDeclaradas(intake);
 
@@ -430,11 +467,17 @@ Nunca trates todos os planetas como equivalentes.
 ${blocoDatas(datas)}
 
 -- Candidatas do catálogo --
-${blocoCatalogoVocacional(catalogo)}
+${blocoCatalogoVocacional(catalogo, cursosPorDestino)}
 
 -- Roda da Vida (8 dimensões, 0-10) --
 ${blocoRodaDaVida(savPorCasa, pesosPlanetas, axes.regentesCasas)}
 Para cada dimensão marcada EXTREMO (≤4 ou ≥7), o texto tem de ter pelo menos uma frase que explique o que esse valor significa para esta pessoa especificamente — nunca deixar um extremo sem menção.
+
+-- Perfil de elementos e modalidades --
+${blocoElementosModalidades(elementosModalidades)}
+
+-- Aspectos principais --
+${blocoAspectosPessoais(aspectosPessoais)}
 
 -- Opções declaradas --
 ${
@@ -478,6 +521,10 @@ LIMITAÇÕES — 1 a 2 linhas "${MARCADORES.limitacao} <frase>", obrigatório:
 - REGRA DE NÃO-DUPLICAÇÃO: o relatório já tem, mais abaixo, uma tabela determinística ("Onde a carta tem atrito") com a implicação prática detalhada de CADA planeta fraco. Se vais nomear aqui um planeta fraco que essa tabela já desenvolve, NÃO repitas a explicação inteira — uma frase curta que o nomeia e remete (ex.: "Vénus, a área mais fraca da carta, aparece desenvolvida mais à frente") chega; o desenvolvimento completo fica só na tabela.
 
 O QUE VALORIZA — sempre com conteúdo real (nunca omitir, mesmo quando Vénus é a camada mais fraca da carta — "o que valoriza" nunca fica só como um número solto no gráfico de pesos, sem explicação no texto): um parágrafo curto, sem marcador, sobre o que esta pessoa genuinamente valoriza, ancorado em Vénus e nos dons/limitações já nomeados.
+
+ELEMENTOS E MODALIDADES (correcção do especialista): o elemento dominante revela como a pessoa processa e actua no mundo. A modalidade dominante revela o seu ritmo natural de mudança. Usa estes dados para enriquecer o retrato de personalidade nesta secção — não como lista, mas integrados na narrativa dos dons/limitações já escritos, nunca como parágrafo à parte só sobre elementos.
+
+ASPECTOS ENTRE PLANETAS PESSOAIS (correcção do especialista): os aspectos revelam tensões e harmonias internas. Nomeia os aspectos mais relevantes (especialmente quadraturas e oposições, ver "-- Aspectos principais --" acima) como parte das limitações ou tensões internas do perfil — nunca como secção nova, sempre integrados onde já estás a nomear dons/limitações/tensões.
 
 Termina a secção com uma linha "${MARCADORES.sinteseQuemE} <frase>" — uma frase compacta que resume: quem é, o que a move, o que a trava, onde rende mais, onde rende menos. Nunca introduzas aqui um facto novo que não vá aparecer depois no corpo do relatório — é síntese do que já foi dito, não uma antecipação de algo só explicado mais tarde.
 

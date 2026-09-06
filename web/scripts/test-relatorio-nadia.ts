@@ -131,6 +131,7 @@ async function main() {
   if (process.argv[2] === "relatorio-v8.html") {
     catalogoResultados.candidataForaDaLista = {
       nome: "Ciências da Informação e Documentação",
+      id: "biblioteconomia",
       convergencia: 6,
       camadas: [
         "Planeta de maior peso (Saturn, peso 1.76) aponta para este destino",

@@ -136,6 +136,10 @@ export interface IntakePayload {
   areasConsideradas?: AreaConsiderada[];
   areasConsideradasOutra?: string;
   preferenciaFamilia?: string;
+  /** TAREFA 3 (correcção do especialista) — SPEC-vocacional.md, "O que isto exige da recolha": 2-4 opções em texto livre, com a via se souberem. Nunca obrigatório — ver `validarIntake`. */
+  opcoesAdolescente?: string[];
+  /** TAREFA 3 — "qual delas te parece a mais provável hoje?" Nunca decide nada, mas permite tratar essa como a hipótese em teste. */
+  opcaoMaisProvavel?: string;
 
   // Ramo "universidade"
   cursoActual?: string;
@@ -214,6 +218,15 @@ export function validarIntake(body: unknown): { ok: true; dados: IntakePayload }
     if (areasConsideradas.includes("outra")) dados.areasConsideradasOutra = textoOpcional(b.areasConsideradasOutra);
 
     dados.preferenciaFamilia = textoOpcional(b.preferenciaFamilia);
+
+    // TAREFA 3 (correcção do especialista) — "2 a 4, em texto livre" (SPEC-vocacional.md); nunca obrigatório, por isso aceita 0 sem bloquear.
+    const opcoesAdolescenteBrutas = Array.isArray(b.opcoesAdolescente) ? b.opcoesAdolescente : [];
+    const opcoesAdolescente = opcoesAdolescenteBrutas
+      .filter((o): o is string => typeof o === "string" && o.trim().length > 0)
+      .slice(0, 4)
+      .map((o) => o.trim().slice(0, 200));
+    if (opcoesAdolescente.length > 0) dados.opcoesAdolescente = opcoesAdolescente;
+    dados.opcaoMaisProvavel = textoOpcional(b.opcaoMaisProvavel);
   } else if (situacao === "universidade") {
     const cursoActual = typeof b.cursoActual === "string" ? b.cursoActual.trim() : "";
     if (!cursoActual) return { ok: false, erro: "Falta indicar que curso estás a fazer." };
