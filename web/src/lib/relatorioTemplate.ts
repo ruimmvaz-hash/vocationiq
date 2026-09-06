@@ -1100,7 +1100,7 @@ function tabelaApoioPorAreaDeVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[]
       (h) => `
       <tr>
         <td>${escapeHtml(AREA_VIDA_PT[h.casa] ?? `Área ${h.casa}`)}</td>
-        <td class="col-numero">${h.pontuacaoSav}</td>
+        <td class="col-numero">${h.valor.toFixed(1).replace(".", ",")}/10</td>
         <td><span class="badge-classificacao" style="background:${corClassificacao(h.classificacao)}">${CLASSIFICACAO_LABEL[h.classificacao]}</span></td>
       </tr>`,
     )
