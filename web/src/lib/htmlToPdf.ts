@@ -31,17 +31,33 @@ export async function htmlParaPdf(html: string): Promise<Buffer> {
     args = [];
   }
 
-  const browser = await puppeteer.launch({ executablePath, args, headless: true });
-  try {
-    const page = await browser.newPage();
-    // "load" espera que o <link> das Google Fonts termine de carregar
-    // antes do snapshot — "domcontentloaded" disparava antes da fonte
-    // chegar e o PDF saía com a fonte de sistema por engano.
-    await page.setContent(html, { waitUntil: "load" });
-    await page.evaluateHandle("document.fonts.ready");
-    const pdf = await page.pdf({ printBackground: true, preferCSSPageSize: true });
-    return Buffer.from(pdf);
-  } finally {
-    await browser.close();
+  // "spawn ETXTBSY" — falha transitória conhecida do @sparticuz/chromium
+  // em serverless: o binário do Chromium é extraído para /tmp na primeira
+  // utilização do container; se dois pedidos concorrentes caírem no MESMO
+  // container ainda a meio dessa extracção, o segundo tenta executar um
+  // ficheiro que o primeiro ainda está a escrever. Corrige-se sozinho
+  // passados uns milissegundos — por isso repete em vez de falhar logo.
+  // Qualquer outro erro (ex.: falha de navegação) propaga imediatamente.
+  for (let tentativa = 1; tentativa <= 3; tentativa++) {
+    try {
+      const browser = await puppeteer.launch({ executablePath, args, headless: true });
+      try {
+        const page = await browser.newPage();
+        // "load" espera que o <link> das Google Fonts termine de carregar
+        // antes do snapshot — "domcontentloaded" disparava antes da fonte
+        // chegar e o PDF saía com a fonte de sistema por engano.
+        await page.setContent(html, { waitUntil: "load" });
+        await page.evaluateHandle("document.fonts.ready");
+        const pdf = await page.pdf({ printBackground: true, preferCSSPageSize: true });
+        return Buffer.from(pdf);
+      } finally {
+        await browser.close();
+      }
+    } catch (err) {
+      const ehTextoOcupado = err instanceof Error && err.message.includes("ETXTBSY");
+      if (!ehTextoOcupado || tentativa === 3) throw err;
+      await new Promise((resolve) => setTimeout(resolve, 400 * tentativa));
+    }
   }
+  throw new Error("inatingível");
 }
