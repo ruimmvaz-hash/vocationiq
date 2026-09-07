@@ -49,6 +49,7 @@ async function main() {
     preferencia_familia: "Os meus pais preferiam que eu seguisse medicina.",
     opcoes_adolescente: ["medicina", "engenharia", "design"],
     opcao_mais_provavel: "medicina",
+    ano_escolaridade: "10-a-12",
     curso_actual: null,
     satisfacao_curso: null,
     area_trabalho_actual: null,

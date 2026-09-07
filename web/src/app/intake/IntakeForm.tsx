@@ -10,6 +10,7 @@ import {
   TIPO_MUDANCA,
   AREAS_DESTINO,
   CATEGORIAS_AREAS_DESTINO,
+  ANO_ESCOLARIDADE,
   type Situacao,
   type AreaConsiderada,
   type TipoMudanca,
@@ -32,6 +33,8 @@ interface FormState {
   /** TAREFA 3 (correcção do especialista) — 2 a 4 opções em texto livre, uma por linha (SPEC-vocacional.md). */
   opcoesAdolescente: string;
   opcaoMaisProvavel: string;
+  /** TAREFA 2 (correcção do especialista, ronda seguinte) — granularidade de escolaridade (migração 0020). */
+  anoEscolaridade: string;
 
   cursoActual: string;
   satisfacaoCurso: string;
@@ -64,6 +67,7 @@ const ESTADO_INICIAL: FormState = {
   preferenciaFamilia: "",
   opcoesAdolescente: "",
   opcaoMaisProvavel: "",
+  anoEscolaridade: "",
   cursoActual: "",
   satisfacaoCurso: "",
   areaTrabalhoActual: "",
@@ -179,6 +183,7 @@ export function IntakeForm() {
         .map((o) => o.trim())
         .filter(Boolean),
       opcaoMaisProvavel: f.opcaoMaisProvavel,
+      anoEscolaridade: f.anoEscolaridade,
       cursoActual: f.cursoActual,
       satisfacaoCurso: f.satisfacaoCurso,
       areaTrabalhoActual: f.areaTrabalhoActual,
@@ -295,6 +300,17 @@ export function IntakeForm() {
                   {CLAREZA_IDEIA.map((c) => (
                     <option key={c.valor} value={c.valor}>
                       {c.label}
+                    </option>
+                  ))}
+                </select>
+              </Campo>
+
+              <Campo label="Em que ano de escolaridade estás?" hint="Opcional, mas ajuda o relatório a adaptar-se ao momento de decisão certo.">
+                <select value={f.anoEscolaridade} onChange={(e) => set("anoEscolaridade", e.target.value)} className={inputClass}>
+                  <option value="">Prefiro não dizer</option>
+                  {ANO_ESCOLARIDADE.map((a) => (
+                    <option key={a.valor} value={a.valor}>
+                      {a.label}
                     </option>
                   ))}
                 </select>

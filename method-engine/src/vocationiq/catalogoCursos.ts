@@ -38,6 +38,27 @@ interface NivelSistemaPT {
 }
 const NIVEIS_PT = catalogoSistemaPtJson.niveis as unknown as Record<string, NivelSistemaPT>;
 
+interface ViaSecundaria {
+  id: string;
+  label: string;
+  serve: string[];
+}
+const VIAS_SECUNDARIO = catalogoSistemaPtJson.secundario.vias as unknown as ViaSecundaria[];
+
+/**
+ * TAREFA 2C (correcção do especialista, aprovada) — para quem está no
+ * 7º-9º ano, a decisão real ainda é a VIA do secundário (científico-
+ * humanística), não um curso superior específico (isso só se decide 3+
+ * anos depois). Devolve o label da via a que este destino pertence
+ * (catalogo-sistema-PT.json, secundario.vias[].serve), ou `null` quando
+ * o destino não está listado em nenhuma via (destinos "tecnico"/"fora"
+ * não passam pela mesma decisão do secundário científico-humanístico).
+ */
+export function viaSecundariaParaDestino(destinoId: string): string | null {
+  const via = VIAS_SECUNDARIO.find((v) => v.serve.includes(destinoId));
+  return via?.label ?? null;
+}
+
 export type NivelCurso = "mestrado" | "licenciatura" | "ctesp" | "profissional" | "fora_do_sistema";
 
 const NIVEL_ISCED_PARA_NIVEL_CURSO: Record<number, NivelCurso> = {

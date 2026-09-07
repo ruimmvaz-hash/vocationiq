@@ -87,6 +87,7 @@ async function main() {
     preferencia_familia: null,
     opcoes_adolescente: null,
     opcao_mais_provavel: null,
+    ano_escolaridade: null,
     curso_actual: null,
     satisfacao_curso: null,
     area_trabalho_actual: "Estética",

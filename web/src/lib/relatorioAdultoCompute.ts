@@ -1,7 +1,7 @@
 import "server-only";
 import { geocodeCityCountry } from "./reportGeo";
 import { localBirthTimeToUtc } from "./localBirthTime";
-import { SITUACOES, ANOS_EXPERIENCIA, TIPO_MUDANCA, AREAS_DESTINO } from "./validation";
+import { SITUACOES, ANOS_EXPERIENCIA, TIPO_MUDANCA, AREAS_DESTINO, ANO_ESCOLARIDADE } from "./validation";
 import { gerarHTMLRelatorio, type DadosParaTemplate } from "./relatorioTemplate";
 import type { IntakeRow } from "./store";
 import {
@@ -44,6 +44,7 @@ const SITUACAO_LABEL = Object.fromEntries(SITUACOES.map((s) => [s.valor, s.label
 const ANOS_LABEL = Object.fromEntries(ANOS_EXPERIENCIA.map((a) => [a.valor, a.label]));
 const TIPO_MUDANCA_LABEL = Object.fromEntries(TIPO_MUDANCA.map((t) => [t.valor, t.label]));
 const AREA_DESTINO_LABEL = Object.fromEntries(AREAS_DESTINO.map((a) => [a.valor, a.label]));
+export const ANO_ESCOLARIDADE_LABEL = Object.fromEntries(ANO_ESCOLARIDADE.map((a) => [a.valor, a.label]));
 
 const ASPECTO_LABEL: Record<string, string> = { Conjuncao: "conjunção", Quadratura: "quadratura", Oposicao: "oposição" };
 const PONTO_LABEL: Record<string, string> = { Sun: "Sol natal", Moon: "Lua natal", Mercury: "Mercúrio natal", Venus: "Vénus natal", Mars: "Marte natal", Ascendente: "Ascendente natal", MC: "Meio-céu natal" };
@@ -280,24 +281,18 @@ export async function calcularDadosAstrologicos(intake: IntakeRow, coordenadasEx
  * TAREFA 1B (correcção do especialista) — constrói o intake do adolescente
  * a partir dos campos da migração 0019 (opcoes_adolescente,
  * opcao_mais_provavel) mais os campos partilhados (nome, situacao,
- * preferencia_familia, já existente desde antes da migração 0019).
- *
- * DESVIO — o pedido original menciona também "ano_escolaridade", mas essa
- * coluna nunca foi criada (confirmado: não existe em nenhuma migração até
- * 0019) e o formulário (`IntakeForm.tsx`) não a recolhe — só distingue
- * "9º ano ou menos" vs. "10º-12º ano" via `situacao`. Criar uma migração
- * nova + um campo de formulário novo só para isto ficaria para uma ronda
- * dedicada (mais um campo a pedir à pessoa, decisão do fundador). Por
- * agora, `situacaoDeclarada` já carrega essa granularidade (o label de
- * `situacao`), suficiente para o prompt calibrar o tom por idade.
+ * preferencia_familia, já existente desde antes da migração 0019) e,
+ * desde a TAREFA 2 (ronda seguinte), `ano_escolaridade` (migração 0020).
  */
 export function construirIntakeAdolescente(intake: IntakeRow): VocationiqIntakeAdolescente {
+  const anoEscolaridade = intake.ano_escolaridade === "7-a-9" || intake.ano_escolaridade === "10-a-12" || intake.ano_escolaridade === "pos-12" ? intake.ano_escolaridade : undefined;
   return {
     nome: intake.nome,
     situacaoDeclarada: SITUACAO_LABEL[intake.situacao] ?? intake.situacao,
     opcoesAdolescente: intake.opcoes_adolescente ?? [],
     opcaoMaisProvavel: intake.opcao_mais_provavel ?? undefined,
     preferenciaFamilia: intake.preferencia_familia ? normalizarTextoLivre(intake.preferencia_familia) : undefined,
+    anoEscolaridade,
   };
 }
 
@@ -392,17 +387,36 @@ export async function reconstruirHTMLRelatorio(intake: IntakeRow, texto: string,
       intake,
       coordenadasExistentes,
     );
-    const dadosTemplate: DadosParaTemplate = {
-      nome: intake.nome,
-      dataNascimento: intake.data_nascimento,
-      horaNascimento: horaAproximada ? null : intake.hora_nascimento,
-      localNascimento: intake.local_nascimento,
-      situacaoDeclarada: intakeAdolescente.situacaoDeclarada,
-      areaActual: "Ainda a estudar",
-      anosExperiencia: intakeAdolescente.situacaoDeclarada,
-      opcoesConsideradas: intakeAdolescente.opcoesAdolescente,
-      perguntaEspecifica: intakeAdolescente.opcaoMaisProvavel ? `Qual das opções lhe parece mais provável hoje: ${intakeAdolescente.opcaoMaisProvavel}?` : undefined,
-    };
+    // TAREFA 2C (correcção do especialista, aprovada) — "pos-12" foi
+    // gerado pelo motor adulto (ver DESVIO no route.ts), por isso
+    // re-renderiza com o quadro adulto (sem "ehAdolescente"/"ponte de
+    // transição" em falta) — o texto guardado já está nesse tom.
+    const ehPos12 = intakeAdolescente.anoEscolaridade === "pos-12";
+    const dadosTemplate: DadosParaTemplate = ehPos12
+      ? {
+          nome: intake.nome,
+          dataNascimento: intake.data_nascimento,
+          horaNascimento: horaAproximada ? null : intake.hora_nascimento,
+          localNascimento: intake.local_nascimento,
+          situacaoDeclarada: intakeAdolescente.situacaoDeclarada,
+          areaActual: "",
+          anosExperiencia: "",
+          opcoesConsideradas: intakeAdolescente.opcoesAdolescente,
+          ideiaConcreta: intakeAdolescente.opcaoMaisProvavel,
+        }
+      : {
+          nome: intake.nome,
+          dataNascimento: intake.data_nascimento,
+          horaNascimento: horaAproximada ? null : intake.hora_nascimento,
+          localNascimento: intake.local_nascimento,
+          situacaoDeclarada: intakeAdolescente.situacaoDeclarada,
+          ehAdolescente: true,
+          anoEscolaridade: intakeAdolescente.anoEscolaridade ? ANO_ESCOLARIDADE_LABEL[intakeAdolescente.anoEscolaridade] : undefined,
+          areaActual: "Ainda a estudar",
+          anosExperiencia: intakeAdolescente.situacaoDeclarada,
+          opcoesConsideradas: intakeAdolescente.opcoesAdolescente,
+          perguntaEspecifica: intakeAdolescente.opcaoMaisProvavel ? `Qual das opções lhe parece mais provável hoje: ${intakeAdolescente.opcaoMaisProvavel}?` : undefined,
+        };
     const html = gerarHTMLRelatorio(dadosTemplate, texto, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
     return { html, horaAproximada, coordenadasNascimento };
   }

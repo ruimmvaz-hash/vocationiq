@@ -140,6 +140,7 @@ export {
   sugerirCursosParaCatalogo,
   resolverOpcaoAdolescente,
   sugerirCursosParaOpcoesAdolescente,
+  viaSecundariaParaDestino,
   type CursoSugerido,
   type CursosSugeridos,
   type NivelCurso,

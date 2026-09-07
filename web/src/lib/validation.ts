@@ -16,6 +16,15 @@ export const CLAREZA_IDEIA = [
 
 export type ClarezaIdeia = (typeof CLAREZA_IDEIA)[number]["valor"];
 
+/** TAREFA 2 (correcção do especialista, aprovada) — granularidade dentro do ramo adolescente: "7-a-9" pede área (nunca curso específico), "10-a-12" mantém o formato actual (curso + via de acesso), "pos-12" encaminha para o motor adulto (ver promptAdolescente.ts). Campo opcional — nunca bloqueia o relatório quando não preenchido (rascunhos antigos, ou a pessoa não respondeu). */
+export const ANO_ESCOLARIDADE = [
+  { valor: "7-a-9", label: "7º ao 9º ano" },
+  { valor: "10-a-12", label: "10º ao 12º ano" },
+  { valor: "pos-12", label: "Após o 12º ano" },
+] as const;
+
+export type AnoEscolaridade = (typeof ANO_ESCOLARIDADE)[number]["valor"];
+
 export const AREAS_CONSIDERADAS = [
   { valor: "medicina-saude", label: "Medicina / Saúde" },
   { valor: "engenharia-tecnologia", label: "Engenharia / Tecnologia" },
@@ -140,6 +149,8 @@ export interface IntakePayload {
   opcoesAdolescente?: string[];
   /** TAREFA 3 — "qual delas te parece a mais provável hoje?" Nunca decide nada, mas permite tratar essa como a hipótese em teste. */
   opcaoMaisProvavel?: string;
+  /** TAREFA 2 (correcção do especialista, ronda seguinte) — granularidade de escolaridade (migração 0020), decide se o prompt recomenda área (7-a-9) ou curso específico (10-a-12), ou encaminha para o motor adulto (pos-12). */
+  anoEscolaridade?: AnoEscolaridade;
 
   // Ramo "universidade"
   cursoActual?: string;
@@ -227,6 +238,10 @@ export function validarIntake(body: unknown): { ok: true; dados: IntakePayload }
       .map((o) => o.trim().slice(0, 200));
     if (opcoesAdolescente.length > 0) dados.opcoesAdolescente = opcoesAdolescente;
     dados.opcaoMaisProvavel = textoOpcional(b.opcaoMaisProvavel);
+
+    // TAREFA 2 (correcção do especialista, ronda seguinte) — opcional, nunca bloqueia (rascunhos antigos/pessoa que não respondeu).
+    const anoEscolaridadeBruto = typeof b.anoEscolaridade === "string" ? b.anoEscolaridade : "";
+    if (ANO_ESCOLARIDADE.some((a) => a.valor === anoEscolaridadeBruto)) dados.anoEscolaridade = anoEscolaridadeBruto as AnoEscolaridade;
   } else if (situacao === "universidade") {
     const cursoActual = typeof b.cursoActual === "string" ? b.cursoActual.trim() : "";
     if (!cursoActual) return { ok: false, erro: "Falta indicar que curso estás a fazer." };

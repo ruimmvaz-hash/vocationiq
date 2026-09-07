@@ -20,6 +20,7 @@ export async function criarIntake(dados: IntakePayload, referralCode?: string): 
       preferencia_familia: dados.preferenciaFamilia ?? null,
       opcoes_adolescente: dados.opcoesAdolescente ?? null,
       opcao_mais_provavel: dados.opcaoMaisProvavel ?? null,
+      ano_escolaridade: dados.anoEscolaridade ?? null,
 
       curso_actual: dados.cursoActual ?? null,
       satisfacao_curso: dados.satisfacaoCurso ?? null,
@@ -93,6 +94,7 @@ export interface IntakeRow {
   preferencia_familia: string | null;
   opcoes_adolescente: string[] | null;
   opcao_mais_provavel: string | null;
+  ano_escolaridade: string | null;
 
   curso_actual: string | null;
   satisfacao_curso: string | null;

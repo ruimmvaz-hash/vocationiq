@@ -7,6 +7,15 @@
 // quem ainda não trabalha — nunca "o que me define profissionalmente",
 // sempre "o que me ajuda a prosperar na área que escolho".
 //
+// TAREFA 2C (correcção do especialista, ronda seguinte, aprovada) —
+// granularidade por `anoEscolaridade` (migração 0020): quem está no
+// 7º-9º ano ainda não escolhe curso — escolhe VIA do secundário
+// (científico-humanística). Recomendar "Curso: Medicina, QNQ 7" a um
+// aluno do 7º é prematuro e confunde o momento de decisão real. Quem
+// está no 10º-12º mantém o formato anterior (curso concreto + via de
+// acesso). "pos-12" não é tratado aqui — a rota decide encaminhar para
+// `construirPromptAdulto` nesse caso (ver DESVIO em relatorioAdultoCompute.ts).
+//
 // AVISO DE MATURIDADE (honestidade obrigatória, ver relatório desta
 // ronda): o prompt adulto (`promptAdulto.ts`) chegou a este ponto depois
 // de MAIS DE 15 RONDAS de diagnóstico com dados reais, revisão do
@@ -23,7 +32,7 @@ import type { VocationIQAxes } from "../lifeReport/vocationIQ";
 import type { PesoPlaneta, SavPorCasa } from "./pesosPlanetas";
 import type { ResultadoCatalogoVocacional } from "./catalogoVocacional";
 import type { PerfilElementosModalidades, AspectoPessoal } from "./elementosEAspectos";
-import type { CursosSugeridos } from "./catalogoCursos";
+import { viaSecundariaParaDestino, type CursosSugeridos } from "./catalogoCursos";
 import {
   blocoEixoMissao,
   blocoModoDeGanho,
@@ -46,9 +55,11 @@ export interface VocationiqIntakeAdolescente {
   /** SPEC-vocacional.md — "qual delas te parece a mais provável hoje?". Não decide nada, é a hipótese em teste. */
   opcaoMaisProvavel?: string;
   preferenciaFamilia?: string;
+  /** TAREFA 2 (correcção do especialista, aprovada) — migração 0020. `undefined`/`"pos-12"` nunca chegam a este prompt: `undefined` cai no formato "10-a-12" por omissão (formulário antigo, sem o campo preenchido); "pos-12" é decidido antes, na rota (ver DESVIO em relatorioAdultoCompute.ts). */
+  anoEscolaridade?: "7-a-9" | "10-a-12" | "pos-12";
 }
 
-/** TAREFA 1C — formata os cursos concretos resolvidos para uma opção declarada (ver `sugerirCursosParaOpcoesAdolescente`). `[]` quando a opção não teve correspondência no mapeamento — o texto explica isso em vez de inventar. */
+/** TAREFA 1C — formata os cursos concretos resolvidos para uma opção declarada (ver `sugerirCursosParaOpcoesAdolescente`), para quem está no 10º-12º ano. `[]` quando a opção não teve correspondência no mapeamento — o texto explica isso em vez de inventar. */
 function formatarCursosDaOpcao(cursos: CursosSugeridos[]): string {
   if (!cursos.length) return "(esta opção não tem correspondência directa no catálogo de cursos — lê-a pelo Eixo da Missão e pelo Modo de Ganho acima, não por um curso específico.)";
   return cursos
@@ -60,6 +71,23 @@ function formatarCursosDaOpcao(cursos: CursosSugeridos[]): string {
       ].join("\n");
     })
     .join("\n\n");
+}
+
+/** TAREFA 2C — para quem está no 7º-9º ano, mostra a VIA do secundário (científico-humanística) em vez do curso concreto — a decisão real desta fase, ver aviso no topo do ficheiro. */
+function formatarViaSecundariaDaOpcao(cursos: CursosSugeridos[]): string {
+  if (!cursos.length) return "(esta opção não tem correspondência directa no catálogo — lê-a pelo Eixo da Missão e pelo Modo de Ganho acima.)";
+  const vias = [...new Set(cursos.map((c) => viaSecundariaParaDestino(c.destinoId) ?? "fora do sistema formal — não corresponde a nenhuma via do secundário científico-humanístico"))];
+  return vias.map((v) => `Via do secundário: ${v}`).join("\n");
+}
+
+/** TAREFA 2C — versão abreviada de blocoCatalogoVocacional para o 7º-9º ano: candidatas com VIA do secundário, nunca curso/QNQ/duração (prematuro nesta fase). */
+function blocoCandidatasPorVia(catalogo: ResultadoCatalogoVocacional): string {
+  const candidatasTexto = catalogo.candidatasForaDaLista.length
+    ? catalogo.candidatasForaDaLista
+        .map((c) => `- ${c.nome}: convergência ${c.convergencia} (${c.camadas.join("; ")}). ${formatarViaSecundariaDaOpcao([{ destinoId: c.id } as CursosSugeridos])}`)
+        .join("\n")
+    : "nenhuma — nenhum destino reuniu 4 camadas independentes incluindo o planeta de maior peso.";
+  return `Candidatas com ≥4 convergências (inclui sempre o planeta de maior peso, até 3, em pé de igualdade — nunca ranking):\n${candidatasTexto}`;
 }
 
 export function construirPromptAdolescente(
@@ -75,14 +103,46 @@ export function construirPromptAdolescente(
   cursosPorDestino: Record<string, CursosSugeridos>,
   cursosPorOpcaoDeclarada: Record<string, CursosSugeridos[]>,
 ): string {
+  // TAREFA 2C — "pos-12" nunca chega aqui (a rota encaminha para o motor
+  // adulto antes); só distingue 7-a-9 de tudo o resto (10-a-12, ou
+  // ausente — formulários antigos sem o campo).
+  const ehSeteANove = intake.anoEscolaridade === "7-a-9";
+
   const opcoesTexto = intake.opcoesAdolescente.length
     ? intake.opcoesAdolescente
         .map((o) => {
           const maisProvavel = intake.opcaoMaisProvavel && o.toLowerCase() === intake.opcaoMaisProvavel.toLowerCase();
-          return `- ${o}${maisProvavel ? " (a que a pessoa acha mais provável hoje — trata como a hipótese em teste, não como decisão)" : ""}\n${formatarCursosDaOpcao(cursosPorOpcaoDeclarada[o] ?? [])}`;
+          const detalhe = ehSeteANove ? formatarViaSecundariaDaOpcao(cursosPorOpcaoDeclarada[o] ?? []) : formatarCursosDaOpcao(cursosPorOpcaoDeclarada[o] ?? []);
+          return `- ${o}${maisProvavel ? " (a que a pessoa acha mais provável hoje — trata como a hipótese em teste, não como decisão)" : ""}\n${detalhe}`;
         })
         .join("\n\n")
     : "(nenhuma opção declarada — escreve a partir do que a carta sustenta em geral e da candidata fora da lista.)";
+
+  const blocoCandidatasCatalogo = ehSeteANove ? blocoCandidatasPorVia(catalogo) : blocoCatalogoVocacional(catalogo, cursosPorDestino);
+
+  const instrucaoLeituraPorOpcao = ehSeteANove
+    ? `Para CADA opção em cima da mesa, este formato EXACTO — o cabeçalho "### " e a linha "${MARCADORES.forca}" são obrigatórios:
+
+### <nome exacto da opção>
+${MARCADORES.forca} <forte, moderada ou fraca>
+${MARCADORES.insight} <uma frase que resume a leitura desta opção em menos de 15 palavras>
+1. O que a tua carta sustenta nesta opção — cita pelo menos duas fontes independentes.
+2. O que esta opção te vai pedir mais à frente (o esforço específico DESTA carta, nunca o risco genérico da área).
+3. NESTA FASE (7º-9º ano), a decisão mais importante é a ÁREA — não o curso específico. Usa a via do secundário já listada acima em "Opções em cima da mesa" (nunca um nome de curso, nunca QNQ/duração — isso só se decide 3 anos depois). Formato: "Nesta fase, a decisão mais importante é a via — não o curso específico. A tua carta aponta para [via] porque [razão técnica]."
+4. Onde entra a tua matéria nesta opção — a forma/função, nunca só o sector.`
+    : `Para CADA opção em cima da mesa, este formato EXACTO — o cabeçalho "### " e a linha "${MARCADORES.forca}" são obrigatórios:
+
+### <nome exacto da opção>
+${MARCADORES.forca} <forte, moderada ou fraca>
+${MARCADORES.insight} <uma frase que resume a leitura desta opção em menos de 15 palavras>
+1. O que a tua carta sustenta nesta opção — cita pelo menos duas fontes independentes.
+2. O que esta opção te vai pedir na formação (o esforço específico DESTA carta, nunca o risco genérico da área).
+3. O curso concreto e a via de entrada — usa sempre os dados já listados acima em "Opções em cima da mesa" (nome do curso, nível, QNQ, duração, tipo de instituição, entrada no mercado). NUNCA nomeies uma instituição concreta.
+4. Onde entra a tua matéria nesta opção — a forma/função, nunca só o sector.`;
+
+  const instrucaoCandidata = ehSeteANove
+    ? `Se lista 1, 2 ou 3 candidatas, escreve um bloco próprio para CADA UMA: "${MARCADORES.candidata} <nome exacto>" seguido do texto explicativo. NESTA FASE (7º-9º ano), fala em termos de VIA do secundário (já listada acima), nunca de curso específico, QNQ ou instituição — a decisão real desta fase é a área, não o curso.`
+    : `Se lista 1, 2 ou 3 candidatas, escreve um bloco próprio para CADA UMA: "${MARCADORES.candidata} <nome exacto>" seguido do texto explicativo, citando sempre a via concreta ("-- Via concreta para <nome> --" na secção "Candidatas do catálogo" acima) — tipo de formação, certificação, como se entra, tempo médio até trabalhar na área. Nunca nomeies uma entidade concreta.`;
 
   return `
 [Versão de produção, TAREFA 2 — ver aviso de maturidade no topo de promptAdolescente.ts: prosa instrucional nova, nunca testada contra geração real antes de hoje.]
@@ -108,6 +168,7 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - Ao nomear um caminho fora do sistema formal, indica sempre a via de sustento associada — nunca "o teu caminho é X" sem dizer o que paga as contas enquanto X cresce.
 - NOTAS ESCOLARES: ter boa nota a uma disciplina NÃO é sinal vocacional — é sinal de Mercúrio funcional e de disciplina de estudo, e serve dezenas de territórios. Confundir nota com vocação é o erro mais comum da orientação escolar — nunca o cometas.
 - NUNCA nomear instituições de nenhum tipo — nem de ensino, nem ordens profissionais, nem certificações com nome próprio, nem formadores. Concreto na estrutura ("uma licenciatura de 3 anos", "a ordem profissional da área"), genérico no nome da entidade.
+${ehSeteANove ? '- MOMENTO DE DECISÃO (7º-9º ano): esta pessoa ainda não escolhe curso — escolhe a VIA do secundário (científico-humanística). Nunca recomendes um curso específico, QNQ ou duração de formação superior — isso é prematuro e confunde o momento real de decisão. Fala sempre em termos de área/via.' : ""}
 ${horaNascimentoFornecida ? "" : "\nNOTA INTERNA — hora de nascimento não fornecida, elementos que dependem do Ascendente têm de ser tratados com cautela explícita."}
 
 === DADOS TÉCNICOS ===
@@ -135,10 +196,10 @@ ${blocoElementosModalidades(elementosModalidades)}
 -- Aspectos principais --
 ${blocoAspectosPessoais(aspectosPessoais)}
 
--- Candidatas do catálogo (inclui vias concretas por candidata) --
-${blocoCatalogoVocacional(catalogo, cursosPorDestino)}
+-- Candidatas do catálogo ${ehSeteANove ? "(vias do secundário por candidata)" : "(inclui vias concretas por candidata)"} --
+${blocoCandidatasCatalogo}
 
--- Opções em cima da mesa (com cursos concretos por opção) --
+-- Opções em cima da mesa (${ehSeteANove ? "com via do secundário" : "com cursos concretos"} por opção) --
 ${opcoesTexto}
 
 === ESTRUTURA DO RELATÓRIO — exactamente estas 6 secções, por esta ordem ===
@@ -165,28 +226,20 @@ Termina com "${MARCADORES.sinteseQuemE} <frase>" — uma frase compacta que resu
 Traduz o Eixo da Missão e o Modo de Ganho dominante para linguagem humana, sem ainda nomear nenhuma das opções em cima da mesa.
 
 ## ${SECCAO_TITULOS.leituraPorOpcao}
-Para CADA opção em cima da mesa, este formato EXACTO — o cabeçalho "### " e a linha "${MARCADORES.forca}" são obrigatórios:
-
-### <nome exacto da opção>
-${MARCADORES.forca} <forte, moderada ou fraca>
-${MARCADORES.insight} <uma frase que resume a leitura desta opção em menos de 15 palavras>
-1. O que a tua carta sustenta nesta opção — cita pelo menos duas fontes independentes.
-2. O que esta opção te vai pedir na formação (o esforço específico DESTA carta, nunca o risco genérico da área).
-3. O curso concreto e a via de entrada — usa sempre os dados já listados acima em "Opções em cima da mesa" (nome do curso, nível, QNQ, duração, tipo de instituição, entrada no mercado). NUNCA nomeies uma instituição concreta.
-4. Onde entra a tua matéria nesta opção — a forma/função, nunca só o sector.
+${instrucaoLeituraPorOpcao}
 
 ## ${SECCAO_TITULOS.candidataForaDaLista}
 As candidatas já vêm calculadas deterministicamente na secção "Candidatas do catálogo" acima (até 3) — NÃO calcules a tua própria convergência, NÃO inventes nenhuma candidata diferente.
 
 Se essa secção diz "nenhuma", a primeira e única linha é "${MARCADORES.candidata} nenhuma".
 
-Se lista 1, 2 ou 3 candidatas, escreve um bloco próprio para CADA UMA: "${MARCADORES.candidata} <nome exacto>" seguido do texto explicativo, citando sempre a via concreta ("-- Via concreta para <nome> --" na secção "Candidatas do catálogo" acima) — tipo de formação, certificação, como se entra, tempo médio até trabalhar na área. Nunca nomeies uma entidade concreta.
+${instrucaoCandidata}
 
 REGRA ABSOLUTA — SEM RANKING ENTRE CANDIDATAS: quando há 2 ou 3, apresentam-se em PÉ DE IGUALDADE — proibido "1ª/2ª/3ª escolha", "a mais forte", "menção honrosa".
 
 REGRA ABSOLUTA — CANDIDATA FORA DA LISTA: proibido nomear qualquer candidata sem que venha explicitamente da secção "Candidatas do catálogo" acima. Nunca preenchas com estereótipos de profissão ou associações livres a arquétipos abstractos.
 
 ## ${SECCAO_TITULOS.oPlano}
-CONTEXTO (diferente do relatório adulto): este plano é orientado para a PRÓXIMA DECISÃO ESCOLAR/ACADÉMICA (ex.: escolha de curso, candidatura ao ensino superior, escolha de via no secundário) — NUNCA para uma transição profissional, que ainda não existe. Abre com o tom da classificação da Mahadasha actual (secção "Datas reais" acima). Usa as datas reais dessa secção. Destaca o primeiro passo accionável para esta semana numa linha própria, prefixada exactamente por "${MARCADORES.primeiroPasso} " — ligado à decisão escolar concreta que a pessoa tem à frente, nunca um passo genérico de "explorar carreiras".
+CONTEXTO (diferente do relatório adulto): este plano é orientado para a PRÓXIMA DECISÃO ESCOLAR/ACADÉMICA (ex.: ${ehSeteANove ? "escolha de via no secundário" : "escolha de curso, candidatura ao ensino superior"}) — NUNCA para uma transição profissional, que ainda não existe. Abre com o tom da classificação da Mahadasha actual (secção "Datas reais" acima). Usa as datas reais dessa secção. Destaca o primeiro passo accionável para esta semana numa linha própria, prefixada exactamente por "${MARCADORES.primeiroPasso} " — ligado à decisão escolar concreta que a pessoa tem à frente, nunca um passo genérico de "explorar carreiras".
 `.trim();
 }

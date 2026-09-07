@@ -5,9 +5,9 @@ import { hasSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { obterIntake } from "@/lib/store";
 import { guardarRascunho, apagarRascunho } from "@/lib/storage";
 import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTemplate";
-import { calcularDadosAstrologicosAdolescente, GeocodeError } from "@/lib/relatorioAdultoCompute";
-import { construirPromptAdolescente } from "@naveya/method-engine";
-import { construirPromptCriticaAdolescente, parseCritica, construirPromptReescrita } from "@/lib/criticaRelatorio";
+import { calcularDadosAstrologicosAdolescente, GeocodeError, ANO_ESCOLARIDADE_LABEL } from "@/lib/relatorioAdultoCompute";
+import { construirPromptAdolescente, construirPromptAdulto, type VocationiqIntakeAdulto } from "@naveya/method-engine";
+import { construirPromptCritica, construirPromptCriticaAdolescente, parseCritica, construirPromptReescrita } from "@/lib/criticaRelatorio";
 
 // TAREFA 1A (correcção do especialista, ronda de produção do motor
 // adolescente) — equivalente de api/relatorio/route.ts para o ramo
@@ -77,29 +77,59 @@ export async function POST(request: Request) {
     const { horaAproximada, axes, pesosPlanetas, savPorCasa, datas, intakeAdolescente, catalogoResultados, coordenadasNascimento, elementosModalidades, aspectosPessoais, cursosPorDestino, cursosPorOpcaoDeclarada } =
       await calcularDadosAstrologicosAdolescente(intake);
 
-    const prompt = construirPromptAdolescente(
-      intakeAdolescente,
-      axes,
-      pesosPlanetas,
-      datas,
-      !horaAproximada,
-      catalogoResultados,
-      savPorCasa,
-      elementosModalidades,
-      aspectosPessoais,
-      cursosPorDestino,
-      cursosPorOpcaoDeclarada,
-    );
+    // TAREFA 2C (correcção do especialista, aprovada) — "pos-12" já
+    // terminou o secundário: em vez de criar um terceiro prompt, usa o
+    // motor adulto integral (construirPromptAdulto), tal como pedido
+    // ("sem criar terceiro prompt"). DESVIO: o formulário adolescente não
+    // recolhe área actual/anos de experiência/tipo de mudança — ficam
+    // vazios; as opções escritas em texto livre alimentam areasDestino.
+    const ehPos12 = intakeAdolescente.anoEscolaridade === "pos-12";
+    const prompt = ehPos12
+      ? construirPromptAdulto(
+          {
+            nome: intakeAdolescente.nome,
+            situacaoDeclarada: intakeAdolescente.situacaoDeclarada,
+            areaActual: "",
+            anosExperiencia: "",
+            tipoMudanca: [],
+            areasDestino: intakeAdolescente.opcoesAdolescente,
+            areasDestinoIncluiOutra: false,
+            areasDestinoIncluiAindaNaoSei: intakeAdolescente.opcoesAdolescente.length === 0,
+            ideiaConcreta: intakeAdolescente.opcaoMaisProvavel,
+          } satisfies VocationiqIntakeAdulto,
+          axes,
+          pesosPlanetas,
+          datas,
+          !horaAproximada,
+          catalogoResultados,
+          savPorCasa,
+          elementosModalidades,
+          aspectosPessoais,
+          cursosPorDestino,
+        )
+      : construirPromptAdolescente(
+          intakeAdolescente,
+          axes,
+          pesosPlanetas,
+          datas,
+          !horaAproximada,
+          catalogoResultados,
+          savPorCasa,
+          elementosModalidades,
+          aspectosPessoais,
+          cursosPorDestino,
+          cursosPorOpcaoDeclarada,
+        );
 
     const client = new Anthropic({ apiKey });
 
     const textoOriginal = await gerarTexto(client, prompt, MAX_TOKENS);
 
-    // Crítica adaptada ao ramo adolescente (TOM invertido para "tu",
-    // "ÁREA ACTUAL" substituído por "OPÇÃO EM CIMA DA MESA" — ver
-    // criticaRelatorio.ts). parseCritica/construirPromptReescrita são
-    // genéricos, partilhados com o ramo adulto sem alteração.
-    const promptCritica = construirPromptCriticaAdolescente(prompt, textoOriginal);
+    // Crítica: "pos-12" gerou texto no tom adulto ("você"), por isso usa
+    // a crítica adulta original — a versão adaptada ao adolescente
+    // (construirPromptCriticaAdolescente) inverte o teste de TOM e
+    // rejeitaria precisamente o "você" correcto deste ramo.
+    const promptCritica = ehPos12 ? construirPromptCritica(prompt, textoOriginal) : construirPromptCriticaAdolescente(prompt, textoOriginal);
     const textoCritica = await gerarTexto(client, promptCritica, MAX_TOKENS_CRITICA);
     const resultadoCritica = parseCritica(textoCritica);
 
@@ -114,23 +144,36 @@ export async function POST(request: Request) {
     const dadosTecnicosParaGuardar = { axes, pesos: pesosPlanetas, earningModes: axes.earningModeAll, earningModeDominante: axes.earningModeDominante, datas, savPorCasa };
     const rascunho = await guardarRascunho(intakeId, textoFinal, dadosTecnicosParaGuardar, prompt, { criticaLlm: textoCritica, rascunhoReescrito }, coordenadasNascimento);
 
-    // DESVIO — DadosParaTemplate foi desenhado para o ramo adulto
-    // (areaActual/anosExperiencia). Para o adolescente, que ainda não
-    // trabalha, estes 2 campos recebem texto próprio em vez de ficarem
-    // vazios/enganosos — reaproveita gerarHTMLRelatorio tal como está
-    // (uma reescrita do template para 2 ramos é uma mudança maior, fora
-    // do âmbito desta ronda; sinalizado no relatório).
-    const dadosTemplate: DadosParaTemplate = {
-      nome: intake.nome,
-      dataNascimento: intake.data_nascimento,
-      horaNascimento: horaAproximada ? null : intake.hora_nascimento,
-      localNascimento: intake.local_nascimento,
-      situacaoDeclarada: intakeAdolescente.situacaoDeclarada,
-      areaActual: "Ainda a estudar",
-      anosExperiencia: intakeAdolescente.situacaoDeclarada,
-      opcoesConsideradas: intakeAdolescente.opcoesAdolescente,
-      perguntaEspecifica: intakeAdolescente.opcaoMaisProvavel ? `Qual das opções lhe parece mais provável hoje: ${intakeAdolescente.opcaoMaisProvavel}?` : undefined,
-    };
+    // TAREFA 1 (correcção do especialista) — ehAdolescente/anoEscolaridade
+    // dizem ao template para não mostrar campos/secções do ramo adulto
+    // (área actual, anos de experiência, "ponte de transição") que não
+    // fazem sentido para quem ainda não trabalha (ver relatorioTemplate.ts).
+    // "pos-12" usa o quadro adulto (texto já gerado nesse tom acima).
+    const dadosTemplate: DadosParaTemplate = ehPos12
+      ? {
+          nome: intake.nome,
+          dataNascimento: intake.data_nascimento,
+          horaNascimento: horaAproximada ? null : intake.hora_nascimento,
+          localNascimento: intake.local_nascimento,
+          situacaoDeclarada: intakeAdolescente.situacaoDeclarada,
+          areaActual: "",
+          anosExperiencia: "",
+          opcoesConsideradas: intakeAdolescente.opcoesAdolescente,
+          ideiaConcreta: intakeAdolescente.opcaoMaisProvavel,
+        }
+      : {
+          nome: intake.nome,
+          dataNascimento: intake.data_nascimento,
+          horaNascimento: horaAproximada ? null : intake.hora_nascimento,
+          localNascimento: intake.local_nascimento,
+          situacaoDeclarada: intakeAdolescente.situacaoDeclarada,
+          ehAdolescente: true,
+          anoEscolaridade: intakeAdolescente.anoEscolaridade ? ANO_ESCOLARIDADE_LABEL[intakeAdolescente.anoEscolaridade] : undefined,
+          areaActual: "Ainda a estudar",
+          anosExperiencia: intakeAdolescente.situacaoDeclarada,
+          opcoesConsideradas: intakeAdolescente.opcoesAdolescente,
+          perguntaEspecifica: intakeAdolescente.opcaoMaisProvavel ? `Qual das opções lhe parece mais provável hoje: ${intakeAdolescente.opcaoMaisProvavel}?` : undefined,
+        };
     const html = gerarHTMLRelatorio(dadosTemplate, textoFinal, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
 
     return NextResponse.json({ ok: true, rascunhoId: rascunho.id, texto: textoFinal, html, houveReescrita: rascunhoReescrito !== null });

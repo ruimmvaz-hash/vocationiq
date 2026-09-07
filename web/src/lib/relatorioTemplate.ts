@@ -57,6 +57,20 @@ export interface DadosParaTemplate {
   opcoesConsideradas: string[];
   ideiaConcreta?: string;
   perguntaEspecifica?: string;
+  /**
+   * TAREFA 1 (correcção do especialista) — antes desta correcção, o
+   * ramo adolescente (que não tem área actual/anos de experiência)
+   * reaproveitava estes 2 campos com valores placeholder ("Ainda a
+   * estudar" / o rótulo da situação escolar), o que produzia linhas sem
+   * sentido no quadro de dados ("Anos de experiência: Estou no 10º,
+   * 11º ou 12º ano") e a secção inteira "A sua ponte de transição"
+   * (que assume uma área de trabalho actual a abandonar — não aplicável
+   * a quem nunca trabalhou). `ehAdolescente` faz o template tratar os 2
+   * ramos de forma diferente em vez de forçar dados adultos a caber.
+   */
+  ehAdolescente?: boolean;
+  /** TAREFA 2 (correcção do especialista) — rótulo humano do novo campo `ano_escolaridade` (migração 0020). Só usado quando `ehAdolescente` é true. */
+  anoEscolaridade?: string;
 }
 
 const AZUL = "#1B3A6B";
@@ -940,8 +954,12 @@ function blocoQuemE(d: DadosParaTemplate): string {
     ...(d.horaNascimento ? ([["Hora", d.horaNascimento]] as [string, string][]) : []),
     ["Local de nascimento", d.localNascimento],
     ["Situação declarada", d.situacaoDeclarada],
-    ["Área actual", d.areaActual],
-    ["Anos de experiência", d.anosExperiencia],
+    // TAREFA 1 (correcção do especialista) — "Área actual"/"Anos de
+    // experiência" são conceitos do ramo adulto; um adolescente nunca
+    // trabalhou. Mostra "Ano de escolaridade" quando disponível
+    // (migração 0020, TAREFA 2), ou omite a linha por completo — nunca
+    // reaproveita os rótulos adultos com valores que não fazem sentido.
+    ...(d.ehAdolescente ? (d.anoEscolaridade ? ([["Ano de escolaridade", d.anoEscolaridade]] as [string, string][]) : []) : ([["Área actual", d.areaActual], ["Anos de experiência", d.anosExperiencia]] as [string, string][])),
   ];
   return `
     <div class="bloco-dados">
@@ -1021,7 +1039,7 @@ function cardOpcao(op: LeituraOpcao, dados: DadosParaTemplate, pesos: PesoPlanet
         <span>${escapeHtml(op.nome)}</span>
         <span class="badge-forca" style="background:${corForca(op.forca)}">${FORCA_LABEL[op.forca]}</span>
       </div>
-      ${blocoDiagramaPonte(dados, pesos, axes)}
+      ${dados.ehAdolescente ? "" : blocoDiagramaPonte(dados, pesos, axes)}
       ${op.insight ? `<div class="caixa-insight"><p>${escapeHtml(op.insight)}</p></div>` : ""}
       ${partes}
     </div>`;
