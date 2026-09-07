@@ -1,9 +1,19 @@
 // Redesenho do motor VocationIQ, Parte 3 — arquitectura de 3 passos.
-// Gerar (já existente) → Criticar (2ª chamada, 19 critérios — 12
+// Gerar (já existente) → Criticar (2ª chamada, 20 critérios — 12
 // originais + 13-16 das 4 camadas técnicas + 17-19 de precisão de
-// ligação/nomeação técnica, correcção do especialista) → Reescrever (3ª
-// chamada, só se algum critério falhar). Tudo dentro do mesmo clique em
-// "Gerar rascunho"/"Regenerar" — nunca uma acção separada do admin.
+// ligação/nomeação técnica + 20 detector explícito da palavra "carta",
+// correcção do especialista) → Reescrever (3ª chamada, só se algum
+// critério falhar). Tudo dentro do mesmo clique em "Gerar rascunho"/
+// "Regenerar" — nunca uma acção separada do admin.
+//
+// CORRECÇÃO (ronda seguinte) — o critério 20 é novo: nenhum dos 19
+// critérios anteriores verificava explicitamente a palavra "carta" no
+// TEXTO GERADO PELO LLM (a proibição só existia como regra na geração,
+// nunca como critério na crítica) — por isso, quando o LLM violava a
+// regra, nada na crítica automática apanhava isso nem forçava reescrita.
+// Confirmado por leitura de código: nenhum resíduo de "carta" existe em
+// nenhuma instrução do prompt (ver promptAdulto.ts) — a causa era mesmo
+// esta lacuna na crítica, não um exemplo a ser imitado.
 
 const INSTRUCAO_CRITICA = `Tens à tua frente:
  A) O prompt técnico completo
@@ -73,6 +83,11 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
  19. NOMEAÇÃO TÉCNICA — CONJUNÇÕES: qualquer menção a fusão de
      traços sem incluir os dois planetas entre parênteses: FALHA
      — reescrita obrigatória.
+
+ 20. PALAVRA PROIBIDA — "CARTA": o texto usa a palavra "carta" (ou
+     "mapa astral"/"mapa natal") em vez de "perfil"? Lista cada
+     ocorrência exacta. Se aparecer mesmo uma vez: FALHA —
+     reescrita obrigatória.
 
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
@@ -163,6 +178,11 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
  19. NOMEAÇÃO TÉCNICA — CONJUNÇÕES: qualquer menção a fusão de
      traços sem incluir os dois planetas entre parênteses: FALHA
      — reescrita obrigatória.
+
+ 20. PALAVRA PROIBIDA — "CARTA": o texto usa a palavra "carta" (ou
+     "mapa astral"/"mapa natal") em vez de "perfil"? Lista cada
+     ocorrência exacta. Se aparecer mesmo uma vez: FALHA —
+     reescrita obrigatória.
 
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
