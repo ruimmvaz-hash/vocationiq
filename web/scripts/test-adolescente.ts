@@ -6,13 +6,23 @@
 // e a camada de cálculo. Corre SEM chamar a Anthropic (só imprime o
 // prompt gerado, nunca o envia).
 //
-// Uso: npx tsx scripts/test-adolescente.ts
+// Uso: npx tsx scripts/test-adolescente.ts [--ano=7-a-9|10-a-12]
+//
+// REVERTIDO (correcção do especialista) — `--ano` foi acrescentado só
+// para confirmar por regressão que "7-a-9" e "10-a-12" produzem hoje o
+// MESMO prompt em estrutura (a distinção dentro de promptAdolescente.ts
+// foi removida) — nunca para reintroduzir a distinção aqui.
 
 import { construirPromptAdolescente } from "@naveya/method-engine";
 import { geocodeCityCountry } from "../src/lib/reportGeo";
 import { localBirthTimeToUtc } from "../src/lib/localBirthTime";
 import { calcularDadosAstrologicosAdolescente } from "../src/lib/relatorioAdultoCompute";
 import type { IntakeRow } from "../src/lib/store";
+
+function arg(name: string): string {
+  const found = process.argv.find((a) => a.startsWith(`--${name}=`));
+  return found ? found.slice(name.length + 3) : "";
+}
 
 async function main() {
   const nome = "João (teste adolescente)";
@@ -49,7 +59,7 @@ async function main() {
     preferencia_familia: "Os meus pais preferiam que eu seguisse medicina.",
     opcoes_adolescente: ["medicina", "engenharia", "design"],
     opcao_mais_provavel: "medicina",
-    ano_escolaridade: "10-a-12",
+    ano_escolaridade: (arg("ano") || "10-a-12") as "7-a-9" | "10-a-12",
     curso_actual: null,
     satisfacao_curso: null,
     area_trabalho_actual: null,

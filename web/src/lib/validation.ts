@@ -16,7 +16,7 @@ export const CLAREZA_IDEIA = [
 
 export type ClarezaIdeia = (typeof CLAREZA_IDEIA)[number]["valor"];
 
-/** TAREFA 2 (correcção do especialista, aprovada) — granularidade dentro do ramo adolescente: "7-a-9" pede área (nunca curso específico), "10-a-12" mantém o formato actual (curso + via de acesso), "pos-12" encaminha para o motor adulto (ver promptAdolescente.ts). Campo opcional — nunca bloqueia o relatório quando não preenchido (rascunhos antigos, ou a pessoa não respondeu). */
+/** TAREFA 2 (correcção do especialista, aprovada) — só "pos-12" continua a mudar o comportamento do relatório (encaminha para o motor adulto, ver `ehPos12` em relatorioAdultoCompute.ts/route.ts); a distinção "7-a-9" (área) vs "10-a-12" (curso + via de acesso) dentro do prompt adolescente foi revertida (ver promptAdolescente.ts) — hoje ambos os valores produzem o mesmo percurso. Campo opcional — nunca bloqueia o relatório quando não preenchido (rascunhos antigos, ou a pessoa não respondeu). */
 export const ANO_ESCOLARIDADE = [
   { valor: "7-a-9", label: "7º ao 9º ano" },
   { valor: "10-a-12", label: "10º ao 12º ano" },
@@ -149,7 +149,7 @@ export interface IntakePayload {
   opcoesAdolescente?: string[];
   /** TAREFA 3 — "qual delas te parece a mais provável hoje?" Nunca decide nada, mas permite tratar essa como a hipótese em teste. */
   opcaoMaisProvavel?: string;
-  /** TAREFA 2 (correcção do especialista, ronda seguinte) — granularidade de escolaridade (migração 0020), decide se o prompt recomenda área (7-a-9) ou curso específico (10-a-12), ou encaminha para o motor adulto (pos-12). */
+  /** TAREFA 2 (correcção do especialista, ronda seguinte) — granularidade de escolaridade (migração 0020); só "pos-12" ainda muda o comportamento do relatório, encaminhando para o motor adulto (ver `ehPos12`) — "7-a-9" e "10-a-12" produzem hoje o mesmo percurso adolescente (distinção revertida). */
   anoEscolaridade?: AnoEscolaridade;
 
   // Ramo "universidade"

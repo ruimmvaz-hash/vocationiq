@@ -481,30 +481,42 @@ type SubsistemaCamada = "d1_posicao" | "d9_karakamsha" | "dasha" | "indice_catal
  * especialista o pediu explicitamente, mas nunca é atribuído na prática
  * até o motor ganhar uma camada ligada a períodos — não inventado aqui.
  */
-function analisarCamada(camada: string, ctx: ContextoAvaliacao): { pesoAssociado: number; subsistema: SubsistemaCamada } {
-  if (camada.startsWith("Atmakaraka")) return { pesoAssociado: pesoDoPlaneta(ctx.pesos, ctx.atmakarakaInfo.planeta), subsistema: "d1_posicao" };
-  if (camada.startsWith("Amatyakaraka")) return { pesoAssociado: pesoDoPlaneta(ctx.pesos, ctx.axes.amatyakaraka), subsistema: "d1_posicao" };
-  if (camada.startsWith("Planeta de maior peso")) return { pesoAssociado: pesoDoPlaneta(ctx.pesos, ctx.planetaDeMaiorPeso), subsistema: "d1_posicao" };
-  if (camada.startsWith("Nakshatra do Atmakaraka")) return { pesoAssociado: pesoDoPlaneta(ctx.pesos, ctx.atmakarakaInfo.planeta), subsistema: "d9_karakamsha" };
+/**
+ * `planeta` — quando a camada atribui o seu peso a UM planeta específico
+ * e identificável (Atmakaraka, Amatyakaraka, Planeta de maior peso,
+ * Regente do Modo de Ganho, Nakshatra do Atmakaraka — esta última mede a
+ * posição do MESMO planeta que é o Atmakaraka, não um facto à parte),
+ * usado por `construirDestinoConvergente` para nunca somar o peso do
+ * mesmo planeta duas vezes na soma de desempate (ver DESVIO ali). `null`
+ * para camadas de "Combinação" (sinal conjunto de 2 planetas, não uma
+ * repetição de um facto já contado) e para as genéricas sem planeta
+ * único (Casa temática forte, Eixo do rendimento, Sinais estruturados,
+ * Área actual, Ideia concreta).
+ */
+function analisarCamada(camada: string, ctx: ContextoAvaliacao): { pesoAssociado: number; subsistema: SubsistemaCamada; planeta: ClassicalGraha | null } {
+  if (camada.startsWith("Atmakaraka")) return { pesoAssociado: pesoDoPlaneta(ctx.pesos, ctx.atmakarakaInfo.planeta), subsistema: "d1_posicao", planeta: ctx.atmakarakaInfo.planeta as ClassicalGraha };
+  if (camada.startsWith("Amatyakaraka")) return { pesoAssociado: pesoDoPlaneta(ctx.pesos, ctx.axes.amatyakaraka), subsistema: "d1_posicao", planeta: ctx.axes.amatyakaraka as ClassicalGraha };
+  if (camada.startsWith("Planeta de maior peso")) return { pesoAssociado: pesoDoPlaneta(ctx.pesos, ctx.planetaDeMaiorPeso), subsistema: "d1_posicao", planeta: ctx.planetaDeMaiorPeso as ClassicalGraha };
+  if (camada.startsWith("Nakshatra do Atmakaraka")) return { pesoAssociado: pesoDoPlaneta(ctx.pesos, ctx.atmakarakaInfo.planeta), subsistema: "d9_karakamsha", planeta: ctx.atmakarakaInfo.planeta as ClassicalGraha };
   if (camada.startsWith("Combinação")) {
     const match = camada.match(/^Combinação ([a-z]+)\+([a-z]+) /);
     if (match) {
       const a = (PLANETA_PT_PARA_GRAHA[match[1]] ?? match[1]) as ClassicalGraha;
       const b = (PLANETA_PT_PARA_GRAHA[match[2]] ?? match[2]) as ClassicalGraha;
-      return { pesoAssociado: (pesoDoPlaneta(ctx.pesos, a) + pesoDoPlaneta(ctx.pesos, b)) / 2, subsistema: "d1_posicao" };
+      return { pesoAssociado: (pesoDoPlaneta(ctx.pesos, a) + pesoDoPlaneta(ctx.pesos, b)) / 2, subsistema: "d1_posicao", planeta: null };
     }
-    return { pesoAssociado: 1.0, subsistema: "d1_posicao" };
+    return { pesoAssociado: 1.0, subsistema: "d1_posicao", planeta: null };
   }
   if (camada.startsWith("Regente do Modo de Ganho dominante")) {
     const match = camada.match(/^Regente do Modo de Ganho dominante \(([A-Za-z]+),/);
     const planeta = match ? (match[1] as ClassicalGraha) : undefined;
-    return { pesoAssociado: planeta ? pesoDoPlaneta(ctx.pesos, planeta) : 1.0, subsistema: "d1_posicao" };
+    return { pesoAssociado: planeta ? pesoDoPlaneta(ctx.pesos, planeta) : 1.0, subsistema: "d1_posicao", planeta: planeta ?? null };
   }
-  if (camada.startsWith("Casa temática forte")) return { pesoAssociado: 1.0, subsistema: "d1_posicao" };
+  if (camada.startsWith("Casa temática forte")) return { pesoAssociado: 1.0, subsistema: "d1_posicao", planeta: null };
   // Eixo do rendimento, Sinais estruturados da área, Área actual declarada,
   // Ideia concreta partilhada — sinais do índice do catálogo, sem um único
   // planeta a que se possa atribuir o peso.
-  return { pesoAssociado: 1.0, subsistema: "indice_catalogo" };
+  return { pesoAssociado: 1.0, subsistema: "indice_catalogo", planeta: null };
 }
 
 /**
@@ -537,7 +549,32 @@ function construirDestinoConvergente(id: string, ctx: ContextoAvaliacao): Destin
   const destino = catalogoDestinos[id];
   const camadas = camadasParaDestino(id, ctx);
   const analisadas = camadas.map((c) => analisarCamada(c, ctx));
-  const somaPesoCamadas = Math.round(analisadas.reduce((soma, a) => soma + a.pesoAssociado, 0) * 1000) / 1000;
+  // DESVIO (correcção do especialista) — confirmado com a carta real da
+  // Alice: Saturno é simultaneamente "Planeta de maior peso" E "Regente
+  // do Modo de Ganho dominante" (os dois papéis coincidem no mesmo
+  // planeta), e cada um gera a sua própria camada — correcto para a
+  // CONTAGEM (são 2 factos independentes, SPEC-vocacional.md), mas
+  // ERRADO para a SOMA DE PESOS: somar o peso de Saturno duas vezes
+  // inflaciona o desempate por o mesmo planeta "aparecer com dois
+  // nomes", não porque a carta tenha dois planetas fortes. Sem esta
+  // correcção, "Ciências da Informação e Documentação" (Saturno em 2
+  // papéis) vencia "Ciências da Educação" (Lua só em 1 papel) só por
+  // este artefacto de contagem, não por convergência real mais forte.
+  // Correcção: cada planeta contribui UMA SÓ VEZ para a soma, seja qual
+  // for o nº de camadas com peso a ele atribuído (Atmakaraka,
+  // Amatyakaraka, Planeta de maior peso, Regente do Modo de Ganho,
+  // Nakshatra do Atmakaraka — esta última é o mesmo planeta Atmakaraka,
+  // nunca um planeta à parte). Camadas sem planeta único (Combinação,
+  // Casa temática forte, Eixo do rendimento, Sinais estruturados, Área
+  // actual, Ideia concreta) continuam a somar 1 vez cada, sem dedup —
+  // não repetem o peso de um planeta já contado, são sinais à parte.
+  const pesoPorPlaneta = new Map<string, number>();
+  let somaSemPlanetaUnico = 0;
+  for (const a of analisadas) {
+    if (a.planeta) pesoPorPlaneta.set(a.planeta, a.pesoAssociado);
+    else somaSemPlanetaUnico += a.pesoAssociado;
+  }
+  const somaPesoCamadas = Math.round(([...pesoPorPlaneta.values()].reduce((s, p) => s + p, 0) + somaSemPlanetaUnico) * 1000) / 1000;
   const subsistemasDistintos = new Set(analisadas.map((a) => a.subsistema)).size;
   return {
     id,
