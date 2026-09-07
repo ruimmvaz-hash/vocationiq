@@ -47,6 +47,10 @@ import {
   blocoConjuncoes,
   blocoYogas,
   blocoVargottama,
+  INSTRUCAO_AVASTHAS,
+  INSTRUCAO_CONJUNCOES,
+  INSTRUCAO_YOGAS,
+  INSTRUCAO_VARGOTTAMA,
   TERMOS_PROIBIDOS,
   SECCAO_TITULOS,
   MARCADORES,
@@ -173,10 +177,10 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
   · SINAL FORTE (2-3 camadas): confiança, citando as fontes.
   · LEITURA (interpretação sólida, sem convergência mensurável): escreve-se como leitura, nunca como facto.
   · EM ABERTO (o perfil não distingue): diz isso directamente — "o teu perfil não distingue entre X e Y, a decisão fica contigo".
-- AVASTHAS — OBRIGATÓRIO NA SECÇÃO "${SECCAO_TITULOS.quemE}": usa as avasthas para explicar porque um dom aparentemente forte pode não estar ainda a funcionar na prática. Exemplo correcto: "Mercúrio em Yuva (pleno vigor) — a comunicação flui naturalmente, sem esforço" vs "Saturno exaltado mas em Vriddha (declínio) — a estrutura e a disciplina estão lá, mas operam por reserva, não por impulso espontâneo." Planeta forte (peso ≥1,3) mas Mrita: dizer explicitamente que o potencial existe mas a expressão está bloqueada. Planeta fraco (peso <0,9) mas Yuva: dizer que tem mais capacidade de expressão do que o peso sugere. NUNCA ler o peso isolado da avastha.
-- CONJUNÇÕES — OBRIGATÓRIO NA SECÇÃO "${SECCAO_TITULOS.quemE}": usa as conjunções para explicar fusões ou tensões entre impulsos que de outra forma pareceriam contraditórios. Exemplo correcto: "Saturno conjunção Mercúrio — o pensamento é metódico e disciplinado; o que parece lentidão é na verdade rigor." Conjunção com Júpiter ou Vénus: eleva o planeta mais fraco — nomear o efeito concreto. Conjunção Saturno+Marte: adiciona determinação mas também conflito interno entre impulso e controlo. Ler sempre planetas em conjunção como uma unidade, nunca separados.
-- YOGAS — OBRIGATÓRIO COMO CAMADA DE CONVERGÊNCIA: um yoga activo pode ser o reforço adicional que confirma uma candidata já apresentada acima com convergência forte (≥4 camadas) — nunca a fonte que cria uma candidata nova. Raja Yoga activo ligado a uma opção de autoridade/liderança: citar como reforço adicional. Dhana Yoga activo ligado a uma opção de recursos/finanças: citar como reforço adicional. Viparita Raja Yoga: ligar a opções de superação/transformação (medicina, investigação, direito, psicologia). PROIBIDO usar um yoga para promover uma opção que a secção "Candidatas do catálogo" não tenha já listado — os yogas reforçam a leitura das candidatas já dadas, nunca substituem o catálogo. Se nenhum yoga activo, não mencionar.
-- VARGOTTAMA — OBRIGATÓRIO NA DESCRIÇÃO DO PERFIL: usa para distinguir traços estruturais e estáveis de traços situacionais. Planeta Vargottama: dizer que este traço é consistente e duradouro — não muda com as circunstâncias. Planeta não-Vargottama: pode ser modulado pelo contexto e pelo esforço. Eleva o nível de confiança das afirmações sobre planetas Vargottama — são os pontos mais sólidos do perfil. Se nenhum planeta é Vargottama, não mencionar.
+- ${INSTRUCAO_AVASTHAS}
+- ${INSTRUCAO_CONJUNCOES}
+- ${INSTRUCAO_YOGAS}
+- ${INSTRUCAO_VARGOTTAMA}
 - HORIZONTE TEMPORAL: até 18 meses, afirmações directas. Entre 18 meses e 3 anos, com cautela ("tende a", "favorece"). Mais de 3 anos, só como pano de fundo.
 - A lista de opções entrega-se sempre com a moldura explícita, no início e no fim da secção "Leitura por opção": isto é para reconhecer, não para obedecer — o critério final é o reconhecimento interno do jovem, nunca o documento.
 - Ao nomear um caminho fora do sistema formal, indica sempre a via de sustento associada — nunca "o teu caminho é X" sem dizer o que paga as contas enquanto X cresce.

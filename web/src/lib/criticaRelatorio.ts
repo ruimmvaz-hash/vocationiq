@@ -45,18 +45,18 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
  12. KARAKAMSHA: foi lido sempre com o Atmakaraka (nunca
      isolado)?
 
- 13. AVASTHAS: planetas com avastha extrema (Bala ou Mrita) foram
-     mencionados na secção "Quem é"? Lista os que estão em falta.
+ 13. AVASTHAS: se existe planeta Mrita cuja área governa a situação
+     actual da pessoa, foi explicado na secção "Quem é"? Se não: FALHA.
 
- 14. CONJUNÇÕES: as conjunções activas foram usadas para explicar
-     fusões ou tensões em "Quem é"? Lista as que faltam.
+ 14. CONJUNÇÕES: cada conjunção activa foi usada numa frase concreta
+     em "Quem é"? Se alguma foi ignorada: FALHA.
 
- 15. YOGAS: os yogas activos foram nomeados e usados como reforço
-     de candidatas já listadas pelo catálogo (nunca para criar
-     candidatas novas)? Lista os que foram ignorados.
+ 15. YOGAS: cada yoga activo foi ligado a uma candidata ou opção
+     concreta (nunca para criar candidatas novas)? Se foi só
+     listado sem ligação: FALHA.
 
- 16. VARGOTTAMA: planetas Vargottama foram identificados como
-     traços estruturais no perfil? Lista os que foram ignorados.
+ 16. VARGOTTAMA: se existe planeta Vargottama, foi nomeado em
+     "Quem é" como traço estrutural? Se não: FALHA.
 
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
@@ -119,18 +119,18 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
  12. KARAKAMSHA: foi lido sempre com o Atmakaraka (nunca
      isolado)?
 
- 13. AVASTHAS: planetas com avastha extrema (Bala ou Mrita) foram
-     mencionados na secção "Quem é"? Lista os que estão em falta.
+ 13. AVASTHAS: se existe planeta Mrita cuja área governa a situação
+     actual da pessoa, foi explicado na secção "Quem é"? Se não: FALHA.
 
- 14. CONJUNÇÕES: as conjunções activas foram usadas para explicar
-     fusões ou tensões em "Quem é"? Lista as que faltam.
+ 14. CONJUNÇÕES: cada conjunção activa foi usada numa frase concreta
+     em "Quem é"? Se alguma foi ignorada: FALHA.
 
- 15. YOGAS: os yogas activos foram nomeados e usados como reforço
-     de candidatas já listadas pelo catálogo (nunca para criar
-     candidatas novas)? Lista os que foram ignorados.
+ 15. YOGAS: cada yoga activo foi ligado a uma candidata ou opção
+     concreta (nunca para criar candidatas novas)? Se foi só
+     listado sem ligação: FALHA.
 
- 16. VARGOTTAMA: planetas Vargottama foram identificados como
-     traços estruturais no perfil? Lista os que foram ignorados.
+ 16. VARGOTTAMA: se existe planeta Vargottama, foi nomeado em
+     "Quem é" como traço estrutural? Se não: FALHA.
 
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.

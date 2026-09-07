@@ -496,6 +496,48 @@ export function blocoVargottama(d1: D1TableResult): string {
   return linhas.length ? linhas.join("\n") : "(nenhum planeta Vargottama nesta carta)";
 }
 
+/**
+ * 4 instruções "REGRAS OBRIGATÓRIAS" das camadas técnicas (correcção do
+ * especialista, ronda seguinte — a versão anterior era genérica demais e
+ * o LLM não as estava a seguir). Partilhadas entre `construirPromptAdulto`
+ * e `construirPromptAdolescente` (FALTA 1 dessa ronda: nunca só um dos
+ * dois motores) — o texto dos exemplos não usa "tu"/"você" em lado
+ * nenhum, por isso funciona sem alteração nos dois registos.
+ *
+ * DESVIO (correcção do especialista, FALTA 2 dessa ronda) — o texto
+ * original pedia "se a área actual é governada por um planeta Mrita",
+ * mas não existe no motor nenhum facto único "o planeta que governa a
+ * área actual": `intake.areaActual` é texto livre, casado contra o
+ * catálogo por `buscarDestinosPorTexto` (`catalogoVocacional.ts`), e os
+ * planetas relevantes só aparecem dentro das CAMADAS de cada destino
+ * correspondente (ex.: "Regente do Modo de Ganho dominante (Venus, casa
+ * 10)"). Verificado com os dados reais da Melina antes de escrever isto:
+ * a área dela ("Estética") liga-se a Vénus (regente do Modo de Ganho,
+ * peso 0,86, Vriddha) — NUNCA à Lua (peso 0,98, Mrita, mas em casa 7,
+ * sem nenhuma ligação a "Estética" nas camadas do catálogo). A instrução
+ * abaixo aponta para o mecanismo real (as camadas de "Derivadas da área
+ * actual", já no prompt) em vez de inventar um facto "planeta que
+ * governa a área actual" que o motor não calcula.
+ */
+export const INSTRUCAO_AVASTHAS = `AVASTHAS — REGRAS OBRIGATÓRIAS na secção "${SECCAO_TITULOS.quemE}":
+· PLANETA LIGADO À ÁREA ACTUAL EM MRITA: olha para os planetas citados nas camadas de "Derivadas da área actual" (dados técnicos, "Candidatas do catálogo"). Se um deles está em Mrita, nomeia-o explicitamente: "Trabalhou durante X anos no campo de [planeta] — mas [planeta] Mrita está bloqueado nesta carta, o que explica com precisão porque essa área nunca trouxe realização plena. Não é falta de talento — é falta de ressonância estrutural."
+· PLANETA FORTE (peso ≥1,3) EM MRITA: nomeia a contradição: "[Planeta] tem força técnica alta (peso X) mas está em Mrita — o potencial existe mas a expressão está bloqueada. O que parece capacidade adormecida é na verdade uma barreira real a trabalhar."
+· PLANETA FRACO (peso <0,9) EM YUVA: nomeia a surpresa positiva: "[Planeta] tem peso baixo (X) mas está em Yuva — tem mais capacidade de expressão do que os números sugerem. É um músculo que responde bem ao treino."
+NUNCA listar avasthas sem as usar para explicar algo concreto sobre a pessoa.`;
+
+export const INSTRUCAO_CONJUNCOES = `CONJUNÇÕES — REGRAS OBRIGATÓRIAS: para cada conjunção activa, a secção "${SECCAO_TITULOS.quemE}" TEM de ter uma frase que explique a fusão ou tensão.
+· CONJUNÇÃO BENÉFICA (com Júpiter ou Vénus): "[Planeta] conjunção [Júpiter/Vénus] — [Planeta] recebe elevação natural. O que seria apenas [qualidade do planeta] torna-se [qualidade elevada]."
+· CONJUNÇÃO DE TENSÃO (Saturno+Marte, Sol+Saturno, Marte+Lua): "[Planeta A] conjunção [Planeta B] — dois impulsos opostos no mesmo espaço. O que parece contradição ([impulso A] vs [impulso B]) é na verdade a tensão criativa que define como esta pessoa age. Resolver esta tensão é o trabalho de uma vida — mas também é a fonte de energia mais original deste perfil."
+NUNCA ignorar conjunções activas.`;
+
+export const INSTRUCAO_YOGAS = `YOGAS — REGRAS OBRIGATÓRIAS: cada yoga activo tem de se ligar a uma candidata ou opção concreta cujas camadas de convergência (secção "Candidatas do catálogo") já citam o MESMO planeta do yoga — PROIBIDO inventar uma ligação a uma candidata cujas camadas não citem nenhum dos planetas do yoga.
+· RAJA YOGA ACTIVO: em "${SECCAO_TITULOS.leituraPorOpcao}" ou "${SECCAO_TITULOS.candidataForaDaLista}", para a candidata que partilha o planeta: "Existe uma configuração técnica nesta carta que sustenta posições de autoridade real — não é ambição, é uma estrutura planetária concreta. Isso reforça [candidata] porque [planeta partilhado] aparece nos dois."
+· DHANA YOGA ACTIVO: liga à opção/candidata de maior potencial financeiro que partilhe o planeta: "A facilidade de converter esforço em recursos (Dhana Yoga activo) reforça [opção] — o caminho financeiro desta área alinha com a estrutura do perfil."
+· VIPARITA RAJA YOGA ACTIVO: nomeia na parte de custo/limitações da opção relevante: "As dificuldades desta área não são obstáculos — são o caminho. Este perfil tem Viparita Raja Yoga, o que significa que a adversidade é precisamente onde a força se constrói."
+NUNCA listar yogas sem os ligar a algo concreto na narrativa. Se nenhum yoga activo, não mencionar.`;
+
+export const INSTRUCAO_VARGOTTAMA = `VARGOTTAMA — REGRAS OBRIGATÓRIAS: se existe planeta Vargottama, a secção "${SECCAO_TITULOS.quemE}" TEM de incluir: "[Planeta] é Vargottama — este traço é estrutural, não situacional. Não muda com as circunstâncias, não depende de esforço para existir. É o ponto mais estável de todo o perfil." Contrasta com um traço não-Vargottama já nomeado nos Dons/Limitações: "Enquanto [outro planeta] pode ser modulado e desenvolvido, [planeta Vargottama] é o que fica quando tudo o resto muda." Se nenhum planeta é Vargottama, não mencionar.`;
+
 export function construirPromptAdulto(
   intake: VocationiqIntakeAdulto,
   axes: VocationIQAxes,
@@ -544,10 +586,10 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
   · LEITURA (interpretação sólida, sem convergência mensurável): escreve-se como leitura, nunca como facto. Ex.: "Uma leitura possível deste perfil é X — não como facto, mas como direcção."
   · EM ABERTO (o perfil não distingue): diz isso directamente. Ex.: "O perfil não distingue entre X e Y — a decisão fica com você."
   Proibido usar linguagem de "Convergência forte" para algo que só tem um "Sinal forte" — o nível de confiança da frase tem de corresponder exactamente ao nível de convergência que a sustenta.
-- AVASTHAS — OBRIGATÓRIO NA SECÇÃO "${SECCAO_TITULOS.quemE}": usa as avasthas para explicar porque um dom aparentemente forte pode não estar a funcionar na prática. Exemplo correcto: "Mercúrio em Yuva (pleno vigor) — a comunicação flui naturalmente, sem esforço" vs "Saturno exaltado mas em Vriddha (declínio) — a estrutura e a disciplina estão lá, mas operam por reserva, não por impulso espontâneo." Planeta forte (peso ≥1,3) mas Mrita: dizer explicitamente que o potencial existe mas a expressão está bloqueada. Planeta fraco (peso <0,9) mas Yuva: dizer que tem mais capacidade de expressão do que o peso sugere. NUNCA ler o peso isolado da avastha.
-- CONJUNÇÕES — OBRIGATÓRIO NA SECÇÃO "${SECCAO_TITULOS.quemE}": usa as conjunções para explicar fusões ou tensões entre impulsos que de outra forma pareceriam contraditórios. Exemplo correcto: "Saturno conjunção Mercúrio — o pensamento é metódico e disciplinado; o que parece lentidão é na verdade rigor." Conjunção com Júpiter ou Vénus: eleva o planeta mais fraco — nomear o efeito concreto. Conjunção Saturno+Marte: adiciona determinação mas também conflito interno entre impulso e controlo. Ler sempre planetas em conjunção como uma unidade, nunca separados.
-- YOGAS — OBRIGATÓRIO COMO CAMADA DE CONVERGÊNCIA: um yoga activo pode ser o reforço adicional que confirma uma candidata já apresentada acima com convergência forte (≥4 camadas) — nunca a fonte que cria uma candidata nova. Raja Yoga activo ligado a um destino de autoridade/liderança: citar como reforço adicional para essa candidata. Dhana Yoga activo ligado a um destino de recursos/finanças: citar como reforço adicional. Viparita Raja Yoga: ligar a candidatas de superação/transformação (medicina, investigação, direito, psicologia). PROIBIDO usar um yoga para promover uma opção que a secção "Candidatas do catálogo" não tenha já listado — os yogas reforçam a leitura das candidatas já dadas, nunca substituem o catálogo. Se nenhum yoga activo, não mencionar.
-- VARGOTTAMA — OBRIGATÓRIO NA DESCRIÇÃO DO PERFIL: usa para distinguir traços estruturais e estáveis de traços situacionais. Planeta Vargottama: dizer que este traço é consistente e duradouro — não muda com as circunstâncias. Planeta não-Vargottama: pode ser modulado pelo contexto e pelo esforço. Eleva o nível de confiança das afirmações sobre planetas Vargottama — são os pontos mais sólidos do perfil. Se nenhum planeta é Vargottama, não mencionar.
+- ${INSTRUCAO_AVASTHAS}
+- ${INSTRUCAO_CONJUNCOES}
+- ${INSTRUCAO_YOGAS}
+- ${INSTRUCAO_VARGOTTAMA}
 - Tom adulto, directo, sem gíria de coach, sem emojis.
 
 VOLUME: Cada secção deve ser tão longa quanto os dados sustentam — nunca mais, nunca menos. Se uma secção não tem nada genuinamente novo a acrescentar, é curta. Não preencher para atingir um mínimo. Proibido: repetir para parecer completo. Permitido: ser curto e preciso.
