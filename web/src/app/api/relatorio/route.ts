@@ -121,7 +121,7 @@ export async function POST(request: Request) {
     let textoFinal = textoOriginal;
     let rascunhoReescrito: string | null = null;
     if (resultadoCritica.falhas.length > 0) {
-      const promptReescrita = construirPromptReescrita(textoOriginal, resultadoCritica.falhas);
+      const promptReescrita = construirPromptReescrita(prompt, textoOriginal, resultadoCritica.falhas);
       rascunhoReescrito = await gerarTexto(client, promptReescrita, MAX_TOKENS);
       textoFinal = rascunhoReescrito;
     }

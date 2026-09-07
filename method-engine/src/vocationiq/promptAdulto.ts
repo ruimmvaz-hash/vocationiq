@@ -107,6 +107,8 @@ export const MARCADORES = {
   limitacao: "LIMITAÇÃO:",
   /** Correcção do especialista — secção "Quem é" (TAREFA 3): a frase de síntese final da secção. */
   sinteseQuemE: "SÍNTESE:",
+  /** TAREFA #40 (mudança de arquitectura — selecção pelo LLM) — bloco único, antes das 3 (ou menos) secções CANDIDATA, explicando qual dom já nomeado em "Quem é" liga a cada candidata escolhida e por que as restantes da pool completa não foram escolhidas. Nunca aparece no relatório final entregue ao cliente — extraído e removido do HTML tal como os outros marcadores internos (ver `relatorioTemplate.ts`). */
+  seleccaoCandidatas: "SELECÇÃO_CANDIDATAS:",
 } as const;
 
 export const FORCA_VALORES = ["forte", "moderada", "fraca"] as const;
@@ -345,28 +347,32 @@ export function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional, c
   const listar = (destinos: ResultadoCatalogoVocacional["destinosDeAreaActual"]) =>
     destinos.length ? destinos.map((d) => `- ${d.nome}: convergência ${d.convergencia} (${d.camadas.join("; ") || "sem camada identificada"})${formatarViaConcreta(cursosPorDestino[d.id])}`).join("\n") : "(nenhum destino do catálogo corresponde)";
 
-  // TAREFA 1 (correcção do especialista) — até 3 candidatas, nunca só a
-  // melhor; nenhuma ordem/numeração no texto (nunca "1ª/2ª/3ª", nunca
-  // "menção honrosa" — ver a instrução equivalente na secção "## Candidata
-  // fora da lista" mais abaixo no prompt).
-  //
-  // TAREFA #38 (sistema em dois níveis) — cada candidata chega já
-  // classificada em Nível 1 (inclui o planeta de maior peso — confiança
-  // plena) ou Nível 2 (só Atmakaraka/Amatyakaraka, sem o planeta de maior
-  // peso — confiança reduzida). O nível vai explícito nos dados técnicos
-  // para o LLM nunca ter de o inferir das camadas — ver
-  // INSTRUCAO_NIVEL_CANDIDATAS para a instrução de linguagem correspondente.
+  // TAREFA #40 (mudança de arquitectura — substitui a TAREFA 1 e a TAREFA
+  // #39) — `catalogarDestinos()` já não escolhe as 3 finais; entrega a
+  // POOL COMPLETA de candidatas que atingem ≥4 camadas (Nível 1 ou 2, sem
+  // limite de 3). A escolha de até 3 passa a ser feita AQUI, pelo LLM, na
+  // mesma chamada que escreve "Quem é" — ver INSTRUCAO_SELECCAO_CANDIDATAS
+  // logo abaixo. Cada linha da pool traz o nível (TAREFA #38) e a soma de
+  // pesos das camadas (`somaPesoCamadas`) explícita, para o LLM ter um
+  // número concreto a citar quando usar isso como desempate — nunca como
+  // critério principal.
   const candidatasTexto = catalogo.candidatasForaDaLista.length
     ? catalogo.candidatasForaDaLista
-        .map((c) => `- ${c.nome}: convergência ${c.convergencia}, Nível ${c.nivelConfianca} (${c.nivelConfianca === 1 ? "inclui o planeta de maior peso — confiança plena" : "só Atmakaraka/Amatyakaraka, sem o planeta de maior peso — confiança reduzida"}) (${c.camadas.join("; ")}).`)
+        .map(
+          (c) =>
+            `- ${c.nome}: convergência ${c.convergencia}, Nível ${c.nivelConfianca} (${c.nivelConfianca === 1 ? "inclui o planeta de maior peso — confiança plena" : "só Atmakaraka/Amatyakaraka, sem o planeta de maior peso — confiança reduzida"}), soma de pesos das camadas ${c.somaPesoCamadas.toFixed(2)} (${c.camadas.join("; ")}).`,
+        )
         .join("\n")
     : "nenhuma — nenhum destino reuniu 4 camadas independentes incluindo um indicador pessoal (planeta de maior peso, Atmakaraka ou Amatyakaraka).";
 
   // TAREFA 3 (correcção do especialista, ronda seguinte) — cada candidata
-  // (até 3) ganha o seu próprio bloco "-- Via concreta para [destino] --",
+  // da pool ganha o seu próprio bloco "-- Via concreta para [destino] --",
   // separado da listagem acima (antes vinha só inline, apensa à linha da
   // candidata). Formato exacto pedido: tipo de formação, certificação,
-  // como se entra, tempo médio até à primeira actividade remunerada.
+  // como se entra, tempo médio até à primeira actividade remunerada. Com a
+  // pool completa (TAREFA #40), isto cobre TODAS as candidatas elegíveis,
+  // não só as 3 que vierem a ser escolhidas — necessário para o LLM poder
+  // escolher qualquer uma da pool com a via concreta já disponível.
   const viasConcretasCandidatas = catalogo.candidatasForaDaLista
     .map((c) => {
       const cursos = cursosPorDestino[c.id];
@@ -380,7 +386,7 @@ export function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional, c
     catalogo.notaAreaGenerica ? `NOTA: ${catalogo.notaAreaGenerica}.` : null,
     `Derivadas da área actual:\n${listar(catalogo.destinosDeAreaActual)}`,
     `Alternativas pelo perfil (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações, eixo do rendimento):\n${listar(catalogo.destinosAlternativos)}`,
-    `Candidatas com ≥4 convergências (Nível 1 ou 2 conforme indicado, até 3, em pé de igualdade dentro do mesmo nível — nunca ranking):\n${candidatasTexto}`,
+    `Candidatas do catálogo — pool completa (≥4 convergências, Nível 1 ou 2 conforme indicado, SEM LIMITE DE 3 — a escolha de até 3 é tua, ver INSTRUCAO_SELECCAO_CANDIDATAS):\n${candidatasTexto}`,
     viasConcretasCandidatas || null,
     catalogo.notaEixoDoRendimento
       ? `NOTA sobre o eixo do rendimento (o que dá sentido vs. o que paga): ${catalogo.notaEixoDoRendimento.leitura}.${catalogo.notaEixoDoRendimento.regraDeEscrita ? ` Como escrever isto: ${catalogo.notaEixoDoRendimento.regraDeEscrita}` : ""}`
@@ -548,7 +554,7 @@ Distingue sempre:
 · Yoga cujos planetas coincidem com os desta candidata: "confirmação directa" — usa "confirma directamente esta candidata".
 · Yoga que reforça capacidade geral sem ligação aos planetas desta candidata: "reforço geral" — usa "reforça o teu/seu potencial nesta área de forma mais geral".
 Se NÃO houver nenhum yoga cujos planetas coincidam com os planetas da candidata, não menciones yogas nessa candidata — PROIBIDO inventar ligação para preencher espaço.
-Esta verificação é obrigatória para as TRÊS candidatas de cada relatório, não só a primeira. Se as três tiverem yogas aplicáveis, as três devem citá-los.`;
+Esta verificação é obrigatória para TODAS as candidatas escolhidas (até 3), não só a primeira. Se todas tiverem yogas aplicáveis, todas devem citá-los.`;
 
 // CORRECÇÃO 3 (correcção do especialista, ronda seguinte) — obriga o
 // mesmo formato de nomeação técnica nos dois motores (adulto e
@@ -572,10 +578,26 @@ Sempre que o texto descrever uma conjunção (dois traços "fundidos" ou "quase 
  * impessoal, correcta nos dois registos, sem perder o sentido pedido
  * (referenciar um dom já nomeado antes na secção "Quem é").
  */
-export const INSTRUCAO_ABERTURA_CANDIDATAS = `CANDIDATA FORA DA LISTA — LIGAÇÃO OBRIGATÓRIA A DOM JÁ NOMEADO: antes de qualquer menção às camadas técnicas (Atmakaraka, eixo do rendimento, sinais estruturados, etc.), cada candidata DEVE abrir com uma frase que a ligue explicitamente a um dom ou traço já nomeado na secção "${SECCAO_TITULOS.quemE}" deste mesmo relatório.
+// TAREFA #40 (correcção do especialista — MUDANÇA DE ARQUITECTURA) —
+// depois de quatro rondas a afinar limiares/gates/desempates dentro de
+// `catalogarDestinos()` (cada um resolvendo o caso que o motivou e
+// quebrando outro — ver comentário TAREFA #40 em catalogoVocacional.ts),
+// a escolha de QUAIS até 3 candidatas mostrar deixa de ser uma fórmula
+// numérica e passa a ser um julgamento do próprio LLM, no mesmo sítio
+// onde já se confia nele para escrever "Quem é" — porque é aí, e só aí,
+// que "esta candidata liga-se com clareza a um dom já nomeado" pode ser
+// avaliado de facto, não aproximado por peso ou contagem de camadas.
+export const INSTRUCAO_SELECCAO_CANDIDATAS = `SELECÇÃO DAS CANDIDATAS FORA DA LISTA — a secção "Candidatas do catálogo" pode trazer mais de 3 candidatas (a pool completa, sem limite). A tua tarefa é escolher até 3 — nunca inventar nenhuma fora da pool, nunca escolher menos do que a pool oferece até ao máximo de 3.
+Critério de escolha, por esta ordem — nunca ao contrário:
+1. LIGAÇÃO NARRATIVA (critério principal): prefere candidatas cuja convergência técnica se liga com clareza a um dom ou traço JÁ NOMEADO na secção "${SECCAO_TITULOS.quemE}" — o mesmo dom que vais citar na frase de abertura obrigatória (ver a seguir). Uma candidata cujas camadas não consegues ligar com clareza a nenhum dom já nomeado NÃO deve ser escolhida, mesmo que tenha mais camadas ou nível de confiança mais alto do que outra que se ligue melhor.
+2. SOMA DE PESOS — DESEMPATE, NUNCA CRITÉRIO PRINCIPAL: só quando duas ou mais candidatas se ligam com igual clareza a um dom já nomeado (ou nenhuma se distingue claramente das outras nesse critério), usa a "soma de pesos das camadas" (o número dado em cada linha da pool) para decidir — a de maior soma vence.
+Nunca escolhas só pela contagem de camadas nem só pelo Nível (1 ou 2) — o nível diz respeito à CONFIANÇA da candidata depois de escolhida, não a SE deve ser escolhida.
+Antes de qualquer bloco "${MARCADORES.candidata}", escreve OBRIGATORIAMENTE um bloco único "${MARCADORES.seleccaoCandidatas}" (machine-readable, nunca omitido), explicando em prosa curta: (a) a que dom já nomeado em "${SECCAO_TITULOS.quemE}" cada candidata escolhida se liga, e (b) por que as restantes candidatas da pool completa (nomeia-as pelo nome) não foram escolhidas — ligação mais fraca ou inexistente a um dom já nomeado, ou perderam o desempate por soma de pesos. Este bloco nunca aparece no relatório entregue ao cliente — é só para auditoria interna do raciocínio.`;
+
+export const INSTRUCAO_ABERTURA_CANDIDATAS = `CANDIDATA FORA DA LISTA — LIGAÇÃO OBRIGATÓRIA A DOM JÁ NOMEADO: antes de qualquer menção às camadas técnicas (Atmakaraka, eixo do rendimento, sinais estruturados, etc.), cada candidata escolhida DEVE abrir com uma frase que a ligue explicitamente a um dom ou traço já nomeado na secção "${SECCAO_TITULOS.quemE}" deste mesmo relatório.
 Padrão obrigatório: "Isto liga-se directamente a [nome do dom/traço já nomeado em ${SECCAO_TITULOS.quemE}, citado quase literalmente] que já foi nomeado acima — é essa mesma força aplicada a um território concreto."
 Só depois desta frase é que o texto pode introduzir as camadas técnicas de convergência.
-Obrigatório nas três candidatas de cada relatório, sem excepção.`;
+Obrigatório em todas as candidatas escolhidas (até 3, ou menos se a pool completa oferecer menos de 3), sem excepção.`;
 
 // TAREFA #38 (correcção do especialista, sistema em dois níveis) —
 // dados técnicos: cada candidata fora da lista chega com "Nível 1" ou
@@ -645,7 +667,7 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - PLANETA FRACO + ÁREA ACTUAL: Se a área actual é governada por um planeta fraco (peso < 0,9), isso explica o porquê da insatisfação com precisão. É obrigatório nomear. EXEMPLO: Vénus fraca + estética = "passou anos no campo do planeta mais fraco do seu perfil — explica o desgaste, não invalida o talento."
 - OPÇÃO DECLARADA — TRADUZIR SEMPRE: A opção que a pessoa declarou é o vocabulário que tinha à mão. SEMPRE traduzir: o que quis dizer, nos termos do perfil? "Quero ser consultora SAP" pode significar "quero ser autoridade que ensina e aconselha com nome próprio" — testar essa tradução, nunca aceitar a opção ao pé da letra.
 - MAHADASHA — CLASSIFICAÇÃO E REGRA: O tom da Mahadasha actual ABRE a secção do plano, antes de qualquer data ou passo. Classificação: Ketu = dissolução/fecho ("prepare e feche, não colha"); Vénus = expansão/prazer/colheita ("avance, o ciclo favorece"); Sol = afirmação/autoridade ("afirme e visibilize"); Lua = emoção/fluxo/intuição ("siga o que sente, não o plano"); Marte = acção/lançamento/conflito ("avance com força e decisão"); Rahu = ambição/disrupção/ilusão ("risco real, oportunidade real"); Júpiter = crescimento/sabedoria/expansão ("expanda com intenção"); Saturno = estrutura/colheita lenta/responsabilidade ("construa devagar, vai durar"); Mercúrio = comunicação/adaptação/aprendizagem ("aprenda e comunique"). A colheita a sério só abre depois do fim da Mahadasha actual — sempre nomear essa data.
-- MARCADORES OBRIGATÓRIOS (recapitulação — cada um já está descrito no lugar exacto onde vai abaixo, mas fica aqui reunido para nunca esquecer nenhum): antes de ${MARCADORES.identidade} "${MARCADORES.fraseAbertura} <frase de 10-15 palavras, poderosa e específica>"; dentro de cada bloco "### <opção>", antes do ponto 1: "${MARCADORES.insight} <frase de síntese em menos de 15 palavras>". São machine-readable e obrigatórios — nunca omitir.
+- MARCADORES OBRIGATÓRIOS (recapitulação — cada um já está descrito no lugar exacto onde vai abaixo, mas fica aqui reunido para nunca esquecer nenhum): antes de ${MARCADORES.identidade} "${MARCADORES.fraseAbertura} <frase de 10-15 palavras, poderosa e específica>"; dentro de cada bloco "### <opção>", antes do ponto 1: "${MARCADORES.insight} <frase de síntese em menos de 15 palavras>"; na secção "${SECCAO_TITULOS.candidataForaDaLista}", antes de qualquer "${MARCADORES.candidata}": "${MARCADORES.seleccaoCandidatas} <raciocínio da escolha entre a pool completa>" (só quando há pelo menos 1 candidata na pool). São machine-readable e obrigatórios — nunca omitir.
 - COERÊNCIA COM OS VISUAIS: o relatório tem elementos visuais gerados automaticamente — gráfico de forças (7 planetas com pesos calculados), radar de competências (6 eixos), Roda da Vida (8 dimensões), tabela de tensões. O texto DEVE referenciar estes visuais quando relevante ("Como mostra o gráfico de forças...", "A sua roda de vida revela...", "O radar de competências confirma..."). NUNCA contradizer o que os visuais mostram — se um visual mostra um valor fraco, o texto não pode dizer que é forte.
 - VALOR ALTO NUM ELEMENTO VISUAL NÃO É O TEMA CENTRAL DA VIDA (correcção do especialista): uma casa com valor alto no gráfico (Roda da Vida, Anexo) pode reflectir onde o planeta mais forte do perfil está fisicamente posicionado — não necessariamente o tema mais importante da vida da pessoa. O tema central é determinado pelo Eixo da Missão e pelo Modo de Ganho, nunca pelo valor mais alto da roda. Exemplo: se "Saúde/Energia" ou "Como lida com obstáculos e o trabalho do dia a dia" (casa 6) aparecer com o valor mais alto de toda a Roda da Vida só porque o planeta mais forte do perfil está fisicamente aí, o texto nunca pode tratar essa área como o propósito central da pessoa — referencia o valor (é obrigatório, ver regra dos extremos), mas contextualiza-o como "onde a força física do perfil se concentra", nunca como substituto do Eixo da Missão/Modo de Ganho ao decidir do que este relatório trata.
 - ESCALA DE CONFIANÇA (correcção do especialista, obrigatória em todo o relatório) — a linguagem usada tem de bater sempre com o nº de camadas que sustentam a afirmação, nunca mais confiante do que os dados permitem:
@@ -659,6 +681,7 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - ${INSTRUCAO_YOGAS}
 - ${INSTRUCAO_VARGOTTAMA}
 - ${INSTRUCAO_CONSISTENCIA_TECNICA}
+- ${INSTRUCAO_SELECCAO_CANDIDATAS}
 - ${INSTRUCAO_ABERTURA_CANDIDATAS}
 - ${INSTRUCAO_NIVEL_CANDIDATAS}
 - Tom adulto, directo, sem gíria de coach, sem emojis.
@@ -788,16 +811,16 @@ ${MARCADORES.insight} <uma frase que resume a leitura desta opção em menos de 
 Repete o bloco "### <nome> / ${MARCADORES.forca} / ${MARCADORES.insight} / 1. / 2. / 3. / 4." para cada opção candidata, uma a seguir à outra.
 
 ## ${SECCAO_TITULOS.candidataForaDaLista}
-As candidatas já vêm calculadas deterministicamente na secção "Candidatas do catálogo" acima (até 3) — NÃO calcules a tua própria convergência, NÃO inventes nenhuma candidata diferente das listadas lá.
+As candidatas elegíveis já vêm calculadas deterministicamente na secção "Candidatas do catálogo" acima — a POOL COMPLETA, sem limite de 3. NÃO calcules a tua própria convergência, NÃO inventes nenhuma candidata diferente das listadas lá. A tua tarefa nesta secção é ESCOLHER até 3 dessa pool (ver INSTRUCAO_SELECCAO_CANDIDATAS) e escrever o bloco de raciocínio obrigatório antes delas.
 
-Se essa secção diz "nenhuma", a primeira e única linha é "${MARCADORES.candidata} nenhuma" — "o seu perfil não aponta a nada fora do que já pensava" é uma resposta válida e completa, não a evites.
+Se essa secção diz "nenhuma", a primeira e única linha é "${MARCADORES.candidata} nenhuma" — "o seu perfil não aponta a nada fora do que já pensava" é uma resposta válida e completa, não a evites. Não é preciso bloco de raciocínio quando não há nenhuma candidata na pool.
 
-Se essa secção lista 1, 2 ou 3 candidatas, escreve um bloco próprio para CADA UMA, nesta ordem de aparição no texto (a ordem em que aparecem na secção "Candidatas do catálogo" NÃO é ranking — ver regra abaixo):
-"${MARCADORES.candidata} <nome exacto>" seguido do texto explicativo dessa candidata, usando só as camadas exactas já listadas para ela (nunca inventes camadas novas nem omitas as que vêm calculadas). Repete "${MARCADORES.candidata} <nome exacto>" uma vez por candidata — nunca um marcador só com a primeira e as outras sem.
+Se essa secção lista 1 ou mais candidatas, primeiro escreve o bloco único "${MARCADORES.seleccaoCandidatas}" (ver INSTRUCAO_SELECCAO_CANDIDATAS para o conteúdo exacto exigido), depois um bloco próprio para CADA candidata ESCOLHIDA (até 3), nesta ordem de aparição no texto (a ordem NÃO é ranking — ver regra abaixo):
+"${MARCADORES.candidata} <nome exacto>" seguido do texto explicativo dessa candidata, usando só as camadas exactas já listadas para ela na pool (nunca inventes camadas novas nem omitas as que vêm calculadas). Repete "${MARCADORES.candidata} <nome exacto>" uma vez por candidata escolhida — nunca um marcador só com a primeira e as outras sem.
 
-VIA CONCRETA (correcção do especialista, TAREFA 3): cada candidata tem um bloco próprio "-- Via concreta para <nome> --" na secção "Candidatas do catálogo" acima, com o tipo de formação, a certificação profissional, como se entra, e o tempo médio até trabalhar na área. Cita esta informação no texto de CADA candidata — nunca a omitas, nunca a inventes, nunca nomeies uma entidade concreta (nem "a escola", nem uma ordem profissional pelo nome) mesmo que o dado bruto pareça convidar a isso.
+VIA CONCRETA (correcção do especialista, TAREFA 3): cada candidata da pool tem um bloco próprio "-- Via concreta para <nome> --" na secção "Candidatas do catálogo" acima, com o tipo de formação, a certificação profissional, como se entra, e o tempo médio até trabalhar na área. Cita esta informação no texto de CADA candidata escolhida — nunca a omitas, nunca a inventes, nunca nomeies uma entidade concreta (nem "a escola", nem uma ordem profissional pelo nome) mesmo que o dado bruto pareça convidar a isso.
 
-REGRA ABSOLUTA — SEM RANKING ENTRE CANDIDATAS (correcção do especialista, TAREFA 1): quando há 2 ou 3 candidatas, apresentam-se sempre em PÉ DE IGUALDADE. PROIBIDO: "1ª escolha", "2ª escolha", "3ª opção", "a mais forte", "a mais provável", "em primeiro lugar", qualquer numeração ordinal, ou tratar uma delas como "menção honrosa"/"nota à parte"/candidata de segunda categoria. Cada candidata tem a sua própria justificação, completa e independente das outras — nunca comparar uma candidata com outra dentro do texto.
+REGRA ABSOLUTA — SEM RANKING ENTRE CANDIDATAS (correcção do especialista, TAREFA 1): quando há 2 ou 3 candidatas escolhidas, apresentam-se sempre em PÉ DE IGUALDADE. PROIBIDO: "1ª escolha", "2ª escolha", "3ª opção", "a mais forte", "a mais provável", "em primeiro lugar", qualquer numeração ordinal, ou tratar uma delas como "menção honrosa"/"nota à parte"/candidata de segunda categoria. Cada candidata tem a sua própria justificação, completa e independente das outras — nunca comparar uma candidata com outra dentro do texto principal (a comparação entre candidatas da pool só acontece dentro do bloco "${MARCADORES.seleccaoCandidatas}", nunca no texto visível ao cliente).
 
 REGRA ABSOLUTA — CANDIDATA FORA DA LISTA (correcção do especialista): PROIBIDO nomear qualquer candidata, mesmo como pista abaixo do limiar, sem que venha explicitamente da secção "Candidatas do catálogo" acima. Se nenhuma candidata do catálogo atingiu ≥4 camadas, a resposta é "${MARCADORES.candidata} nenhuma" — explica honestamente que o perfil não aponta a nada fora do que já foi pensado. NUNCA preenchas com estereótipos de profissão ou associações livres a arquétipos abstractos. Exemplo do que NÃO fazer: sugerir "engenharia, auditoria, saúde pública" por associação livre a "Saturno = estrutura/rigor" — essas profissões não vieram do catálogo, vieram de associação livre; isto é invenção, não leitura, e é exactamente o que esta regra proíbe.
 

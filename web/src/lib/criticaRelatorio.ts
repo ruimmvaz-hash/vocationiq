@@ -97,6 +97,21 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
      mesma certeza que uma Nível 1 (ex.: "o seu perfil sustenta X com
      clareza" sem qualquer qualificador): FALHA — reescrita obrigatória.
 
+ 22. SELECÇÃO DAS CANDIDATAS (LIGAÇÃO NARRATIVA): a secção A) traz a pool
+     completa de candidatas (pode ter mais de 3). Confirma: (a) existe o
+     bloco "SELECÇÃO_CANDIDATAS:" antes das secções CANDIDATA (obrigatório
+     sempre que a pool tem pelo menos 1 candidata); (b) cada candidata
+     APRESENTADA tem uma ligação nomeável e verificável a um dom já
+     nomeado em "Quem é" — a mesma ligação citada na frase de abertura
+     dessa candidata; (c) o raciocínio em "SELECÇÃO_CANDIDATAS:" explica
+     também, com sentido, por que as candidatas da pool que NÃO foram
+     escolhidas ficaram de fora. Se falhar (a) ou (b): FALHA — força
+     RESSELECÇÃO DA POOL COMPLETA (escolher outra candidata da secção A
+     que ligue com clareza a um dom já nomeado, nunca só reescrever a
+     frase de abertura da candidata actual para forçar uma ligação que
+     não existe). Se (c) parecer arbitrário ou ausente: FALHA — reescrita
+     do bloco de raciocínio.
+
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
  Formato:
@@ -200,6 +215,21 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
      mesma certeza que uma Nível 1 (ex.: "o seu perfil sustenta X com
      clareza" sem qualquer qualificador): FALHA — reescrita obrigatória.
 
+ 22. SELECÇÃO DAS CANDIDATAS (LIGAÇÃO NARRATIVA): a secção A) traz a pool
+     completa de candidatas (pode ter mais de 3). Confirma: (a) existe o
+     bloco "SELECÇÃO_CANDIDATAS:" antes das secções CANDIDATA (obrigatório
+     sempre que a pool tem pelo menos 1 candidata); (b) cada candidata
+     APRESENTADA tem uma ligação nomeável e verificável a um dom já
+     nomeado em "Quem é" — a mesma ligação citada na frase de abertura
+     dessa candidata; (c) o raciocínio em "SELECÇÃO_CANDIDATAS:" explica
+     também, com sentido, por que as candidatas da pool que NÃO foram
+     escolhidas ficaram de fora. Se falhar (a) ou (b): FALHA — força
+     RESSELECÇÃO DA POOL COMPLETA (escolher outra candidata da secção A
+     que ligue com clareza a um dom já nomeado, nunca só reescrever a
+     frase de abertura da candidata actual para forçar uma ligação que
+     não existe). Se (c) parecer arbitrário ou ausente: FALHA — reescrita
+     do bloco de raciocínio.
+
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
  Formato:
@@ -243,10 +273,22 @@ export function parseCritica(textoCritica: string): ResultadoCritica {
   return { criterios, falhas, todosPassaram: criterios.length ? falhas.length === 0 : null };
 }
 
+// TAREFA #40 (mudança de arquitectura) — o critério 22 (SELECÇÃO DAS
+// CANDIDATAS) pode exigir escolher uma candidata DIFERENTE da pool
+// completa, não só reescrever uma frase — mas a pool só existe no
+// prompt técnico original (secção "Candidatas do catálogo"), nunca no
+// rascunho já escrito. Sem reenviar o prompt técnico aqui, a reescrita
+// não tinha como "reseleccionar" nada — só podia reescrever a mesma
+// candidata com palavras diferentes, inventando uma ligação que a regra
+// proíbe. `construirPromptReescrita` passa a incluir sempre o prompt
+// técnico completo (o mesmo padrão já usado em `construirPromptCritica`)
+// para qualquer falha que precise de voltar aos dados de origem, não só
+// a de selecção de candidatas.
 const INSTRUCAO_REESCRITA = `Reescreve este relatório corrigindo APENAS as falhas identificadas abaixo.
 Não alteres o que está correcto.
-Mantém todos os marcadores machine-readable (FRASE_ABERTURA:, IDENTIDADE:, DOM:, LIMITAÇÃO:, SÍNTESE:, INSIGHT:, FORÇA:, CANDIDATA:, PRIMEIRO PASSO:) e todos os cabeçalhos "## " das 6 secções, incluindo "## Quem é".`;
+Mantém todos os marcadores machine-readable (FRASE_ABERTURA:, IDENTIDADE:, DOM:, LIMITAÇÃO:, SÍNTESE:, INSIGHT:, FORÇA:, SELECÇÃO_CANDIDATAS:, CANDIDATA:, PRIMEIRO PASSO:) e todos os cabeçalhos "## " das 6 secções, incluindo "## Quem é".
+Se alguma falha for de SELECÇÃO DAS CANDIDATAS (força RESSELECÇÃO DA POOL COMPLETA): volta à secção "Candidatas do catálogo" no prompt técnico (A, abaixo) e escolhe outra candidata da pool completa que ligue com clareza a um dom já nomeado em "Quem é" — nunca inventes uma ligação para a candidata que já lá estava, nem a substituas sem justificação no bloco "SELECÇÃO_CANDIDATAS:".`;
 
-export function construirPromptReescrita(rascunhoOriginal: string, falhas: string[]): string {
-  return `${INSTRUCAO_REESCRITA}\nFalhas a corrigir:\n${falhas.map((f) => `- ${f}`).join("\n")}\n\n=== RELATÓRIO ORIGINAL ===\n${rascunhoOriginal}`;
+export function construirPromptReescrita(promptTecnico: string, rascunhoOriginal: string, falhas: string[]): string {
+  return `${INSTRUCAO_REESCRITA}\nFalhas a corrigir:\n${falhas.map((f) => `- ${f}`).join("\n")}\n\n=== A) PROMPT TÉCNICO ORIGINAL ===\n${promptTecnico}\n\n=== B) RELATÓRIO ORIGINAL ===\n${rascunhoOriginal}`;
 }

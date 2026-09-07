@@ -335,10 +335,12 @@ export function sugerirCursos(destinoId: string): CursosSugeridos | null {
 /**
  * Aplica `sugerirCursos()` a todos os destinos que `catalogarDestinos()`
  * já resolveu com id (`destinosDeAreaActual` + `destinosAlternativos` +
- * `candidatasForaDaLista`, até 3 — TAREFA 1) — nunca a partir de texto
- * livre declarado pela pessoa, que exigiria correspondência aproximada
- * nome→id e arrisca ligar o curso errado ao destino errado. Chamado uma
- * vez por relatório, depois de `catalogarDestinos()` (TAREFA 5).
+ * `candidatasForaDaLista` — TAREFA #40: a pool completa, sem limite de 3,
+ * já que a escolha final de até 3 passou a ser feita pelo LLM, não aqui)
+ * — nunca a partir de texto livre declarado pela pessoa, que exigiria
+ * correspondência aproximada nome→id e arrisca ligar o curso errado ao
+ * destino errado. Chamado uma vez por relatório, depois de
+ * `catalogarDestinos()` (TAREFA 5).
  */
 export function sugerirCursosParaCatalogo(catalogo: ResultadoCatalogoVocacional): Record<string, CursosSugeridos> {
   const resultado: Record<string, CursosSugeridos> = {};

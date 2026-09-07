@@ -566,6 +566,15 @@ export interface CandidataForaDaLista {
    * já foi filtrado antes de chegar aqui.
    */
   nivelConfianca: 1 | 2;
+  /**
+   * TAREFA #40 (mudança de arquitectura — selecção pelo LLM) — soma dos
+   * pesos das camadas desta candidata (a mesma métrica já usada na regra
+   * permanente de desempate, `compararCandidatasEmpatadas`). Exposta aqui
+   * para o LLM a poder citar como critério de DESEMPATE quando a ligação
+   * narrativa a um dom já nomeado em "Quem é" não distingue duas
+   * candidatas da pool — nunca como critério principal de escolha.
+   */
+  somaPesoCamadas: number;
 }
 
 export interface IntakeParaCatalogo {
@@ -578,15 +587,18 @@ export interface ResultadoCatalogoVocacional {
   destinosDeAreaActual: DestinoConvergente[];
   destinosAlternativos: DestinoConvergente[];
   /**
-   * TAREFA 1 (correcção do especialista) — até 3 candidatas, nunca só a
-   * melhor. Array vazio quando 0 destinos atingem a fasquia (≥4 camadas
-   * independentes incluindo um indicador pessoal — Planeta de maior peso,
-   * Atmakaraka ou Amatyakaraka; ver `nivelConfianca` em cada candidata,
-   * TAREFA #38). A ORDEM do array é só um artefacto da ordenação interna
-   * usada para escolher QUAIS 3 entram (convergência, depois a regra
-   * permanente de desempate) — nunca implica ranking; as 3 apresentam-se
-   * sempre em pé de igualdade dentro do mesmo nível de confiança (ver
-   * regra no prompt).
+   * TAREFA #40 (mudança de arquitectura) — a POOL COMPLETA de candidatas
+   * que atingem a fasquia (≥4 camadas independentes incluindo um
+   * indicador pessoal — Planeta de maior peso, Atmakaraka ou
+   * Amatyakaraka; ver `nivelConfianca` em cada candidata, TAREFA #38),
+   * SEM limite de 3. `catalogarDestinos()` já não escolhe as 3 finais —
+   * isso é feito pelo LLM na mesma chamada que escreve "Quem é", com
+   * acesso a esta pool completa (ver INSTRUCAO_SELECCAO_CANDIDATAS em
+   * promptAdulto.ts). Array vazio quando 0 destinos atingem a fasquia. A
+   * ORDEM do array é só um artefacto de apresentação estável nos dados
+   * técnicos (convergência desc, depois a regra permanente de desempate)
+   * — nunca implica ranking nem limita a escolha do LLM às primeiras da
+   * lista.
    */
   candidatasForaDaLista: CandidataForaDaLista[];
   /** Presente só quando a área actual não tem sector específico (ex.: "Empresária", "Gestão") — nota para o prompt citar explicitamente. */
@@ -798,26 +810,50 @@ export function catalogarDestinos(
     if (temIndicadorPessoalFraco(camadas)) return 2;
     return null;
   };
+  // TAREFA #40 (correcção do especialista — MUDANÇA DE ARQUITECTURA,
+  // substitui a TAREFA #39) — quatro rondas seguidas de gates/limiares/
+  // desempates diferentes (Correcção 2 original; "aceitar Atmakaraka/
+  // Amatyakaraka sempre"; "exigir também sinal estrutural"; "exigir peso
+  // próprio ≥1,3"; sistema em dois níveis; vaga reservada à melhor Nível
+  // 2) provaram, cada uma, resolver o caso que a motivou e quebrar outro
+  // — porque todas tentavam decidir "quais são as 3 melhores candidatas"
+  // com uma FÓRMULA fixa, e nenhuma fórmula fixa capta o que realmente
+  // distingue uma boa candidata: se liga com clareza a um dom já
+  // reconhecido na pessoa (secção "Quem é/Quem és"), algo que só se avalia
+  // por leitura, não por peso numérico. A vaga reservada (TAREFA #39)
+  // confirmou isto da pior forma — corrigiu a Alice mas à custa de tirar
+  // ao João uma candidata Nível 1 genuína (Ensino próprio) sem nenhuma
+  // razão que lhe dissesse respeito.
+  //
+  // Daqui para a frente, `catalogarDestinos()` PÁRA de escolher as 3
+  // finais. Produz a POOL COMPLETA — todas as candidatas que atingem
+  // ≥4 camadas independentes com um indicador pessoal (Nível 1 ou 2),
+  // sem limite de 3, na mesma ordem de sempre (convergência desc, depois
+  // a regra permanente de desempate — usada aqui só para uma apresentação
+  // estável nos dados técnicos, nunca para decidir quem fica de fora). O
+  // cálculo de camadas/pesos/nível não muda em nada — só deixa de haver
+  // corte às 3 melhores aqui. A escolha final (até 3, preferindo ligação
+  // narrativa a um dom já nomeado em "Quem é", com a soma de pesos só como
+  // desempate quando a ligação não distingue) passa para o mesmo LLM que
+  // já escreve "Quem é" — ver INSTRUCAO_SELECCAO_CANDIDATAS em
+  // promptAdulto.ts — porque é aí, não aqui, que "liga-se a um dom já
+  // nomeado" pode ser avaliado de facto, não aproximado por uma fórmula.
   const elegveis = destinosAlternativos
     .filter((d) => d.convergencia >= LIMIAR_MINIMO_CANDIDATA)
     .map((d) => ({ destino: d, nivel: nivelDeConfianca(d.camadas) }))
     .filter((x): x is { destino: DestinoConvergente; nivel: 1 | 2 } => x.nivel !== null);
-  // TAREFA 1 (correcção do especialista) — até 3 candidatas, nunca menos
-  // do que a fasquia exige. A ordenação (convergência desc, depois a
-  // regra permanente de desempate) decide só QUAIS 3 entram quando há mais
-  // de 3 elegíveis — a ordem do array resultante nunca é apresentada como
-  // ranking (ver ResultadoCatalogoVocacional.candidatasForaDaLista e a
-  // regra equivalente no prompt). O nível de confiança NÃO entra na
-  // ordenação (não é mais um critério de desempate) — só classifica a
-  // linguagem a usar; uma Nível 2 com convergência mais alta continua a
-  // poder ocupar uma das 3 vagas antes de uma Nível 1 mais fraca.
-  const ordenadas = [...elegveis].sort((a, b) => {
+  const poolOrdenada = [...elegveis].sort((a, b) => {
     if (b.destino.convergencia !== a.destino.convergencia) return b.destino.convergencia - a.destino.convergencia;
     return compararCandidatasEmpatadas(a.destino, b.destino);
   });
-  const candidatasForaDaLista: CandidataForaDaLista[] = ordenadas
-    .slice(0, 3)
-    .map(({ destino: d, nivel }) => ({ nome: d.nome, id: d.id, camadas: d.camadas, convergencia: d.convergencia, nivelConfianca: nivel }));
+  const candidatasForaDaLista: CandidataForaDaLista[] = poolOrdenada.map(({ destino: d, nivel }) => ({
+    nome: d.nome,
+    id: d.id,
+    camadas: d.camadas,
+    convergencia: d.convergencia,
+    nivelConfianca: nivel,
+    somaPesoCamadas: d.somaPesoCamadas,
+  }));
 
   const notaCondicao5 = eixoDoRendimentoActivo.find((a) => a.planetas.length === 0);
 

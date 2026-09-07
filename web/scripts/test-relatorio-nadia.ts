@@ -141,6 +141,7 @@ async function main() {
         id: "biblioteconomia",
         convergencia: 6,
         nivelConfianca: 1,
+        somaPesoCamadas: 1.76,
         camadas: [
           "Planeta de maior peso (Saturn, peso 1.76) aponta para este destino",
           "Regente do Modo de Ganho dominante (Saturn, casa 10) — eixo do rendimento aponta para este destino",

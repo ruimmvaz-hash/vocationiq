@@ -52,6 +52,7 @@ import {
   INSTRUCAO_YOGAS,
   INSTRUCAO_VARGOTTAMA,
   INSTRUCAO_CONSISTENCIA_TECNICA,
+  INSTRUCAO_SELECCAO_CANDIDATAS,
   INSTRUCAO_ABERTURA_CANDIDATAS,
   INSTRUCAO_NIVEL_CANDIDATAS,
   TERMOS_PROIBIDOS,
@@ -93,17 +94,17 @@ function formatarViaSecundariaDaOpcao(cursos: CursosSugeridos[]): string {
   return vias.map((v) => `Via do secundário: ${v}`).join("\n");
 }
 
-/** TAREFA 2C — versão abreviada de blocoCatalogoVocacional para o 7º-9º ano: candidatas com VIA do secundário, nunca curso/QNQ/duração (prematuro nesta fase). */
+/** TAREFA 2C — versão abreviada de blocoCatalogoVocacional para o 7º-9º ano: candidatas com VIA do secundário, nunca curso/QNQ/duração (prematuro nesta fase). TAREFA #40 — pool completa, sem limite de 3 (a escolha é do LLM, ver INSTRUCAO_SELECCAO_CANDIDATAS). */
 function blocoCandidatasPorVia(catalogo: ResultadoCatalogoVocacional): string {
   const candidatasTexto = catalogo.candidatasForaDaLista.length
     ? catalogo.candidatasForaDaLista
         .map(
           (c) =>
-            `- ${c.nome}: convergência ${c.convergencia}, Nível ${c.nivelConfianca} (${c.nivelConfianca === 1 ? "inclui o planeta de maior peso — confiança plena" : "só Atmakaraka/Amatyakaraka, sem o planeta de maior peso — confiança reduzida"}) (${c.camadas.join("; ")}). ${formatarViaSecundariaDaOpcao([{ destinoId: c.id } as CursosSugeridos])}`,
+            `- ${c.nome}: convergência ${c.convergencia}, Nível ${c.nivelConfianca} (${c.nivelConfianca === 1 ? "inclui o planeta de maior peso — confiança plena" : "só Atmakaraka/Amatyakaraka, sem o planeta de maior peso — confiança reduzida"}), soma de pesos das camadas ${c.somaPesoCamadas.toFixed(2)} (${c.camadas.join("; ")}). ${formatarViaSecundariaDaOpcao([{ destinoId: c.id } as CursosSugeridos])}`,
         )
         .join("\n")
     : "nenhuma — nenhum destino reuniu 4 camadas independentes incluindo um indicador pessoal (planeta de maior peso, Atmakaraka ou Amatyakaraka).";
-  return `Candidatas com ≥4 convergências (Nível 1 ou 2 conforme indicado, até 3, em pé de igualdade dentro do mesmo nível — nunca ranking):\n${candidatasTexto}`;
+  return `Candidatas do catálogo — pool completa (≥4 convergências, Nível 1 ou 2 conforme indicado, SEM LIMITE DE 3 — a escolha de até 3 é tua, ver INSTRUCAO_SELECCAO_CANDIDATAS):\n${candidatasTexto}`;
 }
 
 export function construirPromptAdolescente(
@@ -159,9 +160,14 @@ ${MARCADORES.insight} <uma frase que resume a leitura desta opção em menos de 
 3. O curso concreto e a via de entrada — usa sempre os dados já listados acima em "Opções em cima da mesa" (nome do curso, nível, QNQ, duração, tipo de instituição, entrada no mercado). NUNCA nomeies uma instituição concreta.
 4. Onde entra a tua matéria nesta opção — a forma/função, nunca só o sector.`;
 
+  // TAREFA #40 (mudança de arquitectura) — a secção "Candidatas do
+  // catálogo" pode trazer mais candidatas do que as 3 finais; escolher
+  // quais até 3 mostrar é agora trabalho do LLM (INSTRUCAO_SELECCAO_
+  // CANDIDATAS, importada de promptAdulto.ts), com o bloco de raciocínio
+  // obrigatório antes das secções CANDIDATA.
   const instrucaoCandidata = ehSeteANove
-    ? `Se lista 1, 2 ou 3 candidatas, escreve um bloco próprio para CADA UMA: "${MARCADORES.candidata} <nome exacto>" seguido do texto explicativo. NESTA FASE (7º-9º ano), fala em termos de VIA do secundário (já listada acima), nunca de curso específico, QNQ ou instituição — a decisão real desta fase é a área, não o curso.`
-    : `Se lista 1, 2 ou 3 candidatas, escreve um bloco próprio para CADA UMA: "${MARCADORES.candidata} <nome exacto>" seguido do texto explicativo, citando sempre a via concreta ("-- Via concreta para <nome> --" na secção "Candidatas do catálogo" acima) — tipo de formação, certificação, como se entra, tempo médio até trabalhar na área. Nunca nomeies uma entidade concreta.`;
+    ? `Se a pool tiver 1 ou mais candidatas, primeiro escreve o bloco único "${MARCADORES.seleccaoCandidatas}" (ver INSTRUCAO_SELECCAO_CANDIDATAS), depois um bloco próprio para CADA candidata ESCOLHIDA (até 3): "${MARCADORES.candidata} <nome exacto>" seguido do texto explicativo. NESTA FASE (7º-9º ano), fala em termos de VIA do secundário (já listada acima), nunca de curso específico, QNQ ou instituição — a decisão real desta fase é a área, não o curso.`
+    : `Se a pool tiver 1 ou mais candidatas, primeiro escreve o bloco único "${MARCADORES.seleccaoCandidatas}" (ver INSTRUCAO_SELECCAO_CANDIDATAS), depois um bloco próprio para CADA candidata ESCOLHIDA (até 3): "${MARCADORES.candidata} <nome exacto>" seguido do texto explicativo, citando sempre a via concreta ("-- Via concreta para <nome> --" na secção "Candidatas do catálogo" acima) — tipo de formação, certificação, como se entra, tempo médio até trabalhar na área. Nunca nomeies uma entidade concreta.`;
 
   return `
 [Versão de produção, TAREFA 2 — ver aviso de maturidade no topo de promptAdolescente.ts: prosa instrucional nova, nunca testada contra geração real antes de hoje.]
@@ -188,6 +194,7 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - ${INSTRUCAO_YOGAS}
 - ${INSTRUCAO_VARGOTTAMA}
 - ${INSTRUCAO_CONSISTENCIA_TECNICA}
+- ${INSTRUCAO_SELECCAO_CANDIDATAS}
 - ${INSTRUCAO_ABERTURA_CANDIDATAS}
 - ${INSTRUCAO_NIVEL_CANDIDATAS}
 - HORIZONTE TEMPORAL: até 18 meses, afirmações directas. Entre 18 meses e 3 anos, com cautela ("tende a", "favorece"). Mais de 3 anos, só como pano de fundo.
@@ -268,13 +275,13 @@ Traduz o Eixo da Missão e o Modo de Ganho dominante para linguagem humana, sem 
 ${instrucaoLeituraPorOpcao}
 
 ## ${SECCAO_TITULOS.candidataForaDaLista}
-As candidatas já vêm calculadas deterministicamente na secção "Candidatas do catálogo" acima (até 3) — NÃO calcules a tua própria convergência, NÃO inventes nenhuma candidata diferente.
+As candidatas elegíveis já vêm calculadas deterministicamente na secção "Candidatas do catálogo" acima — a POOL COMPLETA, sem limite de 3. NÃO calcules a tua própria convergência, NÃO inventes nenhuma candidata diferente. A tua tarefa é ESCOLHER até 3 dessa pool (ver INSTRUCAO_SELECCAO_CANDIDATAS) e escrever o bloco de raciocínio obrigatório antes delas.
 
-Se essa secção diz "nenhuma", a primeira e única linha é "${MARCADORES.candidata} nenhuma".
+Se essa secção diz "nenhuma", a primeira e única linha é "${MARCADORES.candidata} nenhuma". Não é preciso bloco de raciocínio quando não há nenhuma candidata na pool.
 
 ${instrucaoCandidata}
 
-REGRA ABSOLUTA — SEM RANKING ENTRE CANDIDATAS: quando há 2 ou 3, apresentam-se em PÉ DE IGUALDADE — proibido "1ª/2ª/3ª escolha", "a mais forte", "menção honrosa".
+REGRA ABSOLUTA — SEM RANKING ENTRE CANDIDATAS: quando há 2 ou 3 escolhidas, apresentam-se em PÉ DE IGUALDADE — proibido "1ª/2ª/3ª escolha", "a mais forte", "menção honrosa" (a comparação entre candidatas da pool só acontece dentro do bloco "${MARCADORES.seleccaoCandidatas}", nunca no texto visível).
 
 REGRA ABSOLUTA — CANDIDATA FORA DA LISTA: proibido nomear qualquer candidata sem que venha explicitamente da secção "Candidatas do catálogo" acima. Nunca preenchas com estereótipos de profissão ou associações livres a arquétipos abstractos.
 
