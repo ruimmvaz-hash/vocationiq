@@ -3,8 +3,7 @@ import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { hasSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { obterIntake } from "@/lib/store";
 import { obterTextoRelatorioActual, atualizarCoordenadasNascimento } from "@/lib/storage";
-import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTemplate";
-import { calcularDadosAstrologicos, GeocodeError } from "@/lib/relatorioAdultoCompute";
+import { reconstruirHTMLRelatorio, GeocodeError } from "@/lib/relatorioAdultoCompute";
 import { htmlParaPdf } from "@/lib/htmlToPdf";
 
 /**
@@ -34,7 +33,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   if (!actual) return NextResponse.json({ error: "Sem rascunho nem relatório entregue para este pedido." }, { status: 404 });
 
   try {
-    const { axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, horaAproximada, catalogoResultados, coordenadasNascimento } = await calcularDadosAstrologicos(intake, actual.coordenadasNascimento);
+    // TAREFA 1D (correcção do especialista) — decide adulto/adolescente a
+    // partir de intake.situacao num único sítio (nunca duplicado aqui).
+    const { html, coordenadasNascimento } = await reconstruirHTMLRelatorio(intake, actual.texto, actual.coordenadasNascimento);
     // RISCO ARQUITECTURAL 7 — auto-cura: esta linha ainda não tinha
     // coordenadas guardadas (rascunho de antes da migração 0018) e acabou
     // de geocodificar de novo por não ter escolha — grava agora, para
@@ -42,20 +43,6 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     if (!actual.coordenadasNascimento) {
       await atualizarCoordenadasNascimento(actual.id, coordenadasNascimento).catch((err) => console.error("[pdf] falha ao gravar coordenadas de nascimento (não bloqueante):", err));
     }
-    const dadosTemplate: DadosParaTemplate = {
-      nome: intake.nome,
-      dataNascimento: intake.data_nascimento,
-      horaNascimento: horaAproximada ? null : intake.hora_nascimento,
-      localNascimento: intake.local_nascimento,
-      situacaoDeclarada: intakeAdulto.situacaoDeclarada,
-      areaActual: intakeAdulto.areaActual,
-      anosExperiencia: intakeAdulto.anosExperiencia,
-      oQueNaoFunciona: intakeAdulto.oQueNaoFunciona,
-      opcoesConsideradas: intakeAdulto.areasDestino.concat(intakeAdulto.areasDestinoOutra ? [intakeAdulto.areasDestinoOutra] : []),
-      ideiaConcreta: intakeAdulto.ideiaConcreta,
-      perguntaEspecifica: intakeAdulto.perguntaEspecifica,
-    };
-    const html = gerarHTMLRelatorio(dadosTemplate, actual.texto, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
     const bytes = await htmlParaPdf(html);
     const filename = `Relatorio-VocationIQ-${intake.nome.replace(/[^a-zA-Z0-9À-ÿ ]/g, "").trim().replace(/\s+/g, "-")}.pdf`;
 

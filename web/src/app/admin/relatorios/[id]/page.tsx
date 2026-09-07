@@ -80,10 +80,16 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
   }
   if (!intake) notFound();
 
-  // Motor de geração (VOCATIONIQ-ADULTO-metodologia.md) só cobre o ramo
-  // "trabalho-quero-mudar" — as secções 2 (Mapa técnico)/3 (Rascunho)/4
-  // (Auditoria)/5 (Prompt) ficam vazias/desactivadas nos outros ramos.
-  const podeGerarAutomatico = intake.situacao === "trabalho-quero-mudar";
+  // Motor de geração cobre o ramo "trabalho-quero-mudar" (adulto,
+  // VOCATIONIQ-ADULTO-metodologia.md) e, desde a TAREFA 1 (correcção do
+  // especialista, ronda de produção do motor adolescente), também
+  // "9-ou-menos"/"10-11-12" — as secções 2 (Mapa técnico)/3 (Rascunho)/4
+  // (Auditoria)/5 (Prompt) ficam vazias/desactivadas nos restantes ramos
+  // ("universidade"/"outra").
+  const SITUACOES_ADOLESCENTE = new Set(["9-ou-menos", "10-11-12"]);
+  const ehAdolescente = SITUACOES_ADOLESCENTE.has(intake.situacao);
+  const podeGerarAutomatico = intake.situacao === "trabalho-quero-mudar" || ehAdolescente;
+  const apiBaseRascunho = ehAdolescente ? "/api/relatorio-adolescente" : "/api/relatorio";
 
   const [rascunho, relatorioEntregue] = await Promise.all([
     obterRascunho(intake.id).catch(() => null),
@@ -230,6 +236,7 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
           textoInicial={actual?.texto ?? null}
           criadoEmInicial={rascunho?.criadoEm ?? relatorioEntregue?.criadoEm ?? null}
           temDraftReal={Boolean(rascunho?.texto)}
+          apiBase={apiBaseRascunho}
         />
       </AccordionSection>
 

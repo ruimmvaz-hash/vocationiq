@@ -1,148 +1,116 @@
-// TAREFA 6 (correcção do especialista) — caso de teste ponta-a-ponta do
-// ramo adolescente, com um intake sintético. Corre o pipeline completo
-// SEM chamar a Anthropic (só imprime o prompt gerado, nunca o envia).
-//
-// Usa `construirPromptAdolescente` — um RASCUNHO (ver aviso no topo de
-// method-engine/src/vocationiq/promptAdolescente.ts), nunca revisto ao
-// mesmo nível do prompt adulto. Este script serve para confirmar que os
-// dados técnicos (eixos, elementos/modalidades, aspectos, cursos) chegam
-// correctamente ao prompt — não para validar o texto que o LLM escreveria
-// a partir dele.
+// TAREFA 1/2 (correcção do especialista, ronda de produção) — caso de
+// teste ponta-a-ponta do ramo adolescente, com um IntakeRow sintético que
+// exercita as FUNÇÕES REAIS DE PRODUÇÃO (calcularDadosAstrologicosAdolescente,
+// construirIntakeAdolescente, construirPromptAdolescente) — não uma
+// réplica manual da lógica, para apanhar bugs de integração entre a rota
+// e a camada de cálculo. Corre SEM chamar a Anthropic (só imprime o
+// prompt gerado, nunca o envia).
 //
 // Uso: npx tsx scripts/test-adolescente.ts
 
-import {
-  computeD1Table,
-  computeVocationIQAxes,
-  computePesosPlanetas,
-  computeSavPorCasa,
-  currentDasha,
-  computeTransits,
-  computeWesternTable,
-  computeElementosModalidades,
-  computeAspectosPessoais,
-  catalogarDestinos,
-  sugerirCursos,
-  sugerirCursosParaCatalogo,
-  construirPromptAdolescente,
-  type DadosDatas,
-  type BirthInput,
-  type VocationiqIntakeAdolescente,
-  type CursosSugeridos,
-} from "@naveya/method-engine";
+import { construirPromptAdolescente } from "@naveya/method-engine";
 import { geocodeCityCountry } from "../src/lib/reportGeo";
 import { localBirthTimeToUtc } from "../src/lib/localBirthTime";
-
-const ASPECTO_LABEL: Record<string, string> = { Conjuncao: "conjunção", Quadratura: "quadratura", Oposicao: "oposição" };
-const PONTO_LABEL: Record<string, string> = { Sun: "Sol natal", Moon: "Lua natal", Mercury: "Mercúrio natal", Venus: "Vénus natal", Mars: "Marte natal", Ascendente: "Ascendente natal", MC: "Meio-céu natal" };
-
-// Mapeamento manual, só para este caso de teste — nunca fuzzy-matching em
-// produção (ver DESVIO 3 em catalogoCursos.ts: ligar texto livre a um id
-// do catálogo sem correspondência exacta arrisca ligar o curso errado ao
-// destino errado; "design" sozinho, por exemplo, corresponde a 4 destinos
-// diferentes no catálogo — design_grafico/industrial/interiores/moda —
-// por isso a escolha abaixo é uma escolha arbitrária de teste, não uma
-// resolução automática).
-const ID_CATALOGO_POR_OPCAO: Record<string, string> = {
-  medicina: "medicina",
-  engenharia: "engenharia_informatica",
-  design: "design_grafico",
-};
+import { calcularDadosAstrologicosAdolescente } from "../src/lib/relatorioAdultoCompute";
+import type { IntakeRow } from "../src/lib/store";
 
 async function main() {
   const nome = "João (teste adolescente)";
   const dataNascimento = "2008-03-15";
   const horaNascimento = "10:30";
   const localNascimento = "Lisboa, Portugal";
-  const opcoesAdolescente = ["medicina", "engenharia", "design"];
-  const opcaoMaisProvavel = "medicina";
 
+  // IntakeRow sintético — os campos que calcularDadosAstrologicosAdolescente()
+  // e construirIntakeAdolescente() realmente lêem; o resto fica com valores
+  // neutros (nunca lidos pelo ramo adolescente).
+  const intake: IntakeRow = {
+    id: "teste-joao",
+    created_at: new Date().toISOString(),
+    nome,
+    data_nascimento: dataNascimento,
+    hora_nascimento: horaNascimento,
+    local_nascimento: localNascimento,
+    situacao: "10-11-12",
+    contexto: null,
+    email: null,
+    stripe_checkout_session_id: null,
+    amount_cents: null,
+    referral_code: null,
+    payment_status: "paid",
+    paid_at: new Date().toISOString(),
+    report_status: "not_started",
+    delivered_at: null,
+    revisao_email_enviado: false,
+    revisao_email_180_enviado: false,
+    alerta_36h_enviado: false,
+    clareza_ideia: "duas-tres-opcoes",
+    areas_consideradas: null,
+    areas_consideradas_outra: null,
+    preferencia_familia: "Os meus pais preferiam que eu seguisse medicina.",
+    opcoes_adolescente: ["medicina", "engenharia", "design"],
+    opcao_mais_provavel: "medicina",
+    curso_actual: null,
+    satisfacao_curso: null,
+    area_trabalho_actual: null,
+    anos_experiencia: null,
+    o_que_nao_funciona: null,
+    tipo_mudanca: null,
+    areas_destino: null,
+    areas_destino_outra: null,
+    ideia_concreta: null,
+    para_onde_quer_ir: null,
+    descricao_situacao: null,
+    contexto_adicional: null,
+    pergunta_especifica: null,
+  };
+
+  console.log("=== Geocodificação de controlo ===");
   const geo = await geocodeCityCountry(localNascimento);
   if (!geo) throw new Error(`Não consegui geocodificar "${localNascimento}"`);
   const [year, month, day] = dataNascimento.split("-").map(Number);
   const utcDate = localBirthTimeToUtc({ day, month, year }, horaNascimento, geo.timezone);
   if (!utcDate) throw new Error("data/hora inválida");
-  const birth: BirthInput = { utcDate, latitude: geo.latitude, longitude: geo.longitude };
+  console.log("OK");
 
-  console.log("=== 1. Carta (D1) ===");
-  const d1 = computeD1Table(birth);
-  console.log(`Ascendente: ${d1.ascendant.sign}`);
-
-  console.log("\n=== 2. Pesos + Eixos VocationIQ ===");
-  const pesosPlanetas = computePesosPlanetas(d1);
-  const axes = computeVocationIQAxes(
-    d1,
-    pesosPlanetas.map((p) => ({ planeta: p.planeta, peso: p.peso, estado: p.estado })),
-  );
-  console.log(`Atmakaraka: ${axes.missionAxis.atmakaraka} (casa ${axes.missionAxis.akHouse})`);
-  console.log(`Modo de Ganho dominante: casa ${axes.earningModeDominante[0].house}`);
-
-  const savPorCasa = computeSavPorCasa(d1);
-
-  console.log("\n=== 3. Elementos e modalidades ===");
-  const westernTable = computeWesternTable(birth);
-  const elementosModalidades = computeElementosModalidades(westernTable.planets);
-  console.log(JSON.stringify(elementosModalidades, null, 2));
-
-  console.log("\n=== 4. Aspectos entre planetas pessoais ===");
-  const aspectosPessoais = computeAspectosPessoais(westernTable.planets);
-  console.log(aspectosPessoais.length ? aspectosPessoais.map((a) => `${a.planetaA} ${a.aspecto} ${a.planetaB} (orbe ${a.orbe.toFixed(1)}°)`).join("\n") : "(nenhum)");
-
-  console.log("\n=== 5. Catálogo + cursos ===");
-  // Sem área de trabalho actual (é um adolescente) — areaActual/anosExperiencia
-  // vazios; catalogarDestinos() foi desenhado para o ramo adulto, por isso
-  // "Derivadas da área actual" fica sempre vazio aqui (esperado, não é um bug).
-  const catalogoResultados = catalogarDestinos(
-    axes,
-    pesosPlanetas,
-    savPorCasa,
-    { areaActual: "", anosExperiencia: "" },
-    { planeta: axes.missionAxis.atmakaraka, nakshatra: d1.rows[axes.missionAxis.atmakaraka].nakshatra },
-    westernTable.ascendant.ruler,
-  );
-  const cursosPorDestino: Record<string, CursosSugeridos> = sugerirCursosParaCatalogo(catalogoResultados);
-
-  // Cursos por opção declarada — mapeamento manual de teste (ver nota acima).
-  for (const opcao of opcoesAdolescente) {
-    const id = ID_CATALOGO_POR_OPCAO[opcao];
-    const cursos = id ? sugerirCursos(id) : null;
-    if (cursos) cursosPorDestino[id] = cursos;
-    console.log(`- ${opcao} (id "${id}"): ${cursos ? JSON.stringify(cursos.cursos[0]) : "sem correspondência"}`);
+  console.log("\n=== calcularDadosAstrologicosAdolescente() — pipeline de produção ===");
+  const dados = await calcularDadosAstrologicosAdolescente(intake);
+  console.log(`Ascendente/Atmakaraka: ${dados.axes.missionAxis.atmakaraka} (casa ${dados.axes.missionAxis.akHouse})`);
+  console.log(`Modo de Ganho dominante: casa ${dados.axes.earningModeDominante[0].house}`);
+  console.log(`Elementos e modalidades: ${JSON.stringify(dados.elementosModalidades)}`);
+  console.log(`Aspectos pessoais: ${dados.aspectosPessoais.map((a) => `${a.planetaA} ${a.aspecto} ${a.planetaB}`).join(" | ") || "(nenhum)"}`);
+  console.log(`Candidatas fora da lista (até 3): ${dados.catalogoResultados.candidatasForaDaLista.map((c) => c.nome).join(", ") || "nenhuma"}`);
+  console.log("\nCursos por opção declarada:");
+  for (const [opcao, cursos] of Object.entries(dados.cursosPorOpcaoDeclarada)) {
+    console.log(`- ${opcao}: ${cursos.map((c) => c.cursos[0].nome).join(", ")}`);
   }
-  console.log(`Candidatas fora da lista (até 3): ${catalogoResultados.candidatasForaDaLista.length ? catalogoResultados.candidatasForaDaLista.map((c) => c.nome).join(", ") : "nenhuma"}`);
+  const opcoesSemCorrespondencia = dados.intakeAdolescente.opcoesAdolescente.filter((o) => !dados.cursosPorOpcaoDeclarada[o]);
+  if (opcoesSemCorrespondencia.length) console.log(`Opções SEM correspondência no mapeamento: ${opcoesSemCorrespondencia.join(", ")}`);
 
-  console.log("\n=== 6. Datas reais ===");
-  const agora = new Date();
-  const dasha = currentDasha(birth.utcDate, agora);
-  const proximas = dasha.allAntardashas.filter((a) => a.start >= dasha.antardasha.end).slice(0, 2);
-  const transitos = computeTransits(birth, agora);
-  const formatarAspectos = (hits: { to: string; aspect: string; orb: number }[]) => hits.map((h) => `${ASPECTO_LABEL[h.aspect] ?? h.aspect} com o ${PONTO_LABEL[h.to] ?? h.to} (orbe ${h.orb.toFixed(1)}°)`);
-  const datas: DadosDatas = {
-    mahadashaAtual: { senhor: dasha.mahadasha.lord, inicio: dasha.mahadasha.start, fim: dasha.mahadasha.end },
-    antardashaAtual: { senhor: dasha.antardasha.lord, inicio: dasha.antardasha.start, fim: dasha.antardasha.end },
-    proximasAntardashas: proximas.map((a) => ({ senhor: a.lord, inicio: a.start, fim: a.end })),
-    transitoJupiter: { signo: transitos.jupiter.sign, aspectosAoNatal: formatarAspectos(transitos.jupiter.aspectsToNatal) },
-    transitoSaturno: { signo: transitos.saturn.sign, aspectosAoNatal: formatarAspectos(transitos.saturn.aspectsToNatal) },
-  };
-  console.log(`Mahadasha actual: ${datas.mahadashaAtual.senhor}`);
-
-  console.log("\n=== 7. Prompt completo (RASCUNHO — nunca enviado à Anthropic) ===");
-  const intakeAdolescente: VocationiqIntakeAdolescente = {
-    nome,
-    situacaoDeclarada: "10º-12º ano",
-    opcoesAdolescente,
-    opcaoMaisProvavel,
-  };
-  const prompt = construirPromptAdolescente(intakeAdolescente, axes, pesosPlanetas, datas, true, catalogoResultados, savPorCasa, elementosModalidades, aspectosPessoais, cursosPorDestino);
+  console.log("\n=== construirPromptAdolescente() — prompt completo (nunca enviado à Anthropic) ===");
+  const prompt = construirPromptAdolescente(
+    dados.intakeAdolescente,
+    dados.axes,
+    dados.pesosPlanetas,
+    dados.datas,
+    !dados.horaAproximada,
+    dados.catalogoResultados,
+    dados.savPorCasa,
+    dados.elementosModalidades,
+    dados.aspectosPessoais,
+    dados.cursosPorDestino,
+    dados.cursosPorOpcaoDeclarada,
+  );
   console.log(prompt);
 
-  console.log("\n=== Confirmação de conteúdo (TAREFA 6) ===");
+  console.log("\n=== Confirmação de conteúdo ===");
   const checks: [string, boolean][] = [
     ["Dados técnicos completos (Eixo da Missão)", prompt.includes("Eixo da Missão")],
     ["Elementos e modalidades", prompt.includes("Elemento dominante")],
     ["Aspectos principais", prompt.includes("Aspectos principais")],
-    ["Cursos concretos por opção (medicina)", prompt.includes(opcaoMaisProvavel) && prompt.toLowerCase().includes("entrada no mercado")],
-    ["Secção de candidata fora da lista", prompt.includes("Candidata")],
+    ["Cursos concretos por opção declarada", prompt.includes("Curso:")],
+    ["Via concreta para candidata fora da lista", prompt.includes("Via concreta para")],
+    ["Secção de candidata fora da lista", prompt.includes("Candidatas do catálogo")],
+    ["Tom 'tu' (nunca 'você')", prompt.includes('usa "tu"') && !prompt.includes("Usa SEMPRE")],
   ];
   for (const [label, ok] of checks) console.log(`${ok ? "✓" : "✗"} ${label}`);
 }

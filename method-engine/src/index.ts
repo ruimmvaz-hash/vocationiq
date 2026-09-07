@@ -135,7 +135,15 @@ export { computeRodaDaVida, type DimensaoVida } from "./vocationiq/rodaDaVida";
 // TAREFA 4 (correcção do especialista) — elementos/modalidades tropicais e aspectos entre planetas pessoais, lidos de computeWesternTable.
 export { computeElementosModalidades, computeAspectosPessoais, type PerfilElementosModalidades, type AspectoPessoal } from "./vocationiq/elementosEAspectos";
 // TAREFA 5 (correcção do especialista) — vias concretas de entrada (curso/nível/QNQ/duração/tipo de instituição) por destino do catálogo.
-export { sugerirCursos, sugerirCursosParaCatalogo, type CursoSugerido, type CursosSugeridos, type NivelCurso } from "./vocationiq/catalogoCursos";
+export {
+  sugerirCursos,
+  sugerirCursosParaCatalogo,
+  resolverOpcaoAdolescente,
+  sugerirCursosParaOpcoesAdolescente,
+  type CursoSugerido,
+  type CursosSugeridos,
+  type NivelCurso,
+} from "./vocationiq/catalogoCursos";
 export {
   construirPromptAdulto,
   normalizarTextoLivre,

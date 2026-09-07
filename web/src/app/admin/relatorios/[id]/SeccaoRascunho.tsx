@@ -23,12 +23,15 @@ export function SeccaoRascunho({
   textoInicial,
   criadoEmInicial,
   temDraftReal,
+  apiBase = "/api/relatorio",
 }: {
   intakeId: string;
   podeGerar: boolean;
   textoInicial: string | null;
   criadoEmInicial: string | null;
   temDraftReal: boolean;
+  /** TAREFA 1D (correcção do especialista) — "/api/relatorio" (adulto) ou "/api/relatorio-adolescente" (ramo adolescente), decidido em page.tsx a partir de intake.situacao. */
+  apiBase?: string;
 }) {
   const [texto, setTexto] = useState(textoInicial);
   const [textoEditado, setTextoEditado] = useState(textoInicial ?? "");
@@ -47,7 +50,7 @@ export function SeccaoRascunho({
     setLoading("gerar");
     setErro(null);
     setMensagem(null);
-    const res = await fetch("/api/relatorio", {
+    const res = await fetch(apiBase, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ intakeId }),
@@ -68,7 +71,7 @@ export function SeccaoRascunho({
     setLoading("guardar");
     setErro(null);
     setMensagem(null);
-    const res = await fetch("/api/relatorio", {
+    const res = await fetch(apiBase, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ intakeId, texto: textoEditado }),
@@ -90,7 +93,7 @@ export function SeccaoRascunho({
     setLoading("apagar");
     setErro(null);
     setMensagem(null);
-    const res = await fetch(`/api/relatorio?intakeId=${encodeURIComponent(intakeId)}`, { method: "DELETE" });
+    const res = await fetch(`${apiBase}?intakeId=${encodeURIComponent(intakeId)}`, { method: "DELETE" });
     const data = await res.json().catch(() => ({}));
     setLoading(null);
     if (!res.ok) {

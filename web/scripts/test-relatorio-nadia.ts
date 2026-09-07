@@ -40,9 +40,9 @@ Nádia diz que está numa fase de mudar de rumo profissional, mas ainda sem uma 
 
 ## Quem é
 DOM: Uma capacidade de liderar publicamente que a sua carta sustenta com clareza, mesmo que ainda não a tenha exercido a sério.
-DOM: Uma estrutura interior sólida, construída para durar, que raramente se vê abalada por pressão de curto prazo.
-LIMITAÇÃO: A gestão emocional em decisões importantes pede atenção — não é o ponto mais forte da carta e vale a pena não decidir grandes coisas em dias de baixa.
-LIMITAÇÃO: A fluidez de explicar e ser entendida ainda precisa de ser construída — não lhe sai naturalmente, ao contrário de outras partes da carta.
+DOM: Uma estrutura interior sólida, construída para durar, que raramente se vê abalada por pressão de curto prazo — a sua forma de processar o mundo é mais fixa e persistente do que impulsiva, o que explica porque prefere consolidar em vez de saltar de ideia em ideia.
+LIMITAÇÃO: A gestão emocional em decisões importantes pede atenção à primeira vista — mas essa mesma sensibilidade está directamente ligada a um dos planetas mais generosos da sua carta, o que na prática transforma o que parecia ser um ponto frágil num recurso discreto: raramente é ela a desequilibrar-se sozinha, é mais provável que a ajudem a repor o equilíbrio do que esperaria.
+LIMITAÇÃO: A fluidez de explicar e ser entendida ainda precisa de ser construída — não lhe sai naturalmente, ao contrário de outras partes da carta. Isto liga-se de perto à forma como pensa e ao que valoriza esteticamente, que na sua carta operam quase fundidos — pensa e aprecia como se fossem a mesma coisa, o que às vezes atrasa a tradução em palavras.
 O que genuinamente valoriza é a substância que aguenta o tempo, não o efeito imediato — prefere construir uma coisa sólida a parecer bem-sucedida depressa.
 SÍNTESE: É alguém talhada para liderar com estrutura, mas ainda a aprender a comunicar essa força em voz alta.
 
@@ -60,13 +60,13 @@ INSIGHT: A estrutura para liderar já existe — falta ainda o canal para a expr
 
 ## Candidata fora da lista
 CANDIDATA: Ciências da Informação e Documentação
-Quatro camadas independentes da sua carta convergem nesta área, incluindo o planeta mais forte que tem e a casa que mais sustenta ensino e escrita de fundo — é uma força estrutural que ainda não tinha nomeado.
+Quatro camadas independentes da sua carta convergem nesta área, incluindo o planeta mais forte que tem e a casa que mais sustenta ensino e escrita de fundo — é uma força estrutural que ainda não tinha nomeado. A via concreta passa por uma licenciatura de 3 a 4 anos; não há uma certificação profissional própria desta área — a entrada faz-se por concurso público (bibliotecas municipais ou universitárias, arquivos) ou candidatura directa a instituições privadas com arquivo próprio.
 
 CANDIDATA: Contabilidade e Fiscalidade
-A mesma força estrutural do planeta mais forte da sua carta, ligada aqui à forma como ganha melhor e a sinais próprios desta área — o dom converte-se em dinheiro sem precisar de exposição pública.
+A mesma força estrutural do planeta mais forte da sua carta, ligada aqui à forma como ganha melhor e a sinais próprios desta área — o dom converte-se em dinheiro sem precisar de exposição pública. A via concreta é uma licenciatura seguida de um período de experiência supervisionada antes de poder assinar contas em nome próprio — cerca de 4 a 6 anos até estar plenamente operacional, através da ordem profissional da área.
 
 CANDIDATA: História
-A terceira convergência independente: o mesmo planeta forte, a mesma forma como ganha melhor, e a mesma casa de fundo intelectual — desta vez ligada à leitura de longo prazo em vez da estrutura documental.
+A terceira convergência independente: o mesmo planeta forte, a mesma forma como ganha melhor, e a mesma casa de fundo intelectual — desta vez ligada à leitura de longo prazo em vez da estrutura documental. A via concreta é uma licenciatura de 3 a 4 anos; a entrada no mercado depende mais da área de especialização escolhida do que de uma certificação única.
 
 ## O plano
 O período actual pede que prepare e feche o que já não serve, antes de colher o que vem a seguir — não é o momento de anunciar em grande, é o de organizar por dentro.

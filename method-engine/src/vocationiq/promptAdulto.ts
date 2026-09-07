@@ -348,16 +348,29 @@ export function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional, c
   // Atmakaraka — são coisas diferentes, ver comentário em
   // catalogoVocacional.ts).
   const candidatasTexto = catalogo.candidatasForaDaLista.length
-    ? catalogo.candidatasForaDaLista
-        .map((c) => `- ${c.nome}: convergência ${c.convergencia} (${c.camadas.join("; ")}).${formatarViaConcreta(cursosPorDestino[c.id])}`)
-        .join("\n")
+    ? catalogo.candidatasForaDaLista.map((c) => `- ${c.nome}: convergência ${c.convergencia} (${c.camadas.join("; ")}).`).join("\n")
     : "nenhuma — nenhum destino reuniu 4 camadas independentes incluindo o planeta de maior peso.";
+
+  // TAREFA 3 (correcção do especialista, ronda seguinte) — cada candidata
+  // (até 3) ganha o seu próprio bloco "-- Via concreta para [destino] --",
+  // separado da listagem acima (antes vinha só inline, apensa à linha da
+  // candidata). Formato exacto pedido: tipo de formação, certificação,
+  // como se entra, tempo médio até à primeira actividade remunerada.
+  const viasConcretasCandidatas = catalogo.candidatasForaDaLista
+    .map((c) => {
+      const cursos = cursosPorDestino[c.id];
+      if (!cursos) return null;
+      return `-- Via concreta para ${c.nome} --\n${cursos.entradaMercadoAdulto.join("\n")}`;
+    })
+    .filter(Boolean)
+    .join("\n\n");
 
   return [
     catalogo.notaAreaGenerica ? `NOTA: ${catalogo.notaAreaGenerica}.` : null,
     `Derivadas da área actual:\n${listar(catalogo.destinosDeAreaActual)}`,
     `Alternativas pela carta (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações, eixo do rendimento):\n${listar(catalogo.destinosAlternativos)}`,
     `Candidatas com ≥4 convergências (inclui sempre o planeta de maior peso, até 3, em pé de igualdade — nunca ranking):\n${candidatasTexto}`,
+    viasConcretasCandidatas || null,
     catalogo.notaEixoDoRendimento
       ? `NOTA sobre o eixo do rendimento (o que dá sentido vs. o que paga): ${catalogo.notaEixoDoRendimento.leitura}.${catalogo.notaEixoDoRendimento.regraDeEscrita ? ` Como escrever isto: ${catalogo.notaEixoDoRendimento.regraDeEscrita}` : ""}`
       : null,
@@ -563,6 +576,8 @@ Se essa secção diz "nenhuma", a primeira e única linha é "${MARCADORES.candi
 
 Se essa secção lista 1, 2 ou 3 candidatas, escreve um bloco próprio para CADA UMA, nesta ordem de aparição no texto (a ordem em que aparecem na secção "Candidatas do catálogo" NÃO é ranking — ver regra abaixo):
 "${MARCADORES.candidata} <nome exacto>" seguido do texto explicativo dessa candidata, usando só as camadas exactas já listadas para ela (nunca inventes camadas novas nem omitas as que vêm calculadas). Repete "${MARCADORES.candidata} <nome exacto>" uma vez por candidata — nunca um marcador só com a primeira e as outras sem.
+
+VIA CONCRETA (correcção do especialista, TAREFA 3): cada candidata tem um bloco próprio "-- Via concreta para <nome> --" na secção "Candidatas do catálogo" acima, com o tipo de formação, a certificação profissional, como se entra, e o tempo médio até trabalhar na área. Cita esta informação no texto de CADA candidata — nunca a omitas, nunca a inventes, nunca nomeies uma entidade concreta (nem "a escola", nem uma ordem profissional pelo nome) mesmo que o dado bruto pareça convidar a isso.
 
 REGRA ABSOLUTA — SEM RANKING ENTRE CANDIDATAS (correcção do especialista, TAREFA 1): quando há 2 ou 3 candidatas, apresentam-se sempre em PÉ DE IGUALDADE. PROIBIDO: "1ª escolha", "2ª escolha", "3ª opção", "a mais forte", "a mais provável", "em primeiro lugar", qualquer numeração ordinal, ou tratar uma delas como "menção honrosa"/"nota à parte"/candidata de segunda categoria. Cada candidata tem a sua própria justificação, completa e independente das outras — nunca comparar uma candidata com outra dentro do texto.
 

@@ -2,6 +2,7 @@ import "server-only";
 import { geocodeCityCountry } from "./reportGeo";
 import { localBirthTimeToUtc } from "./localBirthTime";
 import { SITUACOES, ANOS_EXPERIENCIA, TIPO_MUDANCA, AREAS_DESTINO } from "./validation";
+import { gerarHTMLRelatorio, type DadosParaTemplate } from "./relatorioTemplate";
 import type { IntakeRow } from "./store";
 import {
   computeD1Table,
@@ -15,10 +16,12 @@ import {
   computeElementosModalidades,
   computeAspectosPessoais,
   sugerirCursosParaCatalogo,
+  sugerirCursosParaOpcoesAdolescente,
   ELEMENTO_PLANETA,
   MAHADASHA_CLASSIFICACAO,
   normalizarTextoLivre,
   type VocationiqIntakeAdulto,
+  type VocationiqIntakeAdolescente,
   type DadosDatas,
   type BirthInput,
   type VocationIQAxes,
@@ -190,7 +193,17 @@ export interface DadosAstrologicos {
  * tem `viq_relatorios.coordenadas_nascimento` guardadas para este pedido,
  * passa-as aqui para saltar a geocodificação ao vivo por completo.
  */
-export async function calcularDadosAstrologicos(intake: IntakeRow, coordenadasExistentes?: CoordenadasNascimento | null): Promise<DadosAstrologicos> {
+/**
+ * TAREFA 1 (correcção do especialista, ronda de produção do motor
+ * adolescente) — a computação astrológica (D1, pesos, eixos, SAV, datas,
+ * tabela ocidental, elementos/modalidades, aspectos pessoais) NÃO muda
+ * consoante a idade da pessoa; só o catálogo vocacional (que precisa de
+ * um "intake" para casar a área actual) e o texto do prompt mudam. Esta
+ * função extrai o núcleo partilhado — chamada por `calcularDadosAstrologicos`
+ * (adulto) e por `calcularDadosAstrologicosAdolescente` (novo, abaixo) —
+ * para as duas pontas nunca poderem divergir na astrologia em si.
+ */
+async function calcularAstrologiaBase(intake: IntakeRow, coordenadasExistentes?: CoordenadasNascimento | null) {
   const { birth, horaAproximada, coordenadas } = await resolverNascimento(intake.local_nascimento, intake.data_nascimento, intake.hora_nascimento, coordenadasExistentes);
 
   const d1 = computeD1Table(birth);
@@ -201,6 +214,24 @@ export async function calcularDadosAstrologicos(intake: IntakeRow, coordenadasEx
   );
   const savPorCasa = computeSavPorCasa(d1);
   const datas = construirDadosDatas(birth, new Date());
+  // TAREFA 4 (correcção do especialista, ronda anterior) — a mesma
+  // `westernTable` já trazia, sem consumidor, a grelha completa de
+  // posições/aspectos (`planets`) que os elementos/modalidades e os
+  // aspectos entre planetas pessoais precisam — antes só se lia
+  // `.ascendant.ruler` e o resto era descartado.
+  const westernTable = computeWesternTable(birth);
+  const elementosModalidades = computeElementosModalidades(westernTable.planets);
+  const aspectosPessoais = computeAspectosPessoais(westernTable.planets);
+
+  return { horaAproximada, d1, axes, pesosPlanetas, savPorCasa, datas, westernTable, elementosModalidades, aspectosPessoais, coordenadasNascimento: coordenadas };
+}
+
+export async function calcularDadosAstrologicos(intake: IntakeRow, coordenadasExistentes?: CoordenadasNascimento | null): Promise<DadosAstrologicos> {
+  const { horaAproximada, d1, axes, pesosPlanetas, savPorCasa, datas, westernTable, elementosModalidades, aspectosPessoais, coordenadasNascimento } = await calcularAstrologiaBase(
+    intake,
+    coordenadasExistentes,
+  );
+
   const intakeAdulto = construirIntakeAdulto(intake);
   const dadosRicos = construirDadosRicos(datas);
 
@@ -215,13 +246,6 @@ export async function calcularDadosAstrologicos(intake: IntakeRow, coordenadasEx
   // aqui e não no method-engine porque `catalogarDestinos` nunca recebeu
   // o D1 em bruto (ver DESVIO em catalogoVocacional.ts) — este é o mesmo
   // padrão de `atmakarakaInfo` acima, resolvido pelo chamador.
-  //
-  // TAREFA 4 (correcção do especialista) — a mesma `westernTable` já
-  // trazia, sem consumidor, a grelha completa de posições/aspectos
-  // (`planets`) que os elementos/modalidades e os aspectos entre
-  // planetas pessoais precisam — antes desta correcção só se lia
-  // `.ascendant.ruler` e o resto era descartado.
-  const westernTable = computeWesternTable(birth);
   const regenteAscendenteOcidental = westernTable.ascendant.ruler;
   const catalogoResultados = catalogarDestinos(
     axes,
@@ -231,8 +255,6 @@ export async function calcularDadosAstrologicos(intake: IntakeRow, coordenadasEx
     { planeta: atmakaraka, nakshatra: d1.rows[atmakaraka].nakshatra },
     regenteAscendenteOcidental,
   );
-  const elementosModalidades = computeElementosModalidades(westernTable.planets);
-  const aspectosPessoais = computeAspectosPessoais(westernTable.planets);
   // TAREFA 5 (correcção do especialista) — vias concretas por destino,
   // derivadas do próprio catálogo (nunca de texto livre — ver DESVIO em
   // catalogoCursos.ts).
@@ -247,9 +269,158 @@ export async function calcularDadosAstrologicos(intake: IntakeRow, coordenadasEx
     intakeAdulto,
     dadosRicos,
     catalogoResultados,
-    coordenadasNascimento: coordenadas,
+    coordenadasNascimento,
     elementosModalidades,
     aspectosPessoais,
     cursosPorDestino,
   };
+}
+
+/**
+ * TAREFA 1B (correcção do especialista) — constrói o intake do adolescente
+ * a partir dos campos da migração 0019 (opcoes_adolescente,
+ * opcao_mais_provavel) mais os campos partilhados (nome, situacao,
+ * preferencia_familia, já existente desde antes da migração 0019).
+ *
+ * DESVIO — o pedido original menciona também "ano_escolaridade", mas essa
+ * coluna nunca foi criada (confirmado: não existe em nenhuma migração até
+ * 0019) e o formulário (`IntakeForm.tsx`) não a recolhe — só distingue
+ * "9º ano ou menos" vs. "10º-12º ano" via `situacao`. Criar uma migração
+ * nova + um campo de formulário novo só para isto ficaria para uma ronda
+ * dedicada (mais um campo a pedir à pessoa, decisão do fundador). Por
+ * agora, `situacaoDeclarada` já carrega essa granularidade (o label de
+ * `situacao`), suficiente para o prompt calibrar o tom por idade.
+ */
+export function construirIntakeAdolescente(intake: IntakeRow): VocationiqIntakeAdolescente {
+  return {
+    nome: intake.nome,
+    situacaoDeclarada: SITUACAO_LABEL[intake.situacao] ?? intake.situacao,
+    opcoesAdolescente: intake.opcoes_adolescente ?? [],
+    opcaoMaisProvavel: intake.opcao_mais_provavel ?? undefined,
+    preferenciaFamilia: intake.preferencia_familia ? normalizarTextoLivre(intake.preferencia_familia) : undefined,
+  };
+}
+
+export interface DadosAstrologicosAdolescente {
+  horaAproximada: boolean;
+  axes: VocationIQAxes;
+  pesosPlanetas: PesoPlaneta[];
+  savPorCasa: SavPorCasa[];
+  datas: DadosDatas;
+  intakeAdolescente: VocationiqIntakeAdolescente;
+  catalogoResultados: ResultadoCatalogoVocacional;
+  coordenadasNascimento: CoordenadasNascimento;
+  elementosModalidades: PerfilElementosModalidades;
+  aspectosPessoais: AspectoPessoal[];
+  cursosPorDestino: Record<string, CursosSugeridos>;
+  /** TAREFA 1C — cursos concretos resolvidos para cada opção declarada (chave = texto exacto da opção), via o mapeamento manual e curado. */
+  cursosPorOpcaoDeclarada: Record<string, CursosSugeridos[]>;
+}
+
+/**
+ * TAREFA 1A (correcção do especialista) — equivalente de
+ * `calcularDadosAstrologicos` para o ramo adolescente. Reaproveita a MESMA
+ * astrologia (`calcularAstrologiaBase`) — nunca uma segunda implementação
+ * que possa divergir — só a construção do intake e do catálogo mudam.
+ *
+ * `catalogarDestinos` recebe área actual vazia (um adolescente não tem
+ * área de trabalho actual) — `destinosDeAreaActual` fica sempre vazio
+ * para este ramo, por desenho; o relatório assenta em
+ * `destinosAlternativos`/`candidatasForaDaLista` (derivados só da carta)
+ * e nos cursos por opção declarada (TAREFA 1C).
+ */
+export async function calcularDadosAstrologicosAdolescente(intake: IntakeRow, coordenadasExistentes?: CoordenadasNascimento | null): Promise<DadosAstrologicosAdolescente> {
+  const { horaAproximada, d1, axes, pesosPlanetas, savPorCasa, datas, westernTable, elementosModalidades, aspectosPessoais, coordenadasNascimento } = await calcularAstrologiaBase(
+    intake,
+    coordenadasExistentes,
+  );
+
+  const intakeAdolescente = construirIntakeAdolescente(intake);
+  const atmakaraka = axes.missionAxis.atmakaraka;
+  const regenteAscendenteOcidental = westernTable.ascendant.ruler;
+  const catalogoResultados = catalogarDestinos(
+    axes,
+    pesosPlanetas,
+    savPorCasa,
+    { areaActual: "", anosExperiencia: "" },
+    { planeta: atmakaraka, nakshatra: d1.rows[atmakaraka].nakshatra },
+    regenteAscendenteOcidental,
+  );
+  const cursosPorDestino = sugerirCursosParaCatalogo(catalogoResultados);
+  const cursosPorOpcaoDeclarada = sugerirCursosParaOpcoesAdolescente(intakeAdolescente.opcoesAdolescente);
+
+  return {
+    horaAproximada,
+    axes,
+    pesosPlanetas,
+    savPorCasa,
+    datas,
+    intakeAdolescente,
+    catalogoResultados,
+    coordenadasNascimento,
+    elementosModalidades,
+    aspectosPessoais,
+    cursosPorDestino,
+    cursosPorOpcaoDeclarada,
+  };
+}
+
+const SITUACOES_ADOLESCENTE = new Set(["9-ou-menos", "10-11-12"]);
+
+export interface RelatorioParaExibir {
+  html: string;
+  horaAproximada: boolean;
+  coordenadasNascimento: CoordenadasNascimento;
+}
+
+/**
+ * TAREFA 1D (correcção do especialista, ronda de produção do motor
+ * adolescente) — ponto ÚNICO que decide, a partir de `intake.situacao`,
+ * qual pipeline (adulto/adolescente) usar para reconstruir o HTML de um
+ * relatório a partir do texto já gerado. Antes desta correcção, "Ver PDF",
+ * "Aprovar e enviar" (entregar-automatico) e "Aprovar e reenviar"
+ * (aprovar-rascunho) chamavam `calcularDadosAstrologicos` (só a versão
+ * adulto) incondicionalmente — para um pedido do ramo adolescente isso
+ * produzia sempre um HTML com "área actual"/"anos de experiência" em
+ * branco, porque `construirIntakeAdulto` lê colunas que um adolescente
+ * nunca preencheu. Esta função central substitui essa chamada nos 3
+ * sítios — nunca 3 cópias da mesma decisão.
+ */
+export async function reconstruirHTMLRelatorio(intake: IntakeRow, texto: string, coordenadasExistentes?: CoordenadasNascimento | null): Promise<RelatorioParaExibir> {
+  if (SITUACOES_ADOLESCENTE.has(intake.situacao)) {
+    const { horaAproximada, axes, pesosPlanetas, savPorCasa, datas, intakeAdolescente, catalogoResultados, coordenadasNascimento } = await calcularDadosAstrologicosAdolescente(
+      intake,
+      coordenadasExistentes,
+    );
+    const dadosTemplate: DadosParaTemplate = {
+      nome: intake.nome,
+      dataNascimento: intake.data_nascimento,
+      horaNascimento: horaAproximada ? null : intake.hora_nascimento,
+      localNascimento: intake.local_nascimento,
+      situacaoDeclarada: intakeAdolescente.situacaoDeclarada,
+      areaActual: "Ainda a estudar",
+      anosExperiencia: intakeAdolescente.situacaoDeclarada,
+      opcoesConsideradas: intakeAdolescente.opcoesAdolescente,
+      perguntaEspecifica: intakeAdolescente.opcaoMaisProvavel ? `Qual das opções lhe parece mais provável hoje: ${intakeAdolescente.opcaoMaisProvavel}?` : undefined,
+    };
+    const html = gerarHTMLRelatorio(dadosTemplate, texto, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
+    return { html, horaAproximada, coordenadasNascimento };
+  }
+
+  const { horaAproximada, axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, catalogoResultados, coordenadasNascimento } = await calcularDadosAstrologicos(intake, coordenadasExistentes);
+  const dadosTemplate: DadosParaTemplate = {
+    nome: intake.nome,
+    dataNascimento: intake.data_nascimento,
+    horaNascimento: horaAproximada ? null : intake.hora_nascimento,
+    localNascimento: intake.local_nascimento,
+    situacaoDeclarada: intakeAdulto.situacaoDeclarada,
+    areaActual: intakeAdulto.areaActual,
+    anosExperiencia: intakeAdulto.anosExperiencia,
+    oQueNaoFunciona: intakeAdulto.oQueNaoFunciona,
+    opcoesConsideradas: intakeAdulto.areasDestino.concat(intakeAdulto.areasDestinoOutra ? [intakeAdulto.areasDestinoOutra] : []),
+    ideiaConcreta: intakeAdulto.ideiaConcreta,
+    perguntaEspecifica: intakeAdulto.perguntaEspecifica,
+  };
+  const html = gerarHTMLRelatorio(dadosTemplate, texto, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
+  return { html, horaAproximada, coordenadasNascimento };
 }
