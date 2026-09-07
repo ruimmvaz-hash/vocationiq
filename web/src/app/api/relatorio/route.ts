@@ -81,10 +81,24 @@ export async function POST(request: Request) {
   if (!apiKey) return NextResponse.json({ error: "ANTHROPIC_API_KEY não configurada." }, { status: 503 });
 
   try {
-    const { horaAproximada, axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, catalogoResultados, dadosRicos, coordenadasNascimento, elementosModalidades, aspectosPessoais, cursosPorDestino } =
-      await calcularDadosAstrologicos(intake);
+    const {
+      horaAproximada,
+      axes,
+      pesosPlanetas,
+      savPorCasa,
+      datas,
+      intakeAdulto,
+      catalogoResultados,
+      dadosRicos,
+      coordenadasNascimento,
+      elementosModalidades,
+      aspectosPessoais,
+      cursosPorDestino,
+      d1,
+      yogas,
+    } = await calcularDadosAstrologicos(intake);
 
-    const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, !horaAproximada, catalogoResultados, savPorCasa, elementosModalidades, aspectosPessoais, cursosPorDestino);
+    const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, !horaAproximada, catalogoResultados, savPorCasa, elementosModalidades, aspectosPessoais, cursosPorDestino, d1, yogas);
 
     const client = new Anthropic({ apiKey });
 
@@ -133,6 +147,10 @@ export async function POST(request: Request) {
       opcoesConsideradas: intakeAdulto.areasDestino.concat(intakeAdulto.areasDestinoOutra ? [intakeAdulto.areasDestinoOutra] : []),
       ideiaConcreta: intakeAdulto.ideiaConcreta,
       perguntaEspecifica: intakeAdulto.perguntaEspecifica,
+      // FRENTE 1 (correcção do especialista, prova de geração real) — o
+      // mesmo timestamp gravado agora em `guardarRascunho`, nunca
+      // recalculado à parte.
+      rascunhoCriadoEm: rascunho.criadoEm,
     };
     const html = gerarHTMLRelatorio(dadosTemplate, textoFinal, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
 
@@ -161,8 +179,7 @@ export async function PUT(request: Request) {
   if (typeof texto !== "string" || !texto.trim()) return NextResponse.json({ error: "O rascunho não pode ficar vazio." }, { status: 400 });
 
   try {
-    const criadoEm = new Date().toISOString();
-    await guardarRascunho(intakeId, texto);
+    const { criadoEm } = await guardarRascunho(intakeId, texto);
     return NextResponse.json({ ok: true, criadoEm });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

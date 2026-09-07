@@ -17,6 +17,7 @@ import {
   computeAspectosPessoais,
   sugerirCursosParaCatalogo,
   sugerirCursosParaOpcoesAdolescente,
+  detectYogas,
   ELEMENTO_PLANETA,
   MAHADASHA_CLASSIFICACAO,
   normalizarTextoLivre,
@@ -33,6 +34,8 @@ import {
   type PerfilElementosModalidades,
   type AspectoPessoal,
   type CursosSugeridos,
+  type D1TableResult,
+  type YogaHit,
 } from "@naveya/method-engine";
 
 // Pipeline de cálculo astrológico partilhada entre /api/relatorio (gera o
@@ -167,6 +170,9 @@ export interface DadosAstrologicos {
   intakeAdulto: VocationiqIntakeAdulto;
   dadosRicos: DadosRicos;
   catalogoResultados: ResultadoCatalogoVocacional;
+  /** 4 camadas técnicas (correcção do especialista) — avastha/conjunções/Vargottama vêm de `d1` (avastha/conjunções já são campos de `D1TableResult`; Vargottama vem de `d1.d9.rows`); `yogas` já filtrado (sem `neechabhanga_*`, ver `calcularAstrologiaBase`). */
+  d1: D1TableResult;
+  yogas: YogaHit[];
   /** Correcção do especialista (RISCO ARQUITECTURAL 7) — as coordenadas efectivamente usadas nesta chamada: as que vieram de `coordenadasExistentes`, ou as recém-geocodificadas quando não havia nenhuma guardada ainda. O chamador persiste este valor (`guardarRascunho`/backfill nas rotas de regeneração) para nunca mais precisar de geocodificar este pedido. */
   coordenadasNascimento: CoordenadasNascimento;
   /** TAREFA 4 (correcção do especialista) — elementos/modalidades tropicais e aspectos entre planetas pessoais, ambos lidos de `computeWesternTable` (já calculada aqui para `regenteAscendenteOcidental` — nunca uma segunda chamada). */
@@ -223,12 +229,20 @@ async function calcularAstrologiaBase(intake: IntakeRow, coordenadasExistentes?:
   const westernTable = computeWesternTable(birth);
   const elementosModalidades = computeElementosModalidades(westernTable.planets);
   const aspectosPessoais = computeAspectosPessoais(westernTable.planets);
+  // CAMADA 3 (correcção do especialista) — yogas clássicos, sempre
+  // calculados aqui (nunca só no ramo adulto — FALTA 2). Filtra os hits
+  // `neechabhanga_*`: o VocationIQ já tem o seu próprio detector de Neecha
+  // Bhanga Raja Yoga, mais rigoroso (4 condições clássicas, computado
+  // acima em `computePesosPlanetas`) — passar os dois ao mesmo tempo
+  // produziria dois sinais possivelmente divergentes sobre o mesmo
+  // planeta (ver `blocoYogas` em promptAdulto.ts).
+  const yogas = detectYogas(d1).filter((y) => !y.id.startsWith("neechabhanga"));
 
-  return { horaAproximada, d1, axes, pesosPlanetas, savPorCasa, datas, westernTable, elementosModalidades, aspectosPessoais, coordenadasNascimento: coordenadas };
+  return { horaAproximada, d1, axes, pesosPlanetas, savPorCasa, datas, westernTable, elementosModalidades, aspectosPessoais, yogas, coordenadasNascimento: coordenadas };
 }
 
 export async function calcularDadosAstrologicos(intake: IntakeRow, coordenadasExistentes?: CoordenadasNascimento | null): Promise<DadosAstrologicos> {
-  const { horaAproximada, d1, axes, pesosPlanetas, savPorCasa, datas, westernTable, elementosModalidades, aspectosPessoais, coordenadasNascimento } = await calcularAstrologiaBase(
+  const { horaAproximada, d1, axes, pesosPlanetas, savPorCasa, datas, westernTable, elementosModalidades, aspectosPessoais, yogas, coordenadasNascimento } = await calcularAstrologiaBase(
     intake,
     coordenadasExistentes,
   );
@@ -274,6 +288,8 @@ export async function calcularDadosAstrologicos(intake: IntakeRow, coordenadasEx
     elementosModalidades,
     aspectosPessoais,
     cursosPorDestino,
+    d1,
+    yogas,
   };
 }
 
@@ -310,6 +326,9 @@ export interface DadosAstrologicosAdolescente {
   cursosPorDestino: Record<string, CursosSugeridos>;
   /** TAREFA 1C — cursos concretos resolvidos para cada opção declarada (chave = texto exacto da opção), via o mapeamento manual e curado. */
   cursosPorOpcaoDeclarada: Record<string, CursosSugeridos[]>;
+  /** FALTA 2 (correcção do especialista) — mesmas 4 camadas técnicas do ramo adulto, nunca só num dos dois motores. */
+  d1: D1TableResult;
+  yogas: YogaHit[];
 }
 
 /**
@@ -325,7 +344,7 @@ export interface DadosAstrologicosAdolescente {
  * e nos cursos por opção declarada (TAREFA 1C).
  */
 export async function calcularDadosAstrologicosAdolescente(intake: IntakeRow, coordenadasExistentes?: CoordenadasNascimento | null): Promise<DadosAstrologicosAdolescente> {
-  const { horaAproximada, d1, axes, pesosPlanetas, savPorCasa, datas, westernTable, elementosModalidades, aspectosPessoais, coordenadasNascimento } = await calcularAstrologiaBase(
+  const { horaAproximada, d1, axes, pesosPlanetas, savPorCasa, datas, westernTable, elementosModalidades, aspectosPessoais, yogas, coordenadasNascimento } = await calcularAstrologiaBase(
     intake,
     coordenadasExistentes,
   );
@@ -357,6 +376,8 @@ export async function calcularDadosAstrologicosAdolescente(intake: IntakeRow, co
     aspectosPessoais,
     cursosPorDestino,
     cursosPorOpcaoDeclarada,
+    d1,
+    yogas,
   };
 }
 
@@ -381,7 +402,13 @@ export interface RelatorioParaExibir {
  * nunca preencheu. Esta função central substitui essa chamada nos 3
  * sítios — nunca 3 cópias da mesma decisão.
  */
-export async function reconstruirHTMLRelatorio(intake: IntakeRow, texto: string, coordenadasExistentes?: CoordenadasNascimento | null): Promise<RelatorioParaExibir> {
+export async function reconstruirHTMLRelatorio(
+  intake: IntakeRow,
+  texto: string,
+  coordenadasExistentes?: CoordenadasNascimento | null,
+  /** FRENTE 1 (correcção do especialista, prova de geração real) — `TextoRelatorioActual.criadoEm` do chamador; passado ao rodapé do relatório sem alteração, nunca recalculado aqui. */
+  rascunhoCriadoEm?: string | null,
+): Promise<RelatorioParaExibir> {
   if (SITUACOES_ADOLESCENTE.has(intake.situacao)) {
     const { horaAproximada, axes, pesosPlanetas, savPorCasa, datas, intakeAdolescente, catalogoResultados, coordenadasNascimento } = await calcularDadosAstrologicosAdolescente(
       intake,
@@ -403,6 +430,7 @@ export async function reconstruirHTMLRelatorio(intake: IntakeRow, texto: string,
           anosExperiencia: "",
           opcoesConsideradas: intakeAdolescente.opcoesAdolescente,
           ideiaConcreta: intakeAdolescente.opcaoMaisProvavel,
+          rascunhoCriadoEm,
         }
       : {
           nome: intake.nome,
@@ -416,6 +444,7 @@ export async function reconstruirHTMLRelatorio(intake: IntakeRow, texto: string,
           anosExperiencia: intakeAdolescente.situacaoDeclarada,
           opcoesConsideradas: intakeAdolescente.opcoesAdolescente,
           perguntaEspecifica: intakeAdolescente.opcaoMaisProvavel ? `Qual das opções te parece mais provável hoje: ${intakeAdolescente.opcaoMaisProvavel}?` : undefined,
+          rascunhoCriadoEm,
         };
     const html = gerarHTMLRelatorio(dadosTemplate, texto, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
     return { html, horaAproximada, coordenadasNascimento };
@@ -434,6 +463,7 @@ export async function reconstruirHTMLRelatorio(intake: IntakeRow, texto: string,
     opcoesConsideradas: intakeAdulto.areasDestino.concat(intakeAdulto.areasDestinoOutra ? [intakeAdulto.areasDestinoOutra] : []),
     ideiaConcreta: intakeAdulto.ideiaConcreta,
     perguntaEspecifica: intakeAdulto.perguntaEspecifica,
+    rascunhoCriadoEm,
   };
   const html = gerarHTMLRelatorio(dadosTemplate, texto, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
   return { html, horaAproximada, coordenadasNascimento };

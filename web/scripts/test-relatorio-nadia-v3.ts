@@ -123,6 +123,8 @@ async function main() {
     dados.elementosModalidades,
     dados.aspectosPessoais,
     dados.cursosPorDestino,
+    dados.d1,
+    dados.yogas,
   );
   console.log(`(prompt real gerado — ${prompt.length} caracteres)`);
 

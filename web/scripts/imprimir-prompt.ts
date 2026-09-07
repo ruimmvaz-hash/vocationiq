@@ -26,6 +26,7 @@ import {
   sugerirCursosParaCatalogo,
   construirPromptAdulto,
   catalogarDestinos,
+  detectYogas,
   type DadosDatas,
   type BirthInput,
   type VocationiqIntakeAdulto,
@@ -156,8 +157,13 @@ async function main() {
   const elementosModalidades = computeElementosModalidades(westernTable.planets);
   const aspectosPessoais = computeAspectosPessoais(westernTable.planets);
   const cursosPorDestino = sugerirCursosParaCatalogo(catalogoResultados);
+  // 4 camadas técnicas (correcção do especialista) — o VocationIQ já tem
+  // o seu próprio detector de Neecha Bhanga (mais rigoroso, usado no peso
+  // de cada planeta acima); filtra os hits `neechabhanga_*` de detectYogas
+  // para não duplicar/divergir sobre o mesmo planeta (ver blocoYogas).
+  const yogas = detectYogas(d1).filter((y) => !y.id.startsWith("neechabhanga"));
 
-  const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, !horaAproximada, catalogoResultados, savPorCasa, elementosModalidades, aspectosPessoais, cursosPorDestino);
+  const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, !horaAproximada, catalogoResultados, savPorCasa, elementosModalidades, aspectosPessoais, cursosPorDestino, d1, yogas);
 
   console.error("\n=== PROMPT COMPLETO (nunca enviado à Anthropic por este script) ===\n");
   console.log(prompt);

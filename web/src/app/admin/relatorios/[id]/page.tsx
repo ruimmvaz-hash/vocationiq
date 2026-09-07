@@ -234,7 +234,9 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
           intakeId={intake.id}
           podeGerar={podeGerarAutomatico}
           textoInicial={actual?.texto ?? null}
-          criadoEmInicial={rascunho?.criadoEm ?? relatorioEntregue?.criadoEm ?? null}
+          criadoEmInicial={rascunho?.criadoEm ?? relatorioEntregue?.rascunhoCriadoEm ?? relatorioEntregue?.criadoEm ?? null}
+          rascunhoVersaoInicial={actual?.rascunhoVersao ?? 1}
+          criticaCriadaEmInicial={actual?.criticaCriadaEm ?? null}
           temDraftReal={Boolean(rascunho?.texto)}
           apiBase={apiBaseRascunho}
         />

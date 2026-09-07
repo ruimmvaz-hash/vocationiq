@@ -47,7 +47,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   try {
     // TAREFA 1D (correcção do especialista) — decide adulto/adolescente a
     // partir de intake.situacao num único sítio (nunca duplicado aqui).
-    const { html, coordenadasNascimento } = await reconstruirHTMLRelatorio(intake, rascunho.texto, rascunho.coordenadasNascimento);
+    const { html, coordenadasNascimento } = await reconstruirHTMLRelatorio(intake, rascunho.texto, rascunho.coordenadasNascimento, rascunho.criadoEm);
     if (!rascunho.coordenadasNascimento) {
       await atualizarCoordenadasNascimento(rascunho.id, coordenadasNascimento).catch((err) => console.error("[entregar-automatico] falha ao gravar coordenadas de nascimento (não bloqueante):", err));
     }

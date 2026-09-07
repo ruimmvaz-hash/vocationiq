@@ -22,6 +22,8 @@ export function SeccaoRascunho({
   podeGerar,
   textoInicial,
   criadoEmInicial,
+  rascunhoVersaoInicial = 1,
+  criticaCriadaEmInicial = null,
   temDraftReal,
   apiBase = "/api/relatorio",
 }: {
@@ -29,6 +31,10 @@ export function SeccaoRascunho({
   podeGerar: boolean;
   textoInicial: string | null;
   criadoEmInicial: string | null;
+  /** FRENTE 1 (correcção do especialista, prova de geração real) — nº de vezes que este rascunho foi reescrito pela crítica automática (1 = original, nunca reescrito). */
+  rascunhoVersaoInicial?: number;
+  /** FRENTE 1 — quando a crítica automática correu pela última vez. "Guardar rascunho" (edição manual) nunca actualiza este campo — por isso, se `criticaCriadaEmInicial` for anterior a `criadoEmInicial`, o texto actual foi editado à mão DEPOIS da última geração real pela Anthropic. */
+  criticaCriadaEmInicial?: string | null;
   temDraftReal: boolean;
   /** TAREFA 1D (correcção do especialista) — "/api/relatorio" (adulto) ou "/api/relatorio-adolescente" (ramo adolescente), decidido em page.tsx a partir de intake.situacao. */
   apiBase?: string;
@@ -36,6 +42,8 @@ export function SeccaoRascunho({
   const [texto, setTexto] = useState(textoInicial);
   const [textoEditado, setTextoEditado] = useState(textoInicial ?? "");
   const [criadoEm, setCriadoEm] = useState(criadoEmInicial);
+  const [rascunhoVersao, setRascunhoVersao] = useState(rascunhoVersaoInicial);
+  const [criticaCriadaEm, setCriticaCriadaEm] = useState(criticaCriadaEmInicial);
   const [loading, setLoading] = useState<"gerar" | "guardar" | "apagar" | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [mensagem, setMensagem] = useState<string | null>(null);
@@ -63,7 +71,15 @@ export function SeccaoRascunho({
     }
     setTexto(data.texto);
     setTextoEditado(data.texto);
-    setCriadoEm(new Date().toISOString());
+    // FRENTE 1 (correcção do especialista, prova de geração real) — "Gerar"
+    // passa SEMPRE pela crítica automática (nunca opcional, ver route.ts),
+    // por isso `criticaCriadaEm` fica sempre alinhado com `criadoEm` aqui —
+    // ao contrário de "Guardar rascunho" (edição manual), que nunca toca
+    // neste campo.
+    const agora = new Date().toISOString();
+    setCriadoEm(agora);
+    setCriticaCriadaEm(agora);
+    setRascunhoVersao((v) => (data.houveReescrita ? v + 1 : v));
     router.refresh();
   }
 
@@ -106,10 +122,30 @@ export function SeccaoRascunho({
     router.refresh();
   }
 
+  // FRENTE 1 (correcção do especialista, prova de geração real) —
+  // `criticaCriadaEm` só é actualizado por "Gerar"/"Regenerar" (a crítica
+  // corre sempre, nunca é opcional); "Guardar rascunho" (edição manual)
+  // nunca lhe toca. Se `criticaCriadaEm` for anterior a `criadoEm` por mais
+  // do que alguns segundos, o texto actual foi editado à mão DEPOIS da
+  // última chamada real à Anthropic — sinal honesto, não uma prova de má fé.
+  const editadoManualmenteDepoisDaGeracao =
+    criadoEm !== null && (criticaCriadaEm === null || new Date(criticaCriadaEm).getTime() < new Date(criadoEm).getTime() - 5000);
+
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        {criadoEm ? <p className="text-xs text-ink/50">Guardado em {formatarDataHora(criadoEm)}</p> : <p className="text-xs text-ink/50">Ainda sem rascunho gerado.</p>}
+        {criadoEm ? (
+          <div className="text-xs text-ink/50">
+            <p>
+              Rascunho gerado em {formatarDataHora(criadoEm)} (versão {rascunhoVersao})
+            </p>
+            {editadoManualmenteDepoisDaGeracao && (
+              <p className="mt-1 font-semibold text-amber-700">⚠ sem crítica associada a este texto — pode ter sido editado manualmente (&quot;Guardar rascunho&quot;) depois da última geração real pela Anthropic.</p>
+            )}
+          </div>
+        ) : (
+          <p className="text-xs text-ink/50">Ainda sem rascunho gerado.</p>
+        )}
         {!texto && (
           <button
             type="button"

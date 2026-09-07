@@ -35,7 +35,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   try {
     // TAREFA 1D (correcção do especialista) — decide adulto/adolescente a
     // partir de intake.situacao num único sítio (nunca duplicado aqui).
-    const { html, coordenadasNascimento } = await reconstruirHTMLRelatorio(intake, actual.texto, actual.coordenadasNascimento);
+    // FRENTE 1 (correcção do especialista, prova de geração real) —
+    // `actual.criadoEm` é o único lugar de onde este timestamp pode vir,
+    // nunca uma data calculada agora ("Ver PDF" nunca gera texto novo).
+    const { html, coordenadasNascimento } = await reconstruirHTMLRelatorio(intake, actual.texto, actual.coordenadasNascimento, actual.criadoEm);
     // RISCO ARQUITECTURAL 7 — auto-cura: esta linha ainda não tinha
     // coordenadas guardadas (rascunho de antes da migração 0018) e acabou
     // de geocodificar de novo por não ter escolha — grava agora, para

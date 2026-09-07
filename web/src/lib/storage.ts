@@ -106,6 +106,8 @@ export interface RelatorioEntregue {
   rascunhoTexto: string | null;
   enviadoEm: string | null;
   criadoEm: string;
+  /** TAREFA 1 (correcção do especialista, prova de geração real) — quando o TEXTO ACTUAL (`rascunhoTexto`) foi gravado, distinto de `criadoEm` (a criação da linha, que pode ser bem mais antiga do que a última regeneração pós-entrega). */
+  rascunhoCriadoEm: string | null;
   dadosTecnicos: DadosTecnicosArmazenados | null;
   promptCompleto: string | null;
   auditoriaLlm: string | null;
@@ -131,7 +133,9 @@ export async function obterRelatorioEntregue(intakeId: string): Promise<Relatori
   const sb = await getSupabaseAdmin();
   const { data, error } = await sb
     .from("viq_relatorios")
-    .select("id, pdf_path, pdf_filename, rascunho_texto, enviado_em, created_at, dados_tecnicos, prompt_completo, auditoria_llm, auditoria_criada_em, critica_llm, critica_criada_em, rascunho_reescrito, rascunho_versao, coordenadas_nascimento")
+    .select(
+      "id, pdf_path, pdf_filename, rascunho_texto, enviado_em, created_at, rascunho_criado_em, dados_tecnicos, prompt_completo, auditoria_llm, auditoria_criada_em, critica_llm, critica_criada_em, rascunho_reescrito, rascunho_versao, coordenadas_nascimento",
+    )
     .eq("intake_id", intakeId)
     .not("pdf_path", "is", null)
     .order("created_at", { ascending: false })
@@ -145,6 +149,7 @@ export async function obterRelatorioEntregue(intakeId: string): Promise<Relatori
     rascunhoTexto: data.rascunho_texto as string | null,
     enviadoEm: data.enviado_em as string | null,
     criadoEm: data.created_at as string,
+    rascunhoCriadoEm: (data.rascunho_criado_em as string | null) ?? null,
     dadosTecnicos: (data.dados_tecnicos as DadosTecnicosArmazenados | null) ?? null,
     promptCompleto: (data.prompt_completo as string | null) ?? null,
     auditoriaLlm: (data.auditoria_llm as string | null) ?? null,
@@ -210,6 +215,13 @@ export interface DadosCriticaParaGuardar {
  * é `null` (uma reescrita de facto aconteceu nesta geração) — nunca a
  * cada geração/edição em si (Parte 3, pedido explícito).
  */
+/**
+ * TAREFA 1B (correcção do especialista, prova de geração real) — devolve
+ * também `criadoEm`/`rascunhoVersao`, o mesmo valor gravado nesta chamada
+ * (nunca recalculado à parte) — para o backoffice e o rodapé do relatório
+ * mostrarem exactamente o timestamp que ficou na BD, nunca um valor
+ * aproximado calculado de novo no chamador.
+ */
 export async function guardarRascunho(
   intakeId: string,
   texto: string,
@@ -217,7 +229,7 @@ export async function guardarRascunho(
   promptCompleto?: string,
   critica?: DadosCriticaParaGuardar,
   coordenadasNascimento?: CoordenadasNascimento,
-): Promise<{ id: string }> {
+): Promise<{ id: string; criadoEm: string; rascunhoVersao: number }> {
   const sb = await getSupabaseAdmin();
   const agora = new Date().toISOString();
   const houveReescrita = critica !== undefined && critica.rascunhoReescrito !== null;
@@ -237,22 +249,24 @@ export async function guardarRascunho(
 
   if (existente) {
     const versaoActual = (existente.rascunho_versao as number | null) ?? 1;
-    const camposVersao = houveReescrita ? { rascunho_versao: versaoActual + 1 } : {};
+    const versaoFinal = houveReescrita ? versaoActual + 1 : versaoActual;
+    const camposVersao = houveReescrita ? { rascunho_versao: versaoFinal } : {};
     const { error } = await sb
       .from("viq_relatorios")
       .update({ rascunho_texto: texto, rascunho_criado_em: agora, ...camposExtra, ...camposVersao })
       .eq("id", existente.id);
     if (error) throw new Error(`Falha ao actualizar rascunho: ${error.message}`);
-    return { id: existente.id as string };
+    return { id: existente.id as string, criadoEm: agora, rascunhoVersao: versaoFinal };
   }
 
+  const versaoFinal = houveReescrita ? 2 : 1;
   const { data, error } = await sb
     .from("viq_relatorios")
-    .insert({ intake_id: intakeId, rascunho_texto: texto, rascunho_criado_em: agora, ...camposExtra, ...(houveReescrita ? { rascunho_versao: 2 } : {}) })
+    .insert({ intake_id: intakeId, rascunho_texto: texto, rascunho_criado_em: agora, ...camposExtra, ...(houveReescrita ? { rascunho_versao: versaoFinal } : {}) })
     .select("id")
     .single();
   if (error) throw new Error(`Falha ao guardar rascunho: ${error.message}`);
-  return { id: data.id as string };
+  return { id: data.id as string, criadoEm: agora, rascunhoVersao: versaoFinal };
 }
 
 export interface RascunhoRelatorio {
@@ -332,6 +346,8 @@ export interface TextoRelatorioActual {
   id: string;
   texto: string;
   origem: "rascunho" | "entregue";
+  /** TAREFA 1 (correcção do especialista, prova de geração real) — quando este texto foi gravado (`rascunho_criado_em` do rascunho, ou `created_at` da linha entregue). Nunca inventado — vem sempre da BD. */
+  criadoEm: string | null;
   dadosTecnicos: DadosTecnicosArmazenados | null;
   promptCompleto: string | null;
   auditoriaLlm: string | null;
@@ -362,6 +378,7 @@ export async function obterTextoRelatorioActual(intakeId: string): Promise<Texto
       id: rascunho.id,
       texto: rascunho.texto,
       origem: "rascunho",
+      criadoEm: rascunho.criadoEm ?? null,
       dadosTecnicos: rascunho.dadosTecnicos,
       promptCompleto: rascunho.promptCompleto,
       auditoriaLlm: rascunho.auditoriaLlm,
@@ -379,6 +396,10 @@ export async function obterTextoRelatorioActual(intakeId: string): Promise<Texto
       id: entregue.id,
       texto: entregue.rascunhoTexto,
       origem: "entregue",
+      // TAREFA 1 — `rascunhoCriadoEm` (quando o TEXTO foi gravado), nunca
+      // `criadoEm` (quando a LINHA foi criada — pode ser muito mais antigo
+      // do que a última regeneração real antes da aprovação).
+      criadoEm: entregue.rascunhoCriadoEm ?? entregue.criadoEm ?? null,
       dadosTecnicos: entregue.dadosTecnicos,
       promptCompleto: entregue.promptCompleto,
       auditoriaLlm: entregue.auditoriaLlm,

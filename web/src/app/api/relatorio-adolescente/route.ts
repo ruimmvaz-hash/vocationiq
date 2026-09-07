@@ -74,8 +74,22 @@ export async function POST(request: Request) {
   if (!apiKey) return NextResponse.json({ error: "ANTHROPIC_API_KEY não configurada." }, { status: 503 });
 
   try {
-    const { horaAproximada, axes, pesosPlanetas, savPorCasa, datas, intakeAdolescente, catalogoResultados, coordenadasNascimento, elementosModalidades, aspectosPessoais, cursosPorDestino, cursosPorOpcaoDeclarada } =
-      await calcularDadosAstrologicosAdolescente(intake);
+    const {
+      horaAproximada,
+      axes,
+      pesosPlanetas,
+      savPorCasa,
+      datas,
+      intakeAdolescente,
+      catalogoResultados,
+      coordenadasNascimento,
+      elementosModalidades,
+      aspectosPessoais,
+      cursosPorDestino,
+      cursosPorOpcaoDeclarada,
+      d1,
+      yogas,
+    } = await calcularDadosAstrologicosAdolescente(intake);
 
     // TAREFA 2C (correcção do especialista, aprovada) — "pos-12" já
     // terminou o secundário: em vez de criar um terceiro prompt, usa o
@@ -106,6 +120,8 @@ export async function POST(request: Request) {
           elementosModalidades,
           aspectosPessoais,
           cursosPorDestino,
+          d1,
+          yogas,
         )
       : construirPromptAdolescente(
           intakeAdolescente,
@@ -119,6 +135,8 @@ export async function POST(request: Request) {
           aspectosPessoais,
           cursosPorDestino,
           cursosPorOpcaoDeclarada,
+          d1,
+          yogas,
         );
 
     const client = new Anthropic({ apiKey });
@@ -160,6 +178,7 @@ export async function POST(request: Request) {
           anosExperiencia: "",
           opcoesConsideradas: intakeAdolescente.opcoesAdolescente,
           ideiaConcreta: intakeAdolescente.opcaoMaisProvavel,
+          rascunhoCriadoEm: rascunho.criadoEm,
         }
       : {
           nome: intake.nome,
@@ -173,6 +192,7 @@ export async function POST(request: Request) {
           anosExperiencia: intakeAdolescente.situacaoDeclarada,
           opcoesConsideradas: intakeAdolescente.opcoesAdolescente,
           perguntaEspecifica: intakeAdolescente.opcaoMaisProvavel ? `Qual das opções te parece mais provável hoje: ${intakeAdolescente.opcaoMaisProvavel}?` : undefined,
+          rascunhoCriadoEm: rascunho.criadoEm,
         };
     const html = gerarHTMLRelatorio(dadosTemplate, textoFinal, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
 
@@ -201,8 +221,7 @@ export async function PUT(request: Request) {
   if (typeof texto !== "string" || !texto.trim()) return NextResponse.json({ error: "O rascunho não pode ficar vazio." }, { status: 400 });
 
   try {
-    const criadoEm = new Date().toISOString();
-    await guardarRascunho(intakeId, texto);
+    const { criadoEm } = await guardarRascunho(intakeId, texto);
     return NextResponse.json({ ok: true, criadoEm });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

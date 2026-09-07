@@ -120,6 +120,8 @@ async function main() {
     dados.elementosModalidades,
     dados.aspectosPessoais,
     dados.cursosPorDestino,
+    dados.d1,
+    dados.yogas,
   );
   console.log(`(prompt real gerado — ${prompt.length} caracteres)`);
 
@@ -142,7 +144,16 @@ async function main() {
   console.log(`Guardado em: ${outPath}`);
 
   console.log("\n=== As 4 secções pedidas (TAREFA 2), texto exacto do prompt real ===");
-  for (const marcador of ["-- Perfil de elementos e modalidades --", "-- Aspectos principais --", "Candidatas com ≥4 convergências", "-- Via concreta para"]) {
+  for (const marcador of [
+    "-- Perfil de elementos e modalidades --",
+    "-- Aspectos principais --",
+    "Candidatas com ≥4 convergências",
+    "-- Via concreta para",
+    "-- Avasthas (maturidade dos planetas) --",
+    "-- Conjunções activas --",
+    "-- Yogas activos --",
+    "-- Vargottama --",
+  ]) {
     const idx = prompt.indexOf(marcador);
     console.log(`\n[${marcador}]`);
     console.log(idx === -1 ? "AUSENTE" : prompt.slice(idx, idx + 400));

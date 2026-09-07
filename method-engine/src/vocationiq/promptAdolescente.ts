@@ -33,6 +33,8 @@ import type { PesoPlaneta, SavPorCasa } from "./pesosPlanetas";
 import type { ResultadoCatalogoVocacional } from "./catalogoVocacional";
 import type { PerfilElementosModalidades, AspectoPessoal } from "./elementosEAspectos";
 import { viaSecundariaParaDestino, type CursosSugeridos } from "./catalogoCursos";
+import type { D1TableResult } from "../lifeReport/d1Table";
+import type { YogaHit } from "../lifeReport/yogas";
 import {
   blocoEixoMissao,
   blocoModoDeGanho,
@@ -41,6 +43,10 @@ import {
   blocoCatalogoVocacional,
   blocoElementosModalidades,
   blocoAspectosPessoais,
+  blocoAvasthas,
+  blocoConjuncoes,
+  blocoYogas,
+  blocoVargottama,
   TERMOS_PROIBIDOS,
   SECCAO_TITULOS,
   MARCADORES,
@@ -102,6 +108,9 @@ export function construirPromptAdolescente(
   aspectosPessoais: AspectoPessoal[],
   cursosPorDestino: Record<string, CursosSugeridos>,
   cursosPorOpcaoDeclarada: Record<string, CursosSugeridos[]>,
+  /** FALTA 2 (correcção do especialista) — mesmas 4 camadas técnicas do ramo adulto, mesmos blocos partilhados (blocoAvasthas/blocoConjuncoes/blocoYogas/blocoVargottama, importados de promptAdulto.ts) — nunca um adolescente com menos profundidade técnica do que um adulto. */
+  d1: D1TableResult,
+  yogas: YogaHit[],
 ): string {
   // TAREFA 2C — "pos-12" nunca chega aqui (a rota encaminha para o motor
   // adulto antes); só distingue 7-a-9 de tudo o resto (10-a-12, ou
@@ -164,6 +173,10 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
   · SINAL FORTE (2-3 camadas): confiança, citando as fontes.
   · LEITURA (interpretação sólida, sem convergência mensurável): escreve-se como leitura, nunca como facto.
   · EM ABERTO (o perfil não distingue): diz isso directamente — "o teu perfil não distingue entre X e Y, a decisão fica contigo".
+- AVASTHAS — OBRIGATÓRIO: A avastha de cada planeta modifica a sua leitura de forma crítica. Um planeta forte (peso ≥1,3) mas Mrita (morto) não consegue expressar a sua força — está bloqueado. Um planeta fraco (peso <0,9) mas Yuva (jovem adulto) tem mais capacidade de expressão do que o peso sugere. NUNCA ler o peso isolado da avastha.
+- CONJUNÇÕES — OBRIGATÓRIO: Quando dois planetas estão no mesmo signo, a sua energia funde-se. Ler sempre os planetas em conjunção como uma unidade, não separados. Uma conjunção com Júpiter ou Vénus eleva; com Saturno ou Marte adiciona peso e responsabilidade.
+- YOGAS — OBRIGATÓRIO: Os yogas modificam fundamentalmente o potencial do perfil. Um Raja Yoga activo significa que a pessoa tem capacidade estrutural real para posições de destaque — não é wishful thinking, é uma configuração técnica. Nomear cada yoga activo e o que significa em linguagem concreta.
+- VARGOTTAMA — OBRIGATÓRIO: Um planeta Vargottama tem expressão muito mais consistente e duradoura do que o peso isolado sugere. Sempre nomear planetas Vargottama e elevar o nível de confiança das afirmações sobre eles.
 - HORIZONTE TEMPORAL: até 18 meses, afirmações directas. Entre 18 meses e 3 anos, com cautela ("tende a", "favorece"). Mais de 3 anos, só como pano de fundo.
 - A lista de opções entrega-se sempre com a moldura explícita, no início e no fim da secção "Leitura por opção": isto é para reconhecer, não para obedecer — o critério final é o reconhecimento interno do jovem, nunca o documento.
 - Ao nomear um caminho fora do sistema formal, indica sempre a via de sustento associada — nunca "o teu caminho é X" sem dizer o que paga as contas enquanto X cresce.
@@ -187,6 +200,18 @@ ${blocoModoDeGanho(axes)}
 
 -- Peso de cada planeta --
 ${blocoPesos(pesosPlanetas)}
+
+-- Avasthas (maturidade dos planetas) --
+${blocoAvasthas(d1)}
+
+-- Conjunções activas --
+${blocoConjuncoes(d1)}
+
+-- Yogas activos --
+${blocoYogas(yogas)}
+
+-- Vargottama --
+${blocoVargottama(d1)}
 
 -- Datas reais --
 ${blocoDatas(datas)}

@@ -100,6 +100,8 @@ async function main() {
     dados.aspectosPessoais,
     dados.cursosPorDestino,
     dados.cursosPorOpcaoDeclarada,
+    dados.d1,
+    dados.yogas,
   );
   console.log(prompt);
 

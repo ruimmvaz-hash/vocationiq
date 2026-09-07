@@ -18,6 +18,7 @@ import {
   sugerirCursosParaCatalogo,
   construirPromptAdulto,
   catalogarDestinos,
+  detectYogas,
   type VocationiqIntakeAdulto,
   type DadosDatas,
   type BirthInput,
@@ -93,8 +94,9 @@ async function main() {
   const elementosModalidades = computeElementosModalidades(westernTable.planets);
   const aspectosPessoais = computeAspectosPessoais(westernTable.planets);
   const cursosPorDestino = sugerirCursosParaCatalogo(catalogoResultados);
+  const yogas = detectYogas(d1).filter((y) => !y.id.startsWith("neechabhanga"));
 
-  const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, true, catalogoResultados, savPorCasa, elementosModalidades, aspectosPessoais, cursosPorDestino);
+  const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, true, catalogoResultados, savPorCasa, elementosModalidades, aspectosPessoais, cursosPorDestino, d1, yogas);
 
   console.log("=".repeat(80));
   console.log("PROMPT GERADO (caso de teste) — nunca enviado à Anthropic neste script");
@@ -142,6 +144,7 @@ async function main() {
   const elementosModalidadesSemHora = computeElementosModalidades(westernTableSemHora.planets);
   const aspectosPessoaisSemHora = computeAspectosPessoais(westernTableSemHora.planets);
   const cursosPorDestinoSemHora = sugerirCursosParaCatalogo(catalogoResultadosSemHora);
+  const yogasSemHora = detectYogas(d1SemHora).filter((y) => !y.id.startsWith("neechabhanga"));
   const promptSemHora = construirPromptAdulto(
     intakeAdulto,
     axesSemHora,
@@ -153,6 +156,8 @@ async function main() {
     elementosModalidadesSemHora,
     aspectosPessoaisSemHora,
     cursosPorDestinoSemHora,
+    d1SemHora,
+    yogasSemHora,
   );
   const indiceNota = promptSemHora.indexOf("NOTA INTERNA");
   console.log("\n" + "=".repeat(80));

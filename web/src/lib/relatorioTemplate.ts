@@ -71,6 +71,15 @@ export interface DadosParaTemplate {
   ehAdolescente?: boolean;
   /** TAREFA 2 (correcção do especialista) — rótulo humano do novo campo `ano_escolaridade` (migração 0020). Só usado quando `ehAdolescente` é true. */
   anoEscolaridade?: string;
+  /**
+   * FRENTE 1 (correcção do especialista, prova de geração real) — ISO
+   * timestamp de `rascunho_criado_em`/`rascunho_criado_em` do texto
+   * entregue (nunca inventado, nunca um placeholder) — vem sempre de
+   * `TextoRelatorioActual.criadoEm` (storage.ts). `undefined`/`null`
+   * (rascunho antigo, anterior a esta correcção) omite a linha do rodapé
+   * por completo — nunca mostra uma data aproximada.
+   */
+  rascunhoCriadoEm?: string | null;
 }
 
 const AZUL = "#1B3A6B";
@@ -422,6 +431,14 @@ function formatarDataLonga(iso: string): string {
 
 function formatarMesAno(d: Date): string {
   return new Intl.DateTimeFormat("pt-PT", { month: "short", year: "numeric" }).format(d).replace(".", "");
+}
+
+/** FRENTE 1 (correcção do especialista) — "7 de Setembro de 2026 às 04:23", fuso de Lisboa (o mesmo que o resto do template usa para datas). */
+function formatarDataHoraLonga(iso: string): string {
+  const d = new Date(iso);
+  const data = new Intl.DateTimeFormat("pt-PT", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Lisbon" }).format(d);
+  const hora = new Intl.DateTimeFormat("pt-PT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Lisbon" }).format(d);
+  return `${data} às ${hora}`;
 }
 
 // ---------- Gráficos SVG (deterministicamente a partir dos dados, nunca do LLM) ----------
@@ -1632,6 +1649,7 @@ export function gerarHTMLRelatorio(
     <div class="rodape-logo">Vocation<span class="iq">IQ</span></div>
     <p>Este relatório foi preparado especificamente para ${escapeHtml(dados.nome)}</p>
     <p>${dataGeracao} · vocationiq.app</p>
+    ${dados.rascunhoCriadoEm ? `<p>Análise gerada em ${formatarDataHoraLonga(dados.rascunhoCriadoEm)}</p>` : ""}
     <p><strong>Confidencial</strong></p>
   </footer>
 
