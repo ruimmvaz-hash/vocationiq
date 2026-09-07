@@ -164,12 +164,25 @@ async function main() {
   // texto exacto (não só a secção de dados) — o diagnóstico pedido era
   // exactamente isto: "a instrução está a chegar ao prompt gerado?".
   console.log("\n=== Presença das 4 instruções REGRAS OBRIGATÓRIAS no prompt real ===");
-  for (const instrucao of ["AVASTHAS — REGRAS OBRIGATÓRIAS", "CONJUNÇÕES — REGRAS OBRIGATÓRIAS", "YOGAS — REGRAS OBRIGATÓRIAS", "VARGOTTAMA — INSTRUÇÃO OBRIGATÓRIA"]) {
+  for (const instrucao of [
+    "AVASTHAS — REGRAS OBRIGATÓRIAS",
+    "CONJUNÇÕES — REGRAS OBRIGATÓRIAS",
+    "YOGAS — INSTRUÇÃO OBRIGATÓRIA PARA CANDIDATAS",
+    "VARGOTTAMA — INSTRUÇÃO OBRIGATÓRIA",
+    "CONSISTÊNCIA TÉCNICA ENTRE MOTORES",
+    "CANDIDATA FORA DA LISTA — LIGAÇÃO OBRIGATÓRIA A DOM JÁ NOMEADO",
+  ]) {
     console.log(`${instrucao}: ${prompt.includes(instrucao) ? "PRESENTE" : "AUSENTE"}`);
   }
-  console.log(`\nOcorrências de "Raja Yoga:" no prompt: ${(prompt.match(/Raja Yoga:/g) ?? []).length}`);
+  console.log(`\nOcorrências de "Existe também" (padrão yogas por candidata): ${(prompt.match(/Existe também/g) ?? []).length}`);
+  console.log(`Ocorrências de "Isto liga-se directamente a" (padrão abertura candidatas): ${(prompt.match(/Isto liga-se directamente a/g) ?? []).length}`);
+  console.log(`Ocorrências de "Raja Yoga:" no prompt: ${(prompt.match(/Raja Yoga:/g) ?? []).length}`);
   console.log(`Ocorrências de "Viparita Raja Yoga" no prompt: ${(prompt.match(/Viparita Raja Yoga/g) ?? []).length}`);
   console.log(`Ocorrências de "Vargottama" no prompt (dados + instrução): ${(prompt.match(/Vargottama/g) ?? []).length}`);
+  // 3 ocorrências esperadas: todas dentro da própria regra "PROIBIDO USAR
+  // A PALAVRA 'CARTA'" (o cabeçalho da regra + o exemplo do que NÃO
+  // escrever) — nunca fora dela. Qualquer contagem > 3 é um vazamento real.
+  console.log(`Ocorrências de "carta" no prompt (esperado: 3, só dentro da regra que a proíbe): ${(prompt.match(/\bcarta\b/gi) ?? []).length}`);
 }
 
 main().catch((err) => {

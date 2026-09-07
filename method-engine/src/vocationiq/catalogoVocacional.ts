@@ -760,7 +760,7 @@ export function catalogarDestinos(
     destinosDeAreaActual,
     destinosAlternativos,
     candidatasForaDaLista,
-    notaAreaGenerica: areaGenerica ? `área actual não tem sector específico ("${intake.areaActual}") — candidatas derivadas só da carta (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações activas)` : null,
+    notaAreaGenerica: areaGenerica ? `área actual não tem sector específico ("${intake.areaActual}") — candidatas derivadas só do perfil (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações activas)` : null,
     notaEixoDoRendimento: notaCondicao5 ? notaCondicao5.nota : null,
   };
 }

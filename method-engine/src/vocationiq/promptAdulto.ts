@@ -471,7 +471,7 @@ function naturezaConjuncao(a: string, b: string): "benéfica" | "tensão" | "neu
 }
 
 export function blocoConjuncoes(d1: D1TableResult): string {
-  if (!d1.conjunctions.length) return "(nenhuma conjunção entre os 9 grahas nesta carta)";
+  if (!d1.conjunctions.length) return "(nenhuma conjunção entre os 9 grahas neste perfil)";
   return d1.conjunctions.map((c) => `${planetaPt(c.a)} conjunção ${planetaPt(c.b)} (casa ${d1.rows[c.a].house}, natureza ${naturezaConjuncao(c.a, c.b)})`).join("\n");
 }
 
@@ -483,7 +483,7 @@ export function blocoConjuncoes(d1: D1TableResult): string {
 // Bhanga — o VocationIQ já tem o seu próprio detector, mais rigoroso (4
 // condições clássicas, `pesosPlanetas.ts`), usado no peso de cada planeta.
 export function blocoYogas(yogas: YogaHit[]): string {
-  if (!yogas.length) return "(nenhum yoga clássico detectado nesta carta)";
+  if (!yogas.length) return "(nenhum yoga clássico detectado neste perfil)";
   return yogas.map((y) => `${y.label}: ${y.detail}`).join("\n");
 }
 
@@ -493,7 +493,7 @@ export function blocoVargottama(d1: D1TableResult): string {
   const linhas = Object.values(d1.d9.rows)
     .filter((r) => r.vargottama)
     .map((r) => `${planetaPt(r.graha)}: Vargottama (mesmo signo ${r.d1Sign} em D-1 e D-9)`);
-  return linhas.length ? linhas.join("\n") : "(nenhum planeta Vargottama nesta carta)";
+  return linhas.length ? linhas.join("\n") : "(nenhum planeta Vargottama neste perfil)";
 }
 
 /**
@@ -520,7 +520,7 @@ export function blocoVargottama(d1: D1TableResult): string {
  * governa a área actual" que o motor não calcula.
  */
 export const INSTRUCAO_AVASTHAS = `AVASTHAS — REGRAS OBRIGATÓRIAS na secção "${SECCAO_TITULOS.quemE}":
-· PLANETA LIGADO À ÁREA ACTUAL EM MRITA: olha para os planetas citados nas camadas de "Derivadas da área actual" (dados técnicos, "Candidatas do catálogo"). Se um deles está em Mrita, nomeia-o explicitamente: "Trabalhou durante X anos no campo de [planeta] — mas [planeta] Mrita está bloqueado nesta carta, o que explica com precisão porque essa área nunca trouxe realização plena. Não é falta de talento — é falta de ressonância estrutural."
+· PLANETA LIGADO À ÁREA ACTUAL EM MRITA: olha para os planetas citados nas camadas de "Derivadas da área actual" (dados técnicos, "Candidatas do catálogo"). Se um deles está em Mrita, nomeia-o explicitamente: "Trabalhou durante X anos no campo de [planeta] — mas [planeta] Mrita está bloqueado neste perfil, o que explica com precisão porque essa área nunca trouxe realização plena. Não é falta de talento — é falta de ressonância estrutural."
 · PLANETA FORTE (peso ≥1,3) EM MRITA: nomeia a contradição: "[Planeta] tem força técnica alta (peso X) mas está em Mrita — o potencial existe mas a expressão está bloqueada. O que parece capacidade adormecida é na verdade uma barreira real a trabalhar."
 · PLANETA FRACO (peso <0,9) EM YUVA: nomeia a surpresa positiva: "[Planeta] tem peso baixo (X) mas está em Yuva — tem mais capacidade de expressão do que os números sugerem. É um músculo que responde bem ao treino."
 NUNCA listar avasthas sem as usar para explicar algo concreto sobre a pessoa.`;
@@ -530,11 +530,47 @@ export const INSTRUCAO_CONJUNCOES = `CONJUNÇÕES — REGRAS OBRIGATÓRIAS: para
 · CONJUNÇÃO DE TENSÃO (Saturno+Marte, Sol+Saturno, Marte+Lua): "[Planeta A] conjunção [Planeta B] — dois impulsos opostos no mesmo espaço. O que parece contradição ([impulso A] vs [impulso B]) é na verdade a tensão criativa que define como esta pessoa age. Resolver esta tensão é o trabalho de uma vida — mas também é a fonte de energia mais original deste perfil."
 NUNCA ignorar conjunções activas.`;
 
-export const INSTRUCAO_YOGAS = `YOGAS — REGRAS OBRIGATÓRIAS: cada yoga activo tem de se ligar a uma candidata ou opção concreta cujas camadas de convergência (secção "Candidatas do catálogo") já citam o MESMO planeta do yoga — PROIBIDO inventar uma ligação a uma candidata cujas camadas não citem nenhum dos planetas do yoga.
-· RAJA YOGA ACTIVO: em "${SECCAO_TITULOS.leituraPorOpcao}" ou "${SECCAO_TITULOS.candidataForaDaLista}", para a candidata que partilha o planeta: "Existe uma configuração técnica neste perfil que sustenta posições de autoridade real — não é ambição, é uma estrutura planetária concreta. Isso reforça [candidata] porque [planeta partilhado] aparece nos dois."
-· DHANA YOGA ACTIVO: liga à opção/candidata de maior potencial financeiro que partilhe o planeta: "A facilidade de converter esforço em recursos (Dhana Yoga activo) reforça [opção] — o caminho financeiro desta área alinha com a estrutura do perfil."
-· VIPARITA RAJA YOGA ACTIVO: nomeia na parte de custo/limitações da opção relevante: "As dificuldades desta área não são obstáculos — são o caminho. Este perfil tem Viparita Raja Yoga, o que significa que a adversidade é precisamente onde a força se constrói."
-NUNCA listar yogas sem os ligar a algo concreto na narrativa. Se nenhum yoga activo, não mencionar.`;
+// CORRECÇÃO 2 (correcção do especialista, ronda seguinte) — a versão
+// anterior ("cada yoga tem de se ligar a uma candidata... que já citam o
+// MESMO planeta") já pedia a mesma verificação de planeta partilhado, mas
+// não distinguia "o yoga confirma esta candidata especificamente" de "o
+// yoga só reforça capacidade geral", nem obrigava a testar as 3
+// candidatas (só falava de "uma candidata"). Versão mais precisa e
+// exaustiva, com frase-molde quase literal.
+export const INSTRUCAO_YOGAS = `YOGAS — INSTRUÇÃO OBRIGATÓRIA PARA CANDIDATAS: para CADA candidata fora da lista apresentada, verifica se algum yoga activo (Raja Yoga, Dhana Yoga, Viparita Raja Yoga) cita pelo menos um dos planetas que fazem parte das camadas de convergência dessa candidata.
+Se sim, a leitura desta candidata DEVE incluir uma frase com este padrão exacto: "Existe também, [de forma independente desta convergência / reforçando esta convergência], uma configuração técnica neste perfil ([nome do yoga em português simples, ex.: 'Raja Yoga', 'configuração de autoridade real']) que [confirma directamente esta candidata / reforça o teu/seu potencial nesta área de forma mais geral]"
+Distingue sempre:
+· Yoga cujos planetas coincidem com os desta candidata: "confirmação directa" — usa "confirma directamente esta candidata".
+· Yoga que reforça capacidade geral sem ligação aos planetas desta candidata: "reforço geral" — usa "reforça o teu/seu potencial nesta área de forma mais geral".
+Se NÃO houver nenhum yoga cujos planetas coincidam com os planetas da candidata, não menciones yogas nessa candidata — PROIBIDO inventar ligação para preencher espaço.
+Esta verificação é obrigatória para as TRÊS candidatas de cada relatório, não só a primeira. Se as três tiverem yogas aplicáveis, as três devem citá-los.`;
+
+// CORRECÇÃO 3 (correcção do especialista, ronda seguinte) — obriga o
+// mesmo formato de nomeação técnica nos dois motores (adulto e
+// adolescente), para as avasthas e as conjunções nunca aparecerem como
+// prosa livre sem o termo técnico entre parênteses — torna o critério 18/
+// 19 da crítica automática verificável por padrão de texto, não por
+// interpretação.
+export const INSTRUCAO_CONSISTENCIA_TECNICA = `CONSISTÊNCIA TÉCNICA ENTRE MOTORES — obrigatório em ambos, adulto e adolescente:
+Sempre que o texto descrever o estado de maturidade de um planeta, a frase DEVE incluir entre parênteses a palavra "avastha" e o nome técnico do estado (Bala/Yuva/Vriddha/Mrita), no formato: "...está numa fase (avastha) de declínio (Vriddha)..."
+Sempre que o texto descrever uma conjunção (dois traços "fundidos" ou "quase como uma coisa só"), a frase DEVE incluir entre parênteses os dois planetas envolvidos: "...(Lua+Marte fundidos)..."`;
+
+/**
+ * CORRECÇÃO 4 (correcção do especialista, ronda seguinte).
+ *
+ * DESVIO — o texto pedido dizia "que já viste acima" (registo "tu").
+ * Esta é uma constante partilhada entre `construirPromptAdulto`
+ * ("você") e `construirPromptAdolescente` ("tu") — "viste" (2ª pessoa
+ * do singular, pretérito) está certo para o adolescente mas seria
+ * gramaticalmente errado no relatório adulto ("você viu", nunca "você
+ * viste"). Substituído por "que já foi nomeado acima" — construção
+ * impessoal, correcta nos dois registos, sem perder o sentido pedido
+ * (referenciar um dom já nomeado antes na secção "Quem é").
+ */
+export const INSTRUCAO_ABERTURA_CANDIDATAS = `CANDIDATA FORA DA LISTA — LIGAÇÃO OBRIGATÓRIA A DOM JÁ NOMEADO: antes de qualquer menção às camadas técnicas (Atmakaraka, eixo do rendimento, sinais estruturados, etc.), cada candidata DEVE abrir com uma frase que a ligue explicitamente a um dom ou traço já nomeado na secção "${SECCAO_TITULOS.quemE}" deste mesmo relatório.
+Padrão obrigatório: "Isto liga-se directamente a [nome do dom/traço já nomeado em ${SECCAO_TITULOS.quemE}, citado quase literalmente] que já foi nomeado acima — é essa mesma força aplicada a um território concreto."
+Só depois desta frase é que o texto pode introduzir as camadas técnicas de convergência.
+Obrigatório nas três candidatas de cada relatório, sem excepção.`;
 
 // CORRECÇÃO 1 (correcção do especialista, confirmada com 3 relatórios
 // reais) — a versão anterior ("TEM de incluir... este traço é
@@ -600,6 +636,8 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - ${INSTRUCAO_CONJUNCOES}
 - ${INSTRUCAO_YOGAS}
 - ${INSTRUCAO_VARGOTTAMA}
+- ${INSTRUCAO_CONSISTENCIA_TECNICA}
+- ${INSTRUCAO_ABERTURA_CANDIDATAS}
 - Tom adulto, directo, sem gíria de coach, sem emojis.
 
 VOLUME: Cada secção deve ser tão longa quanto os dados sustentam — nunca mais, nunca menos. Se uma secção não tem nada genuinamente novo a acrescentar, é curta. Não preencher para atingir um mínimo. Proibido: repetir para parecer completo. Permitido: ser curto e preciso.

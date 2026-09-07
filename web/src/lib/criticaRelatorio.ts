@@ -1,9 +1,9 @@
 // Redesenho do motor VocationIQ, Parte 3 — arquitectura de 3 passos.
-// Gerar (já existente) → Criticar (2ª chamada, 16 critérios — 12
-// originais + 13-16 das 4 camadas técnicas, correcção do especialista)
-// → Reescrever (3ª chamada, só se algum critério falhar). Tudo dentro do
-// mesmo clique em "Gerar rascunho"/"Regenerar" — nunca uma acção
-// separada do admin.
+// Gerar (já existente) → Criticar (2ª chamada, 19 critérios — 12
+// originais + 13-16 das 4 camadas técnicas + 17-19 de precisão de
+// ligação/nomeação técnica, correcção do especialista) → Reescrever (3ª
+// chamada, só se algum critério falhar). Tudo dentro do mesmo clique em
+// "Gerar rascunho"/"Regenerar" — nunca uma acção separada do admin.
 
 const INSTRUCAO_CRITICA = `Tens à tua frente:
  A) O prompt técnico completo
@@ -51,13 +51,28 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
  14. CONJUNÇÕES: cada conjunção activa foi usada numa frase concreta
      em "Quem é"? Se alguma foi ignorada: FALHA.
 
- 15. YOGAS: cada yoga activo foi ligado a uma candidata ou opção
-     concreta (nunca para criar candidatas novas)? Se foi só
-     listado sem ligação: FALHA.
+ 15. YOGAS POR CANDIDATA: para cada yoga activo, existe uma frase na
+     leitura de alguma candidata ou opção que o cita com o padrão
+     "Existe também..."? Se existe yoga activo e nenhuma candidata
+     o cita: FALHA — reescrita obrigatória.
 
  16. VARGOTTAMA: se existe planeta Vargottama nos dados técnicos,
      a palavra "Vargottama" ou "estrutural" aparece na secção
      "Quem é"? Se não aparecer: FALHA — reescrita obrigatória.
+
+ 17. ABERTURA DAS CANDIDATAS: cada candidata fora da lista abre com
+     ligação explícita a dom de "Quem é" antes de qualquer camada
+     técnica? Se abre directamente com Atmakaraka, eixo do
+     rendimento ou camadas técnicas sem a frase de ligação: FALHA
+     — reescrita obrigatória.
+
+ 18. NOMEAÇÃO TÉCNICA — AVASTHAS: qualquer menção a maturidade
+     planetária sem incluir "(avastha)" e o nome técnico entre
+     parênteses: FALHA — reescrita obrigatória.
+
+ 19. NOMEAÇÃO TÉCNICA — CONJUNÇÕES: qualquer menção a fusão de
+     traços sem incluir os dois planetas entre parênteses: FALHA
+     — reescrita obrigatória.
 
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
@@ -126,13 +141,28 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
  14. CONJUNÇÕES: cada conjunção activa foi usada numa frase concreta
      em "Quem é"? Se alguma foi ignorada: FALHA.
 
- 15. YOGAS: cada yoga activo foi ligado a uma candidata ou opção
-     concreta (nunca para criar candidatas novas)? Se foi só
-     listado sem ligação: FALHA.
+ 15. YOGAS POR CANDIDATA: para cada yoga activo, existe uma frase na
+     leitura de alguma candidata ou opção que o cita com o padrão
+     "Existe também..."? Se existe yoga activo e nenhuma candidata
+     o cita: FALHA — reescrita obrigatória.
 
  16. VARGOTTAMA: se existe planeta Vargottama nos dados técnicos,
      a palavra "Vargottama" ou "estrutural" aparece na secção
      "Quem é"? Se não aparecer: FALHA — reescrita obrigatória.
+
+ 17. ABERTURA DAS CANDIDATAS: cada candidata fora da lista abre com
+     ligação explícita a dom de "Quem é" antes de qualquer camada
+     técnica? Se abre directamente com Atmakaraka, eixo do
+     rendimento ou camadas técnicas sem a frase de ligação: FALHA
+     — reescrita obrigatória.
+
+ 18. NOMEAÇÃO TÉCNICA — AVASTHAS: qualquer menção a maturidade
+     planetária sem incluir "(avastha)" e o nome técnico entre
+     parênteses: FALHA — reescrita obrigatória.
+
+ 19. NOMEAÇÃO TÉCNICA — CONJUNÇÕES: qualquer menção a fusão de
+     traços sem incluir os dois planetas entre parênteses: FALHA
+     — reescrita obrigatória.
 
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.

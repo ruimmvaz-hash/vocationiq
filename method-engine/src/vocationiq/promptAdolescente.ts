@@ -51,6 +51,8 @@ import {
   INSTRUCAO_CONJUNCOES,
   INSTRUCAO_YOGAS,
   INSTRUCAO_VARGOTTAMA,
+  INSTRUCAO_CONSISTENCIA_TECNICA,
+  INSTRUCAO_ABERTURA_CANDIDATAS,
   TERMOS_PROIBIDOS,
   SECCAO_TITULOS,
   MARCADORES,
@@ -181,6 +183,8 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - ${INSTRUCAO_CONJUNCOES}
 - ${INSTRUCAO_YOGAS}
 - ${INSTRUCAO_VARGOTTAMA}
+- ${INSTRUCAO_CONSISTENCIA_TECNICA}
+- ${INSTRUCAO_ABERTURA_CANDIDATAS}
 - HORIZONTE TEMPORAL: até 18 meses, afirmações directas. Entre 18 meses e 3 anos, com cautela ("tende a", "favorece"). Mais de 3 anos, só como pano de fundo.
 - A lista de opções entrega-se sempre com a moldura explícita, no início e no fim da secção "Leitura por opção": isto é para reconhecer, não para obedecer — o critério final é o reconhecimento interno do jovem, nunca o documento.
 - Ao nomear um caminho fora do sistema formal, indica sempre a via de sustento associada — nunca "o teu caminho é X" sem dizer o que paga as contas enquanto X cresce.

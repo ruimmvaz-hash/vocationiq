@@ -105,6 +105,8 @@ async function main() {
   );
   console.log(prompt);
 
+  console.log(`\nOcorrências de "carta" no prompt (esperado: 3, só dentro da regra que a proíbe): ${(prompt.match(/\bcarta\b/gi) ?? []).length}`);
+
   console.log("\n=== Confirmação de conteúdo ===");
   const checks: [string, boolean][] = [
     ["Dados técnicos completos (Eixo da Missão)", prompt.includes("Eixo da Missão")],
