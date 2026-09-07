@@ -1,10 +1,10 @@
 // Verificação pontual (não faz parte do produto) — TAREFA "VERIFICAÇÃO
 // APÓS IMPLEMENTAR": mostra os dados REAIS computados pelas 4 camadas
 // novas (avastha/conjunções/yogas/Vargottama) para a Melina e a Nádia,
-// usando as FUNÇÕES REAIS exportadas (computeD1Table, detectYogas,
+// usando as FUNÇÕES REAIS exportadas (computeD1Table, detectarYogasVocacionais,
 // blocoAvasthas/blocoConjuncoes/blocoYogas/blocoVargottama) — nada
 // reimplementado.
-import { computeD1Table, detectYogas, blocoAvasthas, blocoConjuncoes, blocoYogas, blocoVargottama, type BirthInput } from "@naveya/method-engine";
+import { computeD1Table, detectarYogasVocacionais, blocoAvasthas, blocoConjuncoes, blocoYogas, blocoVargottama, type BirthInput } from "@naveya/method-engine";
 import { geocodeCityCountry } from "../src/lib/reportGeo";
 import { localBirthTimeToUtc } from "../src/lib/localBirthTime";
 
@@ -17,7 +17,7 @@ async function mostrar(nome: string, local: string, dataNascimento: string, hora
   const birth: BirthInput = { utcDate, latitude: geo.latitude, longitude: geo.longitude };
 
   const d1 = computeD1Table(birth);
-  const yogas = detectYogas(d1).filter((y) => !y.id.startsWith("neechabhanga"));
+  const yogas = detectarYogasVocacionais(d1);
 
   console.log(`\n${"=".repeat(70)}`);
   console.log(`${nome} — ${local}, ${dataNascimento} ${horaNascimento}`);
@@ -29,7 +29,7 @@ async function mostrar(nome: string, local: string, dataNascimento: string, hora
   console.log("\n-- Conjunções activas --");
   console.log(blocoConjuncoes(d1));
 
-  console.log("\n-- Yogas activos (Neecha Bhanga filtrado — VocationIQ já tem o seu próprio) --");
+  console.log("\n-- Yogas activos (Raja/Dhana/Viparita Raja — nunca Neecha Bhanga, o VocationIQ já tem o seu próprio) --");
   console.log(blocoYogas(yogas));
 
   console.log("\n-- Vargottama --");

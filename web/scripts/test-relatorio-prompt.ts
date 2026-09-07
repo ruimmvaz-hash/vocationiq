@@ -18,7 +18,7 @@ import {
   sugerirCursosParaCatalogo,
   construirPromptAdulto,
   catalogarDestinos,
-  detectYogas,
+  detectarYogasVocacionais,
   type VocationiqIntakeAdulto,
   type DadosDatas,
   type BirthInput,
@@ -94,7 +94,7 @@ async function main() {
   const elementosModalidades = computeElementosModalidades(westernTable.planets);
   const aspectosPessoais = computeAspectosPessoais(westernTable.planets);
   const cursosPorDestino = sugerirCursosParaCatalogo(catalogoResultados);
-  const yogas = detectYogas(d1).filter((y) => !y.id.startsWith("neechabhanga"));
+  const yogas = detectarYogasVocacionais(d1);
 
   const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, true, catalogoResultados, savPorCasa, elementosModalidades, aspectosPessoais, cursosPorDestino, d1, yogas);
 
@@ -144,7 +144,7 @@ async function main() {
   const elementosModalidadesSemHora = computeElementosModalidades(westernTableSemHora.planets);
   const aspectosPessoaisSemHora = computeAspectosPessoais(westernTableSemHora.planets);
   const cursosPorDestinoSemHora = sugerirCursosParaCatalogo(catalogoResultadosSemHora);
-  const yogasSemHora = detectYogas(d1SemHora).filter((y) => !y.id.startsWith("neechabhanga"));
+  const yogasSemHora = detectarYogasVocacionais(d1SemHora);
   const promptSemHora = construirPromptAdulto(
     intakeAdulto,
     axesSemHora,

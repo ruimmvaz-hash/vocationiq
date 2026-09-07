@@ -132,6 +132,8 @@ export {
   type NotaEixoRendimento,
 } from "./vocationiq/catalogoVocacional";
 export { computeRodaDaVida, type DimensaoVida } from "./vocationiq/rodaDaVida";
+// CAMADA 3 (correcção do especialista, ronda seguinte) — 3 yogas vocacionais construídos de raiz (Raja/Dhana/Viparita Raja), nunca Neecha Bhanga (ver detectarNeechaBhanga acima).
+export { detectarYogasVocacionais } from "./vocationiq/yogasVocationais";
 // TAREFA 4 (correcção do especialista) — elementos/modalidades tropicais e aspectos entre planetas pessoais, lidos de computeWesternTable.
 export { computeElementosModalidades, computeAspectosPessoais, type PerfilElementosModalidades, type AspectoPessoal } from "./vocationiq/elementosEAspectos";
 // TAREFA 5 (correcção do especialista) — vias concretas de entrada (curso/nível/QNQ/duração/tipo de instituição) por destino do catálogo.

@@ -429,30 +429,44 @@ const AVASTHA_PT: Record<string, string> = {
   Mrita: "morta — energia bloqueada, dificuldade real de expressão",
 };
 
+// `d1.rows[g].avastha`/`.degreeInSign` já vêm calculados por
+// `computeD1Table()` — não existe (nem é preciso) um `computeAvasthaBaladi(d1)`
+// à parte; seria só um invólucro a reler o mesmo valor.
 export function blocoAvasthas(d1: D1TableResult): string {
   const linhas: string[] = [];
   for (const r of Object.values(d1.rows)) {
     if (!r.avastha) continue;
-    linhas.push(`${planetaPt(r.graha)}: ${r.avastha} (${AVASTHA_PT[r.avastha]})`);
+    linhas.push(`${planetaPt(r.graha)}: ${r.avastha} (${r.degreeInSign.toFixed(1)}°) — ${AVASTHA_PT[r.avastha]}`);
   }
   return linhas.join("\n");
 }
 
 // ── CAMADA 2 — conjunções (mesmo signo, já calculadas por `computeD1Table`
 // → `d1.conjunctions`, nunca recalculadas aqui). Classificação de natureza
-// (benéfica/tensão/neutra) por convenção clássica: Júpiter/Vénus são
-// benéficos; Sol/Marte/Saturno/Rahu/Ketu são maléficos; uma conjunção que
-// mistura um benéfico com um maléfico é lida como tensão (resultado misto),
-// nunca como benéfica pura.
-const CONJUNCAO_BENEFICOS = ["Jupiter", "Venus"];
-const CONJUNCAO_MALEFICOS = ["Sun", "Mars", "Saturn", "Rahu", "Ketu"];
+// por pares exactos (correcção do especialista, ronda seguinte — lista
+// fechada, não uma regra geral de benéfico/maléfico): Júpiter+Vénus,
+// Júpiter+Lua e Vénus+Lua são benéficas; Saturno+Marte, Sol+Saturno e
+// Marte+Lua são tensão (Marte+Lua = Angaraka Yoga, volatilidade emocional
+// clássica — não é "maléfico toca neutro", é o par em si); qualquer outro
+// par é neutro.
+const CONJUNCOES_BENEFICAS: [string, string][] = [
+  ["Jupiter", "Venus"],
+  ["Jupiter", "Moon"],
+  ["Venus", "Moon"],
+];
+const CONJUNCOES_TENSAO: [string, string][] = [
+  ["Saturn", "Mars"],
+  ["Sun", "Saturn"],
+  ["Mars", "Moon"],
+];
+
+function parCoincide(par: [string, string], a: string, b: string): boolean {
+  return (par[0] === a && par[1] === b) || (par[0] === b && par[1] === a);
+}
 
 function naturezaConjuncao(a: string, b: string): "benéfica" | "tensão" | "neutra" {
-  const temBenefico = CONJUNCAO_BENEFICOS.includes(a) || CONJUNCAO_BENEFICOS.includes(b);
-  const temMalefico = CONJUNCAO_MALEFICOS.includes(a) || CONJUNCAO_MALEFICOS.includes(b);
-  if (temBenefico && temMalefico) return "tensão";
-  if (temBenefico) return "benéfica";
-  if (temMalefico) return "tensão";
+  if (CONJUNCOES_BENEFICAS.some((par) => parCoincide(par, a, b))) return "benéfica";
+  if (CONJUNCOES_TENSAO.some((par) => parCoincide(par, a, b))) return "tensão";
   return "neutra";
 }
 
@@ -461,14 +475,13 @@ export function blocoConjuncoes(d1: D1TableResult): string {
   return d1.conjunctions.map((c) => `${planetaPt(c.a)} conjunção ${planetaPt(c.b)} (casa ${d1.rows[c.a].house}, natureza ${naturezaConjuncao(c.a, c.b)})`).join("\n");
 }
 
-// ── CAMADA 3 — yogas clássicos, já detectados por `detectYogas(d1)`
-// (method-engine, `lifeReport/yogas.ts`), nunca recalculados aqui. O
-// chamador filtra os hits `neechabhanga_*` antes de passar `yogas` aqui —
-// o VocationIQ já tem o seu próprio detector de Neecha Bhanga Raja Yoga,
-// mais rigoroso (4 condições clássicas, `pesosPlanetas.ts`), usado no
-// cálculo do peso de cada planeta; passar os dois ao mesmo tempo
-// produziria dois sinais de Neecha Bhanga possivelmente divergentes
-// sobre o mesmo planeta.
+// ── CAMADA 3 (correcção do especialista, ronda seguinte) — 3 yogas
+// vocacionais construídos de raiz em `vocationiq/yogasVocationais.ts`
+// (Raja/Dhana/Viparita Raja, condições específicas pedidas — não a versão
+// genérica de `lifeReport/yogas.ts`, que cobre 8 yogas com condições mais
+// largas e nunca foi desenhada para este produto). Nunca inclui Neecha
+// Bhanga — o VocationIQ já tem o seu próprio detector, mais rigoroso (4
+// condições clássicas, `pesosPlanetas.ts`), usado no peso de cada planeta.
 export function blocoYogas(yogas: YogaHit[]): string {
   if (!yogas.length) return "(nenhum yoga clássico detectado nesta carta)";
   return yogas.map((y) => `${y.label}: ${y.detail}`).join("\n");
@@ -531,10 +544,10 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
   · LEITURA (interpretação sólida, sem convergência mensurável): escreve-se como leitura, nunca como facto. Ex.: "Uma leitura possível deste perfil é X — não como facto, mas como direcção."
   · EM ABERTO (o perfil não distingue): diz isso directamente. Ex.: "O perfil não distingue entre X e Y — a decisão fica com você."
   Proibido usar linguagem de "Convergência forte" para algo que só tem um "Sinal forte" — o nível de confiança da frase tem de corresponder exactamente ao nível de convergência que a sustenta.
-- AVASTHAS — OBRIGATÓRIO: A avastha de cada planeta modifica a sua leitura de forma crítica. Um planeta forte (peso ≥1,3) mas Mrita (morto) não consegue expressar a sua força — está bloqueado. Um planeta fraco (peso <0,9) mas Yuva (jovem adulto) tem mais capacidade de expressão do que o peso sugere. NUNCA ler o peso isolado da avastha.
-- CONJUNÇÕES — OBRIGATÓRIO: Quando dois planetas estão no mesmo signo, a sua energia funde-se. Ler sempre os planetas em conjunção como uma unidade, não separados. Uma conjunção com Júpiter ou Vénus eleva; com Saturno ou Marte adiciona peso e responsabilidade.
-- YOGAS — OBRIGATÓRIO: Os yogas modificam fundamentalmente o potencial do perfil. Um Raja Yoga activo significa que a pessoa tem capacidade estrutural real para posições de destaque — não é wishful thinking, é uma configuração técnica. Nomear cada yoga activo e o que significa em linguagem concreta.
-- VARGOTTAMA — OBRIGATÓRIO: Um planeta Vargottama tem expressão muito mais consistente e duradoura do que o peso isolado sugere. Sempre nomear planetas Vargottama e elevar o nível de confiança das afirmações sobre eles.
+- AVASTHAS — OBRIGATÓRIO NA SECÇÃO "${SECCAO_TITULOS.quemE}": usa as avasthas para explicar porque um dom aparentemente forte pode não estar a funcionar na prática. Exemplo correcto: "Mercúrio em Yuva (pleno vigor) — a comunicação flui naturalmente, sem esforço" vs "Saturno exaltado mas em Vriddha (declínio) — a estrutura e a disciplina estão lá, mas operam por reserva, não por impulso espontâneo." Planeta forte (peso ≥1,3) mas Mrita: dizer explicitamente que o potencial existe mas a expressão está bloqueada. Planeta fraco (peso <0,9) mas Yuva: dizer que tem mais capacidade de expressão do que o peso sugere. NUNCA ler o peso isolado da avastha.
+- CONJUNÇÕES — OBRIGATÓRIO NA SECÇÃO "${SECCAO_TITULOS.quemE}": usa as conjunções para explicar fusões ou tensões entre impulsos que de outra forma pareceriam contraditórios. Exemplo correcto: "Saturno conjunção Mercúrio — o pensamento é metódico e disciplinado; o que parece lentidão é na verdade rigor." Conjunção com Júpiter ou Vénus: eleva o planeta mais fraco — nomear o efeito concreto. Conjunção Saturno+Marte: adiciona determinação mas também conflito interno entre impulso e controlo. Ler sempre planetas em conjunção como uma unidade, nunca separados.
+- YOGAS — OBRIGATÓRIO COMO CAMADA DE CONVERGÊNCIA: um yoga activo pode ser o reforço adicional que confirma uma candidata já apresentada acima com convergência forte (≥4 camadas) — nunca a fonte que cria uma candidata nova. Raja Yoga activo ligado a um destino de autoridade/liderança: citar como reforço adicional para essa candidata. Dhana Yoga activo ligado a um destino de recursos/finanças: citar como reforço adicional. Viparita Raja Yoga: ligar a candidatas de superação/transformação (medicina, investigação, direito, psicologia). PROIBIDO usar um yoga para promover uma opção que a secção "Candidatas do catálogo" não tenha já listado — os yogas reforçam a leitura das candidatas já dadas, nunca substituem o catálogo. Se nenhum yoga activo, não mencionar.
+- VARGOTTAMA — OBRIGATÓRIO NA DESCRIÇÃO DO PERFIL: usa para distinguir traços estruturais e estáveis de traços situacionais. Planeta Vargottama: dizer que este traço é consistente e duradouro — não muda com as circunstâncias. Planeta não-Vargottama: pode ser modulado pelo contexto e pelo esforço. Eleva o nível de confiança das afirmações sobre planetas Vargottama — são os pontos mais sólidos do perfil. Se nenhum planeta é Vargottama, não mencionar.
 - Tom adulto, directo, sem gíria de coach, sem emojis.
 
 VOLUME: Cada secção deve ser tão longa quanto os dados sustentam — nunca mais, nunca menos. Se uma secção não tem nada genuinamente novo a acrescentar, é curta. Não preencher para atingir um mínimo. Proibido: repetir para parecer completo. Permitido: ser curto e preciso.

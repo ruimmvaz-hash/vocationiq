@@ -17,7 +17,7 @@ import {
   computeAspectosPessoais,
   sugerirCursosParaCatalogo,
   sugerirCursosParaOpcoesAdolescente,
-  detectYogas,
+  detectarYogasVocacionais,
   ELEMENTO_PLANETA,
   MAHADASHA_CLASSIFICACAO,
   normalizarTextoLivre,
@@ -229,14 +229,14 @@ async function calcularAstrologiaBase(intake: IntakeRow, coordenadasExistentes?:
   const westernTable = computeWesternTable(birth);
   const elementosModalidades = computeElementosModalidades(westernTable.planets);
   const aspectosPessoais = computeAspectosPessoais(westernTable.planets);
-  // CAMADA 3 (correcção do especialista) — yogas clássicos, sempre
-  // calculados aqui (nunca só no ramo adulto — FALTA 2). Filtra os hits
-  // `neechabhanga_*`: o VocationIQ já tem o seu próprio detector de Neecha
-  // Bhanga Raja Yoga, mais rigoroso (4 condições clássicas, computado
-  // acima em `computePesosPlanetas`) — passar os dois ao mesmo tempo
-  // produziria dois sinais possivelmente divergentes sobre o mesmo
-  // planeta (ver `blocoYogas` em promptAdulto.ts).
-  const yogas = detectYogas(d1).filter((y) => !y.id.startsWith("neechabhanga"));
+  // CAMADA 3 (correcção do especialista, ronda seguinte) — 3 yogas
+  // vocacionais construídos de raiz (Raja/Dhana/Viparita Raja, condições
+  // específicas do VocationIQ — não a versão genérica de `lifeReport/yogas.ts`),
+  // sempre calculados aqui (nunca só no ramo adulto — FALTA 2). Nunca
+  // inclui Neecha Bhanga por desenho — o VocationIQ já tem o seu próprio
+  // detector, mais rigoroso (4 condições clássicas, `computePesosPlanetas`
+  // acima).
+  const yogas = detectarYogasVocacionais(d1);
 
   return { horaAproximada, d1, axes, pesosPlanetas, savPorCasa, datas, westernTable, elementosModalidades, aspectosPessoais, yogas, coordenadasNascimento: coordenadas };
 }

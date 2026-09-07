@@ -1,7 +1,9 @@
 // Redesenho do motor VocationIQ, Parte 3 — arquitectura de 3 passos.
-// Gerar (já existente) → Criticar (2ª chamada, 12 critérios) → Reescrever
-// (3ª chamada, só se algum critério falhar). Tudo dentro do mesmo clique
-// em "Gerar rascunho"/"Regenerar" — nunca uma acção separada do admin.
+// Gerar (já existente) → Criticar (2ª chamada, 16 critérios — 12
+// originais + 13-16 das 4 camadas técnicas, correcção do especialista)
+// → Reescrever (3ª chamada, só se algum critério falhar). Tudo dentro do
+// mesmo clique em "Gerar rascunho"/"Regenerar" — nunca uma acção
+// separada do admin.
 
 const INSTRUCAO_CRITICA = `Tens à tua frente:
  A) O prompt técnico completo
@@ -42,6 +44,19 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
 
  12. KARAKAMSHA: foi lido sempre com o Atmakaraka (nunca
      isolado)?
+
+ 13. AVASTHAS: planetas com avastha extrema (Bala ou Mrita) foram
+     mencionados na secção "Quem é"? Lista os que estão em falta.
+
+ 14. CONJUNÇÕES: as conjunções activas foram usadas para explicar
+     fusões ou tensões em "Quem é"? Lista as que faltam.
+
+ 15. YOGAS: os yogas activos foram nomeados e usados como reforço
+     de candidatas já listadas pelo catálogo (nunca para criar
+     candidatas novas)? Lista os que foram ignorados.
+
+ 16. VARGOTTAMA: planetas Vargottama foram identificados como
+     traços estruturais no perfil? Lista os que foram ignorados.
 
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
@@ -103,6 +118,19 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
 
  12. KARAKAMSHA: foi lido sempre com o Atmakaraka (nunca
      isolado)?
+
+ 13. AVASTHAS: planetas com avastha extrema (Bala ou Mrita) foram
+     mencionados na secção "Quem é"? Lista os que estão em falta.
+
+ 14. CONJUNÇÕES: as conjunções activas foram usadas para explicar
+     fusões ou tensões em "Quem é"? Lista as que faltam.
+
+ 15. YOGAS: os yogas activos foram nomeados e usados como reforço
+     de candidatas já listadas pelo catálogo (nunca para criar
+     candidatas novas)? Lista os que foram ignorados.
+
+ 16. VARGOTTAMA: planetas Vargottama foram identificados como
+     traços estruturais no perfil? Lista os que foram ignorados.
 
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.

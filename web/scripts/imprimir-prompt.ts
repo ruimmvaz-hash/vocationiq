@@ -26,7 +26,7 @@ import {
   sugerirCursosParaCatalogo,
   construirPromptAdulto,
   catalogarDestinos,
-  detectYogas,
+  detectarYogasVocacionais,
   type DadosDatas,
   type BirthInput,
   type VocationiqIntakeAdulto,
@@ -161,7 +161,7 @@ async function main() {
   // o seu próprio detector de Neecha Bhanga (mais rigoroso, usado no peso
   // de cada planeta acima); filtra os hits `neechabhanga_*` de detectYogas
   // para não duplicar/divergir sobre o mesmo planeta (ver blocoYogas).
-  const yogas = detectYogas(d1).filter((y) => !y.id.startsWith("neechabhanga"));
+  const yogas = detectarYogasVocacionais(d1);
 
   const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, !horaAproximada, catalogoResultados, savPorCasa, elementosModalidades, aspectosPessoais, cursosPorDestino, d1, yogas);
 
