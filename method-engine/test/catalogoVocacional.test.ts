@@ -9,8 +9,24 @@ import type { BirthInput } from "../src/lifeReport/types.js";
 // motivou toda a SPEC-vocacional.md: no mapa da Melina (mesma fixture de
 // test/orquestrador.test.ts), o catálogo antigo devolvia "Direito" como
 // topo sem nenhuma camada vir do Atmakaraka (Saturno, a peça mais forte
-// da carta) — "ganha por ser comum, não por ser dela". Estes testes
-// confirmam que a nova integração nunca reproduz esse padrão.
+// da carta) — "ganha por ser comum, não por ser dela".
+//
+// TAREFA #38 (sistema em dois níveis, correcção do especialista) — o
+// diagnóstico da Alice (mesmo mecanismo, carta diferente) mostrou que
+// bloquear por completo qualquer candidata sem o planeta de maior peso
+// também bloqueava candidatas genuínas cujo único indicador pessoal é o
+// Atmakaraka/Amatyakaraka (posição técnica, não força — nunca a mesma
+// coisa, ver catalogoVocacional.ts). Testados três limiares binários
+// diferentes (aceitar sempre; exigir sinal estrutural adicional; exigir
+// peso próprio ≥1,3) e nenhum discriminou correctamente os dois casos —
+// os números da Alice (Atmakaraka Sol, peso 1,02) e da Melina/Rui
+// (Atmakaraka/Amatyakaraka Sol, peso 1,06-1,33) não seguem nenhum padrão
+// de limiar único. A solução final não bloqueia — reclassifica: "Direito
+// sem o planeta de maior peso" nunca deixou de ser o padrão a vigiar,
+// mas agora aparece sempre como Nível 2 (confiança reduzida), nunca como
+// Nível 1 (confiança plena) nem ausente. Estes testes confirmam os dois
+// lados: a candidata continua a aparecer (não é suprimida), mas nunca
+// classificada acima do que os dados sustentam.
 
 const melina: BirthInput = {
   utcDate: new Date(Date.UTC(1984, 11, 11, 11, 30, 0)),
@@ -36,26 +52,51 @@ describe("catalogarDestinos — carta real da Melina (São Paulo, 11/12/1984 08:
     expect(atmakarakaInfo.planeta).toBe("Saturn");
   });
 
-  it("NUNCA propõe 'Direito' como candidata fora da lista sem camada do planeta de maior peso — regressão directa ao bug documentado", () => {
+  it("NUNCA propõe 'Direito' como candidata fora da lista de Nível 1 sem camada do planeta de maior peso — regressão directa ao bug documentado, agora como classificação em vez de exclusão (TAREFA #38)", () => {
     const { axes, pesos, savPorCasa, atmakarakaInfo } = carregarMelina();
     for (const areaActual of ["Estética", "Gestora", "Contabilidade", "Empresária"]) {
       const resultado = catalogarDestinos(axes, pesos, savPorCasa, { areaActual, anosExperiencia: "5 a 10 anos" }, atmakarakaInfo);
       const direito = resultado.candidatasForaDaLista.find((c) => c.nome === "Direito");
-      if (direito) {
-        expect(direito.camadas.some((c: string) => c.startsWith("Planeta de maior peso"))).toBe(true);
+      if (direito && direito.camadas.some((c: string) => c.startsWith("Planeta de maior peso"))) {
+        expect(direito.nivelConfianca).toBe(1);
+      } else if (direito) {
+        // Sem camada do planeta de maior peso — nunca pode passar como
+        // Nível 1 (confiança plena); tem sempre de vir classificada como
+        // Nível 2 (confiança reduzida), nunca ausente e nunca disfarçada
+        // de sinal tão forte quanto o planeta de maior peso.
+        expect(direito.nivelConfianca).toBe(2);
       }
     }
   });
 
-  it("toda candidata fora da lista inclui sempre uma camada do planeta de maior peso (gate estrutural — Correcção 2: Atmakaraka é posição técnica, não força; para a Melina os dois coincidem em Saturno, mas o portão agora testa explicitamente o peso, não a posição) — TAREFA 1: vale para as 3, nunca só a primeira", () => {
+  it("toda candidata fora da lista tem um nível de confiança coerente com as suas próprias camadas (TAREFA #38 — Nível 1 = inclui o planeta de maior peso; Nível 2 = só Atmakaraka/Amatyakaraka, sem o planeta de maior peso) — vale para as 3, nunca só a primeira", () => {
     const { axes, pesos, savPorCasa, atmakarakaInfo } = carregarMelina();
     const maisForte = [...pesos].sort((a, b) => b.peso - a.peso)[0];
     expect(maisForte.planeta).toBe("Saturn");
     const resultado = catalogarDestinos(axes, pesos, savPorCasa, { areaActual: "Estética", anosExperiencia: "5 a 10 anos" }, atmakarakaInfo);
     for (const candidata of resultado.candidatasForaDaLista) {
       expect(candidata.convergencia).toBeGreaterThanOrEqual(4);
-      expect(candidata.camadas.some((c: string) => c.startsWith("Planeta de maior peso"))).toBe(true);
+      const temPlanetaDeMaiorPeso = candidata.camadas.some((c: string) => c.startsWith("Planeta de maior peso"));
+      const temIndicadorFraco = candidata.camadas.some((c: string) => c.startsWith("Atmakaraka") || c.startsWith("Amatyakaraka"));
+      if (temPlanetaDeMaiorPeso) {
+        expect(candidata.nivelConfianca).toBe(1);
+      } else {
+        // Nunca chega aqui sem pelo menos um indicador pessoal — é o
+        // próprio gate de elegibilidade em catalogarDestinos() que o
+        // garante antes de a candidata existir.
+        expect(temIndicadorFraco).toBe(true);
+        expect(candidata.nivelConfianca).toBe(2);
+      }
     }
+  });
+
+  it("'Direito' para a Melina, quando aparece, é sempre Nível 2 (só Amatyakaraka=Sol, nunca o planeta de maior peso=Saturno) — confirma o diagnóstico da ronda de regressão, nunca Nível 1", () => {
+    const { axes, pesos, savPorCasa, atmakarakaInfo } = carregarMelina();
+    const resultado = catalogarDestinos(axes, pesos, savPorCasa, { areaActual: "", anosExperiencia: "" }, atmakarakaInfo);
+    const direito = resultado.candidatasForaDaLista.find((c) => c.nome === "Direito");
+    expect(direito).toBeDefined();
+    expect(direito?.nivelConfianca).toBe(2);
+    expect(direito?.camadas.some((c: string) => c.startsWith("Planeta de maior peso"))).toBe(false);
   });
 
   it("área actual 'Estética' encontra destinos de estética/cosmética no catálogo (bug real da Melina)", () => {

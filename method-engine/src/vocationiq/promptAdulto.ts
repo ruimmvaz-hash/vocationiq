@@ -348,14 +348,19 @@ export function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional, c
   // TAREFA 1 (correcção do especialista) — até 3 candidatas, nunca só a
   // melhor; nenhuma ordem/numeração no texto (nunca "1ª/2ª/3ª", nunca
   // "menção honrosa" — ver a instrução equivalente na secção "## Candidata
-  // fora da lista" mais abaixo no prompt). Corrigido também o texto do
-  // gate: dizia "inclui sempre o Atmakaraka", desactualizado desde a
-  // Correcção 2 (o portão testa o planeta de maior peso, não o
-  // Atmakaraka — são coisas diferentes, ver comentário em
-  // catalogoVocacional.ts).
+  // fora da lista" mais abaixo no prompt).
+  //
+  // TAREFA #38 (sistema em dois níveis) — cada candidata chega já
+  // classificada em Nível 1 (inclui o planeta de maior peso — confiança
+  // plena) ou Nível 2 (só Atmakaraka/Amatyakaraka, sem o planeta de maior
+  // peso — confiança reduzida). O nível vai explícito nos dados técnicos
+  // para o LLM nunca ter de o inferir das camadas — ver
+  // INSTRUCAO_NIVEL_CANDIDATAS para a instrução de linguagem correspondente.
   const candidatasTexto = catalogo.candidatasForaDaLista.length
-    ? catalogo.candidatasForaDaLista.map((c) => `- ${c.nome}: convergência ${c.convergencia} (${c.camadas.join("; ")}).`).join("\n")
-    : "nenhuma — nenhum destino reuniu 4 camadas independentes incluindo o planeta de maior peso.";
+    ? catalogo.candidatasForaDaLista
+        .map((c) => `- ${c.nome}: convergência ${c.convergencia}, Nível ${c.nivelConfianca} (${c.nivelConfianca === 1 ? "inclui o planeta de maior peso — confiança plena" : "só Atmakaraka/Amatyakaraka, sem o planeta de maior peso — confiança reduzida"}) (${c.camadas.join("; ")}).`)
+        .join("\n")
+    : "nenhuma — nenhum destino reuniu 4 camadas independentes incluindo um indicador pessoal (planeta de maior peso, Atmakaraka ou Amatyakaraka).";
 
   // TAREFA 3 (correcção do especialista, ronda seguinte) — cada candidata
   // (até 3) ganha o seu próprio bloco "-- Via concreta para [destino] --",
@@ -375,7 +380,7 @@ export function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional, c
     catalogo.notaAreaGenerica ? `NOTA: ${catalogo.notaAreaGenerica}.` : null,
     `Derivadas da área actual:\n${listar(catalogo.destinosDeAreaActual)}`,
     `Alternativas pelo perfil (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações, eixo do rendimento):\n${listar(catalogo.destinosAlternativos)}`,
-    `Candidatas com ≥4 convergências (inclui sempre o planeta de maior peso, até 3, em pé de igualdade — nunca ranking):\n${candidatasTexto}`,
+    `Candidatas com ≥4 convergências (Nível 1 ou 2 conforme indicado, até 3, em pé de igualdade dentro do mesmo nível — nunca ranking):\n${candidatasTexto}`,
     viasConcretasCandidatas || null,
     catalogo.notaEixoDoRendimento
       ? `NOTA sobre o eixo do rendimento (o que dá sentido vs. o que paga): ${catalogo.notaEixoDoRendimento.leitura}.${catalogo.notaEixoDoRendimento.regraDeEscrita ? ` Como escrever isto: ${catalogo.notaEixoDoRendimento.regraDeEscrita}` : ""}`
@@ -572,6 +577,23 @@ Padrão obrigatório: "Isto liga-se directamente a [nome do dom/traço já nomea
 Só depois desta frase é que o texto pode introduzir as camadas técnicas de convergência.
 Obrigatório nas três candidatas de cada relatório, sem excepção.`;
 
+// TAREFA #38 (correcção do especialista, sistema em dois níveis) —
+// dados técnicos: cada candidata fora da lista chega com "Nível 1" ou
+// "Nível 2" (ver blocoCatalogoVocacional acima). Sem esta instrução, o
+// LLM trataria as duas com a mesma confiança, porque ambas passam o
+// limiar de ≥4 camadas — mas ≥4 camadas com Atmakaraka/Amatyakaraka
+// sozinho (Nível 2) é um sinal genuíno e mais fraco do que ≥4 camadas
+// com o planeta de maior peso (Nível 1), pelo mesmo princípio já usado
+// para yogas (INSTRUCAO_YOGAS: "confirmação directa" vs "reforço
+// geral") e para a ESCALA DE CONFIANÇA geral do relatório (nº de
+// camadas ↔ força da linguagem) — aqui aplicado dentro da própria
+// categoria "≥4 camadas", que a escala geral trata sempre como
+// "convergência forte, sem reserva".
+export const INSTRUCAO_NIVEL_CANDIDATAS = `NÍVEL DE CONFIANÇA DA CANDIDATA FORA DA LISTA — cada candidata vem marcada nos dados técnicos como "Nível 1" ou "Nível 2". Nunca as escrevas com a mesma confiança:
+· Nível 1 (inclui o planeta de maior peso): escreve com confiança plena, sem qualquer qualificador — é a peça mais forte do perfil a confirmar esta direcção.
+· Nível 2 (só Atmakaraka/Amatyakaraka, sem o planeta de maior peso): é um sinal real, nunca inventado — mas mais específico e menos robusto do que Nível 1. A frase tem de o dizer, com linguagem como "há aqui um fio que vale a pena puxar" / "não é o sinal mais forte do perfil, mas é genuíno e específico" / "vale explorar, sem ser ainda uma certeza estrutural". PROIBIDO escrever uma candidata Nível 2 com a mesma linguagem sem reserva de "o seu perfil sustenta X com clareza" que a escala de confiança geral reserva para convergência forte — aqui a convergência existe, mas a sua origem (só o karaka pessoal, não o planeta mais forte da carta) pede a reserva.
+Nunca omitir nem suavizar a diferença chamando as duas de "candidata" sem mais nada — o nível tem de ser audível na frase, não só presente nos dados.`;
+
 // CORRECÇÃO 1 (correcção do especialista, confirmada com 3 relatórios
 // reais) — a versão anterior ("TEM de incluir... este traço é
 // estrutural...") já era obrigatória em teoria, mas deixava a frase
@@ -638,6 +660,7 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - ${INSTRUCAO_VARGOTTAMA}
 - ${INSTRUCAO_CONSISTENCIA_TECNICA}
 - ${INSTRUCAO_ABERTURA_CANDIDATAS}
+- ${INSTRUCAO_NIVEL_CANDIDATAS}
 - Tom adulto, directo, sem gíria de coach, sem emojis.
 
 VOLUME: Cada secção deve ser tão longa quanto os dados sustentam — nunca mais, nunca menos. Se uma secção não tem nada genuinamente novo a acrescentar, é curta. Não preencher para atingir um mínimo. Proibido: repetir para parecer completo. Permitido: ser curto e preciso.

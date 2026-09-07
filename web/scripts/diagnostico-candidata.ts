@@ -102,7 +102,7 @@ async function main() {
   } else {
     console.log(`${catalogo.candidatasForaDaLista.length} candidata(s) fora da lista:\n`);
     for (const c of catalogo.candidatasForaDaLista) {
-      console.log(`- ${c.nome}: ${c.convergencia} camada(s)`);
+      console.log(`- ${c.nome}: ${c.convergencia} camada(s) — Nível ${c.nivelConfianca} (${c.nivelConfianca === 1 ? "inclui planeta de maior peso, confiança plena" : "só Atmakaraka/Amatyakaraka, confiança reduzida"})`);
       c.camadas.forEach((camada, i) => console.log(`    ${i + 1}. ${camada}`));
       // Cruzamento com yogas — a mesma condição que INSTRUCAO_YOGAS pede
       // ao LLM: "confirmação directa" quando o yoga partilha um planeta

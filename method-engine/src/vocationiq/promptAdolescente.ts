@@ -53,6 +53,7 @@ import {
   INSTRUCAO_VARGOTTAMA,
   INSTRUCAO_CONSISTENCIA_TECNICA,
   INSTRUCAO_ABERTURA_CANDIDATAS,
+  INSTRUCAO_NIVEL_CANDIDATAS,
   TERMOS_PROIBIDOS,
   SECCAO_TITULOS,
   MARCADORES,
@@ -96,10 +97,13 @@ function formatarViaSecundariaDaOpcao(cursos: CursosSugeridos[]): string {
 function blocoCandidatasPorVia(catalogo: ResultadoCatalogoVocacional): string {
   const candidatasTexto = catalogo.candidatasForaDaLista.length
     ? catalogo.candidatasForaDaLista
-        .map((c) => `- ${c.nome}: convergência ${c.convergencia} (${c.camadas.join("; ")}). ${formatarViaSecundariaDaOpcao([{ destinoId: c.id } as CursosSugeridos])}`)
+        .map(
+          (c) =>
+            `- ${c.nome}: convergência ${c.convergencia}, Nível ${c.nivelConfianca} (${c.nivelConfianca === 1 ? "inclui o planeta de maior peso — confiança plena" : "só Atmakaraka/Amatyakaraka, sem o planeta de maior peso — confiança reduzida"}) (${c.camadas.join("; ")}). ${formatarViaSecundariaDaOpcao([{ destinoId: c.id } as CursosSugeridos])}`,
+        )
         .join("\n")
-    : "nenhuma — nenhum destino reuniu 4 camadas independentes incluindo o planeta de maior peso.";
-  return `Candidatas com ≥4 convergências (inclui sempre o planeta de maior peso, até 3, em pé de igualdade — nunca ranking):\n${candidatasTexto}`;
+    : "nenhuma — nenhum destino reuniu 4 camadas independentes incluindo um indicador pessoal (planeta de maior peso, Atmakaraka ou Amatyakaraka).";
+  return `Candidatas com ≥4 convergências (Nível 1 ou 2 conforme indicado, até 3, em pé de igualdade dentro do mesmo nível — nunca ranking):\n${candidatasTexto}`;
 }
 
 export function construirPromptAdolescente(
@@ -185,6 +189,7 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - ${INSTRUCAO_VARGOTTAMA}
 - ${INSTRUCAO_CONSISTENCIA_TECNICA}
 - ${INSTRUCAO_ABERTURA_CANDIDATAS}
+- ${INSTRUCAO_NIVEL_CANDIDATAS}
 - HORIZONTE TEMPORAL: até 18 meses, afirmações directas. Entre 18 meses e 3 anos, com cautela ("tende a", "favorece"). Mais de 3 anos, só como pano de fundo.
 - A lista de opções entrega-se sempre com a moldura explícita, no início e no fim da secção "Leitura por opção": isto é para reconhecer, não para obedecer — o critério final é o reconhecimento interno do jovem, nunca o documento.
 - Ao nomear um caminho fora do sistema formal, indica sempre a via de sustento associada — nunca "o teu caminho é X" sem dizer o que paga as contas enquanto X cresce.

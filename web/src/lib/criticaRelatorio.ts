@@ -89,6 +89,14 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
      ocorrência exacta. Se aparecer mesmo uma vez: FALHA —
      reescrita obrigatória.
 
+ 21. NÍVEL DE CONFIANÇA DA CANDIDATA: para cada candidata fora da lista
+     marcada como "Nível 2" nos dados técnicos, o texto usa linguagem de
+     confiança reduzida (ex.: "vale explorar", "sinal genuíno mas não é
+     o mais forte do perfil"), distinta da linguagem sem reserva usada
+     nas candidatas "Nível 1"? Se uma candidata Nível 2 é escrita com a
+     mesma certeza que uma Nível 1 (ex.: "o seu perfil sustenta X com
+     clareza" sem qualquer qualificador): FALHA — reescrita obrigatória.
+
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
  Formato:
@@ -183,6 +191,14 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
      "mapa astral"/"mapa natal") em vez de "perfil"? Lista cada
      ocorrência exacta. Se aparecer mesmo uma vez: FALHA —
      reescrita obrigatória.
+
+ 21. NÍVEL DE CONFIANÇA DA CANDIDATA: para cada candidata fora da lista
+     marcada como "Nível 2" nos dados técnicos, o texto usa linguagem de
+     confiança reduzida (ex.: "vale explorar", "sinal genuíno mas não é
+     o mais forte do perfil"), distinta da linguagem sem reserva usada
+     nas candidatas "Nível 1"? Se uma candidata Nível 2 é escrita com a
+     mesma certeza que uma Nível 1 (ex.: "o seu perfil sustenta X com
+     clareza" sem qualquer qualificador): FALHA — reescrita obrigatória.
 
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.

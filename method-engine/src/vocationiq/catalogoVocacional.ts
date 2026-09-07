@@ -556,6 +556,16 @@ export interface CandidataForaDaLista {
   id: string;
   camadas: string[];
   convergencia: number;
+  /**
+   * TAREFA #38 (sistema em dois níveis) — 1 quando uma das camadas é
+   * "Planeta de maior peso" (confiança plena, comportamento histórico);
+   * 2 quando o único indicador pessoal é Atmakaraka/Amatyakaraka, sem
+   * "Planeta de maior peso" (candidata real, mas o prompt deve assinalar
+   * confiança reduzida — ver INSTRUCAO_NIVEL_CANDIDATAS em
+   * promptAdulto.ts). Nunca um 3º valor — quem não atinge nível 1 nem 2
+   * já foi filtrado antes de chegar aqui.
+   */
+  nivelConfianca: 1 | 2;
 }
 
 export interface IntakeParaCatalogo {
@@ -570,10 +580,13 @@ export interface ResultadoCatalogoVocacional {
   /**
    * TAREFA 1 (correcção do especialista) — até 3 candidatas, nunca só a
    * melhor. Array vazio quando 0 destinos atingem a fasquia (≥4 camadas
-   * incluindo o planeta de maior peso). A ORDEM do array é só um artefacto
-   * da ordenação interna usada para escolher QUAIS 3 entram (convergência,
-   * depois a regra permanente de desempate) — nunca implica ranking; as
-   * 3 apresentam-se sempre em pé de igualdade (ver regra no prompt).
+   * independentes incluindo um indicador pessoal — Planeta de maior peso,
+   * Atmakaraka ou Amatyakaraka; ver `nivelConfianca` em cada candidata,
+   * TAREFA #38). A ORDEM do array é só um artefacto da ordenação interna
+   * usada para escolher QUAIS 3 entram (convergência, depois a regra
+   * permanente de desempate) — nunca implica ranking; as 3 apresentam-se
+   * sempre em pé de igualdade dentro do mesmo nível de confiança (ver
+   * regra no prompt).
    */
   candidatasForaDaLista: CandidataForaDaLista[];
   /** Presente só quando a área actual não tem sector específico (ex.: "Empresária", "Gestão") — nota para o prompt citar explicitamente. */
@@ -725,8 +738,9 @@ export function catalogarDestinos(
 
   // Passo 4 — candidata fora da lista: só entre as ALTERNATIVAS (nunca
   // repete uma opção que a área actual já descreve), só se ≥4 camadas
-  // independentes convergirem, E só se o PLANETA DE MAIOR PESO (a peça
-  // mais forte da carta) for uma delas.
+  // independentes convergirem, E só se pelo menos uma dessas camadas for
+  // um INDICADOR PESSOAL da carta (não um sinal genérico) — Atmakaraka,
+  // Amatyakaraka, ou o Planeta de maior peso.
   //
   // Correcção do especialista (Correcção 2) — o portão usava o Atmakaraka
   // como proxy para "peça mais forte da carta", mas são coisas diferentes:
@@ -738,21 +752,72 @@ export function catalogarDestinos(
   // arquetípica do Sol (materia_prima "decidir e responder pela decisão"
   // → Direito/Política, independente da casa onde o Sol está), enquanto
   // ignorava sinais muito mais específicos da carta ligados a Saturno.
-  // Mantém a mesma lógica estrutural da correcção anterior (evitar
-  // "ganha por ser comum, não por ser dela") — só troca QUAL planeta
-  // conta como "a peça mais forte".
-  const elegveis = destinosAlternativos.filter((d) => d.convergencia >= LIMIAR_MINIMO_CANDIDATA && d.camadas.some((c) => c.startsWith("Planeta de maior peso")));
+  //
+  // DESVIO (diagnóstico da Alice — mesma carta da Nádia acima) — a
+  // Correcção 2 tinha, sem intenção, deixado de fora o próprio caso que a
+  // motivou: para a Alice, "Direito" atinge 4-5 camadas independentes,
+  // uma delas o Atmakaraka (Sol), mas nenhuma é "Planeta de maior peso"
+  // (Saturno) — o portão bloqueia-o por inteiro, mesmo tendo um indicador
+  // pessoal genuíno a apoiá-lo.
+  //
+  // Três tentativas de resolver isto com um único limiar binário
+  // (aceitar Atmakaraka/Amatyakaraka sempre; exigir também "Casa temática
+  // forte"/"Sinais estruturados"; exigir peso próprio ≥1,3 do AK/AmK)
+  // foram testadas por regressão contra Rui, João, Melina e Alice e
+  // REPROVARAM TODAS — os dados provam que não há um limiar único capaz
+  // de discriminar "Direito da Alice" (Atmakaraka Sol, peso 1,02 — sinal
+  // real mas tecnicamente fraco) de "Direito do Rui/Melina" (Atmakaraka/
+  // Amatyakaraka Sol, peso 1,06/1,33 — sinal espúrio, direcções opostas
+  // ao que qualquer limiar de peso previa). Ver relatório da ronda de
+  // diagnóstico para os números.
+  //
+  // TAREFA #38 — SISTEMA EM DOIS NÍVEIS (solução final): em vez de um
+  // portão binário passa/reprova, cada candidata que atinge ≥4 camadas
+  // ganha um NÍVEL DE CONFIANÇA, nunca uma exclusão:
+  //   Nível 1 — inclui uma camada "Planeta de maior peso": comportamento
+  //             e linguagem inalterados (confiança plena).
+  //   Nível 2 — só inclui Atmakaraka/Amatyakaraka, nunca "Planeta de
+  //             maior peso": candidata continua a ser mostrada (não é
+  //             suprimida), mas o prompt (INSTRUCAO_NIVEL_CANDIDATAS,
+  //             promptAdulto.ts) instrui o LLM a assinalar confiança
+  //             reduzida — o mesmo espírito da distinção "confirmação
+  //             directa" vs "reforço geral" já usada para yogas
+  //             (INSTRUCAO_YOGAS). Nunca suprimir o sinal — só nomear a
+  //             sua força relativa, que é informação real (a pessoa quer
+  //             saber se é "o perfil converge com clareza" ou "há um fio
+  //             a puxar, vale explorar mas não é o mesmo tipo de certeza").
+  // Não introduz nenhum novo limiar de contagem/peso — só reclassifica os
+  // que já passavam os limiares existentes (≥4 camadas + indicador
+  // pessoal). Aplica-se por igual à Alice (Nível 2) e ao Rui/Melina
+  // (Nível 2) — a diferença nunca esteve em bloquear uns e passar outros,
+  // está em como o texto fala de cada nível.
+  const temPlanetaDeMaiorPeso = (camadas: string[]) => camadas.some((c) => c.startsWith("Planeta de maior peso"));
+  const temIndicadorPessoalFraco = (camadas: string[]) => camadas.some((c) => c.startsWith("Atmakaraka") || c.startsWith("Amatyakaraka"));
+  const nivelDeConfianca = (camadas: string[]): 1 | 2 | null => {
+    if (temPlanetaDeMaiorPeso(camadas)) return 1;
+    if (temIndicadorPessoalFraco(camadas)) return 2;
+    return null;
+  };
+  const elegveis = destinosAlternativos
+    .filter((d) => d.convergencia >= LIMIAR_MINIMO_CANDIDATA)
+    .map((d) => ({ destino: d, nivel: nivelDeConfianca(d.camadas) }))
+    .filter((x): x is { destino: DestinoConvergente; nivel: 1 | 2 } => x.nivel !== null);
   // TAREFA 1 (correcção do especialista) — até 3 candidatas, nunca menos
   // do que a fasquia exige. A ordenação (convergência desc, depois a
   // regra permanente de desempate) decide só QUAIS 3 entram quando há mais
   // de 3 elegíveis — a ordem do array resultante nunca é apresentada como
   // ranking (ver ResultadoCatalogoVocacional.candidatasForaDaLista e a
-  // regra equivalente no prompt).
+  // regra equivalente no prompt). O nível de confiança NÃO entra na
+  // ordenação (não é mais um critério de desempate) — só classifica a
+  // linguagem a usar; uma Nível 2 com convergência mais alta continua a
+  // poder ocupar uma das 3 vagas antes de uma Nível 1 mais fraca.
   const ordenadas = [...elegveis].sort((a, b) => {
-    if (b.convergencia !== a.convergencia) return b.convergencia - a.convergencia;
-    return compararCandidatasEmpatadas(a, b);
+    if (b.destino.convergencia !== a.destino.convergencia) return b.destino.convergencia - a.destino.convergencia;
+    return compararCandidatasEmpatadas(a.destino, b.destino);
   });
-  const candidatasForaDaLista: CandidataForaDaLista[] = ordenadas.slice(0, 3).map((d) => ({ nome: d.nome, id: d.id, camadas: d.camadas, convergencia: d.convergencia }));
+  const candidatasForaDaLista: CandidataForaDaLista[] = ordenadas
+    .slice(0, 3)
+    .map(({ destino: d, nivel }) => ({ nome: d.nome, id: d.id, camadas: d.camadas, convergencia: d.convergencia, nivelConfianca: nivel }));
 
   const notaCondicao5 = eixoDoRendimentoActivo.find((a) => a.planetas.length === 0);
 

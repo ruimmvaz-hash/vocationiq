@@ -49,7 +49,7 @@
       "label": "Mercúrio",
       "materia_prima": "traduzir, ligar, negociar, medir, escrever, mover informação; mãos rápidas e mente rápida",
       "destinos": {
-        "superior": ["literatura_linguistica", "linguas", "traducao", "jornalismo", "marketing", "publicidade", "contabilidade", "matematica", "estatistica", "engenharia_informatica", "sistemas_redes", "economia", "comercio", "secretariado", "ciencias_farmaceuticas", "audiovisual"],
+        "superior": ["literatura_linguistica", "linguas", "traducao", "jornalismo", "marketing", "publicidade", "contabilidade", "matematica", "estatistica", "engenharia_informatica", "sistemas_redes", "economia", "comercio", "secretariado", "ciencias_farmaceuticas", "audiovisual", "psicologia"],
         "superior_condicionado": [
           { "id": "direito", "condicao": "apenas na vertente contratual e de negociação, não na de tribunal", "vertente": "contratual" }
         ],
@@ -57,7 +57,7 @@
         "tecnico_condicionado": [
           { "id": "t_design_grafico", "condicao": "requer Vénus" }
         ],
-        "fora": ["f_escrita_propria", "f_edicao", "f_traducao_independente", "f_formacao_online", "f_negociacao"]
+        "fora": ["f_escrita_propria", "f_edicao", "f_traducao_independente", "f_formacao_online", "f_negociacao", "f_astrologia", "f_ensino_proprio"]
       },
       "contraindicacao": "rotina monótona sem variedade nem interlocutor; isolamento prolongado sem troca.",
       "aviso_obrigatorio": "Ciências Farmacêuticas entra porque Mercúrio é a fórmula e a dose. O valor de Mercúrio está em explicar bem o que é complexo."
@@ -110,7 +110,7 @@
           { "id": "gestao", "condicao": "em consultoria estratégica" }
         ],
         "tecnico": ["t_formacao_tecnica", "t_contabilidade", "t_editorial", "t_guia"],
-        "fora": ["f_ensino_proprio", "f_escrita_ensaio", "f_vida_religiosa", "f_supervisao", "f_publicacao", "f_direcao_espiritual"]
+        "fora": ["f_ensino_proprio", "f_escrita_ensaio", "f_vida_religiosa", "f_supervisao", "f_publicacao", "f_direcao_espiritual", "f_astrologia"]
       },
       "contraindicacao": "funções puramente mecânicas e sem horizonte de sentido; ambientes onde a pergunta 'porquê' seja mal recebida.",
       "aviso_obrigatorio": "Júpiter serve qualquer atividade onde o valor esteja em dar sentido, não em executar. É o karaka clássico do ensino — a sua presença forte no Ascendente, a reger a Casa 10 ou a aspetar 5/9, obriga a considerar Ensino mesmo quando o Atmakaraka aponta noutra direção."
