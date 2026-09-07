@@ -158,6 +158,18 @@ async function main() {
     console.log(`\n[${marcador}]`);
     console.log(idx === -1 ? "AUSENTE" : prompt.slice(idx, idx + 400));
   }
+
+  // Correcção do especialista (ronda seguinte) — confirma que as 4
+  // instruções "REGRAS OBRIGATÓRIAS" chegam mesmo ao prompt real, com o
+  // texto exacto (não só a secção de dados) — o diagnóstico pedido era
+  // exactamente isto: "a instrução está a chegar ao prompt gerado?".
+  console.log("\n=== Presença das 4 instruções REGRAS OBRIGATÓRIAS no prompt real ===");
+  for (const instrucao of ["AVASTHAS — REGRAS OBRIGATÓRIAS", "CONJUNÇÕES — REGRAS OBRIGATÓRIAS", "YOGAS — REGRAS OBRIGATÓRIAS", "VARGOTTAMA — INSTRUÇÃO OBRIGATÓRIA"]) {
+    console.log(`${instrucao}: ${prompt.includes(instrucao) ? "PRESENTE" : "AUSENTE"}`);
+  }
+  console.log(`\nOcorrências de "Raja Yoga:" no prompt: ${(prompt.match(/Raja Yoga:/g) ?? []).length}`);
+  console.log(`Ocorrências de "Viparita Raja Yoga" no prompt: ${(prompt.match(/Viparita Raja Yoga/g) ?? []).length}`);
+  console.log(`Ocorrências de "Vargottama" no prompt (dados + instrução): ${(prompt.match(/Vargottama/g) ?? []).length}`);
 }
 
 main().catch((err) => {

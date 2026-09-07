@@ -55,8 +55,9 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
      concreta (nunca para criar candidatas novas)? Se foi só
      listado sem ligação: FALHA.
 
- 16. VARGOTTAMA: se existe planeta Vargottama, foi nomeado em
-     "Quem é" como traço estrutural? Se não: FALHA.
+ 16. VARGOTTAMA: se existe planeta Vargottama nos dados técnicos,
+     a palavra "Vargottama" ou "estrutural" aparece na secção
+     "Quem é"? Se não aparecer: FALHA — reescrita obrigatória.
 
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
@@ -129,8 +130,9 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
      concreta (nunca para criar candidatas novas)? Se foi só
      listado sem ligação: FALHA.
 
- 16. VARGOTTAMA: se existe planeta Vargottama, foi nomeado em
-     "Quem é" como traço estrutural? Se não: FALHA.
+ 16. VARGOTTAMA: se existe planeta Vargottama nos dados técnicos,
+     a palavra "Vargottama" ou "estrutural" aparece na secção
+     "Quem é"? Se não aparecer: FALHA — reescrita obrigatória.
 
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.

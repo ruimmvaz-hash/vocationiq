@@ -531,12 +531,22 @@ export const INSTRUCAO_CONJUNCOES = `CONJUNÇÕES — REGRAS OBRIGATÓRIAS: para
 NUNCA ignorar conjunções activas.`;
 
 export const INSTRUCAO_YOGAS = `YOGAS — REGRAS OBRIGATÓRIAS: cada yoga activo tem de se ligar a uma candidata ou opção concreta cujas camadas de convergência (secção "Candidatas do catálogo") já citam o MESMO planeta do yoga — PROIBIDO inventar uma ligação a uma candidata cujas camadas não citem nenhum dos planetas do yoga.
-· RAJA YOGA ACTIVO: em "${SECCAO_TITULOS.leituraPorOpcao}" ou "${SECCAO_TITULOS.candidataForaDaLista}", para a candidata que partilha o planeta: "Existe uma configuração técnica nesta carta que sustenta posições de autoridade real — não é ambição, é uma estrutura planetária concreta. Isso reforça [candidata] porque [planeta partilhado] aparece nos dois."
+· RAJA YOGA ACTIVO: em "${SECCAO_TITULOS.leituraPorOpcao}" ou "${SECCAO_TITULOS.candidataForaDaLista}", para a candidata que partilha o planeta: "Existe uma configuração técnica neste perfil que sustenta posições de autoridade real — não é ambição, é uma estrutura planetária concreta. Isso reforça [candidata] porque [planeta partilhado] aparece nos dois."
 · DHANA YOGA ACTIVO: liga à opção/candidata de maior potencial financeiro que partilhe o planeta: "A facilidade de converter esforço em recursos (Dhana Yoga activo) reforça [opção] — o caminho financeiro desta área alinha com a estrutura do perfil."
 · VIPARITA RAJA YOGA ACTIVO: nomeia na parte de custo/limitações da opção relevante: "As dificuldades desta área não são obstáculos — são o caminho. Este perfil tem Viparita Raja Yoga, o que significa que a adversidade é precisamente onde a força se constrói."
 NUNCA listar yogas sem os ligar a algo concreto na narrativa. Se nenhum yoga activo, não mencionar.`;
 
-export const INSTRUCAO_VARGOTTAMA = `VARGOTTAMA — REGRAS OBRIGATÓRIAS: se existe planeta Vargottama, a secção "${SECCAO_TITULOS.quemE}" TEM de incluir: "[Planeta] é Vargottama — este traço é estrutural, não situacional. Não muda com as circunstâncias, não depende de esforço para existir. É o ponto mais estável de todo o perfil." Contrasta com um traço não-Vargottama já nomeado nos Dons/Limitações: "Enquanto [outro planeta] pode ser modulado e desenvolvido, [planeta Vargottama] é o que fica quando tudo o resto muda." Se nenhum planeta é Vargottama, não mencionar.`;
+// CORRECÇÃO 1 (correcção do especialista, confirmada com 3 relatórios
+// reais) — a versão anterior ("TEM de incluir... este traço é
+// estrutural...") já era obrigatória em teoria, mas deixava a frase
+// exacta ao critério do LLM; nos 3 relatórios reais revistos, Vargottama
+// nunca apareceu apesar de estar calculado (confirmado por diagnóstico:
+// tanto esta instrução como os dados "-- Vargottama --" chegam ao prompt
+// real, ver relatório da ronda). Versão mais directiva: um padrão de
+// frase quase literal, não uma paráfrase livre. "Carta" substituído por
+// "perfil" no texto pedido — a palavra "carta" está proibida em todo o
+// relatório desde uma correcção anterior (TAREFA 3D).
+export const INSTRUCAO_VARGOTTAMA = `VARGOTTAMA — INSTRUÇÃO OBRIGATÓRIA: se existe planeta Vargottama, a secção "${SECCAO_TITULOS.quemE}" DEVE conter uma frase com este padrão exacto: "[Nome do planeta em português] é o traço mais estável deste perfil — aparece com a mesma força em duas dimensões independentes do perfil, o que significa que não muda com as circunstâncias nem depende de esforço para existir." Esta frase é obrigatória. Se não existe planeta Vargottama, não mencionar.`;
 
 export function construirPromptAdulto(
   intake: VocationiqIntakeAdulto,
