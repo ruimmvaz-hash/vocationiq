@@ -415,7 +415,7 @@ export async function reconstruirHTMLRelatorio(intake: IntakeRow, texto: string,
           areaActual: "Ainda a estudar",
           anosExperiencia: intakeAdolescente.situacaoDeclarada,
           opcoesConsideradas: intakeAdolescente.opcoesAdolescente,
-          perguntaEspecifica: intakeAdolescente.opcaoMaisProvavel ? `Qual das opções lhe parece mais provável hoje: ${intakeAdolescente.opcaoMaisProvavel}?` : undefined,
+          perguntaEspecifica: intakeAdolescente.opcaoMaisProvavel ? `Qual das opções te parece mais provável hoje: ${intakeAdolescente.opcaoMaisProvavel}?` : undefined,
         };
     const html = gerarHTMLRelatorio(dadosTemplate, texto, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
     return { html, horaAproximada, coordenadasNascimento };

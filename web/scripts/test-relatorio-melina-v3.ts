@@ -27,8 +27,8 @@ LIMITAÇÃO: A forma como pensa e comunica está ligada de perto à sua identida
 O que genuinamente valoriza é a solidez que se prova com o tempo.
 SÍNTESE: É alguém talhada para transformar estrutura em resultado prático, ainda a decidir onde essa estrutura rende mais.
 
-## O que a carta sustenta
-A sua carta aponta com clareza para uma área onde o que faz paga directamente.
+## O que o perfil sustenta
+O seu perfil aponta com clareza para uma área onde o que faz paga directamente.
 
 ## Leitura por opção
 ### Estética
@@ -36,7 +36,7 @@ FORÇA: fraca
 INSIGHT: A área actual não é onde o seu planeta mais forte está a apontar com mais clareza.
 1. Não há convergência forte a sustentar a estética como destino de fundo.
 2. Continuar aqui custa-lhe não render ao máximo o seu planeta mais forte.
-3. Falta-lhe ainda uma ponte concreta entre o que já sabe fazer e a área que a carta sustenta com mais força.
+3. Falta-lhe ainda uma ponte concreta entre o que já sabe fazer e a área que o perfil sustenta com mais força.
 4. A sua matéria entra por rigor e disciplina, não pela componente estética.
 
 ## Candidata fora da lista

@@ -20,7 +20,7 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
 
  4. ÁREA ACTUAL: é usada como capital acumulado ou ignorada?
 
- 5. OPÇÃO DECLARADA vs CARTA: a opção é testada ou só
+ 5. OPÇÃO DECLARADA vs PERFIL: a opção é testada ou só
     confirmada?
 
  6. TENSÕES: tensões entre sinais contraditórios são nomeadas?
@@ -81,8 +81,8 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
  4. OPÇÃO EM CIMA DA MESA: cada opção em cima da mesa é usada como
     ponto de partida real (com o curso concreto listado) ou ignorada?
 
- 5. OPÇÃO EM CIMA DA MESA vs CARTA: cada opção é testada contra a
-    carta ou só confirmada sem crítica?
+ 5. OPÇÃO EM CIMA DA MESA vs PERFIL: cada opção é testada contra o
+    perfil ou só confirmada sem crítica?
 
  6. TENSÕES: tensões entre sinais contraditórios são nomeadas?
     Lista as que faltam.

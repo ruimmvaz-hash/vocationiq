@@ -103,6 +103,38 @@ const CARACTERISTICA_PT: Record<string, string> = {
   Saturn: "O que mais lhe exige",
 };
 
+/** TAREFA 1 (correcção do especialista) — versão "tu" de CARACTERISTICA_PT, para o ramo adolescente (ver `caracteristicaPt`). */
+const CARACTERISTICA_PT_TU: Record<string, string> = {
+  Sun: "A tua missão de fundo",
+  Moon: "O que sentes antes de pensar",
+  Mars: "A tua capacidade de agir",
+  Mercury: "Como comunicas e decides",
+  Jupiter: "Para onde queres crescer",
+  Venus: "O que valorizas",
+  Saturn: "O que mais te exige",
+};
+
+/** TAREFA 1 — escolhe o registo "tu" (ramo adolescente) ou "você" (ramo adulto) para o rótulo humano de um planeta. */
+function caracteristicaPt(planeta: string, usarTu: boolean): string {
+  return usarTu ? (CARACTERISTICA_PT_TU[planeta] ?? planeta) : (CARACTERISTICA_PT[planeta] ?? planeta);
+}
+
+/**
+ * TAREFA 3B (correcção do especialista) — legenda do gráfico "O peso de
+ * cada característica": uma frase em português simples do que cada
+ * característica representa, sem pronome pessoal (evita duplicar em
+ * tu/você — funciona igual nos dois ramos).
+ */
+const CARACTERISTICA_EXPLICACAO: Record<string, string> = {
+  Sun: "Representa a direcção mais profunda do perfil — o que move a pessoa quando tudo o resto está resolvido.",
+  Moon: "Mostra a reacção emocional instintiva, antes de qualquer análise racional.",
+  Mars: "Indica a facilidade natural para tomar iniciativa e executar.",
+  Mercury: "Revela o estilo natural de comunicar, processar informação e tomar decisões.",
+  Jupiter: "Aponta a direcção onde o crescimento e a expansão acontecem com mais naturalidade.",
+  Venus: "Mostra o que traz prazer, harmonia e sentido de valor próprio.",
+  Saturn: "Marca onde a disciplina e o esforço sustentado são mais necessários.",
+};
+
 const CASA_LABEL_LINHAS: Record<number, [string, string]> = {
   2: ["Pela voz e", "consultoria"],
   6: ["Resolvendo", "problemas"],
@@ -125,6 +157,26 @@ const AREA_VIDA_PT: Record<number, string> = {
   12: "O que solta e o que fica só para si",
 };
 
+/** TAREFA 1 — versão "tu" de AREA_VIDA_PT, para o Anexo do ramo adolescente. */
+const AREA_VIDA_PT_TU: Record<number, string> = {
+  1: "Como se apresenta ao mundo, a tua energia",
+  2: "O que ganha e como lida com dinheiro",
+  3: "A tua iniciativa e comunicação do dia a dia",
+  4: "As tuas raízes, casa e estabilidade emocional",
+  5: "A tua criatividade e aquilo que constrói",
+  6: "Como lida com obstáculos e o trabalho do dia a dia",
+  7: "As tuas parcerias e relações directas",
+  8: "As transformações profundas, o que fica escondido",
+  9: "As tuas crenças e para onde quer expandir",
+  10: "A tua carreira e a cara que mostra publicamente",
+  11: "Os teus ganhos, redes e comunidade",
+  12: "O que solta e o que fica só para ti",
+};
+
+function areaVidaPt(casa: number, usarTu: boolean): string {
+  return (usarTu ? AREA_VIDA_PT_TU[casa] : AREA_VIDA_PT[casa]) ?? `Área ${casa}`;
+}
+
 const CLASSIFICACAO_LABEL: Record<ClassificacaoApoio, string> = { forte: "Forte", medio: "Médio", fraco: "Fraco" };
 function corClassificacao(c: ClassificacaoApoio): string {
   if (c === "forte") return VERDE;
@@ -145,6 +197,19 @@ const DASHA_O_QUE_PEDE: Record<string, string> = {
   Ketu: "Pede-lhe que solte o que já não serve e olhe para dentro.",
 };
 
+/** TAREFA 1 — versão "tu" de DASHA_O_QUE_PEDE, para o Anexo "Os teus períodos" do ramo adolescente. */
+const DASHA_O_QUE_PEDE_TU: Record<string, string> = {
+  Sun: "Pede que assumas responsabilidade e liderança visível.",
+  Moon: "Pede que cuides da tua estabilidade emocional e da tua casa.",
+  Mars: "Pede acção directa e coragem para resolver o que está parado.",
+  Mercury: "Pede clareza de comunicação e atenção aos detalhes práticos.",
+  Jupiter: "Pede que invistas em crescimento, aprendizagem e visão de longo prazo.",
+  Venus: "Pede que cuides das tuas relações e do que valorizas.",
+  Saturn: "Pede disciplina, paciência, e trabalho de fundo sem resultados imediatos.",
+  Rahu: "Pede que saias da tua zona confortável e arrisques algo novo.",
+  Ketu: "Pede que soltes o que já não serve e olhes para dentro.",
+};
+
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }
@@ -162,7 +227,7 @@ function corForca(forca: ForcaValor): string {
 }
 
 const FORCA_LABEL: Record<ForcaValor, string> = {
-  forte: "Carta apoia com força",
+  forte: "Perfil apoia com força",
   moderada: "Suporte moderado",
   fraca: "Suporte fraco",
 };
@@ -361,7 +426,7 @@ function formatarMesAno(d: Date): string {
 
 // ---------- Gráficos SVG (deterministicamente a partir dos dados, nunca do LLM) ----------
 
-function svgGraficoForcas(pesos: PesoPlaneta[]): string {
+function svgGraficoForcas(pesos: PesoPlaneta[], usarTu: boolean): string {
   const ordenados = [...pesos].sort((a, b) => b.peso - a.peso);
   const largura = 620;
   const alturaLinha = 42;
@@ -376,7 +441,7 @@ function svgGraficoForcas(pesos: PesoPlaneta[]): string {
       const y = i * alturaLinha + 8;
       const larguraBarra = Math.max(2, Math.min(p.peso / escalaMax, 1) * areaBarra);
       const cor = corPeso(p.peso);
-      const label = CARACTERISTICA_PT[p.planeta] ?? p.planeta;
+      const label = caracteristicaPt(p.planeta, usarTu);
       return `
       <text x="${margemEsquerda - 14}" y="${y + 21}" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="14" fill="#1A1A1A">${escapeHtml(label)}</text>
       <rect x="${margemEsquerda}" y="${y + 5}" width="${areaBarra}" height="20" fill="${CINZA_CLARO}" rx="4" />
@@ -667,14 +732,14 @@ function svgRadarCompetencias(eixos: EixoCompetencia[]): string {
   </svg>`;
 }
 
-function blocoRadarCompetencias(pesos: PesoPlaneta[], savPorCasa: SavPorCasa[], regentesCasas: Record<number, ClassicalGraha>): string {
+function blocoRadarCompetencias(pesos: PesoPlaneta[], savPorCasa: SavPorCasa[], regentesCasas: Record<number, ClassicalGraha>, usarTu: boolean): string {
   const eixos = computeRadarCompetencias(pesos, savPorCasa, regentesCasas);
   return `
     <div class="radar-wrap">
-      <p class="bloco-titulo" style="text-align:center">O seu perfil de competências</p>
-      <p class="roda-vida-subtitulo" style="text-align:center">Onde a sua carta tem força natural</p>
+      <p class="bloco-titulo" style="text-align:center">${usarTu ? "O teu perfil de competências" : "O seu perfil de competências"}</p>
+      <p class="roda-vida-subtitulo" style="text-align:center">${usarTu ? "Onde o teu perfil tem força natural" : "Onde o seu perfil tem força natural"}</p>
       <div class="grafico-wrap grafico-centrado">${svgRadarCompetencias(eixos)}</div>
-      <p class="grafico-legenda" style="text-align:center">Valores calculados a partir da força real da sua carta — não são avaliações de personalidade.</p>
+      <p class="grafico-legenda" style="text-align:center">${usarTu ? "Valores calculados a partir da força real do teu perfil — não são avaliações de personalidade." : "Valores calculados a partir da força real do seu perfil — não são avaliações de personalidade."}</p>
     </div>`;
 }
 
@@ -720,7 +785,7 @@ function blocoDiagramaPonte(dados: DadosParaTemplate, pesos: PesoPlaneta[], axes
   ].filter((x): x is string => Boolean(x));
 
   const aprende = MODO_GANHO_APRENDE[axes.earningMode.house] ?? "A disciplina que esta opção pede no dia a dia.";
-  const naoMuda = maisFraco ? `${escapeHtml(CARACTERISTICA_PT[maisFraco.planeta] ?? maisFraco.planeta)} continua a ser o elo mais frágil da sua carta — não desaparece com formação.` : "";
+  const naoMuda = maisFraco ? `${escapeHtml(CARACTERISTICA_PT[maisFraco.planeta] ?? maisFraco.planeta)} continua a ser o elo mais frágil do seu perfil — não desaparece com formação.` : "";
 
   return `
     <div class="ponte-wrap">
@@ -827,23 +892,23 @@ function blocoDiagramaConvergencia(nome: string, camadas: string[]): string {
 
 // ---------- Blocos HTML ----------
 
-/** Os "sinais" do diagrama de identidade — reaproveita os mesmos rótulos humanos já usados no gráfico "O peso de cada característica" (CARACTERISTICA_PT), ordenados por peso decrescente. Sempre determinístico, nunca do LLM. */
-function sinaisIdentidade(pesos: PesoPlaneta[]): string[] {
-  return [...pesos].sort((a, b) => b.peso - a.peso).map((p) => CARACTERISTICA_PT[p.planeta] ?? p.planeta);
+/** Os "sinais" do diagrama de identidade — reaproveita os mesmos rótulos humanos já usados no gráfico "O peso de cada característica" (caracteristicaPt), ordenados por peso decrescente. Sempre determinístico, nunca do LLM. */
+function sinaisIdentidade(pesos: PesoPlaneta[], usarTu: boolean): string[] {
+  return [...pesos].sort((a, b) => b.peso - a.peso).map((p) => caracteristicaPt(p.planeta, usarTu));
 }
 
-function blocoDiagramaIdentidade(pesos: PesoPlaneta[], identidade: string | null): string {
+function blocoDiagramaIdentidade(pesos: PesoPlaneta[], identidade: string | null, usarTu: boolean): string {
   if (!identidade) return "";
   return `
     <section class="seccao">
-      <h2 class="titulo-seccao">Quem você realmente é</h2>
-      <div class="grafico-wrap grafico-centrado">${svgDiagramaIdentidade(sinaisIdentidade(pesos), identidade)}</div>
-      <p class="grafico-legenda" style="text-align:center">Os sinais à esquerda são os traços mais fortes da sua carta — convergem na síntese ao centro.</p>
+      <h2 class="titulo-seccao">${usarTu ? "Quem realmente és" : "Quem você realmente é"}</h2>
+      <div class="grafico-wrap grafico-centrado">${svgDiagramaIdentidade(sinaisIdentidade(pesos, usarTu), identidade)}</div>
+      <p class="grafico-legenda" style="text-align:center">${usarTu ? "Os sinais à esquerda são os traços mais fortes do teu perfil — convergem na síntese ao centro." : "Os sinais à esquerda são os traços mais fortes do seu perfil — convergem na síntese ao centro."}</p>
     </section>`;
 }
 
-function blocoRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], regentesCasas: Record<number, ClassicalGraha>): string {
-  const dimensoes = computeRodaDaVida(savPorCasa, pesos, regentesCasas);
+function blocoRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], regentesCasas: Record<number, ClassicalGraha>, usarTu: boolean): string {
+  const dimensoes = computeRodaDaVida(savPorCasa, pesos, regentesCasas, usarTu);
   const lista = dimensoes
     .map(
       (d) => `
@@ -857,30 +922,27 @@ function blocoRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], regente
 
   return `
     <div class="roda-vida-wrap">
-      <p class="bloco-titulo roda-vida-titulo">O seu perfil de vida</p>
-      <p class="roda-vida-subtitulo">Como a sua carta estrutura cada área da sua vida</p>
+      <p class="bloco-titulo roda-vida-titulo">${usarTu ? "O teu perfil de vida" : "O seu perfil de vida"}</p>
+      <p class="roda-vida-subtitulo">${usarTu ? "Como o teu perfil estrutura cada área da tua vida" : "Como o seu perfil estrutura cada área da sua vida"}</p>
       <div class="grafico-wrap grafico-centrado">${svgRodaDaVida(dimensoes)}</div>
       <p class="grafico-legenda">Verde = força natural (≥7) · Âmbar = equilíbrio (4-6) · Vermelho = pede mais construção (&lt;4)</p>
       <div class="caixa-neutra roda-vida-explicacao">
-        <p>Esta roda mostra onde a sua carta tem força natural e onde pede mais esforço. Não é um julgamento — é um mapa. Áreas mais preenchidas indicam onde o seu perfil flui naturalmente. Áreas menos preenchidas indicam onde vai precisar de construir com mais intenção.</p>
+        <p>${
+          usarTu
+            ? "Esta roda mostra onde o teu perfil tem força natural e onde pede mais esforço. Não é um julgamento — é um mapa. Áreas mais preenchidas indicam onde o teu perfil flui naturalmente. Áreas menos preenchidas indicam onde vais precisar de construir com mais intenção."
+            : "Esta roda mostra onde o seu perfil tem força natural e onde pede mais esforço. Não é um julgamento — é um mapa. Áreas mais preenchidas indicam onde o seu perfil flui naturalmente. Áreas menos preenchidas indicam onde vai precisar de construir com mais intenção."
+        }</p>
       </div>
       <div class="dimensao-vida-lista">${lista}</div>
     </div>`;
 }
 
-/** Rótulo humano da casa dominante do Modo de Ganho — mesma convenção de CASA_LABEL_LINHAS, aqui em frase única para a coluna "O que apoia" da tabela de tensões. */
-const CASA_APOIO_LABEL: Record<number, string> = {
-  2: "Ganhar pela voz e pela consultoria",
-  6: "Ganhar por resolver problemas",
-  10: "Ganhar por liderar publicamente",
-};
-
 /**
  * TAREFA 4 (correcção do especialista) — implicação prática ESPECÍFICA de
  * cada planeta fraco, uma frase própria por planeta (nunca a mesma frase
  * genérica repetida). Texto exacto pedido, determinístico — gerado pelo
- * código, nunca pelo LLM (só a 3ª coluna da tabela "Onde a carta tem
- * atrito" muda; as outras duas mantêm-se).
+ * código, nunca pelo LLM (só o diagrama "Onde o perfil tem atrito" a usa;
+ * é sempre a mesma independentemente do ramo — não tem pronome pessoal).
  */
 const IMPLICACAO_PRATICA_PLANETA: Record<string, string> = {
   Mercury: "A fluidez de explicar e ser entendida precisa de ser construída — não é natural. Apoio externo (editor, coach de comunicação) compensa.",
@@ -892,39 +954,90 @@ const IMPLICACAO_PRATICA_PLANETA: Record<string, string> = {
   Saturn: "A estrutura e a disciplina de longo prazo precisam de sistemas externos — não confiar só na força de vontade.",
 };
 
+interface ItemAtrito {
+  planeta: string;
+  peso: number;
+  implicacao: string;
+}
+
 /**
- * Tabela de tensões — determinística: para CADA planeta com peso < 0,9
- * (limiar já usado em corPeso/TERMOS_PROIBIDOS), sem excepção nem tecto —
- * cruza com a tese central (Modo(s) de Ganho dominante(s) — pode ser mais
- * do que um em caso de co-dominância, TAREFA 2). Peso mais baixo primeiro.
- * Nunca escrita pelo LLM — só o texto das 5 secções de prosa vem de lá.
- * Colunas renomeadas (TAREFA 4): "O que a carta sustenta" / "O que
- * resiste" / "O que isto implica na prática" — a 3ª já não repete a mesma
- * frase genérica para planetas diferentes.
+ * TAREFA 3C (correcção do especialista) — substitui a tabela "Onde o
+ * perfil tem atrito" por um diagrama SVG: centro = a tese central do
+ * relatório (marcador IDENTIDADE: já escrito pelo LLM — nunca inventado
+ * aqui, ver FALTA 2), um nó por planeta fraco (peso < 0,9 — mesmos dados
+ * reais de sempre, nunca texto inventado), rótulo "O que resiste:
+ * <planeta>" + a implicação prática (IMPLICACAO_PRATICA_PLANETA, já
+ * existente, TAREFA 4 de uma ronda anterior). Mesma técnica de
+ * posicionamento dinâmico de svgDiagramaConvergencia (altura de cada nó
+ * calculada a partir do nº real de linhas do seu texto).
  */
-function tabelaTensoes(pesos: PesoPlaneta[], casasDominantes: number[]): string {
+function svgDiagramaAtrito(identidade: string, itens: ItemAtrito[]): string {
+  const largura = 720;
+  const raioCentro = 85;
+  const lineHeightRotulo = 15;
+  const lineHeightImplicacao = 13;
+  const gapEntreNos = 20;
+  const topo = 20;
+  const maxCarLinhaRotulo = 30;
+  const maxCarLinhaImplicacao = 38;
+  const cx = largura - raioCentro - 40;
+  const margemTexto = cx - raioCentro - 46;
+  const pontoDeEntrada = cx - raioCentro - 8;
+  const raioNoX = 9;
+  const raioNoY = 6;
+
+  let cursorY = topo;
+  const nos = itens.map((item) => {
+    const rotulo = `O que resiste: ${PLANETA_PT[item.planeta] ?? item.planeta}`;
+    const linhasRotulo = quebrarLinhas(rotulo, maxCarLinhaRotulo);
+    const linhasImplicacao = quebrarLinhas(item.implicacao, maxCarLinhaImplicacao);
+    const alturaRotulo = linhasRotulo.length * lineHeightRotulo;
+    const alturaImplicacao = linhasImplicacao.length * lineHeightImplicacao;
+    const blocoAltura = alturaRotulo + 4 + alturaImplicacao;
+    const centroY = cursorY + blocoAltura / 2;
+    cursorY += blocoAltura + gapEntreNos;
+    const primeiraLinhaRotuloY = centroY - blocoAltura / 2 + lineHeightRotulo - 2;
+    const tspansRotulo = linhasRotulo.map((l, i) => `<tspan x="${margemTexto - 8}" y="${primeiraLinhaRotuloY + i * lineHeightRotulo}">${escapeHtml(l)}</tspan>`).join("");
+    const inicioImplicacaoY = primeiraLinhaRotuloY + (linhasRotulo.length - 1) * lineHeightRotulo + lineHeightImplicacao + 2;
+    const tspansImplicacao = linhasImplicacao.map((l, i) => `<tspan x="${margemTexto - 8}" y="${inicioImplicacaoY + i * lineHeightImplicacao}">${escapeHtml(l)}</tspan>`).join("");
+    return { centroY, tspansRotulo, tspansImplicacao };
+  });
+
+  const alturaNos = cursorY - gapEntreNos - topo;
+  const cy = Math.max(topo + alturaNos / 2, raioCentro + 20);
+  const altura = Math.max(cy + raioCentro + 20, topo + alturaNos + 20);
+
+  const linhasIdentidade = quebrarLinhas(identidade, 15);
+  const inicioY = cy - (linhasIdentidade.length - 1) * 9;
+  const tspansIdentidade = linhasIdentidade.map((l, i) => `<tspan x="${cx}" y="${inicioY + i * 18}">${escapeHtml(l)}</tspan>`).join("");
+
+  return `<svg viewBox="0 0 ${largura} ${altura}" width="100%" style="max-width:${largura}px;height:auto" xmlns="http://www.w3.org/2000/svg">
+    ${nos
+      .map(
+        (n) => `
+      <text text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="${VERMELHO}">${n.tspansRotulo}</text>
+      <text text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="11" fill="#4A4A4A">${n.tspansImplicacao}</text>
+      <path d="M ${margemTexto} ${n.centroY} L ${pontoDeEntrada} ${cy}" stroke="${AMBAR}" stroke-width="2" fill="none" opacity="0.8" />
+      <ellipse cx="${margemTexto}" cy="${n.centroY}" rx="${raioNoX}" ry="${raioNoY}" fill="${VERMELHO}" />`,
+      )
+      .join("")}
+    <circle cx="${cx}" cy="${cy}" r="${raioCentro}" fill="${AZUL}" />
+    <text text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#FFFFFF">${tspansIdentidade}</text>
+  </svg>`;
+}
+
+function blocoDiagramaAtrito(pesos: PesoPlaneta[], identidade: string | null): string {
   const fracos = [...pesos].filter((p) => p.peso < 0.9).sort((a, b) => a.peso - b.peso);
   if (!fracos.length) return "";
-
-  const apoio = casasDominantes.map((c) => CASA_APOIO_LABEL[c] ?? "A sua forma dominante de ganhar").join(" e ");
-  const linhas = fracos
-    .map(
-      (p) => `
-      <tr>
-        <td>${escapeHtml(apoio)}</td>
-        <td>${escapeHtml(CARACTERISTICA_PT[p.planeta] ?? p.planeta)} <span class="peso-fraco">(peso ${p.peso.toFixed(2)})</span></td>
-        <td>${escapeHtml(IMPLICACAO_PRATICA_PLANETA[p.planeta] ?? "Esta parte da carta está enfraquecida — o que a tese central pede aqui não é natural, tem de ser construído com esforço consciente.")}</td>
-      </tr>`,
-    )
-    .join("");
-
+  const itens: ItemAtrito[] = fracos.map((p) => ({
+    planeta: p.planeta,
+    peso: p.peso,
+    implicacao: IMPLICACAO_PRATICA_PLANETA[p.planeta] ?? "Esta parte do perfil está enfraquecida — o que a tese central pede aqui não é natural, tem de ser construído com esforço consciente.",
+  }));
   return `
-    <div class="anexo-espaco">
-      <p class="rotulo-pequeno">Onde a carta tem atrito</p>
-      <table class="tabela-anexo tabela-tensoes">
-        <thead><tr><th>O que a carta sustenta</th><th>O que resiste</th><th>O que isto implica na prática</th></tr></thead>
-        <tbody>${linhas}</tbody>
-      </table>
+    <div class="anexo-espaco atrito-wrap">
+      <p class="rotulo-pequeno" style="text-align:center">Onde o perfil tem atrito</p>
+      <div class="grafico-wrap grafico-centrado">${svgDiagramaAtrito(identidade ?? "O que este perfil sustenta", itens)}</div>
     </div>`;
 }
 
@@ -953,13 +1066,19 @@ function blocoQuemE(d: DadosParaTemplate): string {
     ["Data de nascimento", formatarDataLonga(d.dataNascimento)],
     ...(d.horaNascimento ? ([["Hora", d.horaNascimento]] as [string, string][]) : []),
     ["Local de nascimento", d.localNascimento],
-    ["Situação declarada", d.situacaoDeclarada],
-    // TAREFA 1 (correcção do especialista) — "Área actual"/"Anos de
-    // experiência" são conceitos do ramo adulto; um adolescente nunca
-    // trabalhou. Mostra "Ano de escolaridade" quando disponível
-    // (migração 0020, TAREFA 2), ou omite a linha por completo — nunca
-    // reaproveita os rótulos adultos com valores que não fazem sentido.
-    ...(d.ehAdolescente ? (d.anoEscolaridade ? ([["Ano de escolaridade", d.anoEscolaridade]] as [string, string][]) : []) : ([["Área actual", d.areaActual], ["Anos de experiência", d.anosExperiencia]] as [string, string][])),
+    // TAREFA 2 (correcção do especialista, ronda seguinte) — para o
+    // adolescente, "Situação declarada" (o rótulo em bruto do formulário,
+    // ex.: "Estou no 10º, 11º ou 12º ano") e "Ano de escolaridade" (o
+    // mesmo facto, formatado a partir de `ano_escolaridade`, migração
+    // 0020) mostravam a MESMA informação duas vezes — mantém-se só "Ano
+    // de escolaridade". "Situação declarada" continua no ramo adulto
+    // (onde é o único campo com essa informação) e no ramo "pos-12" (que
+    // usa o quadro adulto — ver DESVIO em relatorioAdultoCompute.ts).
+    ...(d.ehAdolescente
+      ? d.anoEscolaridade
+        ? ([["Ano de escolaridade", d.anoEscolaridade]] as [string, string][])
+        : ([["Situação declarada", d.situacaoDeclarada]] as [string, string][])
+      : ([["Situação declarada", d.situacaoDeclarada], ["Área actual", d.areaActual], ["Anos de experiência", d.anosExperiencia]] as [string, string][])),
   ];
   return `
     <div class="bloco-dados">
@@ -990,14 +1109,22 @@ function blocoOQueTrouxe(d: DadosParaTemplate): string {
     </div>`;
 }
 
-function blocoOQueEsteRelatorioResponde(): string {
-  const itens = [
-    "A sua missão de fundo, e onde ela já aparece na sua vida profissional.",
-    "Como e onde ganha melhor.",
-    "Uma leitura honesta de cada opção que está a considerar: o que a sustenta, o que custa, o que falta.",
-    "Se há alguma opção fora da sua lista que a sua carta sustenta com força.",
-    "Um primeiro passo concreto para esta semana, ligado às suas datas reais.",
-  ];
+function blocoOQueEsteRelatorioResponde(usarTu: boolean): string {
+  const itens = usarTu
+    ? [
+        "A tua missão de fundo, e onde ela já aparece nas tuas escolhas.",
+        "Como e onde ganhas melhor.",
+        "Uma leitura honesta de cada opção que estás a considerar: o que a sustenta, o que custa, o que falta.",
+        "Se há alguma opção fora da tua lista que o teu perfil sustenta com força.",
+        "Um primeiro passo concreto para esta semana, ligado às tuas datas reais.",
+      ]
+    : [
+        "A sua missão de fundo, e onde ela já aparece na sua vida profissional.",
+        "Como e onde ganha melhor.",
+        "Uma leitura honesta de cada opção que está a considerar: o que a sustenta, o que custa, o que falta.",
+        "Se há alguma opção fora da sua lista que o seu perfil sustenta com força.",
+        "Um primeiro passo concreto para esta semana, ligado às suas datas reais.",
+      ];
   return `
     <div class="bloco-dados">
       <p class="bloco-titulo">O que este relatório responde</p>
@@ -1007,10 +1134,10 @@ function blocoOQueEsteRelatorioResponde(): string {
 
 function cardOpcao(op: LeituraOpcao, dados: DadosParaTemplate, pesos: PesoPlaneta[], axes: VocationIQAxes): string {
   const PARTE_LABEL = [
-    { icone: "&#10003;", titulo: "O que a carta sustenta" },
+    { icone: "&#10003;", titulo: "O que o perfil sustenta" },
     { icone: "&#9888;", titulo: "O que vai custar" },
     { icone: "?", titulo: "O que pede que falta" },
-    { icone: "&#8594;", titulo: "Onde entra a sua matéria" },
+    { icone: "&#8594;", titulo: dados.ehAdolescente ? "Onde entra a tua matéria" : "Onde entra a sua matéria" },
   ];
   const partes = op.partes
     .map((texto, i) => {
@@ -1056,7 +1183,7 @@ function blocoSeccaoQuemE(corpo: string): string {
       (d) => `
       <div class="card-dom">
         <span class="card-dom-icone">&#10003;</span>
-        <p>${escapeHtml(d)}</p>
+        <div><p class="card-dom-titulo">Dom</p><p>${escapeHtml(d)}</p></div>
       </div>`,
     )
     .join("");
@@ -1065,7 +1192,7 @@ function blocoSeccaoQuemE(corpo: string): string {
       (l) => `
       <div class="card-limitacao">
         <span class="card-limitacao-icone">&#9888;</span>
-        <p>${escapeHtml(l)}</p>
+        <div><p class="card-limitacao-titulo">A desenvolver</p><p>${escapeHtml(l)}</p></div>
       </div>`,
     )
     .join("");
@@ -1086,7 +1213,7 @@ function blocoSeccaoQuemE(corpo: string): string {
  * destaque visual diferente entre elas — a ordem em que chegam do LLM é
  * só a ordem em que ele as escreveu, nunca ranking).
  */
-function blocoCandidataForaDaLista(corpo: string, catalogo: ResultadoCatalogoVocacional | null): string {
+function blocoCandidataForaDaLista(corpo: string, catalogo: ResultadoCatalogoVocacional | null, usarTu: boolean): string {
   const { candidatas, textoSemCandidata } = parseCandidataForaDaLista(corpo);
   if (!candidatas.length) {
     return `<div class="caixa-neutra">${markdownParaHtml(textoSemCandidata || corpo)}</div>`;
@@ -1097,7 +1224,7 @@ function blocoCandidataForaDaLista(corpo: string, catalogo: ResultadoCatalogoVoc
       return `
       ${blocoDiagramaConvergencia(c.nome, camadas)}
       <div class="card-candidata">
-        <p class="card-candidata-header">Uma opção que ainda não considerou</p>
+        <p class="card-candidata-header">${usarTu ? "Uma opção que ainda não consideraste" : "Uma opção que ainda não considerou"}</p>
         <p class="card-candidata-nome">${escapeHtml(c.nome)}</p>
         ${markdownParaHtml(c.texto)}
       </div>`;
@@ -1105,14 +1232,14 @@ function blocoCandidataForaDaLista(corpo: string, catalogo: ResultadoCatalogoVoc
     .join("\n");
 }
 
-function blocoOPlano(corpo: string, datas: DadosDatas): string {
+function blocoOPlano(corpo: string, datas: DadosDatas, usarTu: boolean): string {
   const { corpo: resto, primeiroPasso } = parsePlano(corpo);
   return `
     ${blocoCaixaPeriodoActual(datas)}
     <div class="timeline-wrap">${svgTimeline(datas)}</div>
-    <p class="grafico-legenda">Âmbar = o período em que está agora · Azul-claro = os períodos seguintes.</p>
+    <p class="grafico-legenda">Âmbar = o período em que ${usarTu ? "estás" : "está"} agora · Azul-claro = os períodos seguintes.</p>
     ${resto ? markdownParaHtml(resto) : ""}
-    ${primeiroPasso ? `<div class="caixa-primeiro-passo"><p class="caixa-primeiro-passo-label">O seu primeiro passo esta semana</p><p>${escapeHtml(primeiroPasso)}</p></div>` : ""}`;
+    ${primeiroPasso ? `<div class="caixa-primeiro-passo"><p class="caixa-primeiro-passo-label">${usarTu ? "O teu primeiro passo esta semana" : "O seu primeiro passo esta semana"}</p><p>${escapeHtml(primeiroPasso)}</p></div>` : ""}`;
 }
 
 /**
@@ -1135,7 +1262,7 @@ function casasCentraisDaTese(axes: VocationIQAxes): Set<number> {
   return new Set<number>([axes.missionAxis.akHouse, axes.missionAxis.karakamshaHouse, ...axes.earningModeDominante.map((e) => e.house)]);
 }
 
-function tabelaApoioPorAreaDeVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], axes: VocationIQAxes): string {
+function tabelaApoioPorAreaDeVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], axes: VocationIQAxes, usarTu: boolean): string {
   const apoioCombinado = computeApoioPorAreaDeVida(savPorCasa, pesos, axes.regentesCasas);
   const casasCentrais = casasCentraisDaTese(axes);
   const linhas = [...apoioCombinado]
@@ -1143,7 +1270,7 @@ function tabelaApoioPorAreaDeVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[]
     .map(
       (h) => `
       <tr>
-        <td>${escapeHtml(AREA_VIDA_PT[h.casa] ?? `Área ${h.casa}`)}</td>
+        <td>${escapeHtml(areaVidaPt(h.casa, usarTu))}</td>
         <td class="col-numero">${h.valor.toFixed(1).replace(".", ",")}/10</td>
         <td><span class="badge-classificacao" style="background:${corClassificacao(h.classificacao)}">${CLASSIFICACAO_LABEL[h.classificacao]}</span></td>
       </tr>`,
@@ -1151,12 +1278,12 @@ function tabelaApoioPorAreaDeVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[]
     .join("");
   // Correcção do especialista (verificação Casa 6) — uma casa "Forte" que
   // não sustenta a tese central (fora do Eixo da Missão e do Modo de
-  // Ganho) pode estar assim só porque o planeta mais forte da carta está
+  // Ganho) pode estar assim só porque o planeta mais forte do perfil está
   // fisicamente lá, não porque é o tema mais importante da vida da
   // pessoa. Nota só aparece quando esse caso realmente ocorre.
   const forteForaDaTese = apoioCombinado.filter((h) => h.classificacao === "forte" && !casasCentrais.has(h.casa));
   const nota = forteForaDaTese.length
-    ? `<p class="anexo-nota">Nota: ${forteForaDaTese.map((h) => escapeHtml(AREA_VIDA_PT[h.casa] ?? `Área ${h.casa}`)).join(", ")} aparece com apoio Forte, mas não é uma das casas centrais desta leitura (Eixo da Missão / Modo de Ganho) — reflecte sobretudo onde a força física da carta está posicionada, não o tema principal da sua vocação.</p>`
+    ? `<p class="anexo-nota">Nota: ${forteForaDaTese.map((h) => escapeHtml(areaVidaPt(h.casa, usarTu))).join(", ")} aparece com apoio Forte, mas não é uma das casas centrais desta leitura (Eixo da Missão / Modo de Ganho) — reflecte sobretudo onde a força física do perfil está posicionada, não o tema principal da ${usarTu ? "tua" : "sua"} vocação.</p>`
     : "";
   return `
     <table class="tabela-anexo">
@@ -1165,12 +1292,13 @@ function tabelaApoioPorAreaDeVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[]
     </table>${nota}`;
 }
 
-function tabelaOsTeusPeriodos(datas: DadosDatas): string {
+function tabelaOsTeusPeriodos(datas: DadosDatas, usarTu: boolean): string {
   const periodos = [
     { ...datas.mahadashaAtual, tipo: "Ciclo actual" },
     { ...datas.antardashaAtual, tipo: "Período actual" },
     ...datas.proximasAntardashas.map((p) => ({ ...p, tipo: "Período seguinte" })),
   ];
+  const dicionarioOQuePede = usarTu ? DASHA_O_QUE_PEDE_TU : DASHA_O_QUE_PEDE;
   const linhas = periodos
     .map(
       (p) => `
@@ -1178,7 +1306,7 @@ function tabelaOsTeusPeriodos(datas: DadosDatas): string {
         <td>${escapeHtml(p.tipo)}</td>
         <td>${escapeHtml(PLANETA_PT[p.senhor] ?? p.senhor)}</td>
         <td>${formatarMesAno(p.inicio)} – ${formatarMesAno(p.fim)}</td>
-        <td>${escapeHtml(DASHA_O_QUE_PEDE[p.senhor] ?? "")}</td>
+        <td>${escapeHtml(dicionarioOQuePede[p.senhor] ?? "")}</td>
       </tr>`,
     )
     .join("");
@@ -1189,13 +1317,20 @@ function tabelaOsTeusPeriodos(datas: DadosDatas): string {
     </table>`;
 }
 
-function seccaoComoLer(): string {
-  const paragrafos = [
-    "Este relatório cruza várias camadas do seu mapa de nascimento — a sua energia de fundo, a forma como ganha melhor, o que o mercado já reconhece em si, e o momento em que está agora — para chegar a uma leitura sobre cada opção que trouxe.",
-    "Cada opção só é apresentada como \"sustentada com força\" quando pelo menos duas fontes independentes convergem — nunca por um único sinal isolado.",
-    "As datas que vê na tabela de períodos são reais, calculadas a partir da sua hora de nascimento (ou de uma estimativa, quando não a soubemos) — não são genéricas nem iguais para todos.",
-    "Nada aqui é uma sentença. É um mapa do que a sua carta sustenta e do que custa — a decisão final é sempre sua.",
-  ];
+function seccaoComoLer(usarTu: boolean): string {
+  const paragrafos = usarTu
+    ? [
+        "Este relatório cruza várias camadas do teu mapa de nascimento — a tua energia de fundo, a forma como ganhas melhor, o que já se nota em ti, e o momento em que estás agora — para chegar a uma leitura sobre cada opção que trouxeste.",
+        "Cada opção só é apresentada como \"sustentada com força\" quando pelo menos duas fontes independentes convergem — nunca por um único sinal isolado.",
+        "As datas que vês na tabela de períodos são reais, calculadas a partir da tua hora de nascimento (ou de uma estimativa, quando não a soubemos) — não são genéricas nem iguais para todos.",
+        "Nada aqui é uma sentença. É um mapa do que o teu perfil sustenta e do que custa — a decisão final é sempre tua.",
+      ]
+    : [
+        "Este relatório cruza várias camadas do seu mapa de nascimento — a sua energia de fundo, a forma como ganha melhor, o que o mercado já reconhece em si, e o momento em que está agora — para chegar a uma leitura sobre cada opção que trouxe.",
+        "Cada opção só é apresentada como \"sustentada com força\" quando pelo menos duas fontes independentes convergem — nunca por um único sinal isolado.",
+        "As datas que vê na tabela de períodos são reais, calculadas a partir da sua hora de nascimento (ou de uma estimativa, quando não a soubemos) — não são genéricas nem iguais para todos.",
+        "Nada aqui é uma sentença. É um mapa do que o seu perfil sustenta e do que custa — a decisão final é sempre sua.",
+      ];
   return `<div class="caixa-neutra">${paragrafos.map((p) => `<p>${p}</p>`).join("")}</div>`;
 }
 
@@ -1215,6 +1350,12 @@ export function gerarHTMLRelatorio(
   const opcoes = parseLeituraPorOpcao(seccoes[SECCAO_TITULOS.leituraPorOpcao] ?? "");
   const identidade = parseIdentidade(texto);
   const fraseAbertura = parseFraseAbertura(texto);
+  // TAREFA 1 (correcção do especialista) — deriva o registo tu/você
+  // directamente de `dados.ehAdolescente` (já correcto em todos os
+  // chamadores) em vez de um 2º parâmetro booleano que podia divergir
+  // dele — nunca dois flags a dizerem coisas diferentes sobre o mesmo
+  // relatório.
+  const usarTu = dados.ehAdolescente === true;
 
   return `<!doctype html>
 <html lang="pt">
@@ -1273,10 +1414,16 @@ export function gerarHTMLRelatorio(
   strong { color: var(--azul); }
 
   .grafico-legenda { font-size: 12px; color: #6B6B6B; margin-top: 10px; }
+  .grafico-explicacao { font-size: 14px; color: #4A4A4A; margin: 0 0 14px; max-width: 560px; }
   .grafico-wrap { overflow-x: auto; }
   .grafico-3barras { display: flex; justify-content: center; }
   .grafico-centrado { display: flex; justify-content: center; }
   .peso-fraco { color: #6B6B6B; font-size: 12px; }
+  /* TAREFA 3B (correcção do especialista) — legenda linha-a-linha de cada característica do gráfico "O peso de cada característica". */
+  .lista-caracteristicas { margin: 14px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.7; color: #4A4A4A; }
+  .lista-caracteristicas strong { color: var(--azul); }
+  /* TAREFA 3C — diagrama "Onde o perfil tem atrito" (substitui a tabela anterior). */
+  .atrito-wrap { text-align: center; }
 
   .roda-vida-wrap { margin-top: 20px; text-align: center; }
   .roda-vida-titulo { text-align: center; margin-bottom: 2px; }
@@ -1302,12 +1449,15 @@ export function gerarHTMLRelatorio(
   /* Correcção do especialista — secção "Quem é" (TAREFA 3C) */
   .grelha-dons-limitacoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 16px; }
   .card-dom, .card-limitacao { border-radius: 8px; padding: 14px 16px; display: flex; gap: 10px; align-items: flex-start; }
-  .card-dom { background: rgba(79,122,92,0.12); border-left: 3px solid ${VERDE}; }
-  .card-limitacao { background: rgba(245,166,35,0.14); border-left: 3px solid var(--ambar); }
+  .card-dom { background: #e8f5e9; border-left: 3px solid ${VERDE}; }
+  .card-limitacao { background: #fff8e1; border-left: 3px solid var(--ambar); }
   .card-dom-icone, .card-limitacao-icone { flex-shrink: 0; font-size: 15px; font-weight: 700; line-height: 1.5; }
   .card-dom-icone { color: ${VERDE}; }
   .card-limitacao-icone { color: var(--ambar); }
   .card-dom p, .card-limitacao p { margin: 0; font-size: 14px; line-height: 1.6; }
+  .card-dom-titulo, .card-limitacao-titulo { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; margin: 0 0 4px; }
+  .card-dom-titulo { color: ${VERDE}; }
+  .card-limitacao-titulo { color: var(--ambar); }
   .caixa-sintese-quemE { background: var(--azul); color: #FFFFFF; border-radius: 10px; padding: 20px 22px; margin-top: 8px; }
   .caixa-sintese-quemE p { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.6; }
 
@@ -1386,7 +1536,7 @@ export function gerarHTMLRelatorio(
 
   <div class="capa">
     <div class="capa-logo">Vocation<span class="iq">IQ</span></div>
-    <div class="capa-tagline">Descubra a sua área. Antes de escolher.</div>
+    <div class="capa-tagline">${usarTu ? "Descobre a tua área. Antes de escolher." : "Descubra a sua área. Antes de escolher."}</div>
     <hr class="capa-divisor" />
     <p class="capa-nome">${escapeHtml(dados.nome)}</p>
     <p class="capa-data">${dataGeracao}</p>
@@ -1401,11 +1551,11 @@ export function gerarHTMLRelatorio(
       <div class="quadro-dados">
         ${blocoQuemE(dados)}
         ${blocoOQueTrouxe(dados)}
-        ${blocoOQueEsteRelatorioResponde()}
+        ${blocoOQueEsteRelatorioResponde(usarTu)}
       </div>
     </section>
 
-    ${blocoDiagramaIdentidade(pesos, identidade)}
+    ${blocoDiagramaIdentidade(pesos, identidade, usarTu)}
 
     <section class="seccao">
       <h2 class="titulo-seccao">${escapeHtml(SECCAO_TITULOS.abertura)}</h2>
@@ -1419,22 +1569,33 @@ export function gerarHTMLRelatorio(
       ${markdownParaHtml(seccoes[SECCAO_TITULOS.oQueACartaSustenta] ?? "")}
 
       <div class="subseccao">
-        <p class="bloco-titulo">O peso de cada característica</p>
-        <div class="grafico-wrap">${svgGraficoForcas(pesos)}</div>
-        <p class="grafico-legenda">Verde = a carta apoia com força · Âmbar = suporte moderado · Vermelho = suporte fraco</p>
+        <p class="bloco-titulo">${usarTu ? "O peso de cada característica do teu perfil" : "O peso de cada característica do seu perfil"}</p>
+        <p class="grafico-explicacao">${
+          usarTu
+            ? "Este gráfico mostra a força relativa de cada característica do teu perfil. Valores acima de 1,3 indicam onde tens força natural; abaixo de 0,9 indicam onde o esforço vai ser maior."
+            : "Este gráfico mostra a força relativa de cada característica do seu perfil. Valores acima de 1,3 indicam onde tem força natural; abaixo de 0,9 indicam onde o esforço vai ser maior."
+        }</p>
+        <div class="grafico-wrap">${svgGraficoForcas(pesos, usarTu)}</div>
+        <p class="grafico-legenda">Verde = o perfil apoia com força · Âmbar = suporte moderado · Vermelho = suporte fraco</p>
+        <ul class="lista-caracteristicas">
+          ${[...pesos]
+            .sort((a, b) => b.peso - a.peso)
+            .map((p) => `<li><strong>${escapeHtml(caracteristicaPt(p.planeta, usarTu))}</strong> — ${escapeHtml(CARACTERISTICA_EXPLICACAO[p.planeta] ?? "")}</li>`)
+            .join("")}
+        </ul>
       </div>
 
-      <div class="subseccao">${blocoRadarCompetencias(pesos, savPorCasa, axes.regentesCasas)}</div>
+      <div class="subseccao">${blocoRadarCompetencias(pesos, savPorCasa, axes.regentesCasas, usarTu)}</div>
 
-      ${blocoRodaDaVida(savPorCasa, pesos, axes.regentesCasas)}
+      ${blocoRodaDaVida(savPorCasa, pesos, axes.regentesCasas, usarTu)}
 
-      <div class="subseccao">${tabelaTensoes(pesos, axes.earningModeDominante.map((e) => e.house))}</div>
+      <div class="subseccao">${blocoDiagramaAtrito(pesos, identidade)}</div>
     </section>
 
     <section class="seccao">
-      <h2 class="titulo-seccao">Como ganha melhor</h2>
+      <h2 class="titulo-seccao">${usarTu ? "Como ganhas melhor" : "Como ganha melhor"}</h2>
       <div class="grafico-wrap grafico-3barras">${svgModoDeGanho(earningModes, axes.earningModeDominante.map((e) => e.house))}</div>
-      <p class="grafico-legenda" style="text-align:center">A barra em azul é o modo dominante — a forma que a sua carta mais sustenta para gerar valor.</p>
+      <p class="grafico-legenda" style="text-align:center">${usarTu ? "A barra em azul é o modo dominante — a forma que o teu perfil mais sustenta para gerar valor." : "A barra em azul é o modo dominante — a forma que o seu perfil mais sustenta para gerar valor."}</p>
     </section>
 
     <section class="seccao">
@@ -1444,25 +1605,25 @@ export function gerarHTMLRelatorio(
 
     <section class="seccao">
       <h2 class="titulo-seccao">${escapeHtml(SECCAO_TITULOS.candidataForaDaLista)}</h2>
-      ${blocoCandidataForaDaLista(seccoes[SECCAO_TITULOS.candidataForaDaLista] ?? "", catalogoResultados)}
+      ${blocoCandidataForaDaLista(seccoes[SECCAO_TITULOS.candidataForaDaLista] ?? "", catalogoResultados, usarTu)}
     </section>
 
     <section class="seccao">
-      <h2 class="titulo-seccao">O seu calendário</h2>
-      ${blocoOPlano(seccoes[SECCAO_TITULOS.oPlano] ?? "", datas)}
+      <h2 class="titulo-seccao">${usarTu ? "O teu calendário" : "O seu calendário"}</h2>
+      ${blocoOPlano(seccoes[SECCAO_TITULOS.oPlano] ?? "", datas, usarTu)}
     </section>
 
     <section class="seccao anexo">
-      <h2 class="titulo-seccao">Anexo — dados da sua análise</h2>
+      <h2 class="titulo-seccao">${usarTu ? "Anexo — dados da tua análise" : "Anexo — dados da sua análise"}</h2>
 
       <p class="rotulo-pequeno">Como ler este relatório</p>
-      ${seccaoComoLer()}
+      ${seccaoComoLer(usarTu)}
 
       <p class="rotulo-pequeno anexo-espaco">Apoio por área de vida</p>
-      ${tabelaApoioPorAreaDeVida(savPorCasa, pesos, axes)}
+      ${tabelaApoioPorAreaDeVida(savPorCasa, pesos, axes, usarTu)}
 
-      <p class="rotulo-pequeno anexo-espaco">Os seus períodos</p>
-      ${tabelaOsTeusPeriodos(datas)}
+      <p class="rotulo-pequeno anexo-espaco">${usarTu ? "Os teus períodos" : "Os seus períodos"}</p>
+      ${tabelaOsTeusPeriodos(datas, usarTu)}
     </section>
 
   </div>

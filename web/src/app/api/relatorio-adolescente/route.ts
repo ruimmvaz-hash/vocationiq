@@ -172,7 +172,7 @@ export async function POST(request: Request) {
           areaActual: "Ainda a estudar",
           anosExperiencia: intakeAdolescente.situacaoDeclarada,
           opcoesConsideradas: intakeAdolescente.opcoesAdolescente,
-          perguntaEspecifica: intakeAdolescente.opcaoMaisProvavel ? `Qual das opções lhe parece mais provável hoje: ${intakeAdolescente.opcaoMaisProvavel}?` : undefined,
+          perguntaEspecifica: intakeAdolescente.opcaoMaisProvavel ? `Qual das opções te parece mais provável hoje: ${intakeAdolescente.opcaoMaisProvavel}?` : undefined,
         };
     const html = gerarHTMLRelatorio(dadosTemplate, textoFinal, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
 

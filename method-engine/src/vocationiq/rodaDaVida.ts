@@ -41,16 +41,46 @@ function valorDimensao(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], casas: nu
  * uma calculada a partir do SAV, do peso dos planetas presentes, E do
  * peso do regente real da(s) casa(s) clássica(s) que a sustentam. Sempre
  * determinística — nunca o LLM.
+ *
+ * TAREFA 1 (correcção do especialista, ronda de correcção tu/você) — as
+ * `descricao` abaixo estavam escritas só no registo "você" ("a sua
+ * vocação", "o seu mundo"), mas esta função é partilhada com o ramo
+ * adolescente (relatorioTemplate.ts's blocoRodaDaVida, chamado sem
+ * distinguir ramo) — por isso `usarTu` (default `false`, preserva o
+ * comportamento anterior para quem já a chamava, ex.: promptAdulto.ts,
+ * que nem sequer lê `descricao`) escolhe o registo certo. Também renomeia
+ * "carta" → "perfil" (TAREFA 3D, banido do texto do relatório).
  */
-export function computeRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], regentesCasas: Record<number, ClassicalGraha>): DimensaoVida[] {
+export function computeRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], regentesCasas: Record<number, ClassicalGraha>, usarTu = false): DimensaoVida[] {
+  const descricao = usarTu
+    ? {
+        carreira: "A força da tua vocação e direcção profissional",
+        financas: "A tua relação natural com a geração e gestão de recursos",
+        desenvolvimento: "A tua capacidade de crescer e expandir o teu mundo",
+        saude: "A tua reserva de energia e capacidade de acção",
+        relacoes: "A força das tuas ligações e do teu círculo",
+        criatividade: "A tua capacidade de criar e de te expressares",
+        ambiente: "O que o teu perfil pede em termos de base e de raízes",
+        contribuicao: "O que deixas para além de ti — a marca que fica nas pessoas e nos sistemas que tocas",
+      }
+    : {
+        carreira: "A força da sua vocação e direcção profissional",
+        financas: "A sua relação natural com a geração e gestão de recursos",
+        desenvolvimento: "A sua capacidade de crescer e expandir o seu mundo",
+        saude: "A sua reserva de energia e capacidade de acção",
+        relacoes: "A força das suas ligações e do seu círculo",
+        criatividade: "A sua capacidade de criar e de se expressar",
+        ambiente: "O que o seu perfil pede em termos de base e de raízes",
+        contribuicao: "O que deixa para além de si — a marca que fica nas pessoas e nos sistemas que toca",
+      };
   return [
-    { nome: "Carreira / Propósito", descricao: "A força da sua vocação e direcção profissional", valor: valorDimensao(savPorCasa, pesos, [10], regentesCasas) },
-    { nome: "Finanças / Recursos", descricao: "A sua relação natural com a geração e gestão de recursos", valor: valorDimensao(savPorCasa, pesos, [2], regentesCasas) },
-    { nome: "Desenvolvimento Pessoal", rotulo: "Desenv. Pessoal", descricao: "A sua capacidade de crescer e expandir o seu mundo", valor: valorDimensao(savPorCasa, pesos, [1, 9], regentesCasas) },
-    { nome: "Saúde / Energia", descricao: "A sua reserva de energia e capacidade de acção", valor: valorDimensao(savPorCasa, pesos, [6], regentesCasas) },
-    { nome: "Relações / Rede", descricao: "A força das suas ligações e do seu círculo", valor: valorDimensao(savPorCasa, pesos, [7, 11], regentesCasas) },
-    { nome: "Criatividade / Expressão", descricao: "A sua capacidade de criar e de se expressar", valor: valorDimensao(savPorCasa, pesos, [5], regentesCasas) },
-    { nome: "Ambiente / Estilo de vida", descricao: "O que a sua carta pede em termos de base e de raízes", valor: valorDimensao(savPorCasa, pesos, [4], regentesCasas) },
-    { nome: "Contribuição / Impacto", descricao: "O que deixa para além de si — a marca que fica nas pessoas e nos sistemas que toca", valor: valorDimensao(savPorCasa, pesos, [9, 11], regentesCasas) },
+    { nome: "Carreira / Propósito", descricao: descricao.carreira, valor: valorDimensao(savPorCasa, pesos, [10], regentesCasas) },
+    { nome: "Finanças / Recursos", descricao: descricao.financas, valor: valorDimensao(savPorCasa, pesos, [2], regentesCasas) },
+    { nome: "Desenvolvimento Pessoal", rotulo: "Desenv. Pessoal", descricao: descricao.desenvolvimento, valor: valorDimensao(savPorCasa, pesos, [1, 9], regentesCasas) },
+    { nome: "Saúde / Energia", descricao: descricao.saude, valor: valorDimensao(savPorCasa, pesos, [6], regentesCasas) },
+    { nome: "Relações / Rede", descricao: descricao.relacoes, valor: valorDimensao(savPorCasa, pesos, [7, 11], regentesCasas) },
+    { nome: "Criatividade / Expressão", descricao: descricao.criatividade, valor: valorDimensao(savPorCasa, pesos, [5], regentesCasas) },
+    { nome: "Ambiente / Estilo de vida", descricao: descricao.ambiente, valor: valorDimensao(savPorCasa, pesos, [4], regentesCasas) },
+    { nome: "Contribuição / Impacto", descricao: descricao.contribuicao, valor: valorDimensao(savPorCasa, pesos, [9, 11], regentesCasas) },
   ];
 }

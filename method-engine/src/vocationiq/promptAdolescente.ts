@@ -116,7 +116,7 @@ export function construirPromptAdolescente(
           return `- ${o}${maisProvavel ? " (a que a pessoa acha mais provável hoje — trata como a hipótese em teste, não como decisão)" : ""}\n${detalhe}`;
         })
         .join("\n\n")
-    : "(nenhuma opção declarada — escreve a partir do que a carta sustenta em geral e da candidata fora da lista.)";
+    : "(nenhuma opção declarada — escreve a partir do que o perfil sustenta em geral e da candidata fora da lista.)";
 
   const blocoCandidatasCatalogo = ehSeteANove ? blocoCandidatasPorVia(catalogo) : blocoCatalogoVocacional(catalogo, cursosPorDestino);
 
@@ -126,17 +126,17 @@ export function construirPromptAdolescente(
 ### <nome exacto da opção>
 ${MARCADORES.forca} <forte, moderada ou fraca>
 ${MARCADORES.insight} <uma frase que resume a leitura desta opção em menos de 15 palavras>
-1. O que a tua carta sustenta nesta opção — cita pelo menos duas fontes independentes.
-2. O que esta opção te vai pedir mais à frente (o esforço específico DESTA carta, nunca o risco genérico da área).
-3. NESTA FASE (7º-9º ano), a decisão mais importante é a ÁREA — não o curso específico. Usa a via do secundário já listada acima em "Opções em cima da mesa" (nunca um nome de curso, nunca QNQ/duração — isso só se decide 3 anos depois). Formato: "Nesta fase, a decisão mais importante é a via — não o curso específico. A tua carta aponta para [via] porque [razão técnica]."
+1. O que o teu perfil sustenta nesta opção — cita pelo menos duas fontes independentes.
+2. O que esta opção te vai pedir mais à frente (o esforço específico DESTE perfil, nunca o risco genérico da área).
+3. NESTA FASE (7º-9º ano), a decisão mais importante é a ÁREA — não o curso específico. Usa a via do secundário já listada acima em "Opções em cima da mesa" (nunca um nome de curso, nunca QNQ/duração — isso só se decide 3 anos depois). Formato: "Nesta fase, a decisão mais importante é a via — não o curso específico. O teu perfil aponta para [via] porque [razão técnica]."
 4. Onde entra a tua matéria nesta opção — a forma/função, nunca só o sector.`
     : `Para CADA opção em cima da mesa, este formato EXACTO — o cabeçalho "### " e a linha "${MARCADORES.forca}" são obrigatórios:
 
 ### <nome exacto da opção>
 ${MARCADORES.forca} <forte, moderada ou fraca>
 ${MARCADORES.insight} <uma frase que resume a leitura desta opção em menos de 15 palavras>
-1. O que a tua carta sustenta nesta opção — cita pelo menos duas fontes independentes.
-2. O que esta opção te vai pedir na formação (o esforço específico DESTA carta, nunca o risco genérico da área).
+1. O que o teu perfil sustenta nesta opção — cita pelo menos duas fontes independentes.
+2. O que esta opção te vai pedir na formação (o esforço específico DESTE perfil, nunca o risco genérico da área).
 3. O curso concreto e a via de entrada — usa sempre os dados já listados acima em "Opções em cima da mesa" (nome do curso, nível, QNQ, duração, tipo de instituição, entrada no mercado). NUNCA nomeies uma instituição concreta.
 4. Onde entra a tua matéria nesta opção — a forma/função, nunca só o sector.`;
 
@@ -150,19 +150,20 @@ ${MARCADORES.insight} <uma frase que resume a leitura desta opção em menos de 
 És um especialista em orientação vocacional para adolescentes de 15 a 18 anos, ainda sem experiência profissional. Vais escrever um relatório para ${intake.nome} com base nos dados técnicos fornecidos abaixo. Segue as regras rigorosamente:
 - Zero jargão astrológico visível. Nunca escrevas nenhum destes termos (nem sinónimos técnicos óbvios) no texto do relatório — traduz sempre para linguagem simples e concreta:
 ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
-- O sujeito de cada frase é a pessoa, nunca o planeta ou a técnica ("Tens..." / "A tua carta sustenta...", nunca "Marte na casa X indica...").
+- O sujeito de cada frase é a pessoa, nunca o planeta ou a técnica ("Tens..." / "O teu perfil sustenta...", nunca "Marte na casa X indica...").
 - TRATAMENTO: usa "tu" — é a pessoa mais nova a quem este relatório se dirige, não um adulto profissional. Nunca "você".
+- PROIBIDO USAR A PALAVRA "CARTA": nunca escrevas "carta" (nem "mapa astral", "mapa natal") no texto do relatório — usa sempre "perfil". Correcto: "o teu perfil sustenta X". Proibido: "a tua carta sustenta X".
 - TOM: acessível para quem tem 15 a 18 anos e ainda não trabalhou — mais claro e menos abstracto do que um relatório para adultos, NUNCA condescendente ou infantilizado. Sem gíria de coach, sem emojis. Nunca uses "carreira estabelecida", "anos de experiência", ou qualquer referência a um percurso profissional que esta pessoa ainda não teve.
-- PROIBIDO: primeira pessoa do plural ("identificámos", "vimos", "calculámos"). Correcto: "a tua carta mostra", "os dados indicam".
-- Zero fatalismo. Nada é inevitável nem escrito em pedra. Nunca escrevas "deves escolher X" ou qualquer veredicto fechado — apresenta o que a carta sustenta e o que pede, a decisão é sempre da pessoa (e, nesta idade, também da família, mas o relatório fala directamente com ela).
+- PROIBIDO: primeira pessoa do plural ("identificámos", "vimos", "calculámos"). Correcto: "o teu perfil mostra", "os dados indicam".
+- Zero fatalismo. Nada é inevitável nem escrito em pedra. Nunca escrevas "deves escolher X" ou qualquer veredicto fechado — apresenta o que o perfil sustenta e o que pede, a decisão é sempre da pessoa (e, nesta idade, também da família, mas o relatório fala directamente com ela).
 - REGRA ANTI-REPETIÇÃO: cada facto técnico serve de base a UMA frase central em UMA secção. Proibido repetir a mesma conclusão com palavras diferentes em secções diferentes.
 - PLANETAS FRACOS (peso < 0,9): sempre mencionados explicitamente, nunca uma barra vermelha sem texto correspondente.
-- TENSÃO INTERNA: sempre que dois sinais da carta apontam em direcções diferentes, o texto é obrigado a nomeá-lo — nunca escolher só o lado bonito.
+- TENSÃO INTERNA: sempre que dois sinais do perfil apontam em direcções diferentes, o texto é obrigado a nomeá-lo — nunca escolher só o lado bonito.
 - ESCALA DE CONFIANÇA (obrigatória em todo o relatório) — a linguagem tem de bater sempre com o nº de camadas que sustentam a afirmação:
   · CONVERGÊNCIA FORTE (≥4 camadas): linguagem sem reserva.
   · SINAL FORTE (2-3 camadas): confiança, citando as fontes.
   · LEITURA (interpretação sólida, sem convergência mensurável): escreve-se como leitura, nunca como facto.
-  · EM ABERTO (a carta não distingue): diz isso directamente — "a tua carta não distingue entre X e Y, a decisão fica contigo".
+  · EM ABERTO (o perfil não distingue): diz isso directamente — "o teu perfil não distingue entre X e Y, a decisão fica contigo".
 - HORIZONTE TEMPORAL: até 18 meses, afirmações directas. Entre 18 meses e 3 anos, com cautela ("tende a", "favorece"). Mais de 3 anos, só como pano de fundo.
 - A lista de opções entrega-se sempre com a moldura explícita, no início e no fim da secção "Leitura por opção": isto é para reconhecer, não para obedecer — o critério final é o reconhecimento interno do jovem, nunca o documento.
 - Ao nomear um caminho fora do sistema formal, indica sempre a via de sustento associada — nunca "o teu caminho é X" sem dizer o que paga as contas enquanto X cresce.

@@ -33,23 +33,23 @@ FRASE_ABERTURA: A curiosidade que já tens por como as coisas funcionam por dent
 IDENTIDADE: Estratega em formação que pensa em rede antes de decidir
 
 ## Abertura
-João traz três opções em cima da mesa — medicina, engenharia, design — e quer perceber qual delas a tua carta sustenta com mais clareza, sem que isso decida nada por ti.
+João traz três opções em cima da mesa — medicina, engenharia, design — e quer perceber qual delas o teu perfil sustenta com mais clareza, sem que isso decida nada por ti.
 
 ## Quem é
 DOM: Tens uma capacidade natural para estruturar informação e ver o sistema todo antes de te comprometeres com uma parte isolada dele — isso vai ser uma vantagem real em qualquer percurso académico que exija organização e método.
 DOM: Há uma harmonia natural entre o que sentes e a forma como o comunicas — quando algo te move, raramente tens dificuldade em pô-lo em palavras.
 LIMITAÇÃO: A fluência de comunicação oral em situações de exposição vai precisar de atenção — não é natural, mas é treinável, e a maioria dos cursos que estás a considerar tem componentes práticas que ajudam a desenvolvê-la.
 ELEMENTOS E MODALIDADES: a tua forma de processar o mundo tende para o pensamento e a comunicação, mais do que para a acção instintiva — isso explica porque preferes entender antes de agir.
-A tua carta sustenta genuinamente a solidez que se prova com o tempo, não o reconhecimento imediato.
+O teu perfil sustenta genuinamente a solidez que se prova com o tempo, não o reconhecimento imediato.
 SÍNTESE: És alguém talhado para pensar em rede antes de decidir, ainda a construir a confiança de comunicar essa força em voz alta.
 
-## O que a carta sustenta
-A tua carta aponta para uma área onde o que fazes paga directamente — sem precisares de um intermediário entre o que sabes fazer e o valor que isso gera.
+## O que o perfil sustenta
+O teu perfil aponta para uma área onde o que fazes paga directamente — sem precisares de um intermediário entre o que sabes fazer e o valor que isso gera.
 
 ## Leitura por opção
 ### medicina
 FORÇA: moderada
-INSIGHT: A carta sustenta esta opção como a que achas mais provável hoje — vale a pena testá-la com clareza.
+INSIGHT: O perfil sustenta esta opção como a que achas mais provável hoje — vale a pena testá-la com clareza.
 1. Duas fontes independentes tocam esta área, mas sem convergência forte.
 2. Vai pedir-te um percurso longo de formação antes de trabalhares na área.
 3. Curso: Medicina (mestrado, QNQ 7, 5-6 anos se integrado, Universidade ou Politécnico). Entrada: exame nacional de acesso comum, depois de um ano de internato geral.
@@ -57,8 +57,8 @@ INSIGHT: A carta sustenta esta opção como a que achas mais provável hoje — 
 
 ### engenharia
 FORÇA: moderada
-INSIGHT: Uma opção ampla — a carta ainda não distingue qual ramo específico.
-1. A tua carta sustenta o pensamento estruturado que a engenharia pede, sem apontar um ramo específico com força.
+INSIGHT: Uma opção ampla — o perfil ainda não distingue qual ramo específico.
+1. O teu perfil sustenta o pensamento estruturado que a engenharia pede, sem apontar um ramo específico com força.
 2. Vai pedir-te escolher um ramo concreto antes de avançar.
 3. Curso: Engenharia Civil, Engenharia Informática ou Engenharia Mecânica (licenciatura ou mestrado, 3-5 anos, Universidade ou Politécnico). A inscrição profissional só é obrigatória para actos regulados — muitas funções técnicas não a exigem.
 4. A tua matéria entraria pela estrutura, não pela execução manual.
@@ -69,11 +69,11 @@ INSIGHT: Um sinal mais fraco do que as outras duas opções.
 1. Não há convergência forte a sustentar esta opção como destino de fundo.
 2. Vai custar-te mais do que nas outras opções construir uma base técnica sólida.
 3. Curso: Design de Comunicação (licenciatura, QNQ 6, 3-4 anos, Universidade ou Politécnico). Não há certificação profissional obrigatória — a entrada faz-se por portefólio.
-4. A tua matéria entraria pela estética, um território mais fraco na tua carta.
+4. A tua matéria entraria pela estética, um território mais fraco no teu perfil.
 
 ## Candidata fora da lista
 CANDIDATA: Direito
-Quatro camadas independentes convergem aqui, incluindo o planeta mais forte da tua carta e um sinal próprio da área de Direito. -- Via concreta para Direito --: licenciatura de 5-6 anos incluindo estágio profissional; a certificação exige exame de acesso à advocacia, através da ordem profissional da área.
+Quatro camadas independentes convergem aqui, incluindo o planeta mais forte do teu perfil e um sinal próprio da área de Direito. -- Via concreta para Direito --: licenciatura de 5-6 anos incluindo estágio profissional; a certificação exige exame de acesso à advocacia, através da ordem profissional da área.
 
 CANDIDATA: Ciências da Educação
 A mesma convergência do planeta mais forte, ligada aqui a sinais próprios do ensino. -- Via concreta para Ciências da Educação --: licenciatura de 3-4 anos para funções fora da sala de aula; para dar aulas, precisas de mais um mestrado em ensino.
@@ -174,7 +174,7 @@ async function main() {
     areaActual: "Ainda a estudar",
     anosExperiencia: intakeAdolescente.situacaoDeclarada,
     opcoesConsideradas: intakeAdolescente.opcoesAdolescente,
-    perguntaEspecifica: intakeAdolescente.opcaoMaisProvavel ? `Qual das opções lhe parece mais provável hoje: ${intakeAdolescente.opcaoMaisProvavel}?` : undefined,
+    perguntaEspecifica: intakeAdolescente.opcaoMaisProvavel ? `Qual das opções te parece mais provável hoje: ${intakeAdolescente.opcaoMaisProvavel}?` : undefined,
   };
   const html = gerarHTMLRelatorio(dadosTemplate, TEXTO_EXEMPLO, dados.axes, dados.pesosPlanetas, dados.axes.earningModeAll, dados.datas, dados.savPorCasa, dados.catalogoResultados);
 

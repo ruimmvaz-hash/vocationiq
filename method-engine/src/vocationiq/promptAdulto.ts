@@ -68,9 +68,13 @@ export interface DadosDatas {
  */
 export const SECCAO_TITULOS = {
   abertura: "Abertura",
-  /** Correcção do especialista (nova secção) — retrato de personalidade, entre "Abertura" e "O que a carta sustenta". Ver TAREFA 3 no prompt abaixo. */
+  /** Correcção do especialista (nova secção) — retrato de personalidade, entre "Abertura" e "O que o perfil sustenta". Ver TAREFA 3 no prompt abaixo. */
   quemE: "Quem é",
-  oQueACartaSustenta: "O que a carta sustenta",
+  // TAREFA 3D (correcção do especialista) — "carta" está agora proibido em
+  // todo o texto do relatório (ver PROIBIDO USAR A PALAVRA "CARTA" no
+  // prompt abaixo); este título é escrito literalmente pelo LLM como
+  // cabeçalho "## ", por isso tinha de mudar aqui também, não só na prosa.
+  oQueACartaSustenta: "O que o perfil sustenta",
   leituraPorOpcao: "Leitura por opção",
   candidataForaDaLista: "Candidata fora da lista",
   oPlano: "O plano",
@@ -256,7 +260,7 @@ function blocoAbertura(intake: VocationiqIntakeAdulto): string {
 export function blocoEixoMissao(axes: VocationIQAxes): string {
   const m = axes.missionAxis;
   return [
-    `Atmakaraka (o planeta que representa a vontade/missão mais forte da pessoa nesta carta): ${planetaPt(m.atmakaraka)}, na casa ${m.akHouse}, em ${m.akSign}, estado ${ESTADO_PT[m.akDignity ?? "Neutral"] ?? m.akDignity}.`,
+    `Atmakaraka (o planeta que representa a vontade/missão mais forte da pessoa neste perfil): ${planetaPt(m.atmakaraka)}, na casa ${m.akHouse}, em ${m.akSign}, estado ${ESTADO_PT[m.akDignity ?? "Neutral"] ?? m.akDignity}.`,
     `Karakamsha (onde essa missão aterra em termos de expressão prática, lido no D9): signo ${m.karakamshaSign}, casa ${m.karakamshaHouse} a partir do Ascendente.`,
     `Amatyakaraka (o planeta que comanda a ferramenta de trabalho do dia a dia): ${planetaPt(axes.amatyakaraka)}.`,
   ].join("\n");
@@ -278,14 +282,14 @@ export function blocoModoDeGanho(axes: VocationIQAxes): string {
   // nunca escolher uma só para simplificar.
   const linhaDominante =
     dominantes.length > 1
-      ? `Modo de Ganho CO-DOMINANTE (empate real, mesma pontuação e mesmo nº de camadas convergentes — nunca escolhas só um dos dois): casa ${dominantes[0].house} (${ROTULO_HUMANO[dominantes[0].house]}) e casa ${dominantes[1].house} (${ROTULO_HUMANO[dominantes[1].house]}), ambas com pontuação ${dominantes[0].score}. Usa esta frase, ou uma equivalente, ao escrever sobre o Modo de Ganho: "Modo de Ganho co-dominante: casa ${dominantes[0].house} e casa ${dominantes[1].house} — a carta sustenta os dois com igual força."`
+      ? `Modo de Ganho CO-DOMINANTE (empate real, mesma pontuação e mesmo nº de camadas convergentes — nunca escolhas só um dos dois): casa ${dominantes[0].house} (${ROTULO_HUMANO[dominantes[0].house]}) e casa ${dominantes[1].house} (${ROTULO_HUMANO[dominantes[1].house]}), ambas com pontuação ${dominantes[0].score}. Usa esta frase, ou uma equivalente, ao escrever sobre o Modo de Ganho: "Modo de Ganho co-dominante: casa ${dominantes[0].house} e casa ${dominantes[1].house} — o perfil sustenta os dois com igual força."`
       : `Modo de Ganho dominante: casa ${dominantes[0].house} (${ROTULO_HUMANO[dominantes[0].house]}), pontuação ${dominantes[0].score}.`;
   const linhas = [
     linhaDominante,
     `Sinais que sustentam ${dominantes.length > 1 ? "estas casas" : "esta casa"}: ${dominantes
       .map((d) => `casa ${d.house}: ${d.signals.length ? d.signals.join("; ") : "nenhum sinal directo — só a dignidade base do regente"}`)
       .join(" | ")}`,
-    `As três Artha Trikonas, por ordem de força nesta carta: ${axes.earningModeAll.map((e) => `casa ${e.house} (pontuação ${e.score})`).join(", ")}.`,
+    `As três Artha Trikonas, por ordem de força neste perfil: ${axes.earningModeAll.map((e) => `casa ${e.house} (pontuação ${e.score})`).join(", ")}.`,
   ];
   return linhas.join("\n");
 }
@@ -304,7 +308,7 @@ export function blocoPesos(pesos: PesoPlaneta[]): string {
     .slice()
     .sort((a, b) => b.peso - a.peso)
     .map((p) => {
-      const base = `${planetaPt(p.planeta)}: casa ${p.casa} (${p.signo}), estado ${ESTADO_PT[p.estado] ?? p.estado}, SAV da casa ${p.savCasa} (média da carta ${p.savMedia.toFixed(1)}) → peso ${p.peso.toFixed(3)}.`;
+      const base = `${planetaPt(p.planeta)}: casa ${p.casa} (${p.signo}), estado ${ESTADO_PT[p.estado] ?? p.estado}, SAV da casa ${p.savCasa} (média do perfil ${p.savMedia.toFixed(1)}) → peso ${p.peso.toFixed(3)}.`;
       return p.notaCancelamento ? `${base} NOTA: ${p.notaCancelamento}.` : base;
     });
   return linhas.join("\n");
@@ -368,7 +372,7 @@ export function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional, c
   return [
     catalogo.notaAreaGenerica ? `NOTA: ${catalogo.notaAreaGenerica}.` : null,
     `Derivadas da área actual:\n${listar(catalogo.destinosDeAreaActual)}`,
-    `Alternativas pela carta (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações, eixo do rendimento):\n${listar(catalogo.destinosAlternativos)}`,
+    `Alternativas pelo perfil (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações, eixo do rendimento):\n${listar(catalogo.destinosAlternativos)}`,
     `Candidatas com ≥4 convergências (inclui sempre o planeta de maior peso, até 3, em pé de igualdade — nunca ranking):\n${candidatasTexto}`,
     viasConcretasCandidatas || null,
     catalogo.notaEixoDoRendimento
@@ -407,7 +411,7 @@ export function blocoElementosModalidades(perfil: PerfilElementosModalidades): s
 
 /** TAREFA 4 (correcção do especialista) — traduz `computeAspectosPessoais` para o formato de dados técnicos pedido. */
 export function blocoAspectosPessoais(aspectos: AspectoPessoal[]): string {
-  if (!aspectos.length) return "(nenhum aspecto relevante entre os 5 planetas pessoais nesta carta)";
+  if (!aspectos.length) return "(nenhum aspecto relevante entre os 5 planetas pessoais neste perfil)";
   return aspectos.map((a) => `${planetaPt(a.planetaA)} ${ASPECTO_PT[a.aspecto]} ${planetaPt(a.planetaB)}: ${a.significado}`).join("\n");
 }
 
@@ -429,31 +433,32 @@ export function construirPromptAdulto(
 És um especialista em análise vocacional. Vais escrever um relatório personalizado para ${intake.nome} com base nos dados técnicos fornecidos abaixo. Segue as regras rigorosamente:
 - Zero jargão astrológico visível. Nunca escrevas nenhum destes termos (nem sinónimos técnicos óbvios) no texto do relatório — traduz sempre para linguagem simples e concreta:
 ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
-- O sujeito de cada frase é a pessoa, nunca o planeta ou a técnica ("Você tem..." / "A sua carta sustenta...", nunca "Marte na casa X indica...").
-- REGRA CRÍTICA DE TRATAMENTO: Usa SEMPRE "você" — nunca "tu", nunca "teu/tua", nunca "tens". Esta regra não tem excepção. Exemplos correctos: "você tem", "o seu perfil", "a sua carta", "para si". Exemplos proibidos: "tu tens", "o teu perfil", "a tua carta", "para ti".
-- PROIBIDO: primeira pessoa do plural. Nunca escrever "identificámos", "vimos", "calculámos", "sabemos". O relatório fala só da pessoa. Correcto: "a carta mostra", "os dados indicam". Proibido: "identificámos", "analisámos", "concluímos".
+- O sujeito de cada frase é a pessoa, nunca o planeta ou a técnica ("Você tem..." / "O seu perfil sustenta...", nunca "Marte na casa X indica...").
+- REGRA CRÍTICA DE TRATAMENTO: Usa SEMPRE "você" — nunca "tu", nunca "teu/tua", nunca "tens". Esta regra não tem excepção. Exemplos correctos: "você tem", "o seu perfil", "para si". Exemplos proibidos: "tu tens", "o teu perfil", "para ti".
+- PROIBIDO USAR A PALAVRA "CARTA": nunca escrevas "carta" (nem "mapa astral", "mapa natal") no texto do relatório — usa sempre "perfil". Correcto: "o seu perfil sustenta X". Proibido: "a sua carta sustenta X".
+- PROIBIDO: primeira pessoa do plural. Nunca escrever "identificámos", "vimos", "calculámos", "sabemos". O relatório fala só da pessoa. Correcto: "o perfil mostra", "os dados indicam". Proibido: "identificámos", "analisámos", "concluímos".
 - Zero fatalismo. Nada é inevitável nem escrito em pedra.
-- Nunca escrevas "deves ir para X" ou qualquer veredicto fechado. Apresenta o que a carta sustenta e o que custa — a decisão é sempre da pessoa.
+- Nunca escrevas "deves ir para X" ou qualquer veredicto fechado. Apresenta o que o perfil sustenta e o que custa — a decisão é sempre da pessoa.
 - Nunca uses o padrão genérico de coaching (identificar 3 exemplos, embrulhar num método, oferecer um serviço) sem ligar explicitamente a uma camada técnica calculada abaixo. Cada frase de conselho tem de ser rastreável a um facto técnico específico desta lista — nunca a generalidades sobre a profissão.
-- REGRA ANTI-REPETIÇÃO (reforçada): Cada facto técnico serve de base a UMA frase central em UMA secção. Proibido repetir a MESMA CONCLUSÃO com palavras diferentes — mesmo que a frase literal seja nova. Se "você ganha pela voz" aparece em "O que a carta sustenta", não pode voltar a ser demonstrado em "Leitura por opção" nem em "Candidata fora da lista". Cada secção só pode usar um facto técnico como prova se acrescenta algo genuinamente novo — um custo, uma tensão, uma especificidade. Se não acrescenta nada novo, a secção é curta e remete, nunca repete.
-- PLANETAS FRACOS (peso < 0,9): Devem ser mencionados explicitamente — nunca deixar uma barra vermelha na tabela sem texto correspondente. Se o planeta mais ligado à comunicação (Mercúrio) tem peso fraco, e a tese central é "você ganha pela voz", essa tensão TEM de ser nomeada. Não é contradição — é honestidade. Exemplo correcto: "A sua estrutura aponta para comunicação, mas o canal comunicativo em si é o elo mais fraco da carta — o que significa que esta competência precisa de ser construída, não é natural."
-- ÁREA ACTUAL DA PESSOA: Nunca tratar como dado morto. É o ponto de partida obrigatório de qualquer leitura. Perguntas que o texto deve responder: o que na área actual já serve o que a carta pede? O que na área actual está a trabalhar contra? Que ponte existe entre o que já é e o que quer ser? A transição começa sempre de onde a pessoa está — nunca de zero. Quando a pessoa tem 5+ anos numa área, essa experiência é um activo real — não um obstáculo a ignorar. Nunca tratar a área actual como ponto de partida neutro — é capital acumulado, positivo ou negativo.
-- IDEIA CONCRETA (ideiaConcreta): Quando a pessoa partilhou uma ideia concreta, usá-la para desdobrar a opção declarada — nunca tratar como contexto genérico. Se disse "consultoria SAP", o texto deve diferenciar: a carta sustenta mais "SAP" ou mais "consultoria"? Sustenta o modelo independente ou o modelo de empresa? A ideia concreta é a oportunidade de ser específico — nunca desperdiçar.
-- TENSÃO INTERNA: Sempre que dois sinais da carta apontam em direcções diferentes, o texto É OBRIGADO a nomeá-lo. Nunca escolher só o lado bonito. Exemplos de tensões reais: tese central em "voz/comunicação" mas Mercúrio fraco — nomear. Modo de Ganho aponta para liderança pública mas Montra de Mercado aponta para bastidores — nomear. Missão de longo prazo mas período actual pede pausa — nomear. A tensão é informação, não ruído.
-- O RELATÓRIO NÃO É PARA CONFIRMAR O QUE A PESSOA JÁ PENSA: é para mostrar o que a carta vê — mesmo que contradiga as opções declaradas. Se a carta aponta claramente para uma direcção que a pessoa não declarou, o motor tem de a nomear — não esperar que ela apareça nas opções. A "Candidata fora da lista" não é uma secção opcional — é o momento onde o relatório tem mais valor único. Se os dados convergem em 4 camadas para algo que a pessoa não viu, dizer isso com clareza é o trabalho.
+- REGRA ANTI-REPETIÇÃO (reforçada): Cada facto técnico serve de base a UMA frase central em UMA secção. Proibido repetir a MESMA CONCLUSÃO com palavras diferentes — mesmo que a frase literal seja nova. Se "você ganha pela voz" aparece em "O que o perfil sustenta", não pode voltar a ser demonstrado em "Leitura por opção" nem em "Candidata fora da lista". Cada secção só pode usar um facto técnico como prova se acrescenta algo genuinamente novo — um custo, uma tensão, uma especificidade. Se não acrescenta nada novo, a secção é curta e remete, nunca repete.
+- PLANETAS FRACOS (peso < 0,9): Devem ser mencionados explicitamente — nunca deixar uma barra vermelha na tabela sem texto correspondente. Se o planeta mais ligado à comunicação (Mercúrio) tem peso fraco, e a tese central é "você ganha pela voz", essa tensão TEM de ser nomeada. Não é contradição — é honestidade. Exemplo correcto: "A sua estrutura aponta para comunicação, mas o canal comunicativo em si é o elo mais fraco do perfil — o que significa que esta competência precisa de ser construída, não é natural."
+- ÁREA ACTUAL DA PESSOA: Nunca tratar como dado morto. É o ponto de partida obrigatório de qualquer leitura. Perguntas que o texto deve responder: o que na área actual já serve o que o perfil pede? O que na área actual está a trabalhar contra? Que ponte existe entre o que já é e o que quer ser? A transição começa sempre de onde a pessoa está — nunca de zero. Quando a pessoa tem 5+ anos numa área, essa experiência é um activo real — não um obstáculo a ignorar. Nunca tratar a área actual como ponto de partida neutro — é capital acumulado, positivo ou negativo.
+- IDEIA CONCRETA (ideiaConcreta): Quando a pessoa partilhou uma ideia concreta, usá-la para desdobrar a opção declarada — nunca tratar como contexto genérico. Se disse "consultoria SAP", o texto deve diferenciar: o perfil sustenta mais "SAP" ou mais "consultoria"? Sustenta o modelo independente ou o modelo de empresa? A ideia concreta é a oportunidade de ser específico — nunca desperdiçar.
+- TENSÃO INTERNA: Sempre que dois sinais do perfil apontam em direcções diferentes, o texto É OBRIGADO a nomeá-lo. Nunca escolher só o lado bonito. Exemplos de tensões reais: tese central em "voz/comunicação" mas Mercúrio fraco — nomear. Modo de Ganho aponta para liderança pública mas Montra de Mercado aponta para bastidores — nomear. Missão de longo prazo mas período actual pede pausa — nomear. A tensão é informação, não ruído.
+- O RELATÓRIO NÃO É PARA CONFIRMAR O QUE A PESSOA JÁ PENSA: é para mostrar o que o perfil vê — mesmo que contradiga as opções declaradas. Se o perfil aponta claramente para uma direcção que a pessoa não declarou, o motor tem de a nomear — não esperar que ela apareça nas opções. A "Candidata fora da lista" não é uma secção opcional — é o momento onde o relatório tem mais valor único. Se os dados convergem em 4 camadas para algo que a pessoa não viu, dizer isso com clareza é o trabalho.
 - REGRA CRÍTICA — LEITURA CONJUNTA: Nunca ler um eixo isolado. Ordem obrigatória: 1. Atmakaraka — o que a pessoa é por dentro. 2. Karakamsha (signo + casa JUNTOS, sempre) — onde isso aterra. 3. Modo de Ganho — por onde entra o dinheiro, testado contra 1+2. 4. Planetas fracos — explicam o passado, apontam onde falta apoio. Só depois disto testado e amarrado é que se avalia a opção declarada.
 - KARAKAMSHA — NUNCA ISOLADO: Atmakaraka casa 10 + Karakamsha casa 4 NÃO é contradição. É "autoridade que se constrói a partir de base própria, nunca dentro de estrutura alheia." Lidos juntos, os dois eixos dizem a mesma coisa com instrumentos diferentes.
-- PLANETA FRACO + ÁREA ACTUAL: Se a área actual é governada por um planeta fraco (peso < 0,9), isso explica o porquê da insatisfação com precisão. É obrigatório nomear. EXEMPLO: Vénus fraca + estética = "passou anos no campo do planeta mais fraco da sua carta — explica o desgaste, não invalida o talento."
-- OPÇÃO DECLARADA — TRADUZIR SEMPRE: A opção que a pessoa declarou é o vocabulário que tinha à mão. SEMPRE traduzir: o que quis dizer, nos termos da carta? "Quero ser consultora SAP" pode significar "quero ser autoridade que ensina e aconselha com nome próprio" — testar essa tradução, nunca aceitar a opção ao pé da letra.
+- PLANETA FRACO + ÁREA ACTUAL: Se a área actual é governada por um planeta fraco (peso < 0,9), isso explica o porquê da insatisfação com precisão. É obrigatório nomear. EXEMPLO: Vénus fraca + estética = "passou anos no campo do planeta mais fraco do seu perfil — explica o desgaste, não invalida o talento."
+- OPÇÃO DECLARADA — TRADUZIR SEMPRE: A opção que a pessoa declarou é o vocabulário que tinha à mão. SEMPRE traduzir: o que quis dizer, nos termos do perfil? "Quero ser consultora SAP" pode significar "quero ser autoridade que ensina e aconselha com nome próprio" — testar essa tradução, nunca aceitar a opção ao pé da letra.
 - MAHADASHA — CLASSIFICAÇÃO E REGRA: O tom da Mahadasha actual ABRE a secção do plano, antes de qualquer data ou passo. Classificação: Ketu = dissolução/fecho ("prepare e feche, não colha"); Vénus = expansão/prazer/colheita ("avance, o ciclo favorece"); Sol = afirmação/autoridade ("afirme e visibilize"); Lua = emoção/fluxo/intuição ("siga o que sente, não o plano"); Marte = acção/lançamento/conflito ("avance com força e decisão"); Rahu = ambição/disrupção/ilusão ("risco real, oportunidade real"); Júpiter = crescimento/sabedoria/expansão ("expanda com intenção"); Saturno = estrutura/colheita lenta/responsabilidade ("construa devagar, vai durar"); Mercúrio = comunicação/adaptação/aprendizagem ("aprenda e comunique"). A colheita a sério só abre depois do fim da Mahadasha actual — sempre nomear essa data.
 - MARCADORES OBRIGATÓRIOS (recapitulação — cada um já está descrito no lugar exacto onde vai abaixo, mas fica aqui reunido para nunca esquecer nenhum): antes de ${MARCADORES.identidade} "${MARCADORES.fraseAbertura} <frase de 10-15 palavras, poderosa e específica>"; dentro de cada bloco "### <opção>", antes do ponto 1: "${MARCADORES.insight} <frase de síntese em menos de 15 palavras>". São machine-readable e obrigatórios — nunca omitir.
 - COERÊNCIA COM OS VISUAIS: o relatório tem elementos visuais gerados automaticamente — gráfico de forças (7 planetas com pesos calculados), radar de competências (6 eixos), Roda da Vida (8 dimensões), tabela de tensões. O texto DEVE referenciar estes visuais quando relevante ("Como mostra o gráfico de forças...", "A sua roda de vida revela...", "O radar de competências confirma..."). NUNCA contradizer o que os visuais mostram — se um visual mostra um valor fraco, o texto não pode dizer que é forte.
-- VALOR ALTO NUM ELEMENTO VISUAL NÃO É O TEMA CENTRAL DA VIDA (correcção do especialista): uma casa com valor alto no gráfico (Roda da Vida, Anexo) pode reflectir onde o planeta mais forte da carta está fisicamente posicionado — não necessariamente o tema mais importante da vida da pessoa. O tema central é determinado pelo Eixo da Missão e pelo Modo de Ganho, nunca pelo valor mais alto da roda. Exemplo: se "Saúde/Energia" ou "Como lida com obstáculos e o trabalho do dia a dia" (casa 6) aparecer com o valor mais alto de toda a Roda da Vida só porque o planeta mais forte da carta está fisicamente aí, o texto nunca pode tratar essa área como o propósito central da pessoa — referencia o valor (é obrigatório, ver regra dos extremos), mas contextualiza-o como "onde a força física da carta se concentra", nunca como substituto do Eixo da Missão/Modo de Ganho ao decidir do que este relatório trata.
+- VALOR ALTO NUM ELEMENTO VISUAL NÃO É O TEMA CENTRAL DA VIDA (correcção do especialista): uma casa com valor alto no gráfico (Roda da Vida, Anexo) pode reflectir onde o planeta mais forte do perfil está fisicamente posicionado — não necessariamente o tema mais importante da vida da pessoa. O tema central é determinado pelo Eixo da Missão e pelo Modo de Ganho, nunca pelo valor mais alto da roda. Exemplo: se "Saúde/Energia" ou "Como lida com obstáculos e o trabalho do dia a dia" (casa 6) aparecer com o valor mais alto de toda a Roda da Vida só porque o planeta mais forte do perfil está fisicamente aí, o texto nunca pode tratar essa área como o propósito central da pessoa — referencia o valor (é obrigatório, ver regra dos extremos), mas contextualiza-o como "onde a força física do perfil se concentra", nunca como substituto do Eixo da Missão/Modo de Ganho ao decidir do que este relatório trata.
 - ESCALA DE CONFIANÇA (correcção do especialista, obrigatória em todo o relatório) — a linguagem usada tem de bater sempre com o nº de camadas que sustentam a afirmação, nunca mais confiante do que os dados permitem:
-  · CONVERGÊNCIA FORTE (≥4 camadas): linguagem sem reserva. Ex.: "A sua carta sustenta X com clareza."
+  · CONVERGÊNCIA FORTE (≥4 camadas): linguagem sem reserva. Ex.: "O seu perfil sustenta X com clareza."
   · SINAL FORTE (2-3 camadas): confiança, citando as fontes. Ex.: "Dois sinais independentes apontam para X — o Eixo da Missão e o Modo de Ganho convergem aqui."
-  · LEITURA (interpretação sólida, sem convergência mensurável): escreve-se como leitura, nunca como facto. Ex.: "Uma leitura possível desta carta é X — não como facto, mas como direcção."
-  · EM ABERTO (a carta não distingue): diz isso directamente. Ex.: "A carta não distingue entre X e Y — a decisão fica com você."
+  · LEITURA (interpretação sólida, sem convergência mensurável): escreve-se como leitura, nunca como facto. Ex.: "Uma leitura possível deste perfil é X — não como facto, mas como direcção."
+  · EM ABERTO (o perfil não distingue): diz isso directamente. Ex.: "O perfil não distingue entre X e Y — a decisão fica com você."
   Proibido usar linguagem de "Convergência forte" para algo que só tem um "Sinal forte" — o nível de confiança da frase tem de corresponder exactamente ao nível de convergência que a sustenta.
 - Tom adulto, directo, sem gíria de coach, sem emojis.
 
@@ -479,11 +484,11 @@ ${blocoModoDeGanho(axes)}
 -- Montra de Mercado --
 ${blocoMontraMercado(axes)}
 
--- Peso de cada planeta (estado × SAV da casa / média da carta) --
+-- Peso de cada planeta (estado × SAV da casa / média do perfil) --
 ${blocoPesos(pesosPlanetas)}
 
 Usa estes pesos para calibrar a força de cada afirmação:
-· Peso ≥ 1,3: a carta apoia com força — podes afirmar com clareza
+· Peso ≥ 1,3: o perfil apoia com força — podes afirmar com clareza
 · Peso 0,9 a 1,3: suporte moderado — afirma mas sem excesso de confiança
 · Peso < 0,9: suporte fraco — diz isso com clareza, nunca escrevas com a mesma confiança sobre um planeta de peso 0,58 e um de 1,87
 Nunca trates todos os planetas como equivalentes.
@@ -507,18 +512,18 @@ ${blocoAspectosPessoais(aspectosPessoais)}
 -- Opções declaradas --
 ${
   candidatas.length
-    ? `A pessoa declarou estas opções (avalia TODAS, mesmo as que a carta sustenta fracamente):\n${candidatas.map((c) => `- ${c}`).join("\n")}`
-    : `A pessoa NÃO declarou opções concretas${intake.areasDestinoIncluiAindaNaoSei ? ' (escolheu "ainda não sei")' : ""}. Deriva até 3 candidatas plausíveis a partir do texto livre abaixo — se não conseguires nenhuma candidata clara, NÃO bloqueies o relatório: escreve a Secção 2 (o que a carta sustenta, em geral) e resolve o relatório inteiro pela Secção 4 (candidata fora da lista). Texto livre disponível:`
+    ? `A pessoa declarou estas opções (avalia TODAS, mesmo as que o perfil sustenta fracamente):\n${candidatas.map((c) => `- ${c}`).join("\n")}`
+    : `A pessoa NÃO declarou opções concretas${intake.areasDestinoIncluiAindaNaoSei ? ' (escolheu "ainda não sei")' : ""}. Deriva até 3 candidatas plausíveis a partir do texto livre abaixo — se não conseguires nenhuma candidata clara, NÃO bloqueies o relatório: escreve a Secção 2 (o que o perfil sustenta, em geral) e resolve o relatório inteiro pela Secção 4 (candidata fora da lista). Texto livre disponível:`
 }
-${!candidatas.length ? [intake.paraOndeQuerIr && `"Para onde queres ir": ${normalizarTextoLivre(intake.paraOndeQuerIr)}`, intake.perguntaEspecifica && `Pergunta específica: ${normalizarTextoLivre(intake.perguntaEspecifica)}`, intake.ideiaConcreta && `Ideia concreta: ${normalizarTextoLivre(intake.ideiaConcreta)}`].filter(Boolean).join("\n") || "(nenhum texto livre preenchido — escreve só a partir do que a carta sustenta em geral.)" : ""}
-${intake.tipoMudanca.length ? `\nTipo de mudança que a pessoa diz querer (usa para calibrar a parte 4 de cada leitura — ex.: se inclui trabalhar por conta própria ou abrir negócio, responde explicitamente se a carta sustenta trabalho a solo nessa opção): ${intake.tipoMudanca.join(", ")}.` : ""}
+${!candidatas.length ? [intake.paraOndeQuerIr && `"Para onde queres ir": ${normalizarTextoLivre(intake.paraOndeQuerIr)}`, intake.perguntaEspecifica && `Pergunta específica: ${normalizarTextoLivre(intake.perguntaEspecifica)}`, intake.ideiaConcreta && `Ideia concreta: ${normalizarTextoLivre(intake.ideiaConcreta)}`].filter(Boolean).join("\n") || "(nenhum texto livre preenchido — escreve só a partir do que o perfil sustenta em geral.)" : ""}
+${intake.tipoMudanca.length ? `\nTipo de mudança que a pessoa diz querer (usa para calibrar a parte 4 de cada leitura — ex.: se inclui trabalhar por conta própria ou abrir negócio, responde explicitamente se o perfil sustenta trabalho a solo nessa opção): ${intake.tipoMudanca.join(", ")}.` : ""}
 ${intake.ideiaConcreta && candidatas.length ? `\nIdeia concreta partilhada (contexto adicional, não é uma opção à parte): ${normalizarTextoLivre(intake.ideiaConcreta)}` : ""}
 
 === ESTRUTURA DO RELATÓRIO — exactamente estas 5 secções, por esta ordem ===
 
-ANTES de ${MARCADORES.identidade}, escreve, numa linha própria: "${MARCADORES.fraseAbertura} " seguido de uma frase de 10 a 15 palavras que captura a essência desta carta — poderosa, específica, nunca genérica. Não é um resumo. É a frase que a pessoa vai lembrar deste relatório. Exemplos do formato: "Saturno exaltado não pede que seja reconhecida — pede que construa algo que dure.", "A voz que ensina vale mais do que o cargo que ostenta." Proibido: clichés de coaching, frases genéricas de auto-ajuda. Este marcador é obrigatório e machine-readable, não o omitas.
+ANTES de ${MARCADORES.identidade}, escreve, numa linha própria: "${MARCADORES.fraseAbertura} " seguido de uma frase de 10 a 15 palavras que captura a essência deste perfil — poderosa, específica, nunca genérica. Não é um resumo. É a frase que a pessoa vai lembrar deste relatório. Exemplos do formato: "Saturno exaltado não pede que seja reconhecida — pede que construa algo que dure.", "A voz que ensina vale mais do que o cargo que ostenta." Proibido: clichés de coaching, frases genéricas de auto-ajuda. Este marcador é obrigatório e machine-readable, não o omitas.
 
-DEPOIS de ${MARCADORES.fraseAbertura}, escreve, numa linha própria: "${MARCADORES.identidade} " seguido de uma frase de 8 a 12 palavras que descreve o que esta pessoa foi feita para ser — não o que perguntou, não a sua opção, mas a sua natureza estrutural. Deve ser específica desta carta, nunca genérica. Exemplos do formato: "Autoridade que forma e transmite pelo exemplo directo", "Arquitecta de sistemas que comunica o que outros não conseguem ver". Proibido: "pessoa comunicativa", "líder nato", qualquer cliché de coaching. Este marcador é obrigatório e machine-readable, não o omitas.
+DEPOIS de ${MARCADORES.fraseAbertura}, escreve, numa linha própria: "${MARCADORES.identidade} " seguido de uma frase de 8 a 12 palavras que descreve o que esta pessoa foi feita para ser — não o que perguntou, não a sua opção, mas a sua natureza estrutural. Deve ser específica deste perfil, nunca genérica. Exemplos do formato: "Autoridade que forma e transmite pelo exemplo directo", "Arquitecta de sistemas que comunica o que outros não conseguem ver". Proibido: "pessoa comunicativa", "líder nato", qualquer cliché de coaching. Este marcador é obrigatório e machine-readable, não o omitas.
 
 FORMATO DE SAÍDA (obrigatório): escreve em Markdown. Cada secção começa com um cabeçalho de nível 2, EXACTAMENTE com este texto (sem números, sem variações):
 ## ${SECCAO_TITULOS.abertura}
@@ -536,16 +541,16 @@ Quadro de dados (nome, situação, área actual) e o enquadramento da pergunta q
 Secção nova (correcção do especialista) — um retrato de personalidade, ANTES de qualquer opção ser mencionada. Formato EXACTO, obrigatório e machine-readable — não omitas nem reordenes os marcadores:
 
 DONS — 2 a 3 linhas "${MARCADORES.dom} <frase>", obrigatório:
-- Um dom = um planeta com peso ≥ 1,3. Se nenhum planeta atingir 1,3, usa os dois planetas de maior peso da carta (mesmo abaixo de 1,3) — nunca deixes esta secção sem dons.
+- Um dom = um planeta com peso ≥ 1,3. Se nenhum planeta atingir 1,3, usa os dois planetas de maior peso do perfil (mesmo abaixo de 1,3) — nunca deixes esta secção sem dons.
 - Cada dom cita o planeta + a casa + a dignidade, traduzidos para linguagem simples (nunca o nome técnico do planeta/casa/dignidade em jargão — mesma lista de termos proibidos de sempre). Nunca um adjectivo solto ("é comunicativa") sem estar rastreável a este dado técnico específico.
 - A confiança da frase deve corresponder ao peso real (um peso de 1,8 não se escreve com a mesma força que um de 1,32 — ver ESCALA DE CONFIANÇA acima).
 
 LIMITAÇÕES — 1 a 2 linhas "${MARCADORES.limitacao} <frase>", obrigatório:
 - Uma limitação = um planeta com peso < 0,9.
 - Frase PRÓPRIA e ESPECÍFICA para cada planeta fraco — PROIBIDO repetir a mesma frase genérica para planetas diferentes. Cada planeta tem uma implicação prática concreta, nunca genérica: Mercúrio fraco afecta a fluidez de explicar e ser entendida; Vénus fraca afecta o sentido de valor próprio e o à-vontade a cobrar; Lua fraca afecta a gestão emocional e a intuição em decisões; Marte fraco afecta a capacidade de agir com rapidez e decisão; Sol fraco afecta a afirmação pública da identidade profissional; Júpiter fraco afecta a expansão/crescimento (custa mais do que para outros); Saturno fraco afecta a estrutura e a disciplina de longo prazo (precisa de sistemas externos). Usa estas implicações como ponto de partida, nunca como frase a copiar literalmente duas vezes.
-- REGRA DE NÃO-DUPLICAÇÃO: o relatório já tem, mais abaixo, uma tabela determinística ("Onde a carta tem atrito") com a implicação prática detalhada de CADA planeta fraco. Se vais nomear aqui um planeta fraco que essa tabela já desenvolve, NÃO repitas a explicação inteira — uma frase curta que o nomeia e remete (ex.: "Vénus, a área mais fraca da carta, aparece desenvolvida mais à frente") chega; o desenvolvimento completo fica só na tabela.
+- REGRA DE NÃO-DUPLICAÇÃO: o relatório já tem, mais abaixo, uma tabela determinística ("Onde o perfil tem atrito") com a implicação prática detalhada de CADA planeta fraco. Se vais nomear aqui um planeta fraco que essa tabela já desenvolve, NÃO repitas a explicação inteira — uma frase curta que o nomeia e remete (ex.: "Vénus, a área mais fraca do perfil, aparece desenvolvida mais à frente") chega; o desenvolvimento completo fica só na tabela.
 
-O QUE VALORIZA — sempre com conteúdo real (nunca omitir, mesmo quando Vénus é a camada mais fraca da carta — "o que valoriza" nunca fica só como um número solto no gráfico de pesos, sem explicação no texto): um parágrafo curto, sem marcador, sobre o que esta pessoa genuinamente valoriza, ancorado em Vénus e nos dons/limitações já nomeados.
+O QUE VALORIZA — sempre com conteúdo real (nunca omitir, mesmo quando Vénus é a camada mais fraca do perfil — "o que valoriza" nunca fica só como um número solto no gráfico de pesos, sem explicação no texto): um parágrafo curto, sem marcador, sobre o que esta pessoa genuinamente valoriza, ancorado em Vénus e nos dons/limitações já nomeados.
 
 ELEMENTOS E MODALIDADES (correcção do especialista): o elemento dominante revela como a pessoa processa e actua no mundo. A modalidade dominante revela o seu ritmo natural de mudança. Usa estes dados para enriquecer o retrato de personalidade nesta secção — não como lista, mas integrados na narrativa dos dons/limitações já escritos, nunca como parágrafo à parte só sobre elementos.
 
@@ -561,9 +566,9 @@ Para CADA opção candidata (declarada ou derivada), este formato EXACTO, por es
 
 ### <nome exacto da opção, tal como foi declarada ou derivada>
 ${MARCADORES.forca} <forte, moderada ou fraca — forte se ≥2 fontes independentes fortes convergem, moderada se há suporte real mas não forte, fraca se só um sinal fraco isolado sustenta a opção>
-${MARCADORES.insight} <uma frase que resume a leitura desta opção em menos de 15 palavras — específica desta carta, nunca genérica. Obrigatório e machine-readable, não o omitas.>
-1. O que a carta sustenta nesta opção. Para dizer que a carta sustenta uma opção, cita pelo menos duas fontes independentes (Eixo da Missão, Modo de Ganho, peso de planeta, Montra de Mercado). Uma opção sustentada por um único sinal fraco não é sustentada — diz isso, e usa "${MARCADORES.forca} fraca" nesse caso.
-2. O que esta opção lhe vai custar (o custo específico DESTA carta nesta escolha, nunca o risco genérico da profissão).
+${MARCADORES.insight} <uma frase que resume a leitura desta opção em menos de 15 palavras — específica deste perfil, nunca genérica. Obrigatório e machine-readable, não o omitas.>
+1. O que o perfil sustenta nesta opção. Para dizer que o perfil sustenta uma opção, cita pelo menos duas fontes independentes (Eixo da Missão, Modo de Ganho, peso de planeta, Montra de Mercado). Uma opção sustentada por um único sinal fraco não é sustentada — diz isso, e usa "${MARCADORES.forca} fraca" nesse caso.
+2. O que esta opção lhe vai custar (o custo específico DESTE perfil nesta escolha, nunca o risco genérico da profissão).
 3. O que esta opção pede e que falta actualmente — e se é algo que se aprende ou algo que não muda.
 4. Onde entra a matéria desta pessoa nesta opção — nunca o sector como resposta, sempre a forma/função (usa o Modo de Ganho para decidir se entra pela voz, pela resolução directa, ou pela liderança/execução pública).
 
@@ -572,7 +577,7 @@ Repete o bloco "### <nome> / ${MARCADORES.forca} / ${MARCADORES.insight} / 1. / 
 ## ${SECCAO_TITULOS.candidataForaDaLista}
 As candidatas já vêm calculadas deterministicamente na secção "Candidatas do catálogo" acima (até 3) — NÃO calcules a tua própria convergência, NÃO inventes nenhuma candidata diferente das listadas lá.
 
-Se essa secção diz "nenhuma", a primeira e única linha é "${MARCADORES.candidata} nenhuma" — "a sua carta não aponta a nada fora do que já pensava" é uma resposta válida e completa, não a evites.
+Se essa secção diz "nenhuma", a primeira e única linha é "${MARCADORES.candidata} nenhuma" — "o seu perfil não aponta a nada fora do que já pensava" é uma resposta válida e completa, não a evites.
 
 Se essa secção lista 1, 2 ou 3 candidatas, escreve um bloco próprio para CADA UMA, nesta ordem de aparição no texto (a ordem em que aparecem na secção "Candidatas do catálogo" NÃO é ranking — ver regra abaixo):
 "${MARCADORES.candidata} <nome exacto>" seguido do texto explicativo dessa candidata, usando só as camadas exactas já listadas para ela (nunca inventes camadas novas nem omitas as que vêm calculadas). Repete "${MARCADORES.candidata} <nome exacto>" uma vez por candidata — nunca um marcador só com a primeira e as outras sem.
@@ -581,7 +586,7 @@ VIA CONCRETA (correcção do especialista, TAREFA 3): cada candidata tem um bloc
 
 REGRA ABSOLUTA — SEM RANKING ENTRE CANDIDATAS (correcção do especialista, TAREFA 1): quando há 2 ou 3 candidatas, apresentam-se sempre em PÉ DE IGUALDADE. PROIBIDO: "1ª escolha", "2ª escolha", "3ª opção", "a mais forte", "a mais provável", "em primeiro lugar", qualquer numeração ordinal, ou tratar uma delas como "menção honrosa"/"nota à parte"/candidata de segunda categoria. Cada candidata tem a sua própria justificação, completa e independente das outras — nunca comparar uma candidata com outra dentro do texto.
 
-REGRA ABSOLUTA — CANDIDATA FORA DA LISTA (correcção do especialista): PROIBIDO nomear qualquer candidata, mesmo como pista abaixo do limiar, sem que venha explicitamente da secção "Candidatas do catálogo" acima. Se nenhuma candidata do catálogo atingiu ≥4 camadas, a resposta é "${MARCADORES.candidata} nenhuma" — explica honestamente que a carta não aponta a nada fora do que já foi pensado. NUNCA preenchas com estereótipos de profissão ou associações livres a arquétipos abstractos. Exemplo do que NÃO fazer: sugerir "engenharia, auditoria, saúde pública" por associação livre a "Saturno = estrutura/rigor" — essas profissões não vieram do catálogo, vieram de associação livre; isto é invenção, não leitura, e é exactamente o que esta regra proíbe.
+REGRA ABSOLUTA — CANDIDATA FORA DA LISTA (correcção do especialista): PROIBIDO nomear qualquer candidata, mesmo como pista abaixo do limiar, sem que venha explicitamente da secção "Candidatas do catálogo" acima. Se nenhuma candidata do catálogo atingiu ≥4 camadas, a resposta é "${MARCADORES.candidata} nenhuma" — explica honestamente que o perfil não aponta a nada fora do que já foi pensado. NUNCA preenchas com estereótipos de profissão ou associações livres a arquétipos abstractos. Exemplo do que NÃO fazer: sugerir "engenharia, auditoria, saúde pública" por associação livre a "Saturno = estrutura/rigor" — essas profissões não vieram do catálogo, vieram de associação livre; isto é invenção, não leitura, e é exactamente o que esta regra proíbe.
 
 ## ${SECCAO_TITULOS.oPlano}
 Abre com o tom da classificação da Mahadasha actual (secção "Datas reais" acima) — antes de qualquer data ou passo. Usa as datas reais dessa secção (nunca datas inventadas). Escreve o corpo do plano livremente, e destaca o primeiro passo accionável para esta semana numa linha própria, prefixada exactamente por "${MARCADORES.primeiroPasso} " (obrigatório, machine-readable, não o omitas) — ex.: "${MARCADORES.primeiroPasso} Contacte duas pessoas que já fazem consultoria a solo e pergunte-lhes o que ninguém conta sobre o primeiro ano." Nunca um plano genérico de 90 dias sem ligação às datas calculadas.
