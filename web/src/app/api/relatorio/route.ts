@@ -34,7 +34,13 @@ const MODEL = process.env.REPORT_MODEL || "claude-sonnet-5";
 // outro relatório inteiro — mesmo tecto. A crítica é só texto de análise,
 // tecto mais baixo.
 const MAX_TOKENS = 16000;
-const MAX_TOKENS_CRITICA = 4096;
+// TAREFA (correcção do especialista) — subido de 4096: a crítica cresceu
+// de 12 para 23 critérios ao longo desta ronda (yogas/Vargottama/
+// abertura/nível/selecção/anglicismos), cada um podendo justificar a
+// FALHA com uma citação — 4096 arriscava truncar a resposta a meio,
+// perdendo critérios do fim da lista (18-23) sem nenhum aviso (ver
+// `gerarTexto` abaixo, que agora regista quando isso acontece).
+const MAX_TOKENS_CRITICA = 8192;
 
 const SITUACAO_LABEL = Object.fromEntries(SITUACOES.map((s) => [s.valor, s.label]));
 
@@ -52,6 +58,18 @@ async function gerarTexto(client: Anthropic, prompt: string, maxTokens: number):
     const detalhe = `stop_reason=${response.stop_reason}, blocos=[${tiposDeBloco}]`;
     console.error(`[api/relatorio] resposta sem bloco de texto — ${detalhe}`);
     throw new Error(`Resposta da Anthropic sem bloco de texto (${detalhe}).`);
+  }
+  // TAREFA (correcção do especialista) — antes, um texto TRUNCADO
+  // (stop_reason "max_tokens" mas com bloco de texto presente) passava
+  // sem nenhum aviso. Para a crítica automática, isto é grave e
+  // silencioso: critérios do fim da lista (ex.: 18/19 avastha/conjunção,
+  // ou 22/23) podem nunca chegar a ser escritos — `parseCritica()` não
+  // sabe quantos eram esperados, por isso os que faltam nunca entram em
+  // `falhas` e a reescrita nunca é accionada por eles. Nunca lança erro
+  // (o texto truncado pode ainda ser parcialmente útil) — só regista,
+  // para isto deixar de ser invisível.
+  if (response.stop_reason === "max_tokens") {
+    console.error(`[api/relatorio] resposta TRUNCADA (stop_reason=max_tokens, maxTokens=${maxTokens}) — se isto for a crítica, critérios do fim da lista podem ter sido perdidos silenciosamente.`);
   }
   return textBlock.text;
 }

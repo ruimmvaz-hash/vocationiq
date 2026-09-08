@@ -587,12 +587,26 @@ Sempre que o texto descrever uma conjunção (dois traços "fundidos" ou "quase 
 // onde já se confia nele para escrever "Quem é" — porque é aí, e só aí,
 // que "esta candidata liga-se com clareza a um dom já nomeado" pode ser
 // avaliado de facto, não aproximado por peso ou contagem de camadas.
+// CORRECÇÃO (correcção do especialista, ronda seguinte à mudança de
+// arquitectura) — a primeira versão desta instrução ("ligação narrativa
+// é o critério principal, soma de pesos só desempate") deixava espaço
+// para o LLM tratar "Nível 1" como sinónimo de "liga-se melhor" — não
+// era essa a intenção (nível é só sobre confiança da escrita, nunca
+// sobre elegibilidade), mas na prática, na carta real da Alice, a
+// selecção preferiu 3 candidatas Nível 1 (somas 3.86/3.76/3.76, já
+// deduplicadas) a "Ciências da Educação" (Nível 2, soma 4.19 — A MAIS
+// ALTA DAS 5), só por causa do nível. Correcção: a LIGAÇÃO NARRATIVA
+// continua a ser um FILTRO DE ELEGIBILIDADE (nunca escolher uma
+// candidata que não se ligue genuinamente a um dom já nomeado) — mas
+// deixa de decidir a ORDEM/PRIORIDADE entre as elegíveis. Essa ordem
+// passa a ser SEMPRE a soma de pesos (já deduplicada por planeta, ver
+// catalogoVocacional.ts), nunca o nível.
 export const INSTRUCAO_SELECCAO_CANDIDATAS = `SELECÇÃO DAS CANDIDATAS FORA DA LISTA — a secção "Candidatas do catálogo" pode trazer mais de 3 candidatas (a pool completa, sem limite). A tua tarefa é escolher até 3 — nunca inventar nenhuma fora da pool, nunca escolher menos do que a pool oferece até ao máximo de 3.
-Critério de escolha, por esta ordem — nunca ao contrário:
-1. LIGAÇÃO NARRATIVA (critério principal): prefere candidatas cuja convergência técnica se liga com clareza a um dom ou traço JÁ NOMEADO na secção "${SECCAO_TITULOS.quemE}" — o mesmo dom que vais citar na frase de abertura obrigatória (ver a seguir). Uma candidata cujas camadas não consegues ligar com clareza a nenhum dom já nomeado NÃO deve ser escolhida, mesmo que tenha mais camadas ou nível de confiança mais alto do que outra que se ligue melhor.
-2. SOMA DE PESOS — DESEMPATE, NUNCA CRITÉRIO PRINCIPAL: só quando duas ou mais candidatas se ligam com igual clareza a um dom já nomeado (ou nenhuma se distingue claramente das outras nesse critério), usa a "soma de pesos das camadas" (o número dado em cada linha da pool) para decidir — a de maior soma vence.
-Nunca escolhas só pela contagem de camadas nem só pelo Nível (1 ou 2) — o nível diz respeito à CONFIANÇA da candidata depois de escolhida, não a SE deve ser escolhida.
-Antes de qualquer bloco "${MARCADORES.candidata}", escreve OBRIGATORIAMENTE um bloco único "${MARCADORES.seleccaoCandidatas}" (machine-readable, nunca omitido), explicando em prosa curta: (a) a que dom já nomeado em "${SECCAO_TITULOS.quemE}" cada candidata escolhida se liga, e (b) por que as restantes candidatas da pool completa (nomeia-as pelo nome) não foram escolhidas — ligação mais fraca ou inexistente a um dom já nomeado, ou perderam o desempate por soma de pesos. Este bloco nunca aparece no relatório entregue ao cliente — é só para auditoria interna do raciocínio.`;
+Processo em DOIS PASSOS, nesta ordem exacta:
+PASSO 1 — FILTRO DE ELEGIBILIDADE (ligação narrativa): de toda a pool, elimina qualquer candidata cujas camadas NÃO consigas ligar com clareza a um dom ou traço JÁ NOMEADO na secção "${SECCAO_TITULOS.quemE}" — essa ligação é a mesma que vais citar na frase de abertura obrigatória (ver a seguir). Isto é um filtro binário (liga-se genuinamente, ou não) — nunca uma escala de "liga-se melhor/pior" entre candidatas que já se ligam.
+PASSO 2 — ORDEM ENTRE AS ELEGÍVEIS (soma de pesos, sempre, sem excepção): das candidatas que passaram o Passo 1, a ordem de prioridade para as até 3 vagas é SEMPRE a "soma de pesos das camadas" (o número já deduplicado por planeta, dado em cada linha da pool) — a de maior soma vence, sempre, INDEPENDENTEMENTE do Nível (1 ou 2). PROIBIDO preferir uma candidata Nível 1 com soma mais baixa a uma candidata Nível 2 elegível com soma mais alta — isso já aconteceu numa ronda de testes (uma candidata Nível 2 com a maior soma de todas foi preterida a favor de três Nível 1 com somas mais baixas, só pelo nível) e é exactamente o erro que esta regra proíbe. O Nível NUNCA entra no Passo 2 — só decide a linguagem de confiança depois de a candidata já estar escolhida (ver INSTRUCAO_NIVEL_CANDIDATAS).
+Nunca escolhas só pela contagem de camadas (convergência) — usa sempre a soma de pesos para desempatar ou ordenar dentro das elegíveis.
+Antes de qualquer bloco "${MARCADORES.candidata}", escreve OBRIGATORIAMENTE um bloco único "${MARCADORES.seleccaoCandidatas}" (machine-readable, nunca omitido), explicando em prosa curta: (a) a que dom já nomeado em "${SECCAO_TITULOS.quemE}" cada candidata escolhida se liga, (b) a soma de pesos de cada uma das candidatas escolhidas, e (c) por que as restantes candidatas da pool completa (nomeia-as pelo nome, com a sua soma de pesos) não foram escolhidas — reprovadas no Passo 1 (sem ligação), ou elegíveis mas com soma mais baixa no Passo 2. Este bloco nunca aparece no relatório entregue ao cliente — é só para auditoria interna do raciocínio.`;
 
 export const INSTRUCAO_ABERTURA_CANDIDATAS = `CANDIDATA FORA DA LISTA — LIGAÇÃO OBRIGATÓRIA A DOM JÁ NOMEADO: antes de qualquer menção às camadas técnicas (Atmakaraka, eixo do rendimento, sinais estruturados, etc.), cada candidata escolhida DEVE abrir com uma frase que a ligue explicitamente a um dom ou traço já nomeado na secção "${SECCAO_TITULOS.quemE}" deste mesmo relatório.
 Padrão obrigatório: "Isto liga-se directamente a [nome do dom/traço já nomeado em ${SECCAO_TITULOS.quemE}, citado quase literalmente] que já foi nomeado acima — é essa mesma força aplicada a um território concreto."

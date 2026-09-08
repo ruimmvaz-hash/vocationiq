@@ -28,7 +28,10 @@ export const maxDuration = 280;
 
 const MODEL = process.env.REPORT_MODEL || "claude-sonnet-5";
 const MAX_TOKENS = 16000;
-const MAX_TOKENS_CRITICA = 4096;
+// TAREFA (correcção do especialista) — mesma correcção de api/relatorio/route.ts:
+// subido de 4096 porque a crítica cresceu para 23 critérios, risco real
+// de truncar a resposta a meio e perder critérios do fim sem aviso.
+const MAX_TOKENS_CRITICA = 8192;
 
 const SITUACOES_ADOLESCENTE = new Set(["9-ou-menos", "10-11-12"]);
 
@@ -46,6 +49,13 @@ async function gerarTexto(client: Anthropic, prompt: string, maxTokens: number):
     const detalhe = `stop_reason=${response.stop_reason}, blocos=[${tiposDeBloco}]`;
     console.error(`[api/relatorio-adolescente] resposta sem bloco de texto — ${detalhe}`);
     throw new Error(`Resposta da Anthropic sem bloco de texto (${detalhe}).`);
+  }
+  // TAREFA (correcção do especialista) — ver a mesma correcção em
+  // api/relatorio/route.ts: texto truncado (stop_reason "max_tokens")
+  // passava sem aviso, arriscando perder critérios do fim da crítica
+  // (18-23) silenciosamente. Nunca lança erro, só regista.
+  if (response.stop_reason === "max_tokens") {
+    console.error(`[api/relatorio-adolescente] resposta TRUNCADA (stop_reason=max_tokens, maxTokens=${maxTokens}) — se isto for a crítica, critérios do fim da lista podem ter sido perdidos silenciosamente.`);
   }
   return textBlock.text;
 }

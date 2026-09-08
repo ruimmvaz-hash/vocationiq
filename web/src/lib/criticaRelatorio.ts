@@ -97,20 +97,38 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
      mesma certeza que uma Nível 1 (ex.: "o seu perfil sustenta X com
      clareza" sem qualquer qualificador): FALHA — reescrita obrigatória.
 
- 22. SELECÇÃO DAS CANDIDATAS (LIGAÇÃO NARRATIVA): a secção A) traz a pool
-     completa de candidatas (pode ter mais de 3). Confirma: (a) existe o
-     bloco "SELECÇÃO_CANDIDATAS:" antes das secções CANDIDATA (obrigatório
-     sempre que a pool tem pelo menos 1 candidata); (b) cada candidata
-     APRESENTADA tem uma ligação nomeável e verificável a um dom já
-     nomeado em "Quem é" — a mesma ligação citada na frase de abertura
-     dessa candidata; (c) o raciocínio em "SELECÇÃO_CANDIDATAS:" explica
-     também, com sentido, por que as candidatas da pool que NÃO foram
-     escolhidas ficaram de fora. Se falhar (a) ou (b): FALHA — força
-     RESSELECÇÃO DA POOL COMPLETA (escolher outra candidata da secção A
-     que ligue com clareza a um dom já nomeado, nunca só reescrever a
-     frase de abertura da candidata actual para forçar uma ligação que
-     não existe). Se (c) parecer arbitrário ou ausente: FALHA — reescrita
-     do bloco de raciocínio.
+ 22. SELECÇÃO DAS CANDIDATAS (LIGAÇÃO NARRATIVA + ORDEM POR SOMA DE PESOS):
+     a secção A) traz a pool completa de candidatas (pode ter mais de 3),
+     cada uma com a sua soma de pesos já dada. Confirma:
+     (a) existe o bloco "SELECÇÃO_CANDIDATAS:" antes das secções CANDIDATA
+         (obrigatório sempre que a pool tem pelo menos 1 candidata);
+     (b) cada candidata APRESENTADA tem uma ligação nomeável e verificável
+         a um dom já nomeado em "Quem é" — a mesma ligação citada na
+         frase de abertura dessa candidata;
+     (c) ENTRE as candidatas elegíveis (as que passam (b)), foram
+         escolhidas as de MAIOR soma de pesos — nunca uma candidata Nível
+         1 de soma mais baixa em vez de uma Nível 2 elegível de soma mais
+         alta. Compara os números de soma de pesos dados na secção A)
+         para as candidatas escolhidas contra os das candidatas elegíveis
+         que ficaram de fora — se alguma de fora tem soma mais alta E
+         ligação nomeável válida, e não foi escolhida, isto é FALHA;
+     (d) o raciocínio em "SELECÇÃO_CANDIDATAS:" explica com sentido por
+         que as candidatas não escolhidas ficaram de fora (sem ligação,
+         ou soma mais baixa — nunca "porque é Nível 2").
+     Se falhar (a), (b) ou (c): FALHA — força RESSELECÇÃO DA POOL COMPLETA
+     (refazer os dois passos — filtro de ligação, depois ordem por soma
+     de pesos — nunca só reescrever a frase de abertura da candidata
+     actual). Se (d) parecer arbitrário, ausente, ou justificar a escolha
+     pelo Nível em vez da soma: FALHA — reescrita do bloco de raciocínio.
+
+ 23. ANGLICISMOS: o texto usa palavras inglesas coladas ao português em
+     vez da tradução natural — "also" (em vez de "também"), "however"
+     (em vez de "no entanto"/"contudo"), "actually" (em vez de "de
+     facto"/"na verdade"), "basically" (em vez de "no fundo"),
+     "furthermore"/"moreover" (em vez de "além disso"), ou qualquer outra
+     palavra inglesa comum solta no meio de uma frase portuguesa? Lista
+     cada ocorrência exacta. Se aparecer mesmo uma vez: FALHA — reescrita
+     obrigatória.
 
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
@@ -215,20 +233,38 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
      mesma certeza que uma Nível 1 (ex.: "o seu perfil sustenta X com
      clareza" sem qualquer qualificador): FALHA — reescrita obrigatória.
 
- 22. SELECÇÃO DAS CANDIDATAS (LIGAÇÃO NARRATIVA): a secção A) traz a pool
-     completa de candidatas (pode ter mais de 3). Confirma: (a) existe o
-     bloco "SELECÇÃO_CANDIDATAS:" antes das secções CANDIDATA (obrigatório
-     sempre que a pool tem pelo menos 1 candidata); (b) cada candidata
-     APRESENTADA tem uma ligação nomeável e verificável a um dom já
-     nomeado em "Quem é" — a mesma ligação citada na frase de abertura
-     dessa candidata; (c) o raciocínio em "SELECÇÃO_CANDIDATAS:" explica
-     também, com sentido, por que as candidatas da pool que NÃO foram
-     escolhidas ficaram de fora. Se falhar (a) ou (b): FALHA — força
-     RESSELECÇÃO DA POOL COMPLETA (escolher outra candidata da secção A
-     que ligue com clareza a um dom já nomeado, nunca só reescrever a
-     frase de abertura da candidata actual para forçar uma ligação que
-     não existe). Se (c) parecer arbitrário ou ausente: FALHA — reescrita
-     do bloco de raciocínio.
+ 22. SELECÇÃO DAS CANDIDATAS (LIGAÇÃO NARRATIVA + ORDEM POR SOMA DE PESOS):
+     a secção A) traz a pool completa de candidatas (pode ter mais de 3),
+     cada uma com a sua soma de pesos já dada. Confirma:
+     (a) existe o bloco "SELECÇÃO_CANDIDATAS:" antes das secções CANDIDATA
+         (obrigatório sempre que a pool tem pelo menos 1 candidata);
+     (b) cada candidata APRESENTADA tem uma ligação nomeável e verificável
+         a um dom já nomeado em "Quem é" — a mesma ligação citada na
+         frase de abertura dessa candidata;
+     (c) ENTRE as candidatas elegíveis (as que passam (b)), foram
+         escolhidas as de MAIOR soma de pesos — nunca uma candidata Nível
+         1 de soma mais baixa em vez de uma Nível 2 elegível de soma mais
+         alta. Compara os números de soma de pesos dados na secção A)
+         para as candidatas escolhidas contra os das candidatas elegíveis
+         que ficaram de fora — se alguma de fora tem soma mais alta E
+         ligação nomeável válida, e não foi escolhida, isto é FALHA;
+     (d) o raciocínio em "SELECÇÃO_CANDIDATAS:" explica com sentido por
+         que as candidatas não escolhidas ficaram de fora (sem ligação,
+         ou soma mais baixa — nunca "porque é Nível 2").
+     Se falhar (a), (b) ou (c): FALHA — força RESSELECÇÃO DA POOL COMPLETA
+     (refazer os dois passos — filtro de ligação, depois ordem por soma
+     de pesos — nunca só reescrever a frase de abertura da candidata
+     actual). Se (d) parecer arbitrário, ausente, ou justificar a escolha
+     pelo Nível em vez da soma: FALHA — reescrita do bloco de raciocínio.
+
+ 23. ANGLICISMOS: o texto usa palavras inglesas coladas ao português em
+     vez da tradução natural — "also" (em vez de "também"), "however"
+     (em vez de "no entanto"/"contudo"), "actually" (em vez de "de
+     facto"/"na verdade"), "basically" (em vez de "no fundo"),
+     "furthermore"/"moreover" (em vez de "além disso"), ou qualquer outra
+     palavra inglesa comum solta no meio de uma frase portuguesa? Lista
+     cada ocorrência exacta. Se aparecer mesmo uma vez: FALHA — reescrita
+     obrigatória.
 
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
