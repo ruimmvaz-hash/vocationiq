@@ -458,21 +458,47 @@ interface ExplicacaoGrafico {
   linhas: { categoria: string; texto: string }[];
 }
 
+/** Sem acentos, minúsculas — para emparelhar a linha do LLM com o identificador do gráfico mesmo com variações de grafia/maiúsculas. */
+function semAcentos(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+}
+
 /**
- * Correcção do especialista ("explicação completa de todos os gráficos,
- * linha a linha", pós-PDF real) — extrai o bloco
- * "EXPLICAÇÃO_GRÁFICO: <id>" (id: peso/competencias/vida/ganho) de
- * QUALQUER ponto do texto completo (nunca scoped a uma secção "## " —
- * mesmo mecanismo posicional de FRASE_ABERTURA/IDENTIDADE, porque a
- * posição em que o LLM escreve isto no documento não importa: o
- * template recoloca o resultado junto do gráfico correspondente). `null`
- * quando o bloco não existe (nunca deveria acontecer com o prompt
- * actual, mas o template nunca deve rebentar nem inventar texto se
- * faltar — cai para a legenda determinística já existente).
+ * Correcção do especialista (bug real, confirmado por 3 gerações reais
+ * seguidas — PDF 8, 9, 10: os 4 gráficos continuavam com a legenda
+ * genérica de sempre, mesmo depois da correcção das fronteiras) — a
+ * causa não era o bloco a ser apagado (esse bug já estava corrigido);
+ * era este parser exigir uma correspondência EXACTA e ÚNICA na mesma
+ * linha do marcador ("EXPLICAÇÃO_GRÁFICO: peso", nada mais na linha,
+ * `$` a fechar) — qualquer desvio natural do LLM (escrever "Perfil de
+ * Competências" em vez do código árido "competencias", maiúsculas,
+ * pontuação a seguir) fazia o `match` falhar por inteiro, sem nenhum
+ * aviso, caindo sempre na legenda antiga. Corrigido: já não exige
+ * correspondência exacta — procura, entre TODOS os blocos
+ * "EXPLICAÇÃO_GRÁFICO:" existentes, o primeiro cuja linha (sem acentos,
+ * minúsculas) CONTÉM a palavra-chave do gráfico (ex.: "competenc"
+ * apanha "competencias", "Competências", "Perfil de Competências").
+ * Continua a extrair de QUALQUER ponto do texto completo (nunca scoped
+ * a uma secção "## " — mesmo mecanismo posicional de FRASE_ABERTURA/
+ * IDENTIDADE). `null` só quando o LLM genuinamente não escreveu nenhum
+ * bloco reconhecível para este gráfico — nunca rebenta, cai para a
+ * legenda determinística já existente.
  */
+const PALAVRAS_CHAVE_GRAFICO: Record<string, string[]> = {
+  peso: ["peso"],
+  competencias: ["competenc"],
+  vida: ["vida"],
+  ganho: ["ganho"],
+};
+
 function parseExplicacaoGrafico(textoCompleto: string, id: string): ExplicacaoGrafico | null {
-  const regexBloco = new RegExp(`^${MARCADORES.explicacaoGrafico}\\s*${id}\\s*$`, "im");
-  const blocoMatch = textoCompleto.match(regexBloco);
+  const regexTodos = new RegExp(`^${MARCADORES.explicacaoGrafico}\\s*(.*)$`, "gm");
+  const todos = [...textoCompleto.matchAll(regexTodos)];
+  const palavrasChave = PALAVRAS_CHAVE_GRAFICO[id] ?? [id];
+  const blocoMatch = todos.find((m) => palavrasChave.some((p) => semAcentos(m[1] ?? "").includes(p)));
   if (!blocoMatch) return null;
   const inicioBloco = blocoMatch.index! + blocoMatch[0].length;
   // Correcção do especialista (bug real — 2 rondas: primeiro só um
