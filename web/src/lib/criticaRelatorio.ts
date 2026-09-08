@@ -55,8 +55,17 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
  12. KARAKAMSHA: foi lido sempre com o Atmakaraka (nunca
      isolado)?
 
- 13. AVASTHAS: se existe planeta Mrita cuja área governa a situação
-     actual da pessoa, foi explicado na secção "Quem é"? Se não: FALHA.
+ 13. AVASTHAS: INSTRUCAO_AVASTHAS tem 3 condições — verifica CADA UMA
+     contra os dados técnicos (peso e avastha de cada planeta):
+     (a) um planeta citado nas camadas de "Derivadas da área actual" está
+         em Mrita?
+     (b) um planeta com peso ≥1,3 está em Mrita?
+     (c) um planeta com peso <0,9 está em Yuva?
+     Para CADA condição que se aplica (pode ser mais do que uma ao mesmo
+     tempo, ou nenhuma), confirma que foi explicada na secção "Quem é"
+     com a frase-padrão correspondente. Se alguma condição aplicável não
+     foi mencionada: FALHA — reescrita obrigatória, diz exactamente qual
+     das 3 condições ((a), (b) ou (c)) foi ignorada.
 
  14. CONJUNÇÕES: cada conjunção activa foi usada numa frase concreta
      em "Quem é"? Se alguma foi ignorada: FALHA.
@@ -191,8 +200,17 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
  12. KARAKAMSHA: foi lido sempre com o Atmakaraka (nunca
      isolado)?
 
- 13. AVASTHAS: se existe planeta Mrita cuja área governa a situação
-     actual da pessoa, foi explicado na secção "Quem é"? Se não: FALHA.
+ 13. AVASTHAS: INSTRUCAO_AVASTHAS tem 3 condições — verifica CADA UMA
+     contra os dados técnicos (peso e avastha de cada planeta):
+     (a) um planeta citado nas camadas de "Derivadas da área actual" está
+         em Mrita?
+     (b) um planeta com peso ≥1,3 está em Mrita?
+     (c) um planeta com peso <0,9 está em Yuva?
+     Para CADA condição que se aplica (pode ser mais do que uma ao mesmo
+     tempo, ou nenhuma), confirma que foi explicada na secção "Quem é"
+     com a frase-padrão correspondente. Se alguma condição aplicável não
+     foi mencionada: FALHA — reescrita obrigatória, diz exactamente qual
+     das 3 condições ((a), (b) ou (c)) foi ignorada.
 
  14. CONJUNÇÕES: cada conjunção activa foi usada numa frase concreta
      em "Quem é"? Se alguma foi ignorada: FALHA.
