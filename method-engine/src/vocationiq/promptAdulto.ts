@@ -360,7 +360,7 @@ export function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional, c
     ? catalogo.candidatasForaDaLista
         .map(
           (c) =>
-            `- ${c.nome}: convergência ${c.convergencia}, Nível ${c.nivelConfianca} (${c.nivelConfianca === 1 ? "inclui o planeta de maior peso — confiança plena" : "só Atmakaraka/Amatyakaraka, sem o planeta de maior peso — confiança reduzida"}), soma de pesos das camadas ${c.somaPesoCamadas.toFixed(2)} (${c.camadas.join("; ")}).`,
+            `- ${c.nome}: convergência ${c.convergencia}, Nível ${c.nivelConfianca} (${c.nivelConfianca === 1 ? "inclui o planeta de maior peso — confiança plena" : "âncora pessoal (Atmakaraka/Amatyakaraka/Stellium/Regente de casa dignificado), sem o planeta de maior peso — confiança reduzida"}), soma de pesos das camadas ${c.somaPesoCamadas.toFixed(2)} (${c.camadas.join("; ")}).`,
         )
         .join("\n")
     : "nenhuma — nenhum destino reuniu 4 camadas independentes incluindo um indicador pessoal (planeta de maior peso, Atmakaraka ou Amatyakaraka).";
@@ -627,7 +627,7 @@ Obrigatório em todas as candidatas escolhidas (até 3, ou menos se a pool compl
 // "convergência forte, sem reserva".
 export const INSTRUCAO_NIVEL_CANDIDATAS = `NÍVEL DE CONFIANÇA DA CANDIDATA FORA DA LISTA — cada candidata vem marcada nos dados técnicos como "Nível 1" ou "Nível 2". Nunca as escrevas com a mesma confiança:
 · Nível 1 (inclui o planeta de maior peso): escreve com confiança plena, sem qualquer qualificador — é a peça mais forte do perfil a confirmar esta direcção.
-· Nível 2 (só Atmakaraka/Amatyakaraka, sem o planeta de maior peso): é um sinal real, nunca inventado — mas mais específico e menos robusto do que Nível 1. A frase tem de o dizer, com linguagem como "há aqui um fio que vale a pena puxar" / "não é o sinal mais forte do perfil, mas é genuíno e específico" / "vale explorar, sem ser ainda uma certeza estrutural". PROIBIDO escrever uma candidata Nível 2 com a mesma linguagem sem reserva de "o seu perfil sustenta X com clareza" que a escala de confiança geral reserva para convergência forte — aqui a convergência existe, mas a sua origem (só o karaka pessoal, não o planeta mais forte da carta) pede a reserva.
+· Nível 2 (âncora pessoal — Atmakaraka, Amatyakaraka, Stellium, ou Regente de casa dignificado — mas sem o planeta de maior peso): é um sinal real, nunca inventado — mas mais específico e menos robusto do que Nível 1. A frase tem de o dizer, com linguagem como "há aqui um fio que vale a pena puxar" / "não é o sinal mais forte do perfil, mas é genuíno e específico" / "vale explorar, sem ser ainda uma certeza estrutural". PROIBIDO escrever uma candidata Nível 2 com a mesma linguagem sem reserva de "o seu perfil sustenta X com clareza" que a escala de confiança geral reserva para convergência forte — aqui a convergência existe, mas a sua origem (um indicador pessoal específico, não o planeta mais forte da carta) pede a reserva.
 Nunca omitir nem suavizar a diferença chamando as duas de "candidata" sem mais nada — o nível tem de ser audível na frase, não só presente nos dados.`;
 
 // CORRECÇÃO 1 (correcção do especialista, confirmada com 3 relatórios

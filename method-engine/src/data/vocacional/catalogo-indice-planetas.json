@@ -15,7 +15,8 @@
       "destinos": {
         "superior": ["direito", "ciencia_politica", "gestao", "administracao_publica", "medicina", "relacoes_internacionais", "ciencias_militares"],
         "superior_condicionado": [
-          { "id": "arquitetura", "condicao": "requer Vénus em força" }
+          { "id": "arquitetura", "condicao": "requer Vénus em força" },
+          { "id": "administracao_hospitalar", "condicao": "vertente de liderança e autoridade clínico-administrativa", "vertente": "lideranca" }
         ],
         "tecnico": ["t_direcao_equipa", "t_protecao_pessoas", "t_ourivesaria", "t_eletricidade", "cardiopneumologia"],
         "tecnico_condicionado": [
@@ -90,7 +91,8 @@
         "superior_condicionado": [
           { "id": "medicina", "condicao": "vocação cirúrgica", "vertente": "cirurgica" },
           { "id": "direito", "condicao": "vertente de litígio e tribunal", "vertente": "litigio" },
-          { "id": "medicina_veterinaria", "condicao": "vertente cirúrgica" }
+          { "id": "medicina_veterinaria", "condicao": "vertente cirúrgica" },
+          { "id": "administracao_hospitalar", "condicao": "vertente de operações e gestão de crise hospitalar", "vertente": "operacional" }
         ],
         "tecnico": ["t_serralharia", "t_eletricidade", "t_construcao", "t_mecanica_auto", "t_forcas_seguranca", "t_treinador", "t_emergencia", "t_talho", "t_manutencao", "t_piloto"],
         "fora": ["f_atelier", "f_empreitada", "f_desporto_competicao", "f_artes_marciais"]
@@ -107,7 +109,9 @@
         "superior_condicionado": [
           { "id": "medicina", "condicao": "sobretudo Medicina Interna e Pediatria", "vertente": "interna" },
           { "id": "psicologia", "condicao": "vertente clínica de profundidade", "vertente": "clinica" },
-          { "id": "gestao", "condicao": "em consultoria estratégica" }
+          { "id": "gestao", "condicao": "em consultoria estratégica" },
+          { "id": "administracao_hospitalar", "condicao": "vertente de política de saúde e ética institucional", "vertente": "politica_saude" },
+          { "id": "administracao_publica", "condicao": "vertente de lei, ética e política pública", "vertente": "etica_publica" }
         ],
         "tecnico": ["t_formacao_tecnica", "t_contabilidade", "t_editorial", "t_guia"],
         "fora": ["f_ensino_proprio", "f_escrita_ensaio", "f_vida_religiosa", "f_supervisao", "f_publicacao", "f_direcao_espiritual", "f_astrologia"]
@@ -123,7 +127,9 @@
         "superior": ["engenharia_civil", "arquitetura", "geologia", "engenharia_minas", "historia", "arqueologia", "auditoria", "contabilidade", "seguranca_higiene", "saude_publica", "gerontologia", "silvicultura", "agronomia", "biblioteconomia", "estatistica"],
         "superior_condicionado": [
           { "id": "direito", "condicao": "vertente de norma, notariado e regulação", "vertente": "norma" },
-          { "id": "gestao", "condicao": "em operações e processos" }
+          { "id": "gestao", "condicao": "em operações e processos" },
+          { "id": "administracao_hospitalar", "condicao": "vertente de estrutura, processos e governação hospitalar", "vertente": "estrutural" },
+          { "id": "administracao_publica", "condicao": "vertente de estrutura, ordem e instituições", "vertente": "estrutural" }
         ],
         "tecnico": ["t_construcao", "t_canalizacao", "t_carpintaria", "t_agricultura", "t_manutencao", "t_armazem", "t_arquivo", "t_qualidade", "t_funeraria"],
         "fora": ["f_imobiliario_proprio", "f_agricultura_propria", "f_restauro_proprio", "f_pratica_contemplativa"]

@@ -36,7 +36,8 @@ import catalogoRaridadeJson from "../data/vocacional/catalogo-raridade.json";
 import type { VocationIQAxes } from "../lifeReport/vocationIQ";
 import type { PesoPlaneta } from "./pesosPlanetas";
 import type { SavPorCasa } from "./pesosPlanetas";
-import type { ClassicalGraha, Graha } from "../lifeReport/types";
+import { SIGN_RULERS } from "../lifeReport/signRulers";
+import { CLASSICAL_GRAHAS, type ClassicalGraha, type Graha } from "../lifeReport/types";
 import type { NakshatraName } from "../astrology/nakshatra";
 
 // ---------- Formas mínimas do catálogo (só os campos que este módulo lê) ----------
@@ -47,8 +48,20 @@ interface DestinoCatalogo {
 }
 const catalogoDestinos = catalogoDestinosJson.destinos as unknown as Record<string, DestinoCatalogo>;
 
+/** Um destino em `superior_condicionado`/`tecnico_condicionado` — ver `destinosDoPlaneta` para como `condicao` é interpretada. */
+interface DestinoCondicionado {
+  id: string;
+  condicao: string;
+  vertente?: string;
+}
 interface EntradaPlaneta {
-  destinos: { superior?: string[]; tecnico?: string[]; fora?: string[] };
+  destinos: {
+    superior?: string[];
+    tecnico?: string[];
+    fora?: string[];
+    superior_condicionado?: DestinoCondicionado[];
+    tecnico_condicionado?: DestinoCondicionado[];
+  };
 }
 const catalogoIndicePlanetas = catalogoIndicePlanetasJson.planetas as unknown as Record<string, EntradaPlaneta>;
 
@@ -140,10 +153,60 @@ function casaDe(pesos: PesoPlaneta[], graha: string): number | undefined {
   return pesos.find((p) => p.planeta === graha)?.casa;
 }
 
-function destinosDoPlaneta(graha: Graha): string[] {
+/**
+ * TAREFA (correcção do especialista) — reconhece o padrão "requer
+ * <planeta>[ em força]" no texto de `condicao` como uma PRECONDIÇÃO real
+ * e avaliável (ex.: "requer Vénus em força", "requer Vénus" — os 2 únicos
+ * casos deste tipo, confirmado por leitura de todos os 16 itens
+ * `_condicionado` do catálogo). Qualquer outro texto ("vocação
+ * cirúrgica", "vertente de...", "sobretudo...") devolve `null` — não é
+ * uma precondição, é uma especialização/vertente do destino em si (14
+ * dos 16 itens), promovida sem condição por `destinosDoPlaneta`.
+ */
+function condicaoRequerPlaneta(condicao: string): { planeta: Graha; forte: boolean } | null {
+  const match = normalizar(condicao).match(/^requer\s+([a-z]+)(\s+em\s+forca)?$/);
+  if (!match) return null;
+  const planeta = PLANETA_PT_PARA_GRAHA[match[1]];
+  if (!planeta) return null;
+  return { planeta, forte: !!match[2] };
+}
+
+/**
+ * TAREFA (correcção do especialista) — passa a incluir também os
+ * destinos em `superior_condicionado`/`tecnico_condicionado` (16 itens
+ * em 7 planetas, escritos no catálogo desde sempre mas nunca lidos por
+ * nenhum código — confirmado por grep). Cada item entra de uma de 2
+ * formas, nunca "promoção cega":
+ *   - se `condicao` for "requer <planeta>[ em força]" (ver
+ *     `condicaoRequerPlaneta`) — só promove o destino se esse OUTRO
+ *     planeta tiver peso ≥1,3 ("em força") ou ≥0,9 (sem qualificador),
+ *     os mesmos limiares já usados em `avaliarSinal`
+ *     (planeta_forte/planeta_funcional) — nunca um limiar novo.
+ *   - qualquer outro texto — é uma vertente/especialização do destino
+ *     (ex.: Marte→medicina "vocação cirúrgica"), não uma precondição;
+ *     promovido sem condição, como os arrays planos. A vertente em si
+ *     ainda não é citável na camada gerada (exigiria mudar a assinatura
+ *     partilhada por Atmakaraka/Amatyakaraka/Planeta de maior peso/
+ *     Regente do Modo de Ganho) — DESVIO disclosed, fora do âmbito desta
+ *     correcção.
+ */
+function destinosDoPlaneta(graha: Graha, pesos: PesoPlaneta[]): string[] {
   const entrada = catalogoIndicePlanetas[GRAHA_PARA_PLANETA_PT[graha] ?? graha.toLowerCase()];
   if (!entrada) return [];
-  return [...(entrada.destinos.superior ?? []), ...(entrada.destinos.tecnico ?? []), ...(entrada.destinos.fora ?? [])];
+  const base = [...(entrada.destinos.superior ?? []), ...(entrada.destinos.tecnico ?? []), ...(entrada.destinos.fora ?? [])];
+  const condicionados = [...(entrada.destinos.superior_condicionado ?? []), ...(entrada.destinos.tecnico_condicionado ?? [])];
+  const promovidos: string[] = [];
+  for (const item of condicionados) {
+    const requer = condicaoRequerPlaneta(item.condicao);
+    if (!requer) {
+      promovidos.push(item.id);
+      continue;
+    }
+    const peso = pesoDe(pesos, requer.planeta) ?? 0;
+    const limiar = requer.forte ? 1.3 : 0.9;
+    if (peso >= limiar) promovidos.push(item.id);
+  }
+  return [...base, ...promovidos];
 }
 
 // ---------- Avaliação de sinais do índice inverso (só para as 8 áreas tabeladas) ----------
@@ -305,6 +368,101 @@ function avaliarCasasTematicasFortes(axes: VocationIQAxes, pesos: PesoPlaneta[],
   return CASAS_TEMATICAS.filter((casa) => casaTematicaForte(casa, axes, pesos, regenteAscendenteOcidental));
 }
 
+// ---------- Regente de casa dignificado (correcção do especialista, sinal novo) ----------
+
+/**
+ * Sinal novo (correcção do especialista) — confirmado por auditoria que
+ * um regente de casa numa dignidade forte (Exaltado, signo próprio, ou
+ * Moolatrikona) só entrava no cálculo de camadas SE, por acaso, esse
+ * mesmo planeta também fosse Atmakaraka/Amatyakaraka/Planeta de maior
+ * peso/Regente do Modo de Ganho — um regente claramente dignificado mas
+ * sem nenhum desses 4 papéis ficava invisível ao catálogo, apesar de ser
+ * um sinal astrológico real e forte. Usa exactamente a mesma
+ * classificação de dignidade já usada em `ESTADO_PESO` (pesosPlanetas.ts,
+ * via `PesoPlaneta.estado`) — nunca uma tabela nova. Independente de
+ * "casa temática forte" (que testa peso ≥1,3 do regente, não dignidade —
+ * um planeta pode estar em signo próprio com peso <1,3 se a casa que
+ * ocupa tiver SAV baixo, por isso os dois sinais não são redundantes).
+ */
+const DIGNIDADES_FORTES = new Set(["Exalted", "Own", "Moolatrikona"]);
+
+interface RegenteCasaDignificado {
+  casa: number;
+  regente: ClassicalGraha;
+  dignidade: "Exalted" | "Own" | "Moolatrikona";
+}
+
+/** Os regentes de casa que estão numa dignidade forte nesta carta — avaliado uma vez por pedido, mesmo padrão de `avaliarCasasTematicasFortes`. */
+function avaliarRegentesCasaDignificados(axes: VocationIQAxes, pesos: PesoPlaneta[]): RegenteCasaDignificado[] {
+  const resultado: RegenteCasaDignificado[] = [];
+  for (const casa of CASAS_TEMATICAS) {
+    const regente = axes.regentesCasas[casa];
+    const estado = pesos.find((p) => p.planeta === regente)?.estado;
+    if (estado && DIGNIDADES_FORTES.has(estado)) {
+      resultado.push({ casa, regente, dignidade: estado as "Exalted" | "Own" | "Moolatrikona" });
+    }
+  }
+  return resultado;
+}
+
+const DIGNIDADE_PT: Record<"Exalted" | "Own" | "Moolatrikona", string> = {
+  Exalted: "exaltado",
+  Own: "signo próprio",
+  Moolatrikona: "Moolatrikona",
+};
+
+// ---------- Parivartana entre regentes de casa (correcção do especialista, sinal novo) ----------
+
+/**
+ * Sinal novo (correcção do especialista) — Parivartana (troca mútua de
+ * signos): dois planetas A e B estão em Parivartana quando A ocupa o
+ * signo regido por B E B ocupa o signo regido por A, ao mesmo tempo.
+ * Confirmado no mapa da Alice: Vénus (regente das casas 1 e 6) está em
+ * Capricórnio (regido por Saturno); Saturno (regente das casas 9 e 10)
+ * está em Libra (regido por Vénus) — troca mútua directa. Cada regente
+ * pode reger 1 ou 2 casas (os 5 planetas com dupla regência clássica);
+ * por cada casa de A associada a cada casa de B há uma combinação
+ * distinta, mas o MESMO par de planetas nunca gera mais do que 1 camada
+ * por destino (ver `camadasParaDestino`) — mesmo princípio de "um facto,
+ * uma camada" já aplicado a Stellium/Regente dignificado.
+ */
+interface ParivartanaHit {
+  casaA: number;
+  casaB: number;
+  planetaA: ClassicalGraha;
+  planetaB: ClassicalGraha;
+}
+
+/** Todos os pares de planetas clássicos em Parivartana nesta carta, expandidos por combinação de casas — avaliado uma vez por pedido, mesmo padrão de `avaliarCasasTematicasFortes`/`avaliarRegentesCasaDignificados`. */
+function avaliarParivartanas(axes: VocationIQAxes, pesos: PesoPlaneta[]): ParivartanaHit[] {
+  const casasPorPlaneta = new Map<ClassicalGraha, number[]>();
+  for (const casa of CASAS_TEMATICAS) {
+    const regente = axes.regentesCasas[casa];
+    casasPorPlaneta.set(regente, [...(casasPorPlaneta.get(regente) ?? []), casa]);
+  }
+
+  const hits: ParivartanaHit[] = [];
+  for (let i = 0; i < CLASSICAL_GRAHAS.length; i++) {
+    for (let j = i + 1; j < CLASSICAL_GRAHAS.length; j++) {
+      const a = CLASSICAL_GRAHAS[i];
+      const b = CLASSICAL_GRAHAS[j];
+      const signoA = pesos.find((p) => p.planeta === a)?.signo;
+      const signoB = pesos.find((p) => p.planeta === b)?.signo;
+      if (!signoA || !signoB) continue;
+      const emParivartana = SIGN_RULERS[signoA] === b && SIGN_RULERS[signoB] === a;
+      if (!emParivartana) continue;
+      const casasA = casasPorPlaneta.get(a) ?? [];
+      const casasB = casasPorPlaneta.get(b) ?? [];
+      for (const casaA of casasA) {
+        for (const casaB of casasB) {
+          hits.push({ casaA, casaB, planetaA: a, planetaB: b });
+        }
+      }
+    }
+  }
+  return hits;
+}
+
 // ---------- Camadas independentes por destino ----------
 
 export interface AtmakarakaInfo {
@@ -325,6 +483,10 @@ interface ContextoAvaliacao {
   casasTematicasFortes: number[];
   /** Correcção do especialista — o planeta com maior `peso_planeta` desta carta, usado (Correcção 2) como portão da candidata fora da lista em vez do Atmakaraka. */
   planetaDeMaiorPeso: ClassicalGraha;
+  /** Sinal novo (correcção do especialista) — os regentes de casa nesta carta que estão numa dignidade forte (Exaltado/próprio/Moolatrikona), já avaliados uma vez por pedido — ver `avaliarRegentesCasaDignificados`. */
+  regentesCasaDignificados: RegenteCasaDignificado[];
+  /** Sinal novo (correcção do especialista) — os pares de regentes de casa em Parivartana (troca mútua de signos) nesta carta, já avaliados uma vez por pedido — ver `avaliarParivartanas`. */
+  parivartanas: ParivartanaHit[];
 }
 
 /** Correcção do especialista (Correcção 2) — "peça mais forte da carta" ≠ Atmakaraka (posição técnica, maior grau) — é o planeta com maior `peso_planeta` (estado × SAV/média), a mesma força já usada em todo o resto do motor (Modo de Ganho, Roda da Vida, Radar). */
@@ -343,20 +505,20 @@ function camadasParaDestino(destinoId: string, ctx: ContextoAvaliacao): string[]
   // fora da lista. Nunca as duas camadas ao mesmo tempo para o mesmo
   // facto (violaria "nunca duas vezes o mesmo sistema").
   const atmakarakaEhTambemMaiorPeso = ctx.atmakarakaInfo.planeta === ctx.planetaDeMaiorPeso;
-  if (destinosDoPlaneta(ctx.atmakarakaInfo.planeta).includes(destinoId)) {
+  if (destinosDoPlaneta(ctx.atmakarakaInfo.planeta, ctx.pesos).includes(destinoId)) {
     if (atmakarakaEhTambemMaiorPeso) {
       camadas.push(`Planeta de maior peso — também o Atmakaraka (${ctx.planetaDeMaiorPeso}, peso ${pesoDoPlaneta(ctx.pesos, ctx.planetaDeMaiorPeso).toFixed(2)}) aponta para este destino`);
     } else {
       camadas.push(`Atmakaraka (${ctx.atmakarakaInfo.planeta}) aponta para este destino`);
     }
   }
-  if (destinosDoPlaneta(ctx.axes.amatyakaraka).includes(destinoId)) camadas.push(`Amatyakaraka (${ctx.axes.amatyakaraka}) aponta para este destino`);
+  if (destinosDoPlaneta(ctx.axes.amatyakaraka, ctx.pesos).includes(destinoId)) camadas.push(`Amatyakaraka (${ctx.axes.amatyakaraka}) aponta para este destino`);
 
   // Camada própria para o planeta de maior peso — portão da candidata
   // fora da lista (ver `catalogarDestinos`). Só entra aqui quando NÃO
   // coincide com o Atmakaraka (esse caso já foi coberto acima, com a
   // etiqueta certa, sem duplicar o facto).
-  if (!atmakarakaEhTambemMaiorPeso && destinosDoPlaneta(ctx.planetaDeMaiorPeso).includes(destinoId)) {
+  if (!atmakarakaEhTambemMaiorPeso && destinosDoPlaneta(ctx.planetaDeMaiorPeso, ctx.pesos).includes(destinoId)) {
     camadas.push(`Planeta de maior peso (${ctx.planetaDeMaiorPeso}, peso ${pesoDoPlaneta(ctx.pesos, ctx.planetaDeMaiorPeso).toFixed(2)}) aponta para este destino`);
   }
 
@@ -379,7 +541,7 @@ function camadasParaDestino(destinoId: string, ctx: ContextoAvaliacao): string[]
   // co-dominante (casa 2/Saturno e casa 10/Vénus): agora os DOIS lords são
   // testados, cada um podendo gerar a sua própria camada independente.
   for (const dominante of ctx.axes.earningModeDominante) {
-    if (destinosDoPlaneta(dominante.lord).includes(destinoId)) {
+    if (destinosDoPlaneta(dominante.lord, ctx.pesos).includes(destinoId)) {
       camadas.push(`Regente do Modo de Ganho dominante (${dominante.lord}, casa ${dominante.house}) — eixo do rendimento aponta para este destino`);
     }
   }
@@ -403,7 +565,7 @@ function camadasParaDestino(destinoId: string, ctx: ContextoAvaliacao): string[]
   // outra via — nunca entra em `idsCarta` (ver lá o comentário
   // correspondente). A condição 5 (mismatch) nunca aponta para um destino
   // específico, fica só como nota geral (`catalogarDestinos.notaEixoDoRendimento`).
-  const condicaoEixoActiva = ctx.eixoDoRendimentoActivo.find((ativo) => ativo.planetas.length > 0 && ativo.planetas.some((p) => destinosDoPlaneta(p).includes(destinoId)));
+  const condicaoEixoActiva = ctx.eixoDoRendimentoActivo.find((ativo) => ativo.planetas.length > 0 && ativo.planetas.some((p) => destinosDoPlaneta(p, ctx.pesos).includes(destinoId)));
   if (condicaoEixoActiva) {
     camadas.push(`Eixo do rendimento: ${condicaoEixoActiva.nota.leitura}`);
   }
@@ -425,6 +587,59 @@ function camadasParaDestino(destinoId: string, ctx: ContextoAvaliacao): string[]
     const entradaCasa = catalogoIndiceCasas[String(casa)];
     if (entradaCasa?.destinos.includes(destinoId)) {
       camadas.push(`Casa temática forte (casa ${casa}): ${entradaCasa.tema}`);
+    }
+  }
+
+  // Sinal novo (correcção do especialista) — stellium: `axes.stelliumD1`
+  // já vem calculado (`detectStellium`, "REGRA 2" do algoritmo de síntese
+  // vocacional, lifeReport/stellium.ts) mas nunca tinha sido lido por
+  // este ficheiro. Só o tipo "house" (3+ planetas clássicos na mesma
+  // casa) tem para onde apontar — o mesmo cluster temático da casa já
+  // usado por "Casa temática forte" acima (catalogoIndiceCasas). O tipo
+  // "sign" (3+ no mesmo signo) fica de fora: o catálogo não tem nenhum
+  // índice por signo, e inventar um violaria "não inventar". Independente
+  // de "Casa temática forte" — uma casa pode ter as duas camadas ao mesmo
+  // tempo (concentração de planetas vs. peso do regente/Karakamsha/
+  // Ascendente são sinais distintos, SPEC-vocacional.md).
+  for (const hit of ctx.axes.stelliumD1) {
+    if (hit.kind !== "house") continue;
+    const entradaCasa = catalogoIndiceCasas[String(hit.key)];
+    if (entradaCasa?.destinos.includes(destinoId)) {
+      camadas.push(`Stellium na casa ${hit.key} (${hit.planets.join("+")}) aponta para este destino`);
+    }
+  }
+
+  // Sinal novo (correcção do especialista) — regente de casa dignificado:
+  // ver `avaliarRegentesCasaDignificados` acima. Mesmo mecanismo de
+  // apontar para o cluster temático da casa (catalogoIndiceCasas) — o
+  // sinal é "esta casa tem um regente excepcionalmente bem colocado",
+  // independente de peso ≥1,3 (Casa temática forte) ou de acumular um
+  // dos 4 papéis especiais.
+  for (const item of ctx.regentesCasaDignificados) {
+    const entradaCasa = catalogoIndiceCasas[String(item.casa)];
+    if (entradaCasa?.destinos.includes(destinoId)) {
+      camadas.push(`Regente da casa ${item.casa} dignificado (${item.regente}, ${DIGNIDADE_PT[item.dignidade]}) aponta para este destino`);
+    }
+  }
+
+  // Sinal novo (correcção do especialista) — Parivartana entre regentes
+  // de casa: ver `avaliarParivartanas` acima. O MESMO par de planetas
+  // (ex.: Vénus+Saturno) nunca gera mais do que 1 camada por destino,
+  // mesmo quando um planeta rege 2 casas e ambas ligam ao mesmo destino
+  // (ex.: casa 1 e casa 6 de Vénus, ambas ligadas ao mesmo destino via
+  // Saturno) — outra coisa seria o mesmo facto astrológico (esta troca
+  // mútua específica) a contar 2, 3 ou 4 vezes só por aritmética de dupla
+  // regência, o mesmo tipo de inflação já corrigido para Saturno como
+  // planeta de maior peso + regente do Modo de Ganho.
+  const paresJaCreditados = new Set<string>();
+  for (const hit of ctx.parivartanas) {
+    const chavePar = [hit.planetaA, hit.planetaB].sort().join("+");
+    if (paresJaCreditados.has(chavePar)) continue;
+    const entradaA = catalogoIndiceCasas[String(hit.casaA)];
+    const entradaB = catalogoIndiceCasas[String(hit.casaB)];
+    if (entradaA?.destinos.includes(destinoId) || entradaB?.destinos.includes(destinoId)) {
+      camadas.push(`Parivartana entre regente da casa ${hit.casaA} e regente da casa ${hit.casaB} (${hit.planetaA}+${hit.planetaB}) aponta para este destino`);
+      paresJaCreditados.add(chavePar);
     }
   }
 
@@ -513,6 +728,41 @@ function analisarCamada(camada: string, ctx: ContextoAvaliacao): { pesoAssociado
     return { pesoAssociado: planeta ? pesoDoPlaneta(ctx.pesos, planeta) : 1.0, subsistema: "d1_posicao", planeta: planeta ?? null };
   }
   if (camada.startsWith("Casa temática forte")) return { pesoAssociado: 1.0, subsistema: "d1_posicao", planeta: null };
+  // Sinal novo — stellium: concentração de 2+ planetas na mesma casa, um
+  // sinal conjunto (como "Combinação") — nunca atribuído a um único
+  // planeta para efeitos de dedup, mas com peso próprio (média dos
+  // planetas envolvidos, não 1.0 genérico) para o desempate reflectir a
+  // força real da concentração.
+  if (camada.startsWith("Stellium na casa")) {
+    const match = camada.match(/\(([A-Za-z+]+)\)/);
+    if (match) {
+      const planetasEnvolvidos = match[1].split("+") as ClassicalGraha[];
+      const media = planetasEnvolvidos.reduce((soma, p) => soma + pesoDoPlaneta(ctx.pesos, p), 0) / planetasEnvolvidos.length;
+      return { pesoAssociado: media, subsistema: "d1_posicao", planeta: null };
+    }
+    return { pesoAssociado: 1.0, subsistema: "d1_posicao", planeta: null };
+  }
+  // Sinal novo — regente de casa dignificado: atribuído a UM planeta
+  // específico (o regente), por isso participa no dedup por planeta como
+  // qualquer outra camada de planeta único (ver comentário do campo
+  // `planeta` acima).
+  if (camada.startsWith("Regente da casa") && camada.includes("dignificado")) {
+    const match = camada.match(/dignificado \(([A-Za-z]+),/);
+    const planeta = match ? (match[1] as ClassicalGraha) : undefined;
+    return { pesoAssociado: planeta ? pesoDoPlaneta(ctx.pesos, planeta) : 1.0, subsistema: "d1_posicao", planeta: planeta ?? null };
+  }
+  // Sinal novo — Parivartana entre regentes de casa: sinal conjunto de 2
+  // planetas (como "Combinação"/"Stellium") — nunca atribuído a um único
+  // planeta, peso próprio (média dos 2 planetas envolvidos).
+  if (camada.startsWith("Parivartana entre regente da casa")) {
+    const match = camada.match(/\(([A-Za-z]+)\+([A-Za-z]+)\)/);
+    if (match) {
+      const a = match[1] as ClassicalGraha;
+      const b = match[2] as ClassicalGraha;
+      return { pesoAssociado: (pesoDoPlaneta(ctx.pesos, a) + pesoDoPlaneta(ctx.pesos, b)) / 2, subsistema: "d1_posicao", planeta: null };
+    }
+    return { pesoAssociado: 1.0, subsistema: "d1_posicao", planeta: null };
+  }
   // Eixo do rendimento, Sinais estruturados da área, Área actual declarada,
   // Ideia concreta partilhada — sinais do índice do catálogo, sem um único
   // planeta a que se possa atribuir o peso.
@@ -686,6 +936,8 @@ export function depurarCamadasDestino(
     eixoDoRendimentoActivo: avaliarEixoDoRendimento(axes, pesos),
     casasTematicasFortes: avaliarCasasTematicasFortes(axes, pesos, regenteAscendenteOcidental),
     planetaDeMaiorPeso: planetaDeMaiorPeso(pesos),
+    regentesCasaDignificados: avaliarRegentesCasaDignificados(axes, pesos),
+    parivartanas: avaliarParivartanas(axes, pesos),
   };
   return camadasParaDestino(destinoId, ctx);
 }
@@ -711,6 +963,8 @@ export function catalogarDestinos(
     eixoDoRendimentoActivo,
     casasTematicasFortes,
     planetaDeMaiorPeso: maiorPeso,
+    regentesCasaDignificados: avaliarRegentesCasaDignificados(axes, pesos),
+    parivartanas: avaliarParivartanas(axes, pesos),
   };
 
   const areaGenerica = areaActualEGenerica(intake.areaActual);
@@ -731,10 +985,10 @@ export function catalogarDestinos(
   // máximo 1 camada extra, ver `camadasParaDestino`) um destino que já
   // esteja presente por uma das vias acima.
   const idsCarta = new Set<string>([
-    ...destinosDoPlaneta(atmakarakaInfo.planeta),
-    ...destinosDoPlaneta(axes.amatyakaraka),
+    ...destinosDoPlaneta(atmakarakaInfo.planeta, pesos),
+    ...destinosDoPlaneta(axes.amatyakaraka, pesos),
     ...(catalogoIndiceNakshatras[nakshatraParaChave(atmakarakaInfo.nakshatra)]?.destinos ?? []),
-    ...axes.earningModeDominante.flatMap((e) => destinosDoPlaneta(e.lord)),
+    ...axes.earningModeDominante.flatMap((e) => destinosDoPlaneta(e.lord, pesos)),
     // Correcção do especialista — "casa temática forte" É destino-
     // específica por natureza (liga-se sempre ao cluster de
     // catalogo-indice-casas.json, mesmo padrão de Atmakaraka/
@@ -841,7 +1095,17 @@ export function catalogarDestinos(
   // (Nível 2) — a diferença nunca esteve em bloquear uns e passar outros,
   // está em como o texto fala de cada nível.
   const temPlanetaDeMaiorPeso = (camadas: string[]) => camadas.some((c) => c.startsWith("Planeta de maior peso"));
-  const temIndicadorPessoalFraco = (camadas: string[]) => camadas.some((c) => c.startsWith("Atmakaraka") || c.startsWith("Amatyakaraka"));
+  // DESVIO (correcção do especialista, trabalho a completar — mesma
+  // tarefa dos 2 sinais novos, não uma regra nova) — Stellium e Regente
+  // da casa dignificado são âncoras de Nível 2 tão válidas quanto
+  // Atmakaraka/Amatyakaraka: dignidade de regente de casa (exaltação/
+  // signo próprio/Moolatrikona) é um sinal clássico específico da carta,
+  // não um sinal genérico — o mesmo princípio que já justificava
+  // Atmakaraka/Amatyakaraka como âncoras (indicadores pessoais, não peso
+  // numérico bruto). Nunca Nível 1 — só o planeta de maior peso dá Nível
+  // 1, isso não muda.
+  const temIndicadorPessoalFraco = (camadas: string[]) =>
+    camadas.some((c) => c.startsWith("Atmakaraka") || c.startsWith("Amatyakaraka") || c.startsWith("Stellium na casa") || (c.startsWith("Regente da casa") && c.includes("dignificado")));
   const nivelDeConfianca = (camadas: string[]): 1 | 2 | null => {
     if (temPlanetaDeMaiorPeso(camadas)) return 1;
     if (temIndicadorPessoalFraco(camadas)) return 2;

@@ -47,7 +47,7 @@
     },
     "12": {
       "tema": "espiritualidade, meditação, retiro, saúde mental, hospitais, trabalho humanitário, arte contemplativa, filosofia oriental",
-      "destinos": ["f_pratica_contemplativa", "f_direcao_espiritual", "f_vida_religiosa", "f_terapia_espiritual", "psicologia", "t_geriatria", "f_cuidado_oficio", "f_hermeneutica", "ciencias_religiao", "teologia", "f_astrologia"]
+      "destinos": ["f_pratica_contemplativa", "f_direcao_espiritual", "f_vida_religiosa", "f_terapia_espiritual", "psicologia", "t_geriatria", "f_cuidado_oficio", "f_hermeneutica", "ciencias_religiao", "teologia", "f_astrologia", "administracao_hospitalar"]
     }
   }
 }

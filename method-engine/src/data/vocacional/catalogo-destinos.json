@@ -104,6 +104,16 @@
         "PT": "Administração Pública"
       }
     },
+    "administracao_hospitalar": {
+      "camada": "superior",
+      "isced_area": "0413",
+      "isced_nivel": [
+        7
+      ],
+      "labels": {
+        "PT": "Administração Hospitalar"
+      }
+    },
     "medicina": {
       "camada": "superior",
       "isced_area": "0912",

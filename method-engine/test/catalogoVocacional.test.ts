@@ -69,7 +69,7 @@ describe("catalogarDestinos — carta real da Melina (São Paulo, 11/12/1984 08:
     }
   });
 
-  it("toda candidata fora da lista tem um nível de confiança coerente com as suas próprias camadas (TAREFA #38 — Nível 1 = inclui o planeta de maior peso; Nível 2 = só Atmakaraka/Amatyakaraka, sem o planeta de maior peso) — vale para as 3, nunca só a primeira", () => {
+  it("toda candidata fora da lista tem um nível de confiança coerente com as suas próprias camadas (TAREFA #38 — Nível 1 = inclui o planeta de maior peso; Nível 2 = âncora pessoal — Atmakaraka/Amatyakaraka/Stellium/Regente de casa dignificado — sem o planeta de maior peso) — vale para as 3, nunca só a primeira", () => {
     const { axes, pesos, savPorCasa, atmakarakaInfo } = carregarMelina();
     const maisForte = [...pesos].sort((a, b) => b.peso - a.peso)[0];
     expect(maisForte.planeta).toBe("Saturn");
@@ -77,7 +77,11 @@ describe("catalogarDestinos — carta real da Melina (São Paulo, 11/12/1984 08:
     for (const candidata of resultado.candidatasForaDaLista) {
       expect(candidata.convergencia).toBeGreaterThanOrEqual(4);
       const temPlanetaDeMaiorPeso = candidata.camadas.some((c: string) => c.startsWith("Planeta de maior peso"));
-      const temIndicadorFraco = candidata.camadas.some((c: string) => c.startsWith("Atmakaraka") || c.startsWith("Amatyakaraka"));
+      // Trabalho a completar (correcção do especialista) — Stellium e
+      // Regente da casa dignificado passaram a ser âncoras de Nível 2
+      // válidas, tal como Atmakaraka/Amatyakaraka — este teste tinha de
+      // acompanhar a mesma expansão do gate em catalogarDestinos().
+      const temIndicadorFraco = candidata.camadas.some((c: string) => c.startsWith("Atmakaraka") || c.startsWith("Amatyakaraka") || c.startsWith("Stellium na casa") || (c.startsWith("Regente da casa") && c.includes("dignificado")));
       if (temPlanetaDeMaiorPeso) {
         expect(candidata.nivelConfianca).toBe(1);
       } else {
@@ -90,13 +94,13 @@ describe("catalogarDestinos — carta real da Melina (São Paulo, 11/12/1984 08:
     }
   });
 
-  it("'Direito' para a Melina, quando aparece, é sempre Nível 2 (só Amatyakaraka=Sol, nunca o planeta de maior peso=Saturno) — confirma o diagnóstico da ronda de regressão, nunca Nível 1", () => {
+  it("'Direito' para a Melina aparece na pool (TAREFA — leitura dos campos _condicionado): Saturno (Atmakaraka + planeta de maior peso) liga-se agora a Direito via saturno.superior_condicionado ('vertente de norma, notariado e regulação', promovida sem condição por não ser um 'requer X') — Nível 1, não 2. Comportamento alterado deliberadamente nesta correcção, não uma regressão: antes desta leitura, Saturno não tinha nenhuma ligação viva a Direito.", () => {
     const { axes, pesos, savPorCasa, atmakarakaInfo } = carregarMelina();
     const resultado = catalogarDestinos(axes, pesos, savPorCasa, { areaActual: "", anosExperiencia: "" }, atmakarakaInfo);
     const direito = resultado.candidatasForaDaLista.find((c) => c.nome === "Direito");
     expect(direito).toBeDefined();
-    expect(direito?.nivelConfianca).toBe(2);
-    expect(direito?.camadas.some((c: string) => c.startsWith("Planeta de maior peso"))).toBe(false);
+    expect(direito?.nivelConfianca).toBe(1);
+    expect(direito?.camadas.some((c: string) => c.startsWith("Planeta de maior peso"))).toBe(true);
   });
 
   it("área actual 'Estética' encontra destinos de estética/cosmética no catálogo (bug real da Melina)", () => {
@@ -184,6 +188,11 @@ describe("catalogarDestinos — caso sintético de convergência forte (não é 
     // avaliadas, por isso nunca acrescenta um sinal a nenhuma delas —
     // este caso sintético continua a não testar essa camada nova.
     missionAxis: { karakamshaHouse: 1 },
+    // stelliumD1 — campo lido pelo sinal novo "Stellium na casa" (correcção
+    // do especialista); vazio aqui porque este caso sintético não testa
+    // essa camada (nenhum grupo de 3+ planetas foi montado nos pesos
+    // sintéticos abaixo).
+    stelliumD1: [],
   } as unknown as VocationIQAxes;
   const atmakarakaInfo: AtmakarakaInfo = { planeta: "Jupiter", nakshatra: "Punarvasu" };
 
