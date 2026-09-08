@@ -176,6 +176,7 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
   · SINAL FORTE (2-3 camadas): confiança, citando as fontes.
   · LEITURA (interpretação sólida, sem convergência mensurável): escreve-se como leitura, nunca como facto.
   · EM ABERTO (o perfil não distingue): diz isso directamente — "o teu perfil não distingue entre X e Y, a decisão fica contigo".
+- PROIBIDO EXPOR NÚMEROS DE CÁLCULO INTERNO NO TEXTO VISÍVEL (correcção do especialista, pós-PDF real): "soma de pesos", "convergência N camadas", "Nível 1"/"Nível 2", e o peso numérico exacto de um planeta nunca podem aparecer em bruto em nenhuma secção visível — traduz sempre para a linguagem de confiança já pedida. O "${MARCADORES.seleccaoCandidatas}" é o único sítio onde estes números podem ser citados, e mesmo esse nunca chega ao cliente.
 - ${INSTRUCAO_AVASTHAS}
 - ${INSTRUCAO_CONJUNCOES}
 - ${INSTRUCAO_YOGAS}

@@ -1020,6 +1020,49 @@ function blocoDiagramaPonte(dados: DadosParaTemplate, pesos: PesoPlaneta[], axes
  * a lista completa, com texto humano — nunca inventado aqui). Só chamado
  * quando há candidata (ver blocoCandidataForaDaLista).
  */
+/**
+ * Correcção do especialista ("jargão técnico em bruto nos diagramas",
+ * pós-PDF real) — o rótulo de cada nó do diagrama "Porque esta opção
+ * não é acidente" era o texto da camada cortado no primeiro "(" ou ":",
+ * o que preservava termos técnicos em bruto (Atmakaraka, Amatyakaraka,
+ * Nakshatra do Atmakaraka, "Parivartana entre regente da casa X e Y",
+ * "Regente da casa X dignificado") — a secção mais visível do relatório
+ * a contradizer a regra de zero jargão que o resto do texto respeita.
+ * Traduz cada tipo de camada para linguagem humana, preservando o
+ * número de casa quando a camada o tiver (é informação específica desta
+ * carta, não jargão) — nunca genérico a ponto de perder a
+ * especificidade. Lista sincronizada com os `camadas.push(...)` de
+ * `camadasParaDestino()` (method-engine/catalogoVocacional.ts) — 14
+ * tipos, os mesmos já classificados em `TIPOS_CAMADA_PARA_ASSINATURA`
+ * para o agrupamento de candidatas.
+ */
+function rotuloHumanoCamada(camada: string): string {
+  if (camada.startsWith("Planeta de maior peso — também o Atmakaraka")) return "O ponto mais forte do seu perfil";
+  if (camada.startsWith("Atmakaraka")) return "O seu traço mais amadurecido";
+  if (camada.startsWith("Amatyakaraka")) return "A sua ferramenta de trabalho do dia a dia";
+  if (camada.startsWith("Planeta de maior peso")) return "O ponto mais forte do seu perfil";
+  if (camada.startsWith("Nakshatra do Atmakaraka")) return "Uma nuance mais fina da sua força principal";
+  if (camada.startsWith("Combinação")) return "Duas forças do seu perfil a actuar juntas";
+  if (camada.startsWith("Regente do Modo de Ganho dominante")) return "O que rege a sua forma de ganhar";
+  if (camada.startsWith("Eixo do rendimento")) return "O eixo do que lhe traz retorno";
+  const casaTematica = camada.match(/^Casa temática forte \(casa (\d+)\)/);
+  if (casaTematica) return `Uma área de vida estruturalmente forte (casa ${casaTematica[1]})`;
+  const stellium = camada.match(/^Stellium na casa (\d+)/);
+  if (stellium) return `Uma concentração de força numa área (casa ${stellium[1]})`;
+  const regenteDignificado = camada.match(/^Regente da casa (\d+) dignificado/);
+  if (regenteDignificado) return `O regente dessa área, no seu melhor (casa ${regenteDignificado[1]})`;
+  const parivartana = camada.match(/^Parivartana entre regente da casa (\d+) e regente da casa (\d+)/);
+  if (parivartana) return `Duas áreas de vida a trocar força entre si (casas ${parivartana[1]} e ${parivartana[2]})`;
+  if (camada.startsWith("Sinais estruturados da área")) return "Vários sinais do seu perfil confirmam esta área";
+  if (camada.startsWith("Área actual declarada")) return "A área que já disse que está a trabalhar";
+  if (camada.startsWith("Ideia concreta partilhada")) return "A ideia concreta que partilhou";
+  // Nunca deveria chegar aqui (lista sincronizada acima) — mas nunca
+  // rebenta nem deixa um rótulo vazio: cai para o corte por "(" ou ":"
+  // já usado antes desta correcção.
+  const separador = camada.search(/[(:]/);
+  return (separador > 0 ? camada.slice(0, separador) : camada).trim();
+}
+
 function svgDiagramaConvergencia(nomeCandidata: string, camadas: string[]): string {
   const largura = 760;
   const raioCentro = 80;
@@ -1052,8 +1095,7 @@ function svgDiagramaConvergencia(nomeCandidata: string, camadas: string[]): stri
   //    `margemTexto` com folga (40px) à esquerda da borda do círculo.
   let cursorY = topo;
   const nos = camadas.map((c) => {
-    const separador = c.search(/[(:]/);
-    const rotulo = (separador > 0 ? c.slice(0, separador) : c).trim();
+    const rotulo = rotuloHumanoCamada(c);
     const linhasRotulo = quebrarLinhas(rotulo, maxCarLinhaRotulo);
     const blocoAltura = linhasRotulo.length * lineHeight;
     const centroY = cursorY + blocoAltura / 2;
@@ -1709,7 +1751,8 @@ export function gerarHTMLRelatorio(
 
   /* Correcção do especialista — secção "Quem é" (TAREFA 3C) */
   .grelha-dons-limitacoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 16px; }
-  .card-dom, .card-limitacao { border-radius: 8px; padding: 14px 16px; display: flex; gap: 10px; align-items: flex-start; }
+  /* Correcção do especialista ("caixa vazia", pós-PDF real) — a causa não era o layout assumir um nº fixo de caixas (blocoSeccaoQuemE já é 100% dinâmico, um card por dom/limitação realmente escrita, nunca mais) — era a falta de page-break-inside:avoid nestes cards, dentro de uma grelha CSS que se parte mal entre páginas no PDF: o título de um card ficava numa página e o corpo escapava para a seguinte, deixando "um título sem texto" seguido de "uma caixa em branco" (o resto do card órfão). Mesma causa-raiz já corrigida 2x nesta sessão (candidatas, grupos). */
+  .card-dom, .card-limitacao { border-radius: 8px; padding: 14px 16px; display: flex; gap: 10px; align-items: flex-start; page-break-inside: avoid; break-inside: avoid; }
   .card-dom { background: #e8f5e9; border-left: 3px solid ${VERDE}; }
   .card-limitacao { background: #fff8e1; border-left: 3px solid var(--ambar); }
   .card-dom-icone, .card-limitacao-icone { flex-shrink: 0; font-size: 15px; font-weight: 700; line-height: 1.5; }

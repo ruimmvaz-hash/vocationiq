@@ -182,6 +182,16 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
      a barra dominante fica a contradizer o texto, exactamente o problema
      que esta correcção existe para resolver.
 
+ 25. NÚMEROS DE CÁLCULO INTERNO EM TEXTO VISÍVEL (correcção do
+     especialista, pós-PDF real): fora do bloco "SELECÇÃO_CANDIDATAS:"
+     (que nunca chega ao cliente), o texto visível cita algum destes em
+     bruto — "soma de pesos", "convergência [N] camadas", "Nível 1"/
+     "Nível 2", ou um peso numérico exacto de planeta (ex.: "peso
+     1,76")? Lista cada ocorrência exacta e a secção onde aparece. Se
+     aparecer mesmo uma vez fora do bloco de raciocínio: FALHA —
+     reescrever traduzindo para a linguagem de confiança (ver critério
+     de ESCALA DE CONFIANÇA), nunca reproduzir o número em bruto.
+
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
  Formato:
@@ -369,6 +379,16 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
      falta ou incompleto, reescrita obrigatória. Se falhar (d): FALHA —
      a barra dominante fica a contradizer o texto, exactamente o problema
      que esta correcção existe para resolver.
+
+ 25. NÚMEROS DE CÁLCULO INTERNO EM TEXTO VISÍVEL (correcção do
+     especialista, pós-PDF real): fora do bloco "SELECÇÃO_CANDIDATAS:"
+     (que nunca chega ao cliente), o texto visível cita algum destes em
+     bruto — "soma de pesos", "convergência [N] camadas", "Nível 1"/
+     "Nível 2", ou um peso numérico exacto de planeta (ex.: "peso
+     1,76")? Lista cada ocorrência exacta e a secção onde aparece. Se
+     aparecer mesmo uma vez fora do bloco de raciocínio: FALHA —
+     reescrever traduzindo para a linguagem de confiança (ver critério
+     de ESCALA DE CONFIANÇA), nunca reproduzir o número em bruto.
 
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
