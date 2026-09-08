@@ -1496,12 +1496,48 @@ function blocoSeccaoQuemE(corpo: string): string {
  * primeiro membro do grupo — os cards individuais a seguir trazem só a
  * diferenciação específica que o LLM escreveu para cada um.
  */
+/**
+ * Correcção do especialista (padrão de fundo confirmado por texto em
+ * bruto real, 4 gerações seguidas) — o LLM deriva sistematicamente de
+ * "CANDIDATA: Nome"/"GRUPO: nome1; nome2" para título markdown bold
+ * ("**Nome** — Nível X, ..." / "**Grupo 1 — ...**"), mesmo com a
+ * instrução e os exemplos negativos no prompt (ver
+ * INSTRUCAO_SELECCAO_CANDIDATAS). Rede de segurança do lado do parser,
+ * para quando a prompt não bastar: normaliza QUALQUER linha bold-header
+ * ("**Texto** — resto") para o marcador literal ANTES de qualquer outro
+ * parsing correr — assim toda a lógica existente (fronteiras, grupos,
+ * diagramas) funciona sem alteração, sobre texto já normalizado.
+ *
+ * Candidatas individuais ("**Nome** — resto") tornam-se sempre
+ * "CANDIDATA: Nome\nresto" — recuperam cartão e diagrama completos.
+ *
+ * Cabeçalhos de grupo ("**Grupo N** — resto", texto bold a começar por
+ * "grupo") são DESCARTADOS, nunca convertidos em "GRUPO:" — sem uma
+ * lista explícita de nomes separados por ";" nessa linha (o LLM nunca a
+ * escreve neste formato de desvio), não há como reconstruir com
+ * confiança QUAIS candidatas pertencem ao grupo; inventar essa
+ * associação seria pior do que perder só o agrupamento. Resultado:
+ * cada candidata que estaria nesse grupo continua a chegar como
+ * "CANDIDATA:" individual completa (a convergência partilhada
+ * descrita nesse cabeçalho perde-se, mas nenhuma candidata desaparece
+ * — a falha grave que esta correcção visa eliminar).
+ */
+function normalizarBlocosCandidataImplicitos(corpo: string): string {
+  const regexBoldHeader = /^\*\*([^*]+?)\*\*\s*[—–-]\s*(.*)$/gm;
+  return corpo.replace(regexBoldHeader, (_linhaCompleta, nome: string, resto: string) => {
+    const nomeNormalizado = nome.trim();
+    if (/^grupo\b/i.test(semAcentos(nomeNormalizado))) return "";
+    return `${MARCADORES.candidata} ${nomeNormalizado}\n${resto}`;
+  });
+}
+
 function blocoCandidataForaDaLista(corpo: string, catalogo: ResultadoCatalogoVocacional | null, usarTu: boolean): string {
-  const { candidatas, textoSemCandidata } = parseCandidataForaDaLista(corpo);
+  const corpoNormalizado = normalizarBlocosCandidataImplicitos(corpo);
+  const { candidatas, textoSemCandidata } = parseCandidataForaDaLista(corpoNormalizado);
   if (!candidatas.length) {
     return `<div class="caixa-neutra">${markdownParaHtml(textoSemCandidata || corpo)}</div>`;
   }
-  const grupos = parseGruposCandidatas(corpo);
+  const grupos = parseGruposCandidatas(corpoNormalizado);
   const grupoPorNome = new Map<string, GrupoCandidatasTexto>();
   for (const g of grupos) for (const nome of g.membros) grupoPorNome.set(nome, g);
   const gruposJaRenderizados = new Set<GrupoCandidatasTexto>();

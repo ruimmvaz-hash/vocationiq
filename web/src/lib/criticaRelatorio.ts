@@ -192,6 +192,30 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
      reescrever traduzindo para a linguagem de confiança (ver critério
      de ESCALA DE CONFIANÇA), nunca reproduzir o número em bruto.
 
+ 26. MARCADORES MACHINE-READABLE EM FALTA OU SUBSTITUÍDOS POR MARKDOWN
+     (correcção do especialista — diagnóstico directo de texto em bruto
+     real, 4 gerações seguidas com esta falha exacta, nunca antes
+     apanhada pela crítica automática):
+     (a) Existem, literalmente, os 4 blocos "EXPLICAÇÃO_GRÁFICO: peso",
+         "EXPLICAÇÃO_GRÁFICO: competencias", "EXPLICAÇÃO_GRÁFICO: vida",
+         "EXPLICAÇÃO_GRÁFICO: ganho" — cada um com um parágrafo de
+         abertura e uma linha "LINHA_GRÁFICO:" por categoria (7 para
+         peso, 6 para competencias, 8 para vida, 3 para ganho)? Falta
+         qualquer um dos 4, ou falta alguma categoria dentro de um
+         deles: FALHA — lista exactamente qual(is).
+     (b) TODA candidata na secção "Candidata fora da lista" usa o
+         marcador literal "CANDIDATA: <nome>" — nunca "**<nome>** —
+         ..." nem qualquer outra formatação markdown/bold a substituir
+         o marcador? TODO grupo usa "GRUPO: <nome1>; <nome2>; ..." —
+         nunca "**Grupo N** — ..." nem título bold sem a lista de
+         nomes? Encontraste alguma candidata ou grupo escrito em
+         bold-header markdown em vez do marcador literal exigido: FALHA
+         — cita o nome exacto e a linha onde ocorre.
+     Se falhar (a) ou (b): FALHA — força reescrita da secção afectada
+     inteira, usando sempre os marcadores literais exactos (nunca
+     markdown bold como substituto, por mais parecido que o formato
+     final pareça ao humano).
+
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
  Formato:
@@ -389,6 +413,30 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
      aparecer mesmo uma vez fora do bloco de raciocínio: FALHA —
      reescrever traduzindo para a linguagem de confiança (ver critério
      de ESCALA DE CONFIANÇA), nunca reproduzir o número em bruto.
+
+ 26. MARCADORES MACHINE-READABLE EM FALTA OU SUBSTITUÍDOS POR MARKDOWN
+     (correcção do especialista — diagnóstico directo de texto em bruto
+     real, 4 gerações seguidas com esta falha exacta, nunca antes
+     apanhada pela crítica automática):
+     (a) Existem, literalmente, os 4 blocos "EXPLICAÇÃO_GRÁFICO: peso",
+         "EXPLICAÇÃO_GRÁFICO: competencias", "EXPLICAÇÃO_GRÁFICO: vida",
+         "EXPLICAÇÃO_GRÁFICO: ganho" — cada um com um parágrafo de
+         abertura e uma linha "LINHA_GRÁFICO:" por categoria (7 para
+         peso, 6 para competencias, 8 para vida, 3 para ganho)? Falta
+         qualquer um dos 4, ou falta alguma categoria dentro de um
+         deles: FALHA — lista exactamente qual(is).
+     (b) TODA candidata na secção "Candidata fora da lista" usa o
+         marcador literal "CANDIDATA: <nome>" — nunca "**<nome>** —
+         ..." nem qualquer outra formatação markdown/bold a substituir
+         o marcador? TODO grupo usa "GRUPO: <nome1>; <nome2>; ..." —
+         nunca "**Grupo N** — ..." nem título bold sem a lista de
+         nomes? Encontraste alguma candidata ou grupo escrito em
+         bold-header markdown em vez do marcador literal exigido: FALHA
+         — cita o nome exacto e a linha onde ocorre.
+     Se falhar (a) ou (b): FALHA — força reescrita da secção afectada
+     inteira, usando sempre os marcadores literais exactos (nunca
+     markdown bold como substituto, por mais parecido que o formato
+     final pareça ao humano).
 
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
