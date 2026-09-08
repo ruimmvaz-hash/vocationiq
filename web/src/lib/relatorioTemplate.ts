@@ -375,7 +375,7 @@ function parseLeituraPorOpcao(corpo: string): LeituraOpcao[] {
 function proximoIndiceDeMarcador(texto: string, apartirDe: number, marcadores: string[]): number {
   let menor = texto.length;
   for (const marcador of marcadores) {
-    const regex = new RegExp(`^${marcador}`, "gm");
+    const regex = new RegExp(`^${marcador}`, "gim");
     regex.lastIndex = apartirDe;
     const m = regex.exec(texto);
     if (m && m.index >= apartirDe && m.index < menor) menor = m.index;
@@ -495,7 +495,7 @@ const PALAVRAS_CHAVE_GRAFICO: Record<string, string[]> = {
 };
 
 function parseExplicacaoGrafico(textoCompleto: string, id: string): ExplicacaoGrafico | null {
-  const regexTodos = new RegExp(`^${MARCADORES.explicacaoGrafico}\\s*(.*)$`, "gm");
+  const regexTodos = new RegExp(`^${MARCADORES.explicacaoGrafico}\\s*(.*)$`, "gim");
   const todos = [...textoCompleto.matchAll(regexTodos)];
   const palavrasChave = PALAVRAS_CHAVE_GRAFICO[id] ?? [id];
   const blocoMatch = todos.find((m) => palavrasChave.some((p) => semAcentos(m[1] ?? "").includes(p)));
@@ -510,7 +510,7 @@ function parseExplicacaoGrafico(textoCompleto: string, id: string): ExplicacaoGr
   const fimBloco = proximoIndiceDeMarcador(textoCompleto, inicioBloco, FRONTEIRA_CANDIDATA);
   const bloco = textoCompleto.slice(inicioBloco, fimBloco);
 
-  const regexLinha = new RegExp(`^${MARCADORES.linhaGrafico}\\s*(.*)$`, "gm");
+  const regexLinha = new RegExp(`^${MARCADORES.linhaGrafico}\\s*(.*)$`, "gim");
   const linhasMatches = [...bloco.matchAll(regexLinha)];
   const abertura = (linhasMatches.length ? bloco.slice(0, linhasMatches[0].index!) : bloco).trim();
   const linhas = linhasMatches
