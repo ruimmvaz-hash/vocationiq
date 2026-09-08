@@ -359,14 +359,43 @@ function parseCandidataForaDaLista(corpo: string): { candidatas: { nome: string;
   const matches = [...corpo.matchAll(regex)];
   const primeiroValor = matches[0]?.[1]?.trim() ?? "";
   if (!matches.length || !primeiroValor || primeiroValor.toLowerCase() === "nenhuma") {
-    const textoSemCandidata = corpo.replace(new RegExp(`^${MARCADORES.candidata}\\s*(.*)$`, "m"), "").trim();
+    // Defesa adicional — por instrução, "SELECÇÃO_CANDIDATAS:" nunca
+    // deveria existir quando a resposta é "nenhuma", mas nunca deixar
+    // passar para o cliente se o LLM a escrever de qualquer forma.
+    const textoSemCandidata = corpo
+      .replace(new RegExp(`^${MARCADORES.candidata}\\s*(.*)$`, "m"), "")
+      .replace(new RegExp(`^${MARCADORES.seleccaoCandidatas}\\s*(.*)$`, "gm"), "")
+      .trim();
     return { candidatas: [], textoSemCandidata };
   }
+  // Correcção do especialista (bug real, encontrado por revisão de
+  // código, não por um relatório observado) — o fim de cada candidata
+  // era sempre "até ao próximo CANDIDATA:", sem olhar para "GRUPO:". Com
+  // o formato de agrupamento, isto faz a ÚLTIMA candidata de um grupo
+  // engolir o "GRUPO: ...\n<convergência partilhada>" inteiro do grupo
+  // SEGUINTE (o marcador aparece como texto em bruto dentro do seu
+  // próprio cartão, e a convergência do grupo seguinte fica duplicada —
+  // uma vez ali, indevidamente, outra vez a seguir, na caixa correcta).
+  // Nunca testado antes contra 2+ grupos na mesma secção — o teste
+  // sintético anterior só tinha 1 grupo. Corrigido: o fim de cada
+  // candidata é sempre o que vier primeiro entre o próximo "CANDIDATA:"
+  // e o próximo "GRUPO:" — nunca ultrapassa um bloco de grupo seguinte.
+  const gruposIndices = [...corpo.matchAll(new RegExp(`^${MARCADORES.grupo}\\s*(.*)$`, "gm"))].map((m) => m.index!);
+  // Defesa adicional — "SELECÇÃO_CANDIDATAS:" nunca deve aparecer dentro
+  // do corpo de uma candidata (só antes da primeira, onde já é
+  // descartado por desenho), mas se o LLM alguma vez a repetir fora do
+  // sítio esperado, o fim da candidata pára aí também, nunca a inclui.
+  const seleccaoIndices = [...corpo.matchAll(new RegExp(`^${MARCADORES.seleccaoCandidatas}\\s*(.*)$`, "gm"))].map((m) => m.index!);
   const candidatas = matches
     .map((m, i) => {
       const nome = m[1]?.trim() ?? "";
       const inicio = m.index! + m[0].length;
-      const fim = i + 1 < matches.length ? matches[i + 1].index! : corpo.length;
+      const limites = [
+        i + 1 < matches.length ? matches[i + 1].index! : corpo.length,
+        ...gruposIndices.filter((idx) => idx > m.index!),
+        ...seleccaoIndices.filter((idx) => idx > m.index!),
+      ];
+      const fim = Math.min(...limites);
       return { nome, texto: corpo.slice(inicio, fim).trim() };
     })
     .filter((c) => c.nome);
@@ -394,6 +423,11 @@ function parseGruposCandidatas(corpo: string): GrupoCandidatasTexto[] {
   const regexGrupo = new RegExp(`^${MARCADORES.grupo}\\s*(.*)$`, "gm");
   const matches = [...corpo.matchAll(regexGrupo)];
   const regexCandidata = new RegExp(`^${MARCADORES.candidata}\\s*(.*)$`, "m");
+  // Defesa adicional (mesmo princípio da correcção em
+  // `parseCandidataForaDaLista`) — se "SELECÇÃO_CANDIDATAS:" aparecer
+  // fora do sítio esperado, entre um "GRUPO:" e o seu primeiro
+  // "CANDIDATA:", nunca deixa entrar na convergência partilhada.
+  const regexSeleccao = new RegExp(`^${MARCADORES.seleccaoCandidatas}\\s*(.*)$`, "m");
   return matches
     .map((m, i) => {
       const membros = (m[1] ?? "")
@@ -404,7 +438,9 @@ function parseGruposCandidatas(corpo: string): GrupoCandidatasTexto[] {
       const fimGrupo = i + 1 < matches.length ? matches[i + 1].index! : corpo.length;
       const restante = corpo.slice(inicio, fimGrupo);
       const candidataMatch = restante.match(regexCandidata);
-      const fimTexto = candidataMatch ? inicio + candidataMatch.index! : fimGrupo;
+      const seleccaoMatch = restante.match(regexSeleccao);
+      const limites = [fimGrupo, candidataMatch ? inicio + candidataMatch.index! : fimGrupo, seleccaoMatch ? inicio + seleccaoMatch.index! : fimGrupo];
+      const fimTexto = Math.min(...limites);
       return { membros, textoPartilhado: corpo.slice(inicio, fimTexto).trim() };
     })
     .filter((g) => g.membros.length >= 2);
