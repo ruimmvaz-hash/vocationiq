@@ -888,6 +888,20 @@ export interface ResultadoCatalogoVocacional {
    * lista.
    */
   candidatasForaDaLista: CandidataForaDaLista[];
+  /**
+   * Correcção do especialista ("remover o tecto fixo de 3, com
+   * agrupamento por cluster") — grupos de candidatas (por NOME, referem-
+   * se a `candidatasForaDaLista`) cuja assinatura de TIPOS de camada
+   * (não o texto exacto, o CONJUNTO de tipos — ver `agruparCandidatasPorAssinatura`)
+   * é idêntica ou difere em, no máximo, 1 tipo. Só apresentação — nunca
+   * afecta `nivelConfianca`, `convergencia` nem a ordem de
+   * `candidatasForaDaLista`. Cada sub-array tem ≥2 nomes; uma candidata
+   * sem par (assinatura própria, sem nenhuma outra a ≤1 tipo de
+   * distância) simplesmente não aparece em nenhum grupo aqui — o prompt
+   * trata-a como individual completa (INSTRUCAO_SELECCAO_CANDIDATAS,
+   * promptAdulto.ts).
+   */
+  gruposCandidatas: string[][];
   /** Presente só quando a área actual não tem sector específico (ex.: "Empresária", "Gestão") — nota para o prompt citar explicitamente. */
   notaAreaGenerica: string | null;
   /** Correcção do especialista (TAREFA 4a) — a condição 5 de eixo_do_rendimento ("casas 2 e 11 sem ligação à 10") nunca aponta para um destino específico; quando activa, fica aqui para o prompt citar com a `regraDeEscrita` curada (nunca como condenação). `null` quando a condição não se verifica nesta carta. */
@@ -940,6 +954,106 @@ export function depurarCamadasDestino(
     parivartanas: avaliarParivartanas(axes, pesos),
   };
   return camadasParaDestino(destinoId, ctx);
+}
+
+/**
+ * Correcção do especialista ("remover o tecto fixo de 3, com
+ * agrupamento por cluster") — os 14 tipos de camada reconhecidos, usados
+ * só para agrupar candidatas com convergência quase idêntica na
+ * apresentação final. Testa o TIPO (o prefixo/padrão fixo do texto),
+ * nunca o texto completo — duas candidatas ligadas ao mesmo tipo por
+ * planetas diferentes (ex.: "Atmakaraka" de uma carta é o Sol, da outra
+ * é Mercúrio) contam como o MESMO tipo para efeitos de assinatura, o que
+ * é a leitura correcta aqui: o que agrupa duas candidatas é partilharem
+ * a mesma FORMA de convergência astrológica, não o mesmo planeta
+ * literal. Lista sincronizada com os `camadas.push(...)` de
+ * `camadasParaDestino` acima — qualquer tipo novo aí precisa de uma
+ * entrada aqui.
+ */
+const TIPOS_CAMADA_PARA_ASSINATURA: { nome: string; teste: (camada: string) => boolean }[] = [
+  // Nota: quando o Atmakaraka é também o Planeta de maior peso,
+  // `camadasParaDestino` funde os dois factos numa única camada
+  // ("Planeta de maior peso — também o Atmakaraka...", nunca as duas em
+  // separado) — essa camada conta só como tipo "Planeta de maior peso"
+  // abaixo, nunca também como "Atmakaraka" (contá-la duas vezes
+  // inflacionaria a assinatura com um tipo que a carta não tem
+  // independentemente).
+  { nome: "Atmakaraka", teste: (c) => c.startsWith("Atmakaraka") },
+  { nome: "Amatyakaraka", teste: (c) => c.startsWith("Amatyakaraka") },
+  { nome: "Planeta de maior peso", teste: (c) => c.startsWith("Planeta de maior peso") },
+  { nome: "Nakshatra do Atmakaraka", teste: (c) => c.startsWith("Nakshatra do Atmakaraka") },
+  { nome: "Combinação", teste: (c) => c.startsWith("Combinação") },
+  { nome: "Regente do Modo de Ganho dominante", teste: (c) => c.startsWith("Regente do Modo de Ganho dominante") },
+  { nome: "Eixo do rendimento", teste: (c) => c.startsWith("Eixo do rendimento") },
+  { nome: "Casa temática forte", teste: (c) => c.startsWith("Casa temática forte") },
+  { nome: "Stellium na casa", teste: (c) => c.startsWith("Stellium na casa") },
+  { nome: "Regente da casa dignificado", teste: (c) => c.startsWith("Regente da casa") && c.includes("dignificado") },
+  { nome: "Parivartana entre regentes de casa", teste: (c) => c.startsWith("Parivartana entre regente da casa") },
+  { nome: "Sinais estruturados da área", teste: (c) => c.startsWith("Sinais estruturados da área") },
+  { nome: "Área actual declarada", teste: (c) => c.startsWith("Área actual declarada") },
+  { nome: "Ideia concreta partilhada", teste: (c) => c.startsWith("Ideia concreta partilhada") },
+];
+
+function assinaturaTiposDeCamada(camadas: string[]): Set<string> {
+  return new Set(TIPOS_CAMADA_PARA_ASSINATURA.filter((t) => camadas.some(t.teste)).map((t) => t.nome));
+}
+
+function diferencaSimetrica(a: Set<string>, b: Set<string>): number {
+  let dif = 0;
+  for (const x of a) if (!b.has(x)) dif++;
+  for (const x of b) if (!a.has(x)) dif++;
+  return dif;
+}
+
+/**
+ * Agrupa candidatas cuja assinatura de TIPOS de camada é idêntica ou
+ * quase idêntica.
+ *
+ * DESVIO (encontrado ao testar com a carta real da Melina, ronda de
+ * validação desta correcção) — a primeira versão agrupava por
+ * COMPONENTES LIGADAS num grafo com aresta quando a diferença simétrica
+ * entre duas candidatas era ≤1 (union-find clássico). Isso permite
+ * CADEIAS TRANSITIVAS: A liga-se a B (dif 1), B liga-se a C (dif 1), mas
+ * A e C podem diferir muito mais entre si. Na carta da Melina isto
+ * produziu um "grupo" de 11 candidatas em que "Consultoria de imagem e
+ * estilo" e "Engenharia Civil" acabavam juntas com diferença simétrica
+ * de 4 (partilhando só 2 dos seus 5 tipos combinados) — apresentar isto
+ * como "a mesma convergência astrológica de base" seria enganoso, o
+ * oposto do que o agrupamento existe para fazer.
+ *
+ * Correcção — cada grupo tem uma ÂNCORA fixa (a assinatura exacta mais
+ * frequente entre as candidatas): primeiro juntam-se as candidatas com
+ * assinatura EXACTAMENTE IGUAL (dif 0, o caso claro — ex.: os 13 da
+ * Alice, ou Administração Pública+Gestão da Nádia/Alice, ambos cliques
+ * verificados dif=0 em todos os pares). Só depois, candidatas ainda
+ * isoladas que fiquem a ≤1 tipo de distância DESSA ÂNCORA (nunca de
+ * outra candidata isolada) juntam-se ao grupo — nunca encadeando um
+ * near-miss a partir de outro near-miss. Isto garante que toda a
+ * apresentação de um grupo é sempre defensável face à âncora, mesmo que
+ * dois near-miss extremos do mesmo grupo não sejam idênticos entre si.
+ */
+function agruparCandidatasPorAssinatura(candidatas: CandidataForaDaLista[]): string[][] {
+  const comAssinatura = candidatas.map((c) => ({ nome: c.nome, sig: assinaturaTiposDeCamada(c.camadas) }));
+
+  const porChaveExacta = new Map<string, { nome: string; sig: Set<string> }[]>();
+  for (const c of comAssinatura) {
+    const chave = [...c.sig].sort().join("|");
+    porChaveExacta.set(chave, [...(porChaveExacta.get(chave) ?? []), c]);
+  }
+
+  const gruposExactos = [...porChaveExacta.values()].filter((membros) => membros.length >= 2);
+  const nomesAgrupados = new Set(gruposExactos.flatMap((membros) => membros.map((m) => m.nome)));
+  const isoladas = comAssinatura.filter((c) => !nomesAgrupados.has(c.nome));
+
+  const grupos = gruposExactos.map((membros) => membros.map((m) => m.nome));
+  for (const grupo of grupos) {
+    const ancora = comAssinatura.find((c) => c.nome === grupo[0])!.sig;
+    for (const iso of isoladas) {
+      if (grupo.includes(iso.nome)) continue;
+      if (diferencaSimetrica(ancora, iso.sig) <= 1) grupo.push(iso.nome);
+    }
+  }
+  return grupos;
 }
 
 export function catalogarDestinos(
@@ -1157,11 +1271,13 @@ export function catalogarDestinos(
   }));
 
   const notaCondicao5 = eixoDoRendimentoActivo.find((a) => a.planetas.length === 0);
+  const gruposCandidatas = agruparCandidatasPorAssinatura(candidatasForaDaLista);
 
   return {
     destinosDeAreaActual,
     destinosAlternativos,
     candidatasForaDaLista,
+    gruposCandidatas,
     notaAreaGenerica: areaGenerica ? `área actual não tem sector específico ("${intake.areaActual}") — candidatas derivadas só do perfil (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações activas)` : null,
     notaEixoDoRendimento: notaCondicao5 ? notaCondicao5.nota : null,
   };

@@ -373,6 +373,43 @@ function parseCandidataForaDaLista(corpo: string): { candidatas: { nome: string;
   return { candidatas, textoSemCandidata: "" };
 }
 
+interface GrupoCandidatasTexto {
+  /** Nomes exactos dos membros, na ordem declarada pelo LLM na linha "GRUPO: nome1; nome2; ...". */
+  membros: string[];
+  /** Convergência de base partilhada — o texto entre o marcador GRUPO e o primeiro CANDIDATA a seguir. */
+  textoPartilhado: string;
+}
+
+/**
+ * Correcção do especialista ("remover o tecto fixo de 3, com agrupamento
+ * por cluster") — blocos "GRUPO: <nome1>; <nome2>; ..." (nomes separados
+ * por ";", nunca vírgula) seguidos da convergência de base partilhada até
+ * ao próximo "CANDIDATA:". A associação candidata↔grupo é sempre por NOME
+ * declarado aqui, nunca por posição no texto — robusto mesmo que o LLM
+ * intercale candidatas individuais entre grupos, porque cada candidata é
+ * procurada pelo próprio nome na lista de membros de cada grupo (ver
+ * `blocoCandidataForaDaLista`).
+ */
+function parseGruposCandidatas(corpo: string): GrupoCandidatasTexto[] {
+  const regexGrupo = new RegExp(`^${MARCADORES.grupo}\\s*(.*)$`, "gm");
+  const matches = [...corpo.matchAll(regexGrupo)];
+  const regexCandidata = new RegExp(`^${MARCADORES.candidata}\\s*(.*)$`, "m");
+  return matches
+    .map((m, i) => {
+      const membros = (m[1] ?? "")
+        .split(";")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const inicio = m.index! + m[0].length;
+      const fimGrupo = i + 1 < matches.length ? matches[i + 1].index! : corpo.length;
+      const restante = corpo.slice(inicio, fimGrupo);
+      const candidataMatch = restante.match(regexCandidata);
+      const fimTexto = candidataMatch ? inicio + candidataMatch.index! : fimGrupo;
+      return { membros, textoPartilhado: corpo.slice(inicio, fimTexto).trim() };
+    })
+    .filter((g) => g.membros.length >= 2);
+}
+
 /** Separa a linha "PRIMEIRO PASSO: ..." do resto da secção "O plano". */
 function parsePlano(corpo: string): { corpo: string; primeiroPasso: string | null } {
   const regex = new RegExp(`^.*${MARCADORES.primeiroPasso}\\s*(.*)$`, "m");
@@ -794,12 +831,22 @@ function blocoDiagramaPonte(dados: DadosParaTemplate, pesos: PesoPlaneta[], axes
   const segundoForte = ordenados[1];
   const maisFraco = ordenados[ordenados.length - 1];
 
+  // Correcção do especialista (preview visual) — "Área actual" e "Anos de
+  // experiência" só existem no intake quando a situação declarada é
+  // "trabalho, quero mudar" (ver IntakeForm.tsx) — para quem está a
+  // estudar, na universidade, ou descreveu "outra" situação, os dois
+  // campos chegam aqui vazios. Sem esta guarda, produzia texto partido
+  // ("de experiência em", 'Autoridade construída no tema ""') em todos
+  // esses relatórios reais, não só no perfil de teste que revelou o bug.
   const jaTem = [
-    `${escapeHtml(dados.anosExperiencia)} de experiência em ${escapeHtml(dados.areaActual)}`,
-    `Autoridade construída no tema "${escapeHtml(dados.areaActual)}"`,
+    dados.anosExperiencia && dados.areaActual ? `${escapeHtml(dados.anosExperiencia)} de experiência em ${escapeHtml(dados.areaActual)}` : null,
+    dados.areaActual ? `Autoridade construída no tema "${escapeHtml(dados.areaActual)}"` : null,
     maisForte && maisForte.peso >= 1.3 ? `Força natural em ${escapeHtml(CARACTERISTICA_PT[maisForte.planeta] ?? maisForte.planeta)}` : null,
     segundoForte && segundoForte.peso >= 1.3 ? `Força natural em ${escapeHtml(CARACTERISTICA_PT[segundoForte.planeta] ?? segundoForte.planeta)}` : null,
   ].filter((x): x is string => Boolean(x));
+  // Sem área declarada e sem nenhum planeta ≥1.3 (raro, mas possível):
+  // nunca deixar a coluna "O que já tem" vazia.
+  if (!jaTem.length) jaTem.push("Uma base de talento natural, mesmo sem uma área de trabalho ainda declarada.");
 
   const aprende = MODO_GANHO_APRENDE[axes.earningMode.house] ?? "A disciplina que esta opção pede no dia a dia.";
   const naoMuda = maisFraco ? `${escapeHtml(CARACTERISTICA_PT[maisFraco.planeta] ?? maisFraco.planeta)} continua a ser o elo mais frágil do seu perfil — não desaparece com formação.` : "";
@@ -1225,22 +1272,54 @@ function blocoSeccaoQuemE(corpo: string): string {
 }
 
 /**
- * TAREFA 1 (correcção do especialista) — até 3 candidatas, cada uma com o
- * seu próprio diagrama + card, em pé de igualdade (nenhuma numeração ou
- * destaque visual diferente entre elas — a ordem em que chegam do LLM é
- * só a ordem em que ele as escreveu, nunca ranking).
+ * Correcção do especialista ("remover o tecto fixo de 3, com agrupamento
+ * por cluster") — sem limite de candidatas, cada uma com o seu próprio
+ * diagrama + card, em pé de igualdade (nenhuma numeração ou destaque
+ * visual diferente entre elas — a ordem em que chegam do LLM é só a
+ * ordem em que ele as escreveu, nunca ranking). Candidatas que o LLM
+ * agrupou (bloco "GRUPO:", ver `parseGruposCandidatas`) ganham uma caixa
+ * partilhada com a convergência de base, renderizada uma só vez antes do
+ * primeiro membro do grupo — os cards individuais a seguir trazem só a
+ * diferenciação específica que o LLM escreveu para cada um.
  */
 function blocoCandidataForaDaLista(corpo: string, catalogo: ResultadoCatalogoVocacional | null, usarTu: boolean): string {
   const { candidatas, textoSemCandidata } = parseCandidataForaDaLista(corpo);
   if (!candidatas.length) {
     return `<div class="caixa-neutra">${markdownParaHtml(textoSemCandidata || corpo)}</div>`;
   }
+  const grupos = parseGruposCandidatas(corpo);
+  const grupoPorNome = new Map<string, GrupoCandidatasTexto>();
+  for (const g of grupos) for (const nome of g.membros) grupoPorNome.set(nome, g);
+  const gruposJaRenderizados = new Set<GrupoCandidatasTexto>();
+
   return candidatas
     .map((c) => {
       const camadas = catalogo?.candidatasForaDaLista.find((cat) => cat.nome === c.nome)?.camadas ?? [];
+      const grupo = grupoPorNome.get(c.nome);
+      let introGrupo = "";
+      if (grupo && !gruposJaRenderizados.has(grupo)) {
+        gruposJaRenderizados.add(grupo);
+        // Correcção do especialista (preview visual, cluster de 13 da
+        // Alice) — o diagrama repetia as mesmas 4 etiquetas em cada
+        // membro do grupo (a assinatura de tipos é, por definição, a
+        // mesma dentro de um grupo) — informação 100% redundante com o
+        // parágrafo partilhado, e pesada a partir da 3ª repetição. Agora
+        // o diagrama do grupo aparece UMA VEZ, junto da caixa partilhada,
+        // usando as camadas do 1º membro (a mesma assinatura de tipos de
+        // todos — as candidatas individuais dentro do grupo já não levam
+        // diagrama próprio, só o cartão de texto compacto).
+        introGrupo = `
+        ${blocoDiagramaConvergencia(c.nome, camadas)}
+        <div class="caixa-grupo-candidatas">
+          <p class="card-candidata-header">${usarTu ? "Um conjunto de opções com a mesma convergência de base" : "Um conjunto de opções com a mesma convergência de base"}</p>
+          ${markdownParaHtml(grupo.textoPartilhado)}
+        </div>`;
+      }
+      const diagramaIndividual = grupo ? "" : blocoDiagramaConvergencia(c.nome, camadas);
       return `
-      ${blocoDiagramaConvergencia(c.nome, camadas)}
-      <div class="card-candidata">
+      ${introGrupo}
+      ${diagramaIndividual}
+      <div class="card-candidata${grupo ? " card-candidata-agrupada" : ""}">
         <p class="card-candidata-header">${usarTu ? "Uma opção que ainda não consideraste" : "Uma opção que ainda não considerou"}</p>
         <p class="card-candidata-nome">${escapeHtml(c.nome)}</p>
         ${markdownParaHtml(c.texto)}
@@ -1478,10 +1557,16 @@ export function gerarHTMLRelatorio(
   .caixa-sintese-quemE { background: var(--azul); color: #FFFFFF; border-radius: 10px; padding: 20px 22px; margin-top: 8px; }
   .caixa-sintese-quemE p { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.6; }
 
-  .card-candidata { border: 2px solid var(--ambar); border-radius: 10px; padding: 20px; }
+  .card-candidata { border: 2px solid var(--ambar); border-radius: 10px; padding: 20px; page-break-inside: avoid; break-inside: avoid; }
   .card-candidata-header { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--ambar); margin: 0 0 6px; }
   .card-candidata-nome { font-size: 18px; font-weight: 700; color: var(--azul); margin: 0 0 12px; }
   .caixa-neutra { background: var(--cinza-claro); border-radius: 10px; padding: 20px; }
+
+  /* Correcção do especialista ("remover o tecto fixo de 3, com agrupamento por cluster") — caixa da convergência de base partilhada, uma vez por grupo; os cards individuais a seguir ficam mais compactos (só a diferenciação). page-break-inside: avoid em ambas — bug visto no preview impresso (PDF): "Formação de Professores", o último item do cluster de 13, perdia a moldura ao atravessar uma quebra de página porque nem o card nem a caixa do grupo tinham esta regra. */
+  .caixa-grupo-candidatas { background: var(--cinza-claro); border-left: 4px solid var(--ambar); border-radius: 10px; padding: 18px 20px; margin-bottom: 6px; page-break-inside: avoid; break-inside: avoid; }
+  .caixa-grupo-candidatas p { font-size: 14px; margin: 0 0 10px; }
+  .caixa-grupo-candidatas p:last-child { margin-bottom: 0; }
+  .card-candidata-agrupada { padding: 16px 20px; margin-bottom: 20px; page-break-inside: avoid; break-inside: avoid; }
 
   .timeline-wrap { overflow-x: auto; margin-bottom: 8px; }
   .destaque-passo { margin-top: 24px; }

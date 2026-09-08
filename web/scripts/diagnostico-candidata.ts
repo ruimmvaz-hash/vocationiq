@@ -116,6 +116,22 @@ async function main() {
     }
   }
 
+  // Correcção do especialista ("remover o tecto fixo de 3, com
+  // agrupamento por cluster") — grupos por assinatura de TIPOS de camada
+  // (idêntica ou a ≤1 tipo de distância), já calculados por
+  // catalogarDestinos() e expostos ao prompt em "Grupos de candidatas".
+  console.log("=== Grupos de candidatas (assinatura de camadas idêntica ou quase idêntica) ===");
+  if (!catalogo.gruposCandidatas.length) {
+    console.log("nenhum — todas as candidatas têm assinatura própria.\n");
+  } else {
+    catalogo.gruposCandidatas.forEach((g, i) => {
+      console.log(`Grupo ${i + 1} (${g.length} candidatas): ${g.join(", ")}`);
+    });
+    const agrupadas = new Set(catalogo.gruposCandidatas.flat());
+    const solo = catalogo.candidatasForaDaLista.map((c) => c.nome).filter((n) => !agrupadas.has(n));
+    console.log(`\nSolo (assinatura própria, ${solo.length}): ${solo.length ? solo.join(", ") : "(nenhuma)"}\n`);
+  }
+
   console.log("=== As 4 camadas novas (avasthas/conjunções/yogas/Vargottama) — entram na SELECÇÃO de candidatas? ===");
   console.log("NÃO, por desenho: catalogarDestinos() (o cálculo determinístico de convergência acima) usa só Atmakaraka/Amatyakaraka/Nakshatra/Modo de Ganho/regência/área declarada/ideia concreta — nunca lê avasthas, conjunções, yogas ou Vargottama. As 4 camadas novas entram só na NARRATIVA do prompt (INSTRUCAO_YOGAS etc.), como reforço às candidatas já seleccionadas pelas camadas clássicas acima — nunca podem, por regra explícita do prompt, criar uma candidata que o catálogo não tenha já listado.");
   console.log(`\nYogas activos calculados para este perfil: ${yogas.length ? yogas.map((y) => `${y.label} (${y.detail})`).join("\n  ") : "nenhum"}`);

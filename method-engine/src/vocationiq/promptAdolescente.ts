@@ -142,12 +142,16 @@ ${MARCADORES.insight} <uma frase que resume a leitura desta opção em menos de 
 3. O curso concreto e a via de entrada — usa sempre os dados já listados acima em "Opções em cima da mesa" (nome do curso, nível, QNQ, duração, tipo de instituição, entrada no mercado). NUNCA nomeies uma instituição concreta.
 4. Onde entra a tua matéria nesta opção — a forma/função, nunca só o sector.`;
 
-  // TAREFA #40 (mudança de arquitectura) — a secção "Candidatas do
-  // catálogo" pode trazer mais candidatas do que as 3 finais; escolher
-  // quais até 3 mostrar é agora trabalho do LLM (INSTRUCAO_SELECCAO_
-  // CANDIDATAS, importada de promptAdulto.ts), com o bloco de raciocínio
-  // obrigatório antes das secções CANDIDATA.
-  const instrucaoCandidata = `Se a pool tiver 1 ou mais candidatas, primeiro escreve o bloco único "${MARCADORES.seleccaoCandidatas}" (ver INSTRUCAO_SELECCAO_CANDIDATAS), depois um bloco próprio para CADA candidata ESCOLHIDA (até 3): "${MARCADORES.candidata} <nome exacto>" seguido do texto explicativo, citando sempre a via concreta ("-- Via concreta para <nome> --" na secção "Candidatas do catálogo" acima) — tipo de formação, certificação, como se entra, tempo médio até trabalhar na área. Nunca nomeies uma entidade concreta.`;
+  // Correcção do especialista ("remover o tecto fixo de 3, com
+  // agrupamento por cluster") — a secção "Candidatas do catálogo" traz a
+  // pool completa, SEM LIMITE nenhum; apresentar-se todas as que passam o
+  // Passo 1 (ligação narrativa), agrupadas por convergência de base quase
+  // idêntica quando aplicável (INSTRUCAO_SELECCAO_CANDIDATAS, importada
+  // de promptAdulto.ts — mesma regra nos dois motores, nunca duplicada).
+  const instrucaoCandidata = `Se a pool tiver 1 ou mais candidatas, primeiro escreve o bloco único "${MARCADORES.seleccaoCandidatas}" (ver INSTRUCAO_SELECCAO_CANDIDATAS). Depois, para cada candidata que passou o Passo 1 (ligação narrativa), um de dois formatos:
+FORMATO INDIVIDUAL (sem grupo): "${MARCADORES.candidata} <nome exacto>" seguido do texto explicativo completo, citando sempre a via concreta ("-- Via concreta para <nome> --" na secção "Candidatas do catálogo" acima) — tipo de formação, certificação, como se entra, tempo médio até trabalhar na área. Nunca nomeies uma entidade concreta.
+FORMATO DE GRUPO (2+ candidatas da secção "Grupos de candidatas" que passaram o Passo 1): "${MARCADORES.grupo} <nome1>; <nome2>; ..." seguido da convergência de base partilhada por todo o grupo, escrita uma só vez — depois um bloco "${MARCADORES.candidata} <nome exacto>" por membro, cada um só com a sua diferenciação (2-4 linhas: via concreta dela, prós/contras, porquê esta e não as outras do grupo), sem repetir a convergência de base.
+Apresenta TODAS as candidatas que passaram o Passo 1, sem limite de 3 — nunca "escolher até 3", isso já não é a regra.`;
 
   return `
 [Versão de produção, TAREFA 2 — ver aviso de maturidade no topo de promptAdolescente.ts: prosa instrucional nova, nunca testada contra geração real antes de hoje.]
@@ -195,7 +199,7 @@ ${intake.preferenciaFamilia ? `Preferência da família (contexto, nunca decide)
 ${blocoEixoMissao(axes)}
 
 -- Modo de Ganho --
-${blocoModoDeGanho(axes)}
+${blocoModoDeGanho(axes, pesosPlanetas)}
 
 -- Peso de cada planeta --
 ${blocoPesos(pesosPlanetas)}
@@ -254,13 +258,13 @@ Traduz o Eixo da Missão e o Modo de Ganho dominante para linguagem humana, sem 
 ${instrucaoLeituraPorOpcao}
 
 ## ${SECCAO_TITULOS.candidataForaDaLista}
-As candidatas elegíveis já vêm calculadas deterministicamente na secção "Candidatas do catálogo" acima — a POOL COMPLETA, sem limite de 3. NÃO calcules a tua própria convergência, NÃO inventes nenhuma candidata diferente. A tua tarefa é ESCOLHER até 3 dessa pool (ver INSTRUCAO_SELECCAO_CANDIDATAS) e escrever o bloco de raciocínio obrigatório antes delas.
+As candidatas elegíveis já vêm calculadas deterministicamente na secção "Candidatas do catálogo" acima — a POOL COMPLETA, SEM LIMITE nenhum. NÃO calcules a tua própria convergência, NÃO inventes nenhuma candidata diferente. A tua tarefa é APRESENTAR TODAS as que passam o Passo 1 (ligação narrativa, ver INSTRUCAO_SELECCAO_CANDIDATAS), agrupando as de convergência de base quase idêntica, e escrever o bloco de raciocínio obrigatório antes delas. Nunca "escolher até 3".
 
 Se essa secção diz "nenhuma", a primeira e única linha é "${MARCADORES.candidata} nenhuma". Não é preciso bloco de raciocínio quando não há nenhuma candidata na pool.
 
 ${instrucaoCandidata}
 
-REGRA ABSOLUTA — SEM RANKING ENTRE CANDIDATAS: quando há 2 ou 3 escolhidas, apresentam-se em PÉ DE IGUALDADE — proibido "1ª/2ª/3ª escolha", "a mais forte", "menção honrosa" (a comparação entre candidatas da pool só acontece dentro do bloco "${MARCADORES.seleccaoCandidatas}", nunca no texto visível).
+REGRA ABSOLUTA — SEM RANKING ENTRE CANDIDATAS: candidatas e grupos apresentam-se sempre em PÉ DE IGUALDADE, entre si e dentro do mesmo grupo — proibido "1ª/2ª/3ª escolha", "a mais forte", "menção honrosa". Dentro de um grupo, a diferenciação de cada candidata é sobre ENCAIXE (que via serve melhor esta pessoa), nunca sobre qual é "melhor" (a comparação entre candidatas da pool só acontece dentro do bloco "${MARCADORES.seleccaoCandidatas}", nunca no texto visível).
 
 REGRA ABSOLUTA — CANDIDATA FORA DA LISTA: proibido nomear qualquer candidata sem que venha explicitamente da secção "Candidatas do catálogo" acima. Nunca preenchas com estereótipos de profissão ou associações livres a arquétipos abstractos.
 

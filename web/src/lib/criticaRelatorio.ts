@@ -106,29 +106,46 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
      mesma certeza que uma Nível 1 (ex.: "o seu perfil sustenta X com
      clareza" sem qualquer qualificador): FALHA — reescrita obrigatória.
 
- 22. SELECÇÃO DAS CANDIDATAS (LIGAÇÃO NARRATIVA + ORDEM POR SOMA DE PESOS):
-     a secção A) traz a pool completa de candidatas (pode ter mais de 3),
-     cada uma com a sua soma de pesos já dada. Confirma:
-     (a) existe o bloco "SELECÇÃO_CANDIDATAS:" antes das secções CANDIDATA
-         (obrigatório sempre que a pool tem pelo menos 1 candidata);
-     (b) cada candidata APRESENTADA tem uma ligação nomeável e verificável
-         a um dom já nomeado em "Quem é" — a mesma ligação citada na
-         frase de abertura dessa candidata;
-     (c) ENTRE as candidatas elegíveis (as que passam (b)), foram
-         escolhidas as de MAIOR soma de pesos — nunca uma candidata Nível
-         1 de soma mais baixa em vez de uma Nível 2 elegível de soma mais
-         alta. Compara os números de soma de pesos dados na secção A)
-         para as candidatas escolhidas contra os das candidatas elegíveis
-         que ficaram de fora — se alguma de fora tem soma mais alta E
-         ligação nomeável válida, e não foi escolhida, isto é FALHA;
-     (d) o raciocínio em "SELECÇÃO_CANDIDATAS:" explica com sentido por
-         que as candidatas não escolhidas ficaram de fora (sem ligação,
-         ou soma mais baixa — nunca "porque é Nível 2").
-     Se falhar (a), (b) ou (c): FALHA — força RESSELECÇÃO DA POOL COMPLETA
-     (refazer os dois passos — filtro de ligação, depois ordem por soma
-     de pesos — nunca só reescrever a frase de abertura da candidata
-     actual). Se (d) parecer arbitrário, ausente, ou justificar a escolha
-     pelo Nível em vez da soma: FALHA — reescrita do bloco de raciocínio.
+ 22. APRESENTAÇÃO DAS CANDIDATAS (SEM TECTO DE 3, COM AGRUPAMENTO POR
+     CLUSTER — correcção do especialista): a secção A) traz a pool
+     completa de candidatas (pode ter muito mais de 3) e, quando aplicável,
+     "Grupos de candidatas" (listas de nomes com convergência de base quase
+     idêntica, já calculadas deterministicamente — nunca inventadas pelo
+     LLM). Confirma:
+     (a) existe o bloco "SELECÇÃO_CANDIDATAS:" antes de qualquer secção
+         GRUPO/CANDIDATA (obrigatório sempre que a pool tem pelo menos 1
+         candidata);
+     (b) cada candidata APRESENTADA (individual ou dentro de um grupo) tem
+         uma ligação nomeável e verificável a um dom já nomeado em "Quem
+         é" — para uma individual, citada na sua própria frase de
+         abertura; para uma candidata dentro de um grupo, a ligação pode
+         estar só no bloco "GRUPO:" partilhado (nunca precisa de repetir
+         a frase de abertura por candidata dentro do grupo);
+     (c) NENHUMA candidata que passa (b) foi omitida do texto — compara a
+         lista de nomes da pool completa (secção A) contra os nomes que
+         de facto aparecem em blocos CANDIDATA no texto; toda candidata
+         com ligação nomeável válida tem de estar presente, sem excepção.
+         Se falta alguma (mesmo citada como "não escolhida" no raciocínio
+         "SELECÇÃO_CANDIDATAS:" sem razão de falha de ligação): FALHA —
+         "não escolhida por já haver 3" ou "para não alongar a secção" já
+         não são razões válidas, o tecto de 3 foi removido;
+     (d) AGRUPAMENTO: quando 2 ou mais candidatas apresentadas pertencem
+         ao mesmo grupo em "Grupos de candidatas", elas aparecem sob um
+         único bloco "GRUPO:" com a convergência de base escrita UMA SÓ
+         VEZ — se em vez disso cada uma repete a mesma explicação
+         astrológica de base (mesmas camadas, mesmo raciocínio) em blocos
+         CANDIDATA individuais separados, isto é FALHA (repetição que o
+         agrupamento existe precisamente para evitar). Ao contrário, um
+         "GRUPO:" cujos membros NÃO correspondem a nenhum grupo real da
+         secção "Grupos de candidatas" é FALHA (agrupamento inventado);
+     (e) o raciocínio em "SELECÇÃO_CANDIDATAS:" explica com sentido por
+         que as candidatas ausentes ficaram de fora (só motivo válido:
+         reprovaram o Passo 1 — sem ligação nomeável a um dom já nomeado).
+     Se falhar (a), (b), (c) ou (d): FALHA — força REAPRESENTAÇÃO DA POOL
+     COMPLETA (refazer o filtro de ligação e o agrupamento — nunca só
+     reescrever a frase de abertura da candidata actual). Se (e) parecer
+     arbitrário, ausente, ou justificar uma omissão por "já há candidatas
+     suficientes": FALHA — reescrita do bloco de raciocínio.
 
  23. ANGLICISMOS: o texto usa palavras inglesas coladas ao português em
      vez da tradução natural — "also" (em vez de "também"), "however"
@@ -251,29 +268,46 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
      mesma certeza que uma Nível 1 (ex.: "o seu perfil sustenta X com
      clareza" sem qualquer qualificador): FALHA — reescrita obrigatória.
 
- 22. SELECÇÃO DAS CANDIDATAS (LIGAÇÃO NARRATIVA + ORDEM POR SOMA DE PESOS):
-     a secção A) traz a pool completa de candidatas (pode ter mais de 3),
-     cada uma com a sua soma de pesos já dada. Confirma:
-     (a) existe o bloco "SELECÇÃO_CANDIDATAS:" antes das secções CANDIDATA
-         (obrigatório sempre que a pool tem pelo menos 1 candidata);
-     (b) cada candidata APRESENTADA tem uma ligação nomeável e verificável
-         a um dom já nomeado em "Quem é" — a mesma ligação citada na
-         frase de abertura dessa candidata;
-     (c) ENTRE as candidatas elegíveis (as que passam (b)), foram
-         escolhidas as de MAIOR soma de pesos — nunca uma candidata Nível
-         1 de soma mais baixa em vez de uma Nível 2 elegível de soma mais
-         alta. Compara os números de soma de pesos dados na secção A)
-         para as candidatas escolhidas contra os das candidatas elegíveis
-         que ficaram de fora — se alguma de fora tem soma mais alta E
-         ligação nomeável válida, e não foi escolhida, isto é FALHA;
-     (d) o raciocínio em "SELECÇÃO_CANDIDATAS:" explica com sentido por
-         que as candidatas não escolhidas ficaram de fora (sem ligação,
-         ou soma mais baixa — nunca "porque é Nível 2").
-     Se falhar (a), (b) ou (c): FALHA — força RESSELECÇÃO DA POOL COMPLETA
-     (refazer os dois passos — filtro de ligação, depois ordem por soma
-     de pesos — nunca só reescrever a frase de abertura da candidata
-     actual). Se (d) parecer arbitrário, ausente, ou justificar a escolha
-     pelo Nível em vez da soma: FALHA — reescrita do bloco de raciocínio.
+ 22. APRESENTAÇÃO DAS CANDIDATAS (SEM TECTO DE 3, COM AGRUPAMENTO POR
+     CLUSTER — correcção do especialista): a secção A) traz a pool
+     completa de candidatas (pode ter muito mais de 3) e, quando aplicável,
+     "Grupos de candidatas" (listas de nomes com convergência de base quase
+     idêntica, já calculadas deterministicamente — nunca inventadas pelo
+     LLM). Confirma:
+     (a) existe o bloco "SELECÇÃO_CANDIDATAS:" antes de qualquer secção
+         GRUPO/CANDIDATA (obrigatório sempre que a pool tem pelo menos 1
+         candidata);
+     (b) cada candidata APRESENTADA (individual ou dentro de um grupo) tem
+         uma ligação nomeável e verificável a um dom já nomeado em "Quem
+         é" — para uma individual, citada na sua própria frase de
+         abertura; para uma candidata dentro de um grupo, a ligação pode
+         estar só no bloco "GRUPO:" partilhado (nunca precisa de repetir
+         a frase de abertura por candidata dentro do grupo);
+     (c) NENHUMA candidata que passa (b) foi omitida do texto — compara a
+         lista de nomes da pool completa (secção A) contra os nomes que
+         de facto aparecem em blocos CANDIDATA no texto; toda candidata
+         com ligação nomeável válida tem de estar presente, sem excepção.
+         Se falta alguma (mesmo citada como "não escolhida" no raciocínio
+         "SELECÇÃO_CANDIDATAS:" sem razão de falha de ligação): FALHA —
+         "não escolhida por já haver 3" ou "para não alongar a secção" já
+         não são razões válidas, o tecto de 3 foi removido;
+     (d) AGRUPAMENTO: quando 2 ou mais candidatas apresentadas pertencem
+         ao mesmo grupo em "Grupos de candidatas", elas aparecem sob um
+         único bloco "GRUPO:" com a convergência de base escrita UMA SÓ
+         VEZ — se em vez disso cada uma repete a mesma explicação
+         astrológica de base (mesmas camadas, mesmo raciocínio) em blocos
+         CANDIDATA individuais separados, isto é FALHA (repetição que o
+         agrupamento existe precisamente para evitar). Ao contrário, um
+         "GRUPO:" cujos membros NÃO correspondem a nenhum grupo real da
+         secção "Grupos de candidatas" é FALHA (agrupamento inventado);
+     (e) o raciocínio em "SELECÇÃO_CANDIDATAS:" explica com sentido por
+         que as candidatas ausentes ficaram de fora (só motivo válido:
+         reprovaram o Passo 1 — sem ligação nomeável a um dom já nomeado).
+     Se falhar (a), (b), (c) ou (d): FALHA — força REAPRESENTAÇÃO DA POOL
+     COMPLETA (refazer o filtro de ligação e o agrupamento — nunca só
+     reescrever a frase de abertura da candidata actual). Se (e) parecer
+     arbitrário, ausente, ou justificar uma omissão por "já há candidatas
+     suficientes": FALHA — reescrita do bloco de raciocínio.
 
  23. ANGLICISMOS: o texto usa palavras inglesas coladas ao português em
      vez da tradução natural — "also" (em vez de "também"), "however"
@@ -340,8 +374,8 @@ export function parseCritica(textoCritica: string): ResultadoCritica {
 // a de selecção de candidatas.
 const INSTRUCAO_REESCRITA = `Reescreve este relatório corrigindo APENAS as falhas identificadas abaixo.
 Não alteres o que está correcto.
-Mantém todos os marcadores machine-readable (FRASE_ABERTURA:, IDENTIDADE:, DOM:, LIMITAÇÃO:, SÍNTESE:, INSIGHT:, FORÇA:, SELECÇÃO_CANDIDATAS:, CANDIDATA:, PRIMEIRO PASSO:) e todos os cabeçalhos "## " das 6 secções, incluindo "## Quem é".
-Se alguma falha for de SELECÇÃO DAS CANDIDATAS (força RESSELECÇÃO DA POOL COMPLETA): volta à secção "Candidatas do catálogo" no prompt técnico (A, abaixo) e escolhe outra candidata da pool completa que ligue com clareza a um dom já nomeado em "Quem é" — nunca inventes uma ligação para a candidata que já lá estava, nem a substituas sem justificação no bloco "SELECÇÃO_CANDIDATAS:".`;
+Mantém todos os marcadores machine-readable (FRASE_ABERTURA:, IDENTIDADE:, DOM:, LIMITAÇÃO:, SÍNTESE:, INSIGHT:, FORÇA:, SELECÇÃO_CANDIDATAS:, GRUPO:, CANDIDATA:, PRIMEIRO PASSO:) e todos os cabeçalhos "## " das 6 secções, incluindo "## Quem é".
+Se alguma falha for de APRESENTAÇÃO DAS CANDIDATAS (força REAPRESENTAÇÃO DA POOL COMPLETA): volta à secção "Candidatas do catálogo" (e "Grupos de candidatas") no prompt técnico (A, abaixo) e apresenta TODAS as candidatas da pool completa que ligam com clareza a um dom já nomeado em "Quem é" — sem tecto de 3, agrupando as de convergência de base quase idêntica sob um único bloco "GRUPO:" em vez de repetir a mesma explicação por candidata; nunca inventes uma ligação para uma candidata que não a tenha, nem omitas uma que a tenha só porque já há outras.`;
 
 export function construirPromptReescrita(promptTecnico: string, rascunhoOriginal: string, falhas: string[]): string {
   return `${INSTRUCAO_REESCRITA}\nFalhas a corrigir:\n${falhas.map((f) => `- ${f}`).join("\n")}\n\n=== A) PROMPT TÉCNICO ORIGINAL ===\n${promptTecnico}\n\n=== B) RELATÓRIO ORIGINAL ===\n${rascunhoOriginal}`;

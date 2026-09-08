@@ -3,7 +3,7 @@
 // desvio do texto literal do documento está assinalado num comentário
 // "DESVIO" a explicar porquê.
 
-import type { VocationIQAxes } from "../lifeReport/vocationIQ";
+import type { VocationIQAxes, EarningModeHouse } from "../lifeReport/vocationIQ";
 import type { PesoPlaneta, SavPorCasa } from "./pesosPlanetas";
 import type { ClassicalGraha } from "../lifeReport/types";
 import type { ResultadoCatalogoVocacional } from "./catalogoVocacional";
@@ -109,6 +109,20 @@ export const MARCADORES = {
   sinteseQuemE: "SÍNTESE:",
   /** TAREFA #40 (mudança de arquitectura — selecção pelo LLM) — bloco único, antes das 3 (ou menos) secções CANDIDATA, explicando qual dom já nomeado em "Quem é" liga a cada candidata escolhida e por que as restantes da pool completa não foram escolhidas. Nunca aparece no relatório final entregue ao cliente — extraído e removido do HTML tal como os outros marcadores internos (ver `relatorioTemplate.ts`). */
   seleccaoCandidatas: "SELECÇÃO_CANDIDATAS:",
+  /**
+   * Correcção do especialista ("remover o tecto fixo de 3, com
+   * agrupamento por cluster") — abre um grupo de candidatas com
+   * convergência de base quase idêntica (ver `gruposCandidatas` em
+   * ResultadoCatalogoVocacional). Formato exigido na mesma linha do
+   * marcador: os nomes exactos dos membros do grupo, separados por ";"
+   * (nunca por vírgula — nomes de destinos podem conter vírgula). O texto
+   * a seguir ao marcador, até ao primeiro "CANDIDATA:" seguinte, é a
+   * convergência de base PARTILHADA por todo o grupo — escrita uma só
+   * vez. Cada "CANDIDATA:" que se segue (uma por membro do grupo, pela
+   * mesma ordem dos nomes) traz só a diferenciação específica dessa
+   * candidata, nunca repetindo a convergência de base já escrita aqui.
+   */
+  grupo: "GRUPO:",
 } as const;
 
 export const FORCA_VALORES = ["forte", "moderada", "fraca"] as const;
@@ -270,13 +284,44 @@ export function blocoEixoMissao(axes: VocationIQAxes): string {
   ].join("\n");
 }
 
-export function blocoModoDeGanho(axes: VocationIQAxes): string {
+// Correcção do especialista ("Modo de Ganho — casa de bastidores") — a
+// pontuação que decide qual casa (2/6/10) vence já incorpora onde o
+// regente dessa casa está fisicamente sentado (via `peso`, que depende do
+// SAV da casa que o regente ocupa — ver computeEarningModes,
+// vocationIQ.ts). Mas o RÓTULO narrativo que descreve a casa vencedora ao
+// LLM era um texto fixo por número de casa, sempre o mesmo independente
+// de onde o regente estivesse — confirmado no diagnóstico da Alice:
+// regente do Modo de Ganho (casa 10) sentado na casa 6 (bastidores,
+// exaltado) recebia a mesma frase "assumir a cara pública, ser vista a
+// fazer, não a assistir por trás" que receberia se estivesse na própria
+// casa 10 ou na 1 — o oposto do que a posição real sustenta. Corrigido:
+// quando o regente da casa vencedora está sentado numa casa de bastidores
+// clássica (6/8/12 — dificuldade, serviço, oculto), o rótulo ganha uma
+// cláusula de nuance própria para essa casa, em vez do genérico de
+// exposição/visibilidade directa.
+const CASAS_DE_BASTIDORES = new Set([6, 8, 12]);
+
+const NUANCE_REGENTE_EM_BASTIDORES: Record<EarningModeHouse, string> = {
+  2: " — mas o regente está sentado numa casa de bastidores (6, 8 ou 12): a voz que sustenta este perfil não é a mais sociável nem performática, ganha peso quando resolve algo difícil ou diz uma verdade que os outros evitam, não pelo charme da exposição",
+  6: " — e o regente está também numa casa de bastidores (6, 8 ou 12), o que reforça o padrão: o reconhecimento vem de resolver o que ninguém mais quer tocar, quase sempre sem holofote",
+  10: " — mas o regente está sentado numa casa de bastidores (6, 8 ou 12), não numa posição de exposição directa: o reconhecimento tende a chegar como consequência de resolver, estruturar ou servir com disciplina, nunca por procurar visibilidade — a leitura mais precisa não é 'ser vista a fazer', é 'tornar-se imprescindível através do que sustenta por trás'",
+};
+
+export function blocoModoDeGanho(axes: VocationIQAxes, pesosPlanetas: PesoPlaneta[]): string {
   const dominantes = axes.earningModeDominante;
-  const ROTULO_HUMANO: Record<number, string> = {
+  const ROTULO_HUMANO_BASE: Record<number, string> = {
     2: "ganha pela voz — consultoria, ensino, comunicação directa do que sabe",
     6: "ganha por resolver o problema de outra pessoa — cura, crise, serviço, análise",
     10: "ganha por assumir a cara pública de uma coisa — liderança, execução, empreendedorismo visível",
   };
+  const casaDoRegente = (lord: ClassicalGraha) => pesosPlanetas.find((p) => p.planeta === lord)?.casa;
+  const ROTULO_HUMANO: Record<number, string> = Object.fromEntries(
+    dominantes.map((d) => {
+      const casaRegente = casaDoRegente(d.lord);
+      const nuance = casaRegente !== undefined && CASAS_DE_BASTIDORES.has(casaRegente) ? NUANCE_REGENTE_EM_BASTIDORES[d.house] : "";
+      return [d.house, `${ROTULO_HUMANO_BASE[d.house]}${nuance}`];
+    }),
+  );
   // TAREFA 2 (correcção do especialista) — antes desta correcção, um
   // empate exacto entre duas casas resolvia-se por acidente da ordem do
   // array interno, nunca por decisão metodológica. Agora, empate real
@@ -365,6 +410,18 @@ export function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional, c
         .join("\n")
     : "nenhuma — nenhum destino reuniu 4 camadas independentes incluindo um indicador pessoal (planeta de maior peso, Atmakaraka ou Amatyakaraka).";
 
+  // Correcção do especialista ("remover o tecto fixo de 3, com
+  // agrupamento por cluster") — `gruposCandidatas` (catalogoVocacional.ts)
+  // já vem calculado deterministicamente: listas de nomes cuja
+  // assinatura de TIPOS de camada é idêntica ou difere em, no máximo, 1
+  // tipo. Exposto aqui em texto simples para o LLM usar como base do
+  // agrupamento na apresentação final (ver INSTRUCAO_SELECCAO_CANDIDATAS)
+  // — o LLM NUNCA decide sozinho quem se parece com quem, usa sempre este
+  // cálculo já feito.
+  const gruposTexto = catalogo.gruposCandidatas.length
+    ? catalogo.gruposCandidatas.map((g, i) => `Grupo ${i + 1} (${g.length} candidatas, convergência de base quase idêntica): ${g.join(", ")}.`).join("\n")
+    : "nenhum — todas as candidatas da pool têm assinatura de camadas própria (sem par a ≤1 tipo de distância).";
+
   // TAREFA 3 (correcção do especialista, ronda seguinte) — cada candidata
   // da pool ganha o seu próprio bloco "-- Via concreta para [destino] --",
   // separado da listagem acima (antes vinha só inline, apensa à linha da
@@ -386,7 +443,8 @@ export function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional, c
     catalogo.notaAreaGenerica ? `NOTA: ${catalogo.notaAreaGenerica}.` : null,
     `Derivadas da área actual:\n${listar(catalogo.destinosDeAreaActual)}`,
     `Alternativas pelo perfil (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações, eixo do rendimento):\n${listar(catalogo.destinosAlternativos)}`,
-    `Candidatas do catálogo — pool completa (≥4 convergências, Nível 1 ou 2 conforme indicado, SEM LIMITE DE 3 — a escolha de até 3 é tua, ver INSTRUCAO_SELECCAO_CANDIDATAS):\n${candidatasTexto}`,
+    `Candidatas do catálogo — pool completa (≥4 convergências, Nível 1 ou 2 conforme indicado, SEM LIMITE nenhum — apresentam-se TODAS as que passam o filtro de ligação narrativa, ver INSTRUCAO_SELECCAO_CANDIDATAS):\n${candidatasTexto}`,
+    `Grupos de candidatas (assinatura de camadas idêntica ou quase idêntica — usar para agrupar a apresentação, ver INSTRUCAO_SELECCAO_CANDIDATAS):\n${gruposTexto}`,
     viasConcretasCandidatas || null,
     catalogo.notaEixoDoRendimento
       ? `NOTA sobre o eixo do rendimento (o que dá sentido vs. o que paga): ${catalogo.notaEixoDoRendimento.leitura}.${catalogo.notaEixoDoRendimento.regraDeEscrita ? ` Como escrever isto: ${catalogo.notaEixoDoRendimento.regraDeEscrita}` : ""}`
@@ -601,17 +659,32 @@ Sempre que o texto descrever uma conjunção (dois traços "fundidos" ou "quase 
 // deixa de decidir a ORDEM/PRIORIDADE entre as elegíveis. Essa ordem
 // passa a ser SEMPRE a soma de pesos (já deduplicada por planeta, ver
 // catalogoVocacional.ts), nunca o nível.
-export const INSTRUCAO_SELECCAO_CANDIDATAS = `SELECÇÃO DAS CANDIDATAS FORA DA LISTA — a secção "Candidatas do catálogo" pode trazer mais de 3 candidatas (a pool completa, sem limite). A tua tarefa é escolher até 3 — nunca inventar nenhuma fora da pool, nunca escolher menos do que a pool oferece até ao máximo de 3.
-Processo em DOIS PASSOS, nesta ordem exacta:
-PASSO 1 — FILTRO DE ELEGIBILIDADE (ligação narrativa): de toda a pool, elimina qualquer candidata cujas camadas NÃO consigas ligar com clareza a um dom ou traço JÁ NOMEADO na secção "${SECCAO_TITULOS.quemE}" — essa ligação é a mesma que vais citar na frase de abertura obrigatória (ver a seguir). Isto é um filtro binário (liga-se genuinamente, ou não) — nunca uma escala de "liga-se melhor/pior" entre candidatas que já se ligam.
-PASSO 2 — ORDEM ENTRE AS ELEGÍVEIS (soma de pesos, sempre, sem excepção): das candidatas que passaram o Passo 1, a ordem de prioridade para as até 3 vagas é SEMPRE a "soma de pesos das camadas" (o número já deduplicado por planeta, dado em cada linha da pool) — a de maior soma vence, sempre, INDEPENDENTEMENTE do Nível (1 ou 2). PROIBIDO preferir uma candidata Nível 1 com soma mais baixa a uma candidata Nível 2 elegível com soma mais alta — isso já aconteceu numa ronda de testes (uma candidata Nível 2 com a maior soma de todas foi preterida a favor de três Nível 1 com somas mais baixas, só pelo nível) e é exactamente o erro que esta regra proíbe. O Nível NUNCA entra no Passo 2 — só decide a linguagem de confiança depois de a candidata já estar escolhida (ver INSTRUCAO_NIVEL_CANDIDATAS).
-Nunca escolhas só pela contagem de camadas (convergência) — usa sempre a soma de pesos para desempatar ou ordenar dentro das elegíveis.
-Antes de qualquer bloco "${MARCADORES.candidata}", escreve OBRIGATORIAMENTE um bloco único "${MARCADORES.seleccaoCandidatas}" (machine-readable, nunca omitido), explicando em prosa curta: (a) a que dom já nomeado em "${SECCAO_TITULOS.quemE}" cada candidata escolhida se liga, (b) a soma de pesos de cada uma das candidatas escolhidas, e (c) por que as restantes candidatas da pool completa (nomeia-as pelo nome, com a sua soma de pesos) não foram escolhidas — reprovadas no Passo 1 (sem ligação), ou elegíveis mas com soma mais baixa no Passo 2. Este bloco nunca aparece no relatório entregue ao cliente — é só para auditoria interna do raciocínio.`;
+// CORRECÇÃO (correcção do especialista — "remover o tecto fixo de 3, com
+// agrupamento por cluster") — a versão anterior desta instrução limitava
+// a apresentação a "até 3", com a soma de pesos a decidir quais 3 vagas
+// eram preenchidas. O especialista pediu para remover esse tecto por
+// inteiro: mostrar TODAS as candidatas que passam o Passo 1, sem limite
+// artificial nem ranking de "mais importante" — e, quando várias
+// partilham a mesma convergência de base (ex.: o cluster de 13 destinos
+// ligados à casa 9 exaltada da Alice), agrupá-las na apresentação em vez
+// de repetir a mesma explicação astrológica 13 vezes. O Passo 1 (filtro
+// de ligação narrativa) e a lógica de soma de pesos NÃO mudam — só deixam
+// de servir para CORTAR a três; passam a servir para decidir QUEM fica de
+// fora (só quem reprova o Passo 1) e em que ORDEM de apresentação as
+// restantes aparecem (nunca como hierarquia de importância).
+export const INSTRUCAO_SELECCAO_CANDIDATAS = `APRESENTAÇÃO DAS CANDIDATAS FORA DA LISTA — SEM TECTO DE 3: a secção "Candidatas do catálogo" traz a pool completa (Nível 1 ou 2), sem limite nenhum. A tua tarefa NÃO é escolher até 3 — é decidir quais passam o filtro de ligação narrativa (Passo 1) e apresentar TODAS as que passam, agrupando as que partilham convergência de base quase idêntica (Passo 3). Nunca inventar nenhuma candidata fora da pool; nunca omitir uma candidata elegível só para manter a secção curta.
+Processo em TRÊS PASSOS, nesta ordem exacta:
+PASSO 1 — FILTRO DE ELEGIBILIDADE (ligação narrativa, único filtro que existe): de toda a pool, elimina qualquer candidata cujas camadas NÃO consigas ligar com clareza a um dom ou traço JÁ NOMEADO na secção "${SECCAO_TITULOS.quemE}" — essa ligação é a mesma que vais citar na frase de abertura obrigatória (ver INSTRUCAO_ABERTURA_CANDIDATAS). Filtro binário (liga-se genuinamente, ou não) — nunca uma escala de "liga-se melhor/pior" entre candidatas que já se ligam, e nunca um segundo filtro de "quantas quero mostrar". TODAS as que passam ficam, sem limite.
+PASSO 2 — ORDEM DE APRESENTAÇÃO (soma de pesos, nunca ranking): entre as candidatas que passaram o Passo 1, ordena a apresentação (grupos e candidatas individuais) pela soma de pesos mais alta primeiro — serve só para dar uma ordem estável ao texto, nunca como hierarquia de importância (ver a regra "SEM RANKING" na secção "${SECCAO_TITULOS.candidataForaDaLista}"). O Nível (1 ou 2) nunca decide inclusão nem ordem — só a linguagem de confiança de cada candidata (INSTRUCAO_NIVEL_CANDIDATAS).
+PASSO 3 — AGRUPAMENTO POR ASSINATURA (apresentação, nunca qualificação): os dados técnicos trazem "Grupos de candidatas" — listas de nomes já calculadas deterministicamente cuja convergência de base (o CONJUNTO de tipos de camada, não o texto exacto) é idêntica ou quase idêntica. Para cada grupo em que 2 ou mais membros passaram o Passo 1: escreve a convergência astrológica de base UMA SÓ VEZ para o grupo inteiro num bloco "${MARCADORES.grupo}" (que camadas partilham, o que isso significa em conjunto) — depois, para CADA membro desse grupo que passou o Passo 1, um bloco "${MARCADORES.candidata}" curto (2-4 linhas): porquê esta e não as outras do mesmo grupo, a via concreta dela, prós e contras específicos. NUNCA repetir a convergência de base dentro do bloco de cada candidata — já foi escrita uma vez, no bloco "${MARCADORES.grupo}". Se um grupo, depois do Passo 1, fica com só 1 membro sobrevivente, essa candidata deixa de ser "grupo" — escreve-a no formato individual completo (ver formato exacto na secção "${SECCAO_TITULOS.candidataForaDaLista}"), sem bloco "${MARCADORES.grupo}". Candidatas sem grupo (assinatura própria, nenhuma outra a ≤1 tipo de distância) mantêm sempre o formato individual completo.
+Nunca escolhas só pela contagem de camadas (convergência) — usa sempre a soma de pesos para ordenar.
+Antes de qualquer bloco "${MARCADORES.grupo}" ou "${MARCADORES.candidata}", escreve OBRIGATORIAMENTE um bloco único "${MARCADORES.seleccaoCandidatas}" (machine-readable, nunca omitido), explicando em prosa curta: (a) a que dom já nomeado em "${SECCAO_TITULOS.quemE}" cada candidata que passou o Passo 1 se liga, (b) quais candidatas da pool completa (nomeia-as pelo nome, com a sua soma de pesos) reprovaram o Passo 1 e porquê, (c) como as que passaram ficaram agrupadas — que grupos, com que nomes, e quais ficaram individuais. Este bloco nunca aparece no relatório entregue ao cliente — é só para auditoria interna do raciocínio.`;
 
-export const INSTRUCAO_ABERTURA_CANDIDATAS = `CANDIDATA FORA DA LISTA — LIGAÇÃO OBRIGATÓRIA A DOM JÁ NOMEADO: antes de qualquer menção às camadas técnicas (Atmakaraka, eixo do rendimento, sinais estruturados, etc.), cada candidata escolhida DEVE abrir com uma frase que a ligue explicitamente a um dom ou traço já nomeado na secção "${SECCAO_TITULOS.quemE}" deste mesmo relatório.
+export const INSTRUCAO_ABERTURA_CANDIDATAS = `CANDIDATA FORA DA LISTA — LIGAÇÃO OBRIGATÓRIA A DOM JÁ NOMEADO: antes de qualquer menção às camadas técnicas (Atmakaraka, eixo do rendimento, sinais estruturados, etc.), cada candidata INDIVIDUAL (sem grupo) DEVE abrir com uma frase que a ligue explicitamente a um dom ou traço já nomeado na secção "${SECCAO_TITULOS.quemE}" deste mesmo relatório.
 Padrão obrigatório: "Isto liga-se directamente a [nome do dom/traço já nomeado em ${SECCAO_TITULOS.quemE}, citado quase literalmente] que já foi nomeado acima — é essa mesma força aplicada a um território concreto."
 Só depois desta frase é que o texto pode introduzir as camadas técnicas de convergência.
-Obrigatório em todas as candidatas escolhidas (até 3, ou menos se a pool completa oferecer menos de 3), sem excepção.`;
+GRUPOS (correcção do especialista — agrupamento por cluster): quando várias candidatas partilham bloco "${MARCADORES.grupo}", esta ligação a um dom já nomeado é feita UMA VEZ no bloco "${MARCADORES.grupo}" (a convergência de base do grupo inteiro nasce desse dom) — os blocos "${MARCADORES.candidata}" dentro do grupo NÃO repetem a frase de abertura, vão directos à diferenciação específica de cada uma.
+Obrigatório em todas as candidatas apresentadas, individuais ou em grupo (uma vez por grupo, uma vez por individual), sem excepção — nunca omitir só porque a pool tem muitas candidatas.`;
 
 // TAREFA #38 (correcção do especialista, sistema em dois níveis) —
 // dados técnicos: cada candidata fora da lista chega com "Nível 1" ou
@@ -628,7 +701,8 @@ Obrigatório em todas as candidatas escolhidas (até 3, ou menos se a pool compl
 export const INSTRUCAO_NIVEL_CANDIDATAS = `NÍVEL DE CONFIANÇA DA CANDIDATA FORA DA LISTA — cada candidata vem marcada nos dados técnicos como "Nível 1" ou "Nível 2". Nunca as escrevas com a mesma confiança:
 · Nível 1 (inclui o planeta de maior peso): escreve com confiança plena, sem qualquer qualificador — é a peça mais forte do perfil a confirmar esta direcção.
 · Nível 2 (âncora pessoal — Atmakaraka, Amatyakaraka, Stellium, ou Regente de casa dignificado — mas sem o planeta de maior peso): é um sinal real, nunca inventado — mas mais específico e menos robusto do que Nível 1. A frase tem de o dizer, com linguagem como "há aqui um fio que vale a pena puxar" / "não é o sinal mais forte do perfil, mas é genuíno e específico" / "vale explorar, sem ser ainda uma certeza estrutural". PROIBIDO escrever uma candidata Nível 2 com a mesma linguagem sem reserva de "o seu perfil sustenta X com clareza" que a escala de confiança geral reserva para convergência forte — aqui a convergência existe, mas a sua origem (um indicador pessoal específico, não o planeta mais forte da carta) pede a reserva.
-Nunca omitir nem suavizar a diferença chamando as duas de "candidata" sem mais nada — o nível tem de ser audível na frase, não só presente nos dados.`;
+Nunca omitir nem suavizar a diferença chamando as duas de "candidata" sem mais nada — o nível tem de ser audível na frase, não só presente nos dados.
+GRUPOS COM NÍVEIS MISTOS (correcção do especialista — agrupamento por cluster): um grupo pode ter membros de Nível 1 e Nível 2 ao mesmo tempo (a convergência de base é quase idêntica, mas o indicador pessoal que ancora cada destino pode ser diferente). O bloco "${MARCADORES.grupo}" nunca assume um nível único para o grupo inteiro — a linguagem de confiança (plena ou com reserva) é sempre decidida dentro do bloco "${MARCADORES.candidata}" de cada membro, de acordo com o Nível PRÓPRIO dessa candidata.`;
 
 // CORRECÇÃO 1 (correcção do especialista, confirmada com 3 relatórios
 // reais) — a versão anterior ("TEM de incluir... este traço é
@@ -717,7 +791,7 @@ ${blocoAbertura(intake)}
 ${blocoEixoMissao(axes)}
 
 -- Modo de Ganho --
-${blocoModoDeGanho(axes)}
+${blocoModoDeGanho(axes, pesosPlanetas)}
 
 -- Montra de Mercado --
 ${blocoMontraMercado(axes)}
@@ -825,16 +899,21 @@ ${MARCADORES.insight} <uma frase que resume a leitura desta opção em menos de 
 Repete o bloco "### <nome> / ${MARCADORES.forca} / ${MARCADORES.insight} / 1. / 2. / 3. / 4." para cada opção candidata, uma a seguir à outra.
 
 ## ${SECCAO_TITULOS.candidataForaDaLista}
-As candidatas elegíveis já vêm calculadas deterministicamente na secção "Candidatas do catálogo" acima — a POOL COMPLETA, sem limite de 3. NÃO calcules a tua própria convergência, NÃO inventes nenhuma candidata diferente das listadas lá. A tua tarefa nesta secção é ESCOLHER até 3 dessa pool (ver INSTRUCAO_SELECCAO_CANDIDATAS) e escrever o bloco de raciocínio obrigatório antes delas.
+As candidatas elegíveis já vêm calculadas deterministicamente na secção "Candidatas do catálogo" acima — a POOL COMPLETA, SEM LIMITE nenhum. NÃO calcules a tua própria convergência, NÃO inventes nenhuma candidata diferente das listadas lá. A tua tarefa nesta secção é APRESENTAR TODAS as candidatas da pool que passam o Passo 1 — ligação narrativa a um dom já nomeado (ver INSTRUCAO_SELECCAO_CANDIDATAS) —, agrupando as que partilham convergência de base quase idêntica (Passo 3, mesma instrução), e escrever o bloco de raciocínio obrigatório antes delas. Nunca "escolher até 3" — isso já não é a regra.
 
 Se essa secção diz "nenhuma", a primeira e única linha é "${MARCADORES.candidata} nenhuma" — "o seu perfil não aponta a nada fora do que já pensava" é uma resposta válida e completa, não a evites. Não é preciso bloco de raciocínio quando não há nenhuma candidata na pool.
 
-Se essa secção lista 1 ou mais candidatas, primeiro escreve o bloco único "${MARCADORES.seleccaoCandidatas}" (ver INSTRUCAO_SELECCAO_CANDIDATAS para o conteúdo exacto exigido), depois um bloco próprio para CADA candidata ESCOLHIDA (até 3), nesta ordem de aparição no texto (a ordem NÃO é ranking — ver regra abaixo):
-"${MARCADORES.candidata} <nome exacto>" seguido do texto explicativo dessa candidata, usando só as camadas exactas já listadas para ela na pool (nunca inventes camadas novas nem omitas as que vêm calculadas). Repete "${MARCADORES.candidata} <nome exacto>" uma vez por candidata escolhida — nunca um marcador só com a primeira e as outras sem.
+Se essa secção lista 1 ou mais candidatas, primeiro escreve o bloco único "${MARCADORES.seleccaoCandidatas}" (ver INSTRUCAO_SELECCAO_CANDIDATAS para o conteúdo exacto exigido). Depois, para cada candidata que passou o Passo 1, um de dois formatos — nunca misturar os dois para a mesma candidata:
 
-VIA CONCRETA (correcção do especialista, TAREFA 3): cada candidata da pool tem um bloco próprio "-- Via concreta para <nome> --" na secção "Candidatas do catálogo" acima, com o tipo de formação, a certificação profissional, como se entra, e o tempo médio até trabalhar na área. Cita esta informação no texto de CADA candidata escolhida — nunca a omitas, nunca a inventes, nunca nomeies uma entidade concreta (nem "a escola", nem uma ordem profissional pelo nome) mesmo que o dado bruto pareça convidar a isso.
+FORMATO INDIVIDUAL (candidata sem grupo, ou grupo reduzido a 1 sobrevivente depois do Passo 1) — igual ao formato já usado antes desta correcção: "${MARCADORES.candidata} <nome exacto>" seguido do texto explicativo COMPLETO dessa candidata (ligação ao dom, camadas, via concreta, prós/contras), usando só as camadas exactas já listadas para ela na pool (nunca inventes camadas novas nem omitas as que vêm calculadas).
 
-REGRA ABSOLUTA — SEM RANKING ENTRE CANDIDATAS (correcção do especialista, TAREFA 1): quando há 2 ou 3 candidatas escolhidas, apresentam-se sempre em PÉ DE IGUALDADE. PROIBIDO: "1ª escolha", "2ª escolha", "3ª opção", "a mais forte", "a mais provável", "em primeiro lugar", qualquer numeração ordinal, ou tratar uma delas como "menção honrosa"/"nota à parte"/candidata de segunda categoria. Cada candidata tem a sua própria justificação, completa e independente das outras — nunca comparar uma candidata com outra dentro do texto principal (a comparação entre candidatas da pool só acontece dentro do bloco "${MARCADORES.seleccaoCandidatas}", nunca no texto visível ao cliente).
+FORMATO DE GRUPO (2 ou mais candidatas da secção "Grupos de candidatas" acima que passaram o Passo 1) — "${MARCADORES.grupo} <nome1>; <nome2>; <nome3 ...>" (os nomes exactos dos membros deste grupo que passaram o Passo 1, separados por ";", pela ordem em que os blocos "${MARCADORES.candidata}" a seguir vão aparecer) seguido do texto da convergência astrológica de base PARTILHADA por todo o grupo — o que estas candidatas têm em comum, escrito UMA SÓ VEZ. Logo a seguir, um bloco "${MARCADORES.candidata} <nome exacto>" por cada membro listado no "${MARCADORES.grupo}", nesta ordem, cada um com só a sua diferenciação específica (2-4 linhas: porquê esta e não as outras do mesmo grupo, a via concreta dela, prós e contras específicos) — NUNCA repetir a convergência de base já escrita no bloco "${MARCADORES.grupo}".
+
+Repete este padrão (individual ou de grupo) para toda a pool que passou o Passo 1 — nunca pares a meio, nunca omitas uma candidata elegível para "não alongar a secção". A ordem de aparição dos grupos/individuais no texto segue o Passo 2 (soma de pesos) — a ordem NÃO é ranking (ver regra abaixo).
+
+VIA CONCRETA (correcção do especialista, TAREFA 3): cada candidata da pool tem um bloco próprio "-- Via concreta para <nome> --" na secção "Candidatas do catálogo" acima, com o tipo de formação, a certificação profissional, como se entra, e o tempo médio até trabalhar na área. Cita esta informação no texto de CADA candidata apresentada (individual ou dentro de um grupo) — nunca a omitas, nunca a inventes, nunca nomeies uma entidade concreta (nem "a escola", nem uma ordem profissional pelo nome) mesmo que o dado bruto pareça convidar a isso.
+
+REGRA ABSOLUTA — SEM RANKING ENTRE CANDIDATAS (correcção do especialista, estendida ao agrupamento por cluster): candidatas e grupos apresentam-se sempre em PÉ DE IGUALDADE — nunca entre si, nem dentro do mesmo grupo. PROIBIDO: "1ª escolha", "2ª escolha", "a mais forte", "a mais provável", "em primeiro lugar", qualquer numeração ordinal, ou tratar uma candidata/grupo como "menção honrosa"/"nota à parte"/de segunda categoria. Dentro de um grupo, "porquê esta e não as outras" (a diferenciação pedida) é sobre ENCAIXE (que via concreta serve melhor esta pessoa), nunca sobre qual candidata é "melhor" ou "mais forte" do que a outra — todas no grupo já convergem com a mesma força de base, só a via difere. Cada candidata/grupo tem a sua própria justificação, completa e independente das outras — a comparação entre candidatas da pool só acontece dentro do bloco "${MARCADORES.seleccaoCandidatas}", nunca no texto visível ao cliente.
 
 REGRA ABSOLUTA — CANDIDATA FORA DA LISTA (correcção do especialista): PROIBIDO nomear qualquer candidata, mesmo como pista abaixo do limiar, sem que venha explicitamente da secção "Candidatas do catálogo" acima. Se nenhuma candidata do catálogo atingiu ≥4 camadas, a resposta é "${MARCADORES.candidata} nenhuma" — explica honestamente que o perfil não aponta a nada fora do que já foi pensado. NUNCA preenchas com estereótipos de profissão ou associações livres a arquétipos abstractos. Exemplo do que NÃO fazer: sugerir "engenharia, auditoria, saúde pública" por associação livre a "Saturno = estrutura/rigor" — essas profissões não vieram do catálogo, vieram de associação livre; isto é invenção, não leitura, e é exactamente o que esta regra proíbe.
 
