@@ -5,6 +5,7 @@
 
 import type { VocationIQAxes, EarningModeHouse } from "../lifeReport/vocationIQ";
 import type { PesoPlaneta, SavPorCasa } from "./pesosPlanetas";
+import { valorCasaUnificado } from "./pesosPlanetas";
 import type { ClassicalGraha } from "../lifeReport/types";
 import type { ResultadoCatalogoVocacional } from "./catalogoVocacional";
 import { computeRodaDaVida } from "./rodaDaVida";
@@ -123,6 +124,22 @@ export const MARCADORES = {
    * candidata, nunca repetindo a convergência de base já escrita aqui.
    */
   grupo: "GRUPO:",
+  /**
+   * Correcção do especialista ("explicação completa de todos os
+   * gráficos, linha a linha") — abre a explicação de UM gráfico
+   * específico. Formato exigido na mesma linha do marcador: o
+   * identificador do gráfico, um destes 4 exactos: "peso", "competencias",
+   * "vida", "ganho". O texto a seguir, até ao primeiro
+   * "LINHA_GRÁFICO:" ou ao próximo "EXPLICAÇÃO_GRÁFICO:", é o
+   * parágrafo de abertura desse gráfico (o que é, de onde vêm os
+   * números, como ler as cores/escala, o que mede e porquê). A posição
+   * exacta destes 4 blocos no texto NÃO importa — o template
+   * extrai-os por marcador e recoloca cada um junto do seu próprio
+   * gráfico (mesmo mecanismo já usado para FRASE_ABERTURA/IDENTIDADE).
+   */
+  explicacaoGrafico: "EXPLICAÇÃO_GRÁFICO:",
+  /** Ver `explicacaoGrafico` — uma por linha/categoria do gráfico activo (nome exacto da categoria na mesma linha do marcador), seguida do texto de explicação dessa linha (camada geral + camada personalizada, ver INSTRUCAO_EXPLICACAO_GRAFICOS). */
+  linhaGrafico: "LINHA_GRÁFICO:",
 } as const;
 
 export const FORCA_VALORES = ["forte", "moderada", "fraca"] as const;
@@ -455,9 +472,34 @@ export function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional, c
 }
 
 /** Redesenho do motor (Parte 5A) — o LLM nunca via a Roda da Vida antes disto (só o template a desenhava, depois de o texto já estar escrito), por isso não podia cumprir a instrução de referenciar valores extremos. Calculada aqui com a mesma função que o template usa (`computeRodaDaVida`, movida para o method-engine), nunca inventada de novo. */
-function blocoRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], regentesCasas: Record<number, ClassicalGraha>): string {
+export function blocoRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], regentesCasas: Record<number, ClassicalGraha>): string {
   const dimensoes = computeRodaDaVida(savPorCasa, pesos, regentesCasas);
   return dimensoes.map((d) => `${d.nome}: ${d.valor.toFixed(1)}/10${d.valor <= 4 || d.valor >= 7 ? " — EXTREMO, tem de ser referenciado no texto" : ""}`).join("\n");
+}
+
+/**
+ * Correcção do especialista ("explicação completa de todos os gráficos,
+ * linha a linha") — o "Perfil de Competências" (6 eixos: Comunicação/
+ * Liderança/Criatividade/Estrutura/Relação/Execução) era, até agora,
+ * calculado SÓ no template (`relatorioTemplate.ts`), nunca surgia ao
+ * LLM — por isso o LLM não tinha como escrever nada personalizado sobre
+ * ele. Mesma fórmula usada pelo template (`valorCasaUnificado`, casas
+ * fixas 2/10/5/6/7/1) — nunca inventada de novo, nunca pode divergir do
+ * gráfico que o cliente vê (mesma exigência já aplicada à Roda da Vida
+ * e ao Anexo).
+ */
+export function blocoPerfilCompetencias(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], regentesCasas: Record<number, ClassicalGraha>): string {
+  const savDe = (casa: number) => savPorCasa.find((h) => h.casa === casa)?.pontuacao ?? 0;
+  const valor = (casa: number) => valorCasaUnificado(savDe(casa), casa, pesos, regentesCasas).valor;
+  const eixos = [
+    { nome: "Comunicação", valor: valor(2) },
+    { nome: "Liderança", valor: valor(10) },
+    { nome: "Criatividade", valor: valor(5) },
+    { nome: "Estrutura", valor: valor(6) },
+    { nome: "Relação", valor: valor(7) },
+    { nome: "Execução", valor: valor(1) },
+  ];
+  return eixos.map((e) => `${e.nome}: ${e.valor.toFixed(1)}/10`).join("\n");
 }
 
 const ASPECTO_PT: Record<string, string> = {
@@ -716,6 +758,28 @@ GRUPOS COM NÍVEIS MISTOS (correcção do especialista — agrupamento por clust
 // relatório desde uma correcção anterior (TAREFA 3D).
 export const INSTRUCAO_VARGOTTAMA = `VARGOTTAMA — INSTRUÇÃO OBRIGATÓRIA: se existe planeta Vargottama, a secção "${SECCAO_TITULOS.quemE}" DEVE conter uma frase com este padrão exacto: "[Nome do planeta em português] é o traço mais estável deste perfil — aparece com a mesma força em duas dimensões independentes do perfil, o que significa que não muda com as circunstâncias nem depende de esforço para existir." Esta frase é obrigatória. Se não existe planeta Vargottama, não mencionar.`;
 
+// Correcção do especialista ("explicação completa de todos os gráficos,
+// linha a linha", pós-PDF real) — o relatório mostra 4 gráficos
+// numéricos (peso de cada característica, Perfil de Competências, Perfil
+// de Vida, Como ganha melhor) sem NENHUMA explicação escrita pelo LLM —
+// só legendas fixas, genéricas, iguais para toda a gente. Confirmado no
+// PDF real: a barra dominante de "Como ganha melhor" diz "Liderando
+// publicamente" sem qualquer nuance, contradizendo visualmente o texto
+// que já fala em reconhecimento via bastidores (ver
+// NUANCE_REGENTE_EM_BASTIDORES) — quem só vê o gráfico sai com a leitura
+// errada. Esta instrução fecha essa lacuna: cada gráfico ganha um
+// parágrafo de abertura (o que é, de onde vêm os números, como ler a
+// escala) e uma explicação própria por linha (o que a categoria
+// significa em geral + o que o valor desta pessoa nessa linha significa
+// especificamente), escritos pelo LLM a partir dos dados técnicos reais
+// abaixo — nunca inventados, sempre rastreáveis a um número calculado.
+export const INSTRUCAO_EXPLICACAO_GRAFICOS = `EXPLICAÇÃO COMPLETA DOS GRÁFICOS — OBRIGATÓRIO, SEM EXCEPÇÃO: o relatório tem 4 gráficos numéricos ("${MARCADORES.explicacaoGrafico}" um por cada, identificador exacto entre parênteses): o peso de cada característica (peso), o Perfil de Competências (competencias), o Perfil de Vida (vida), e Como ganha melhor (ganho). NENHUM número ou linha destes gráficos pode chegar ao cliente sem estar explicado antes de ser apresentado — o relatório tem de ser minucioso e altamente profissional em toda esta secção, nunca um corte numérico solto.
+Para CADA um dos 4 gráficos, escreve um bloco "${MARCADORES.explicacaoGrafico} <identificador>" (identificador exacto: peso / competencias / vida / ganho, sem acentos, minúsculas) com este conteúdo, nesta ordem:
+1. PARÁGRAFO DE ABERTURA (antes de qualquer linha): o que este gráfico é, de onde vêm os números (que dado técnico os gera), como ler as cores/escala, e — mais importante — O QUE ESTÁ DE FACTO A MEDIR e porquê essa escala existe. Nunca só "isto mostra X" — explica o mecanismo por trás do número.
+2. Uma linha "${MARCADORES.linhaGrafico} <nome exacto da categoria>" por CADA categoria do gráfico (7 para "peso": Sol/Lua/Marte/Mercúrio/Júpiter/Vénus/Saturno; 6 para "competencias": Comunicação/Liderança/Criatividade/Estrutura/Relação/Execução; 8 para "vida": as 8 dimensões dadas nos dados técnicos, nome exacto; 3 para "ganho": as três Artha Trikonas, casa 2/6/10, nome exacto "Casa 2"/"Casa 6"/"Casa 10") — NUNCA omitir nenhuma categoria, mesmo as que parecem menos relevantes. Cada linha é seguida de um texto com DUAS CAMADAS, sempre as duas, na mesma explicação: (a) o que esta categoria representa em geral (uma definição curta, factual); (b) o que o VALOR ESPECÍFICO desta pessoa nesta categoria significa no perfil dela — personalizado, nunca genérico, citando o número real dado nos dados técnicos.
+CASO ESPECIAL — "ganho": a barra dominante do gráfico tem sempre o rótulo fixo da casa vencedora (ex.: casa 10 = "Liderando publicamente") — isto é um rótulo curto do desenho do gráfico, nunca muda. A linha "${MARCADORES.linhaGrafico} Casa 10" (ou a que for dominante) TEM de nomear explicitamente esse rótulo do gráfico e, se o regente dessa casa estiver sentado numa casa de bastidores (ver a nuance já dada em "-- Modo de Ganho --" acima, quando aplicável), TEM de esclarecer a aparente contradição de frente — nunca deixá-la por resolver. Padrão: "O gráfico mostra '[rótulo do gráfico]' como o seu modo dominante — mas no seu caso isto não significa [leitura óbvia do rótulo]; significa [leitura real, com a nuance de bastidores]." Se o regente NÃO estiver numa casa de bastidores, a linha confirma a leitura directa do rótulo, sem nuance forçada onde não existe.
+Nunca inventar nenhum número — usa sempre os valores exactos dados nos blocos técnicos "-- Peso de cada planeta --", "-- Perfil de Competências --", "-- Roda da Vida --" e "-- Modo de Ganho --". A posição destes 4 blocos no teu texto não importa (o template extrai-os e recoloca-os junto do gráfico correspondente) — mas os 4 têm de existir, sempre, um por gráfico, sem excepção.`;
+
 export function construirPromptAdulto(
   intake: VocationiqIntakeAdulto,
   axes: VocationIQAxes,
@@ -768,6 +832,7 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - ${INSTRUCAO_CONJUNCOES}
 - ${INSTRUCAO_YOGAS}
 - ${INSTRUCAO_VARGOTTAMA}
+- ${INSTRUCAO_EXPLICACAO_GRAFICOS}
 - ${INSTRUCAO_CONSISTENCIA_TECNICA}
 - ${INSTRUCAO_SELECCAO_CANDIDATAS}
 - ${INSTRUCAO_ABERTURA_CANDIDATAS}
@@ -826,6 +891,9 @@ ${blocoCatalogoVocacional(catalogo, cursosPorDestino)}
 -- Roda da Vida (8 dimensões, 0-10) --
 ${blocoRodaDaVida(savPorCasa, pesosPlanetas, axes.regentesCasas)}
 Para cada dimensão marcada EXTREMO (≤4 ou ≥7), o texto tem de ter pelo menos uma frase que explique o que esse valor significa para esta pessoa especificamente — nunca deixar um extremo sem menção.
+
+-- Perfil de Competências (6 eixos, 0-10 — mesma fórmula da Roda da Vida, casas fixas 2/10/5/6/7/1) --
+${blocoPerfilCompetencias(savPorCasa, pesosPlanetas, axes.regentesCasas)}
 
 -- Perfil de elementos e modalidades --
 ${blocoElementosModalidades(elementosModalidades)}

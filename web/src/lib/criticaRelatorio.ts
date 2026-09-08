@@ -156,6 +156,32 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
      cada ocorrência exacta. Se aparecer mesmo uma vez: FALHA — reescrita
      obrigatória.
 
+ 24. EXPLICAÇÃO COMPLETA DOS GRÁFICOS (correcção do especialista,
+     pós-PDF real): confirma que existem os 4 blocos
+     "EXPLICAÇÃO_GRÁFICO:" — peso, competencias, vida, ganho — em
+     qualquer ponto do rascunho. Para cada um:
+     (a) tem um parágrafo de abertura antes da primeira linha
+         "LINHA_GRÁFICO:" (o que o gráfico é, de onde vêm os números,
+         como ler a escala)?
+     (b) tem o número exacto de linhas "LINHA_GRÁFICO:" — 7 para peso
+         (Sol/Lua/Marte/Mercúrio/Júpiter/Vénus/Saturno), 6 para
+         competencias, 8 para vida, 3 para ganho — nenhuma categoria
+         pode faltar?
+     (c) cada linha tem as DUAS camadas (o que a categoria significa em
+         geral + o que o valor específico desta pessoa significa,
+         citando o número real), nunca só uma frase genérica que serviria
+         para qualquer pessoa?
+     (d) para "ganho": a linha da casa dominante nomeia explicitamente o
+         rótulo do gráfico (ex.: "Liderando publicamente") e, se os
+         dados técnicos de "Modo de Ganho" trouxerem a nuance de "casa de
+         bastidores", a linha resolve de frente a aparente contradição
+         entre o rótulo do gráfico e essa nuance — nunca a deixa por
+         esclarecer?
+     Se falhar (a), (b) ou (c) para qualquer um dos 4: FALHA — bloco em
+     falta ou incompleto, reescrita obrigatória. Se falhar (d): FALHA —
+     a barra dominante fica a contradizer o texto, exactamente o problema
+     que esta correcção existe para resolver.
+
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
  Formato:
@@ -317,6 +343,32 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
      palavra inglesa comum solta no meio de uma frase portuguesa? Lista
      cada ocorrência exacta. Se aparecer mesmo uma vez: FALHA — reescrita
      obrigatória.
+
+ 24. EXPLICAÇÃO COMPLETA DOS GRÁFICOS (correcção do especialista,
+     pós-PDF real): confirma que existem os 4 blocos
+     "EXPLICAÇÃO_GRÁFICO:" — peso, competencias, vida, ganho — em
+     qualquer ponto do rascunho. Para cada um:
+     (a) tem um parágrafo de abertura antes da primeira linha
+         "LINHA_GRÁFICO:" (o que o gráfico é, de onde vêm os números,
+         como ler a escala)?
+     (b) tem o número exacto de linhas "LINHA_GRÁFICO:" — 7 para peso
+         (Sol/Lua/Marte/Mercúrio/Júpiter/Vénus/Saturno), 6 para
+         competencias, 8 para vida, 3 para ganho — nenhuma categoria
+         pode faltar?
+     (c) cada linha tem as DUAS camadas (o que a categoria significa em
+         geral + o que o valor específico desta pessoa significa,
+         citando o número real), nunca só uma frase genérica que serviria
+         para qualquer pessoa?
+     (d) para "ganho": a linha da casa dominante nomeia explicitamente o
+         rótulo do gráfico (ex.: "Liderando publicamente") e, se os
+         dados técnicos de "Modo de Ganho" trouxerem a nuance de "casa de
+         bastidores", a linha resolve de frente a aparente contradição
+         entre o rótulo do gráfico e essa nuance — nunca a deixa por
+         esclarecer?
+     Se falhar (a), (b) ou (c) para qualquer um dos 4: FALHA — bloco em
+     falta ou incompleto, reescrita obrigatória. Se falhar (d): FALHA —
+     a barra dominante fica a contradizer o texto, exactamente o problema
+     que esta correcção existe para resolver.
 
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.

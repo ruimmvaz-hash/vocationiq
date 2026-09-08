@@ -446,6 +446,101 @@ function parseGruposCandidatas(corpo: string): GrupoCandidatasTexto[] {
     .filter((g) => g.membros.length >= 2);
 }
 
+interface ExplicacaoGrafico {
+  abertura: string;
+  linhas: { categoria: string; texto: string }[];
+}
+
+/**
+ * Correcção do especialista ("explicação completa de todos os gráficos,
+ * linha a linha", pós-PDF real) — extrai o bloco
+ * "EXPLICAÇÃO_GRÁFICO: <id>" (id: peso/competencias/vida/ganho) de
+ * QUALQUER ponto do texto completo (nunca scoped a uma secção "## " —
+ * mesmo mecanismo posicional de FRASE_ABERTURA/IDENTIDADE, porque a
+ * posição em que o LLM escreve isto no documento não importa: o
+ * template recoloca o resultado junto do gráfico correspondente). `null`
+ * quando o bloco não existe (nunca deveria acontecer com o prompt
+ * actual, mas o template nunca deve rebentar nem inventar texto se
+ * faltar — cai para a legenda determinística já existente).
+ */
+function parseExplicacaoGrafico(textoCompleto: string, id: string): ExplicacaoGrafico | null {
+  const regexBloco = new RegExp(`^${MARCADORES.explicacaoGrafico}\\s*${id}\\s*$`, "im");
+  const blocoMatch = textoCompleto.match(regexBloco);
+  if (!blocoMatch) return null;
+  const inicioBloco = blocoMatch.index! + blocoMatch[0].length;
+  // Correcção do especialista (bug real, encontrado por teste antes de
+  // publicar) — o ÚLTIMO bloco EXPLICAÇÃO_GRÁFICO: do documento não tem
+  // nenhum EXPLICAÇÃO_GRÁFICO: a seguir para o limitar — sem também
+  // parar num cabeçalho "## " seguinte, o bloco "engolia" o resto do
+  // documento inteiro (incluindo toda a secção "Candidata fora da
+  // lista"), que aparecia depois em bruto dentro do próprio gráfico.
+  const regexProximaExplicacao = new RegExp(`^${MARCADORES.explicacaoGrafico}\\s*`, "gm");
+  regexProximaExplicacao.lastIndex = inicioBloco;
+  const proximaMatch = regexProximaExplicacao.exec(textoCompleto);
+  const cabecalhoIndices = [...textoCompleto.matchAll(/^## /gm)].map((m) => m.index!);
+  const limites = [textoCompleto.length, proximaMatch ? proximaMatch.index! : textoCompleto.length, ...cabecalhoIndices.filter((idx) => idx > inicioBloco)];
+  const fimBloco = Math.min(...limites);
+  const bloco = textoCompleto.slice(inicioBloco, fimBloco);
+
+  const regexLinha = new RegExp(`^${MARCADORES.linhaGrafico}\\s*(.*)$`, "gm");
+  const linhasMatches = [...bloco.matchAll(regexLinha)];
+  const abertura = (linhasMatches.length ? bloco.slice(0, linhasMatches[0].index!) : bloco).trim();
+  const linhas = linhasMatches
+    .map((m, i) => {
+      const categoria = m[1]?.trim() ?? "";
+      const inicio = m.index! + m[0].length;
+      const fim = i + 1 < linhasMatches.length ? linhasMatches[i + 1].index! : bloco.length;
+      return { categoria, texto: bloco.slice(inicio, fim).trim() };
+    })
+    .filter((l) => l.categoria);
+  return { abertura, linhas };
+}
+
+/**
+ * Correcção do especialista (bug real, encontrado por teste antes de
+ * publicar) — os blocos "EXPLICAÇÃO_GRÁFICO:"/"LINHA_GRÁFICO:" são
+ * extraídos e recolocados junto do gráfico certo (`parseExplicacaoGrafico`),
+ * mas nunca eram REMOVIDOS de onde o LLM os escreveu no texto bruto —
+ * se caíssem dentro de uma secção "## " normal (ex.: "## Abertura"),
+ * reapareciam em bruto quando essa secção era renderizada pela via
+ * normal (`markdownParaHtml`). Chamado ANTES de dividir o texto em
+ * secções, para nenhuma secção alguma vez ver este texto.
+ */
+function removerBlocosExplicacaoGrafico(texto: string): string {
+  const regexBloco = new RegExp(`^${MARCADORES.explicacaoGrafico}.*$`, "gm");
+  const matches = [...texto.matchAll(regexBloco)];
+  if (!matches.length) return texto;
+  const regexCabecalho = /^## /gm;
+  const cabecalhoIndices = [...texto.matchAll(regexCabecalho)].map((m) => m.index!);
+  const remocoes = matches.map((m, i) => {
+    const inicio = m.index!;
+    const limites = [texto.length, i + 1 < matches.length ? matches[i + 1].index! : texto.length, ...cabecalhoIndices.filter((idx) => idx > inicio)];
+    return { inicio, fim: Math.min(...limites) };
+  });
+  let resultado = "";
+  let cursor = 0;
+  for (const { inicio, fim } of remocoes) {
+    resultado += texto.slice(cursor, inicio);
+    cursor = fim;
+  }
+  resultado += texto.slice(cursor);
+  return resultado.trim();
+}
+
+/** Procura, sem sensibilidade a maiúsculas/acentos/espaços, a explicação de uma categoria dentro do bloco já parseado — para emparelhar "Sol"/"Casa 10"/nome exacto da Roda da Vida com a linha que o LLM escreveu, mesmo com pequenas variações de grafia. */
+function linhaExplicacaoPara(explicacao: ExplicacaoGrafico | null, categoria: string): string | null {
+  if (!explicacao) return null;
+  const normalizar = (s: string) =>
+    s
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .toLowerCase()
+      .trim();
+  const alvo = normalizar(categoria);
+  const linha = explicacao.linhas.find((l) => normalizar(l.categoria) === alvo);
+  return linha?.texto || null;
+}
+
 /** Separa a linha "PRIMEIRO PASSO: ..." do resto da secção "O plano". */
 function parsePlano(corpo: string): { corpo: string; primeiroPasso: string | null } {
   const regex = new RegExp(`^.*${MARCADORES.primeiroPasso}\\s*(.*)$`, "m");
@@ -822,14 +917,23 @@ function svgRadarCompetencias(eixos: EixoCompetencia[]): string {
   </svg>`;
 }
 
-function blocoRadarCompetencias(pesos: PesoPlaneta[], savPorCasa: SavPorCasa[], regentesCasas: Record<number, ClassicalGraha>, usarTu: boolean): string {
+function blocoRadarCompetencias(pesos: PesoPlaneta[], savPorCasa: SavPorCasa[], regentesCasas: Record<number, ClassicalGraha>, usarTu: boolean, explicacao: ExplicacaoGrafico | null): string {
   const eixos = computeRadarCompetencias(pesos, savPorCasa, regentesCasas);
   return `
     <div class="radar-wrap">
       <p class="bloco-titulo" style="text-align:center">${usarTu ? "O teu perfil de competências" : "O seu perfil de competências"}</p>
       <p class="roda-vida-subtitulo" style="text-align:center">${usarTu ? "Onde o teu perfil tem força natural" : "Onde o seu perfil tem força natural"}</p>
+      ${explicacao?.abertura ? `<div class="caixa-neutra grafico-explicacao-llm">${markdownParaHtml(explicacao.abertura)}</div>` : ""}
       <div class="grafico-wrap grafico-centrado">${svgRadarCompetencias(eixos)}</div>
       <p class="grafico-legenda" style="text-align:center">${usarTu ? "Valores calculados a partir da força real do teu perfil — não são avaliações de personalidade." : "Valores calculados a partir da força real do seu perfil — não são avaliações de personalidade."}</p>
+      <ul class="lista-caracteristicas">
+        ${eixos
+          .map((e) => {
+            const personalizado = linhaExplicacaoPara(explicacao, e.nome);
+            return personalizado ? `<li><strong>${escapeHtml(e.nome)}</strong> — <span class="linha-explicacao-llm">${escapeHtml(personalizado)}</span></li>` : "";
+          })
+          .join("")}
+      </ul>
     </div>`;
 }
 
@@ -1007,17 +1111,19 @@ function blocoDiagramaIdentidade(pesos: PesoPlaneta[], identidade: string | null
     </section>`;
 }
 
-function blocoRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], regentesCasas: Record<number, ClassicalGraha>, usarTu: boolean): string {
+function blocoRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], regentesCasas: Record<number, ClassicalGraha>, usarTu: boolean, explicacao: ExplicacaoGrafico | null): string {
   const dimensoes = computeRodaDaVida(savPorCasa, pesos, regentesCasas, usarTu);
   const lista = dimensoes
-    .map(
-      (d) => `
+    .map((d) => {
+      const personalizado = linhaExplicacaoPara(explicacao, d.nome);
+      return `
       <div class="dimensao-vida-item">
         <span class="dimensao-vida-nome">${escapeHtml(d.nome)}</span>
         <span class="dimensao-vida-valor" style="color:${corRodaDaVida(d.valor)}">${d.valor.toFixed(1)}/10</span>
         <p class="dimensao-vida-descricao">${escapeHtml(d.descricao)}</p>
-      </div>`,
-    )
+        ${personalizado ? `<p class="dimensao-vida-descricao linha-explicacao-llm">${escapeHtml(personalizado)}</p>` : ""}
+      </div>`;
+    })
     .join("");
 
   return `
@@ -1032,6 +1138,7 @@ function blocoRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], regente
             ? "Esta roda mostra onde o teu perfil tem força natural e onde pede mais esforço. Não é um julgamento — é um mapa. Áreas mais preenchidas indicam onde o teu perfil flui naturalmente. Áreas menos preenchidas indicam onde vais precisar de construir com mais intenção."
             : "Esta roda mostra onde o seu perfil tem força natural e onde pede mais esforço. Não é um julgamento — é um mapa. Áreas mais preenchidas indicam onde o seu perfil flui naturalmente. Áreas menos preenchidas indicam onde vai precisar de construir com mais intenção."
         }</p>
+        ${explicacao?.abertura ? markdownParaHtml(explicacao.abertura) : ""}
       </div>
       <div class="dimensao-vida-lista">${lista}</div>
     </div>`;
@@ -1476,12 +1583,29 @@ export function gerarHTMLRelatorio(
   savPorCasa: SavPorCasa[],
   catalogoResultados: ResultadoCatalogoVocacional,
 ): string {
-  const seccoes = dividirEmSeccoes(texto);
+  // Correcção do especialista ("explicação completa de todos os
+  // gráficos, linha a linha", pós-PDF real) — os 4 blocos são extraídos
+  // do texto BRUTO original (a posição em que o LLM os escreveu não
+  // importa, ver `parseExplicacaoGrafico`) ANTES de dividir em secções —
+  // se dividíssemos primeiro, um bloco caído dentro de "## Abertura" ou
+  // "## O que o perfil sustenta" ficava preso lá e reaparecia em bruto
+  // (marcador "EXPLICAÇÃO_GRÁFICO:"/"LINHA_GRÁFICO:" visível ao
+  // cliente) quando essa secção fosse renderizada normalmente — bug
+  // confirmado por teste antes de publicar. `removerBlocosExplicacaoGrafico`
+  // limpa esses blocos do texto ANTES de tudo o resto (divisão em
+  // secções, IDENTIDADE, FRASE_ABERTURA) precisar de o ler.
+  const explicacaoPeso = parseExplicacaoGrafico(texto, "peso");
+  const explicacaoCompetencias = parseExplicacaoGrafico(texto, "competencias");
+  const explicacaoVida = parseExplicacaoGrafico(texto, "vida");
+  const explicacaoGanho = parseExplicacaoGrafico(texto, "ganho");
+  const textoLimpo = removerBlocosExplicacaoGrafico(texto);
+
+  const seccoes = dividirEmSeccoes(textoLimpo);
   const dataGeracao = new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "long", year: "numeric" }).format(new Date());
 
   const opcoes = parseLeituraPorOpcao(seccoes[SECCAO_TITULOS.leituraPorOpcao] ?? "");
-  const identidade = parseIdentidade(texto);
-  const fraseAbertura = parseFraseAbertura(texto);
+  const identidade = parseIdentidade(textoLimpo);
+  const fraseAbertura = parseFraseAbertura(textoLimpo);
   // TAREFA 1 (correcção do especialista) — deriva o registo tu/você
   // directamente de `dados.ehAdolescente` (já correcto em todos os
   // chamadores) em vez de um 2º parâmetro booleano que podia divergir
@@ -1554,6 +1678,11 @@ export function gerarHTMLRelatorio(
   /* TAREFA 3B (correcção do especialista) — legenda linha-a-linha de cada característica do gráfico "O peso de cada característica". */
   .lista-caracteristicas { margin: 14px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.7; color: #4A4A4A; }
   .lista-caracteristicas strong { color: var(--azul); }
+  /* Correcção do especialista ("explicação completa de todos os gráficos, linha a linha", pós-PDF real) — parágrafo de abertura escrito pelo LLM (o que o gráfico mede, de onde vêm os números), e a camada personalizada por linha/categoria, sempre a seguir à explicação geral já existente, nunca a substituir. */
+  .grafico-explicacao-llm { font-size: 14px; margin: 10px 0 16px; max-width: 620px; }
+  .grafico-explicacao-llm p { margin: 0 0 10px; }
+  .grafico-explicacao-llm p:last-child { margin-bottom: 0; }
+  .linha-explicacao-llm { display: block; font-style: normal; color: #4A4A4A; margin-top: 2px; }
   /* TAREFA 3C — diagrama "Onde o perfil tem atrito" (substitui a tabela anterior). */
   .atrito-wrap { text-align: center; }
 
@@ -1713,27 +1842,40 @@ export function gerarHTMLRelatorio(
             ? "Este gráfico mostra a força relativa de cada característica do teu perfil. Valores acima de 1,3 indicam onde tens força natural; abaixo de 0,9 indicam onde o esforço vai ser maior."
             : "Este gráfico mostra a força relativa de cada característica do seu perfil. Valores acima de 1,3 indicam onde tem força natural; abaixo de 0,9 indicam onde o esforço vai ser maior."
         }</p>
+        ${explicacaoPeso?.abertura ? `<div class="caixa-neutra grafico-explicacao-llm">${markdownParaHtml(explicacaoPeso.abertura)}</div>` : ""}
         <div class="grafico-wrap">${svgGraficoForcas(pesos, usarTu)}</div>
         <p class="grafico-legenda">Verde = o perfil apoia com força · Âmbar = suporte moderado · Vermelho = suporte fraco</p>
         <ul class="lista-caracteristicas">
           ${[...pesos]
             .sort((a, b) => b.peso - a.peso)
-            .map((p) => `<li><strong>${escapeHtml(caracteristicaPt(p.planeta, usarTu))}</strong> — ${escapeHtml(CARACTERISTICA_EXPLICACAO[p.planeta] ?? "")}</li>`)
+            .map((p) => {
+              const personalizado = linhaExplicacaoPara(explicacaoPeso, PLANETA_PT[p.planeta] ?? p.planeta) ?? linhaExplicacaoPara(explicacaoPeso, caracteristicaPt(p.planeta, false));
+              return `<li><strong>${escapeHtml(caracteristicaPt(p.planeta, usarTu))}</strong> — ${escapeHtml(CARACTERISTICA_EXPLICACAO[p.planeta] ?? "")}${personalizado ? ` <span class="linha-explicacao-llm">${escapeHtml(personalizado)}</span>` : ""}</li>`;
+            })
             .join("")}
         </ul>
       </div>
 
-      <div class="subseccao">${blocoRadarCompetencias(pesos, savPorCasa, axes.regentesCasas, usarTu)}</div>
+      <div class="subseccao">${blocoRadarCompetencias(pesos, savPorCasa, axes.regentesCasas, usarTu, explicacaoCompetencias)}</div>
 
-      ${blocoRodaDaVida(savPorCasa, pesos, axes.regentesCasas, usarTu)}
+      ${blocoRodaDaVida(savPorCasa, pesos, axes.regentesCasas, usarTu, explicacaoVida)}
 
       <div class="subseccao">${blocoDiagramaAtrito(pesos, identidade)}</div>
     </section>
 
     <section class="seccao">
       <h2 class="titulo-seccao">${usarTu ? "Como ganhas melhor" : "Como ganha melhor"}</h2>
+      ${explicacaoGanho?.abertura ? `<div class="caixa-neutra grafico-explicacao-llm">${markdownParaHtml(explicacaoGanho.abertura)}</div>` : ""}
       <div class="grafico-wrap grafico-3barras">${svgModoDeGanho(earningModes, axes.earningModeDominante.map((e) => e.house))}</div>
       <p class="grafico-legenda" style="text-align:center">${usarTu ? "A barra em azul é o modo dominante — a forma que o teu perfil mais sustenta para gerar valor." : "A barra em azul é o modo dominante — a forma que o seu perfil mais sustenta para gerar valor."}</p>
+      <ul class="lista-caracteristicas">
+        ${earningModes
+          .map((e) => {
+            const personalizado = linhaExplicacaoPara(explicacaoGanho, `Casa ${e.house}`);
+            return personalizado ? `<li><strong>${usarTu ? "Casa" : "Casa"} ${e.house}</strong> — <span class="linha-explicacao-llm">${escapeHtml(personalizado)}</span></li>` : "";
+          })
+          .join("")}
+      </ul>
     </section>
 
     <section class="seccao">
