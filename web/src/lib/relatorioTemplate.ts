@@ -354,48 +354,62 @@ function parseLeituraPorOpcao(corpo: string): LeituraOpcao[] {
  * tem nenhum marcador — nesse caso `textoSemCandidata` traz o resto do
  * corpo (a explicação honesta de que não há candidata), tal como antes.
  */
+/**
+ * Correcção do especialista (bug real, confirmado por geração real —
+ * PDF #9) — "GRUPO:", "CANDIDATA:", "SELECÇÃO_CANDIDATAS:" e
+ * "EXPLICAÇÃO_GRÁFICO:" podem, por desenho, aparecer em qualquer
+ * posição relativa uns aos outros (a instrução dá ao LLM liberdade de
+ * posição para os blocos de explicação de gráficos: "a posição não
+ * importa"). Cada função de parsing só sabia parar no PRÓPRIO tipo de
+ * marcador — nunca nos outros três. Resultado real observado: um bloco
+ * "EXPLICAÇÃO_GRÁFICO:" escrito pelo LLM a meio (ou perto) da secção
+ * "Candidata fora da lista" fazia `removerBlocosExplicacaoGrafico`
+ * engolir tudo a seguir até ao próximo "## " — apagando candidatas
+ * inteiras (sem cartão, sem diagrama) antes de a secção sequer ser
+ * dividida. `proximoIndiceDeMarcador` devolve o índice do próximo
+ * marcador de QUALQUER um dos tipos passados (ou de um cabeçalho "## "/
+ * "### ") a partir de uma posição — usado como limite em todos os
+ * parsers desta secção, para nenhum bloco poder voltar a ultrapassar o
+ * marcador seguinte, seja ele qual for.
+ */
+function proximoIndiceDeMarcador(texto: string, apartirDe: number, marcadores: string[]): number {
+  let menor = texto.length;
+  for (const marcador of marcadores) {
+    const regex = new RegExp(`^${marcador}`, "gm");
+    regex.lastIndex = apartirDe;
+    const m = regex.exec(texto);
+    if (m && m.index >= apartirDe && m.index < menor) menor = m.index;
+  }
+  const regexCabecalho = /^#{2,3} /gm;
+  regexCabecalho.lastIndex = apartirDe;
+  const cab = regexCabecalho.exec(texto);
+  if (cab && cab.index >= apartirDe && cab.index < menor) menor = cab.index;
+  return menor;
+}
+
+/** Marcadores que nunca podem ficar "dentro" do corpo de uma candidata, do texto partilhado de um grupo, ou de um bloco de explicação de gráfico. */
+const FRONTEIRA_CANDIDATA = [MARCADORES.explicacaoGrafico, MARCADORES.candidata, MARCADORES.grupo, MARCADORES.seleccaoCandidatas];
+
 function parseCandidataForaDaLista(corpo: string): { candidatas: { nome: string; texto: string }[]; textoSemCandidata: string } {
   const regex = new RegExp(`^${MARCADORES.candidata}\\s*(.*)$`, "gm");
   const matches = [...corpo.matchAll(regex)];
   const primeiroValor = matches[0]?.[1]?.trim() ?? "";
   if (!matches.length || !primeiroValor || primeiroValor.toLowerCase() === "nenhuma") {
-    // Defesa adicional — por instrução, "SELECÇÃO_CANDIDATAS:" nunca
-    // deveria existir quando a resposta é "nenhuma", mas nunca deixar
-    // passar para o cliente se o LLM a escrever de qualquer forma.
+    // Defesa adicional — nenhum destes marcadores deveria existir
+    // quando a resposta é "nenhuma", mas nunca deixar passar para o
+    // cliente se o LLM os escrever de qualquer forma.
     const textoSemCandidata = corpo
       .replace(new RegExp(`^${MARCADORES.candidata}\\s*(.*)$`, "m"), "")
       .replace(new RegExp(`^${MARCADORES.seleccaoCandidatas}\\s*(.*)$`, "gm"), "")
+      .replace(new RegExp(`^${MARCADORES.explicacaoGrafico}\\s*(.*)$`, "gm"), "")
       .trim();
     return { candidatas: [], textoSemCandidata };
   }
-  // Correcção do especialista (bug real, encontrado por revisão de
-  // código, não por um relatório observado) — o fim de cada candidata
-  // era sempre "até ao próximo CANDIDATA:", sem olhar para "GRUPO:". Com
-  // o formato de agrupamento, isto faz a ÚLTIMA candidata de um grupo
-  // engolir o "GRUPO: ...\n<convergência partilhada>" inteiro do grupo
-  // SEGUINTE (o marcador aparece como texto em bruto dentro do seu
-  // próprio cartão, e a convergência do grupo seguinte fica duplicada —
-  // uma vez ali, indevidamente, outra vez a seguir, na caixa correcta).
-  // Nunca testado antes contra 2+ grupos na mesma secção — o teste
-  // sintético anterior só tinha 1 grupo. Corrigido: o fim de cada
-  // candidata é sempre o que vier primeiro entre o próximo "CANDIDATA:"
-  // e o próximo "GRUPO:" — nunca ultrapassa um bloco de grupo seguinte.
-  const gruposIndices = [...corpo.matchAll(new RegExp(`^${MARCADORES.grupo}\\s*(.*)$`, "gm"))].map((m) => m.index!);
-  // Defesa adicional — "SELECÇÃO_CANDIDATAS:" nunca deve aparecer dentro
-  // do corpo de uma candidata (só antes da primeira, onde já é
-  // descartado por desenho), mas se o LLM alguma vez a repetir fora do
-  // sítio esperado, o fim da candidata pára aí também, nunca a inclui.
-  const seleccaoIndices = [...corpo.matchAll(new RegExp(`^${MARCADORES.seleccaoCandidatas}\\s*(.*)$`, "gm"))].map((m) => m.index!);
   const candidatas = matches
-    .map((m, i) => {
+    .map((m) => {
       const nome = m[1]?.trim() ?? "";
       const inicio = m.index! + m[0].length;
-      const limites = [
-        i + 1 < matches.length ? matches[i + 1].index! : corpo.length,
-        ...gruposIndices.filter((idx) => idx > m.index!),
-        ...seleccaoIndices.filter((idx) => idx > m.index!),
-      ];
-      const fim = Math.min(...limites);
+      const fim = proximoIndiceDeMarcador(corpo, inicio, FRONTEIRA_CANDIDATA);
       return { nome, texto: corpo.slice(inicio, fim).trim() };
     })
     .filter((c) => c.nome);
@@ -422,28 +436,21 @@ interface GrupoCandidatasTexto {
 function parseGruposCandidatas(corpo: string): GrupoCandidatasTexto[] {
   const regexGrupo = new RegExp(`^${MARCADORES.grupo}\\s*(.*)$`, "gm");
   const matches = [...corpo.matchAll(regexGrupo)];
-  const regexCandidata = new RegExp(`^${MARCADORES.candidata}\\s*(.*)$`, "m");
-  // Defesa adicional (mesmo princípio da correcção em
-  // `parseCandidataForaDaLista`) — se "SELECÇÃO_CANDIDATAS:" aparecer
-  // fora do sítio esperado, entre um "GRUPO:" e o seu primeiro
-  // "CANDIDATA:", nunca deixa entrar na convergência partilhada.
-  const regexSeleccao = new RegExp(`^${MARCADORES.seleccaoCandidatas}\\s*(.*)$`, "m");
-  return matches
-    .map((m, i) => {
-      const membros = (m[1] ?? "")
-        .split(";")
-        .map((s) => s.trim())
-        .filter(Boolean);
-      const inicio = m.index! + m[0].length;
-      const fimGrupo = i + 1 < matches.length ? matches[i + 1].index! : corpo.length;
-      const restante = corpo.slice(inicio, fimGrupo);
-      const candidataMatch = restante.match(regexCandidata);
-      const seleccaoMatch = restante.match(regexSeleccao);
-      const limites = [fimGrupo, candidataMatch ? inicio + candidataMatch.index! : fimGrupo, seleccaoMatch ? inicio + seleccaoMatch.index! : fimGrupo];
-      const fimTexto = Math.min(...limites);
-      return { membros, textoPartilhado: corpo.slice(inicio, fimTexto).trim() };
-    })
-    .filter((g) => g.membros.length >= 2);
+  return matches.map((m) => {
+    const membros = (m[1] ?? "")
+      .split(";")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const inicio = m.index! + m[0].length;
+    // O texto PARTILHADO pára no primeiro marcador de qualquer tipo a
+    // seguir — normalmente o primeiro "CANDIDATA:" do próprio grupo (é
+    // onde a convergência de base acaba e a diferenciação começa).
+    // FRONTEIRA_CANDIDATA já inclui GRUPO/SELECÇÃO/EXPLICAÇÃO — nunca
+    // precisa de um limite "exterior" à parte, é sempre o mais apertado
+    // dos dois.
+    const fimTexto = proximoIndiceDeMarcador(corpo, inicio, FRONTEIRA_CANDIDATA);
+    return { membros, textoPartilhado: corpo.slice(inicio, fimTexto).trim() };
+  }).filter((g) => g.membros.length >= 2);
 }
 
 interface ExplicacaoGrafico {
@@ -468,18 +475,13 @@ function parseExplicacaoGrafico(textoCompleto: string, id: string): ExplicacaoGr
   const blocoMatch = textoCompleto.match(regexBloco);
   if (!blocoMatch) return null;
   const inicioBloco = blocoMatch.index! + blocoMatch[0].length;
-  // Correcção do especialista (bug real, encontrado por teste antes de
-  // publicar) — o ÚLTIMO bloco EXPLICAÇÃO_GRÁFICO: do documento não tem
-  // nenhum EXPLICAÇÃO_GRÁFICO: a seguir para o limitar — sem também
-  // parar num cabeçalho "## " seguinte, o bloco "engolia" o resto do
-  // documento inteiro (incluindo toda a secção "Candidata fora da
-  // lista"), que aparecia depois em bruto dentro do próprio gráfico.
-  const regexProximaExplicacao = new RegExp(`^${MARCADORES.explicacaoGrafico}\\s*`, "gm");
-  regexProximaExplicacao.lastIndex = inicioBloco;
-  const proximaMatch = regexProximaExplicacao.exec(textoCompleto);
-  const cabecalhoIndices = [...textoCompleto.matchAll(/^## /gm)].map((m) => m.index!);
-  const limites = [textoCompleto.length, proximaMatch ? proximaMatch.index! : textoCompleto.length, ...cabecalhoIndices.filter((idx) => idx > inicioBloco)];
-  const fimBloco = Math.min(...limites);
+  // Correcção do especialista (bug real — 2 rondas: primeiro só um
+  // cabeçalho "## " seguinte limitava o bloco, o que já ajudou; depois
+  // confirmado por geração real que também precisa de parar em
+  // CANDIDATA:/GRUPO:/SELECÇÃO_CANDIDATAS: — ver `proximoIndiceDeMarcador`)
+  // — sem isso, um bloco EXPLICAÇÃO_GRÁFICO escrito perto da secção
+  // "Candidata fora da lista" engolia candidatas inteiras.
+  const fimBloco = proximoIndiceDeMarcador(textoCompleto, inicioBloco, FRONTEIRA_CANDIDATA);
   const bloco = textoCompleto.slice(inicioBloco, fimBloco);
 
   const regexLinha = new RegExp(`^${MARCADORES.linhaGrafico}\\s*(.*)$`, "gm");
@@ -510,13 +512,14 @@ function removerBlocosExplicacaoGrafico(texto: string): string {
   const regexBloco = new RegExp(`^${MARCADORES.explicacaoGrafico}.*$`, "gm");
   const matches = [...texto.matchAll(regexBloco)];
   if (!matches.length) return texto;
-  const regexCabecalho = /^## /gm;
-  const cabecalhoIndices = [...texto.matchAll(regexCabecalho)].map((m) => m.index!);
-  const remocoes = matches.map((m, i) => {
-    const inicio = m.index!;
-    const limites = [texto.length, i + 1 < matches.length ? matches[i + 1].index! : texto.length, ...cabecalhoIndices.filter((idx) => idx > inicio)];
-    return { inicio, fim: Math.min(...limites) };
-  });
+  // Correcção do especialista (bug real, confirmado por geração real —
+  // PDF #9) — só parar num "## " seguinte não bastava: um bloco
+  // EXPLICAÇÃO_GRÁFICO escrito perto da secção "Candidata fora da
+  // lista" engolia candidatas inteiras (nem cartão nem diagrama) porque
+  // a remoção ia até ao próximo "## " sem olhar para CANDIDATA:/GRUPO:/
+  // SELECÇÃO_CANDIDATAS: pelo caminho. `proximoIndiceDeMarcador` para
+  // em qualquer um destes, sempre.
+  const remocoes = matches.map((m) => ({ inicio: m.index!, fim: proximoIndiceDeMarcador(texto, m.index! + m[0].length, FRONTEIRA_CANDIDATA) }));
   let resultado = "";
   let cursor = 0;
   for (const { inicio, fim } of remocoes) {
@@ -1563,8 +1566,14 @@ function tabelaApoioPorAreaDeVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[]
   // fisicamente lá, não porque é o tema mais importante da vida da
   // pessoa. Nota só aparece quando esse caso realmente ocorre.
   const forteForaDaTese = apoioCombinado.filter((h) => h.classificacao === "forte" && !casasCentrais.has(h.casa));
+  // Correcção do especialista ("erro de concordância verbal", pós-PDF
+  // real) — com 2+ áreas na lista, o sujeito é composto ("X, Y e Z") e a
+  // frase tem de ir para o plural (verbos, e "uma das casas centrais" →
+  // "casas centrais", sem o "uma das" que só faz sentido no singular);
+  // com exactamente 1 área, mantém-se a forma singular original.
+  const plural = forteForaDaTese.length > 1;
   const nota = forteForaDaTese.length
-    ? `<p class="anexo-nota">Nota: ${forteForaDaTese.map((h) => escapeHtml(areaVidaPt(h.casa, usarTu))).join(", ")} aparece com apoio Forte, mas não é uma das casas centrais desta leitura (Eixo da Missão / Modo de Ganho) — reflecte sobretudo onde a força física do perfil está posicionada, não o tema principal da ${usarTu ? "tua" : "sua"} vocação.</p>`
+    ? `<p class="anexo-nota">Nota: ${forteForaDaTese.map((h) => escapeHtml(areaVidaPt(h.casa, usarTu))).join(", ")} ${plural ? "aparecem" : "aparece"} com apoio Forte, mas ${plural ? "não são casas centrais" : "não é uma das casas centrais"} desta leitura (Eixo da Missão / Modo de Ganho) — reflecte${plural ? "m" : ""} sobretudo onde a força física do perfil está posicionada, não o tema principal da ${usarTu ? "tua" : "sua"} vocação.</p>`
     : "";
   return `
     <table class="tabela-anexo">

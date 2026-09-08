@@ -318,11 +318,22 @@ export function blocoEixoMissao(axes: VocationIQAxes): string {
 // exposição/visibilidade directa.
 const CASAS_DE_BASTIDORES = new Set([6, 8, 12]);
 
+// DESVIO (correcção do especialista, ronda seguinte — pós-PDF real) — a
+// primeira versão desta cláusula tinha 3 frases em cadeia de "não
+// significa X, significa Y", cada uma a hedgear a anterior. Suspeita
+// directa do especialista, a confirmar com geração real: o LLM pode ter
+// absorvido esse tom hesitante para a SÍNTESE do Modo de Ganho em "O
+// que o perfil sustenta", enfraquecendo uma frase que antes era directa.
+// Reescrita mais curta e AFIRMATIVA — nuance real, sem hedging em
+// cadeia — e reforçada com uma instrução explícita (ver `NOTA_TOM_NUANCE`
+// abaixo) para nunca confundir "mais precisa" com "mais hesitante".
 const NUANCE_REGENTE_EM_BASTIDORES: Record<EarningModeHouse, string> = {
-  2: " — mas o regente está sentado numa casa de bastidores (6, 8 ou 12): a voz que sustenta este perfil não é a mais sociável nem performática, ganha peso quando resolve algo difícil ou diz uma verdade que os outros evitam, não pelo charme da exposição",
-  6: " — e o regente está também numa casa de bastidores (6, 8 ou 12), o que reforça o padrão: o reconhecimento vem de resolver o que ninguém mais quer tocar, quase sempre sem holofote",
-  10: " — mas o regente está sentado numa casa de bastidores (6, 8 ou 12), não numa posição de exposição directa: o reconhecimento tende a chegar como consequência de resolver, estruturar ou servir com disciplina, nunca por procurar visibilidade — a leitura mais precisa não é 'ser vista a fazer', é 'tornar-se imprescindível através do que sustenta por trás'",
+  2: " — e o regente está numa casa de bastidores (6, 8 ou 12): a voz ganha peso ao dizer verdades difíceis, não pelo charme social",
+  6: " — e o regente está também numa casa de bastidores (6, 8 ou 12): reforça o padrão — reconhecimento por resolver o que ninguém mais quer tocar",
+  10: " — mas o regente está numa casa de bastidores (6, 8 ou 12): a autoridade não vem de exposição directa, vem de se tornar imprescindível através do que sustenta por trás",
 };
+
+const NOTA_TOM_NUANCE = `A nuance de "casa de bastidores" acima (quando presente) é informação para tornar a frase mais PRECISA, nunca mais hesitante — escreve-a com a mesma confiança directa que escreverias sem ela. Errado: "talvez o reconhecimento venha mais de resolver do que de aparecer". Certo: "o reconhecimento vem de se tornar imprescindível, não de procurar palco" — afirmativo, específico, sem qualificadores fracos ("talvez", "pode ser que", "de certa forma").`;
 
 export function blocoModoDeGanho(axes: VocationIQAxes, pesosPlanetas: PesoPlaneta[]): string {
   const dominantes = axes.earningModeDominante;
@@ -332,11 +343,13 @@ export function blocoModoDeGanho(axes: VocationIQAxes, pesosPlanetas: PesoPlanet
     10: "ganha por assumir a cara pública de uma coisa — liderança, execução, empreendedorismo visível",
   };
   const casaDoRegente = (lord: ClassicalGraha) => pesosPlanetas.find((p) => p.planeta === lord)?.casa;
+  let algumaNuanceAplicada = false;
   const ROTULO_HUMANO: Record<number, string> = Object.fromEntries(
     dominantes.map((d) => {
       const casaRegente = casaDoRegente(d.lord);
-      const nuance = casaRegente !== undefined && CASAS_DE_BASTIDORES.has(casaRegente) ? NUANCE_REGENTE_EM_BASTIDORES[d.house] : "";
-      return [d.house, `${ROTULO_HUMANO_BASE[d.house]}${nuance}`];
+      const temNuance = casaRegente !== undefined && CASAS_DE_BASTIDORES.has(casaRegente);
+      if (temNuance) algumaNuanceAplicada = true;
+      return [d.house, `${ROTULO_HUMANO_BASE[d.house]}${temNuance ? NUANCE_REGENTE_EM_BASTIDORES[d.house] : ""}`];
     }),
   );
   // TAREFA 2 (correcção do especialista) — antes desta correcção, um
@@ -357,6 +370,7 @@ export function blocoModoDeGanho(axes: VocationIQAxes, pesosPlanetas: PesoPlanet
       .join(" | ")}`,
     `As três Artha Trikonas, por ordem de força neste perfil: ${axes.earningModeAll.map((e) => `casa ${e.house} (pontuação ${e.score})`).join(", ")}.`,
   ];
+  if (algumaNuanceAplicada) linhas.push(NOTA_TOM_NUANCE);
   return linhas.join("\n");
 }
 
