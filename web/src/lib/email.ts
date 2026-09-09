@@ -267,12 +267,27 @@ export async function sendLeadMagnetEmail(params: { to: string }): Promise<Deliv
     return { ok: false, detail: "RESEND_API_KEY não configurada" };
   }
 
+  // Vai buscar o PDF ao próprio site em vez de ler do sistema de
+  // ficheiros local — o conteúdo de public/ não é garantidamente
+  // acessível por fs.readFileSync numa função serverless da Vercel,
+  // mas é sempre servido normalmente por HTTP.
+  let pdfBuffer: Buffer;
+  try {
+    const pdfRes = await fetch(`${SITE_URL}/exemplo-relatorio.pdf`);
+    if (!pdfRes.ok) throw new Error(`GET /exemplo-relatorio.pdf → ${pdfRes.status}`);
+    pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[vocationiq email] falha ao obter o PDF de exemplo:", detail);
+    return { ok: false, detail };
+  }
+
   const bodyHtml = `
     ${p("Olá,")}
-    ${p("Obrigado pelo teu interesse no VocationIQ.")}
-    ${p(`Podes ver um exemplo de análise em: <a href="${SITE_URL}/exemplo" style="color:#1B3A6B;">${SITE_HOST}/exemplo</a>`)}
-    ${p(`Quando quiseres a tua análise completa: <a href="${SITE_URL}/intake" style="color:#1B3A6B;">${SITE_HOST}/intake</a>`)}
-    <p style="margin:24px 0 0;">VocationIQ</p>
+    ${p("Segue em anexo o exemplo completo de uma análise VocationIQ.")}
+    ${p("Este relatório mostra o nível de profundidade e detalhe que recebes — desde o perfil de personalidade até às opções vocacionais concretas, com vias de entrada no mercado.")}
+    ${p(`Se quiseres a tua análise pessoal, podes começar aqui: <a href="${SITE_URL}/intake" style="color:#1B3A6B;">${SITE_HOST}/intake</a>`)}
+    <p style="margin:24px 0 0;">Com os melhores cumprimentos,<br>Equipa VocationIQ</p>
   `;
 
   const resend = new Resend(RESEND_API_KEY);
@@ -281,8 +296,9 @@ export async function sendLeadMagnetEmail(params: { to: string }): Promise<Deliv
       from: FROM_EMAIL,
       to: params.to,
       replyTo: REPLY_TO,
-      subject: "O teu exemplo VocationIQ",
+      subject: "O teu exemplo de análise VocationIQ",
       html: wrapper(bodyHtml),
+      attachments: [{ filename: "exemplo-analise-vocationiq.pdf", content: pdfBuffer, contentType: "application/pdf" }],
     });
     if (error) throw new Error(error.message);
     return { ok: true };

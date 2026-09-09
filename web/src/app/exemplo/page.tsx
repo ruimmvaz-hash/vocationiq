@@ -31,6 +31,20 @@ const PAGINAS = [
     altura: 1436,
     titulo: "Apoio por área de vida e os teus períodos",
   },
+  {
+    src: "/images/exemplo/opcoes-nao-consideradas.png",
+    largura: 1785,
+    altura: 2224,
+    titulo: "Opções que ainda não consideraste",
+    largo: true,
+  },
+  {
+    src: "/images/exemplo/tabela-vias-entrada.png",
+    largura: 1785,
+    altura: 358,
+    titulo: "Resumo das vias de entrada recomendadas",
+    largo: true,
+  },
 ];
 
 export default function ExemploPage() {
@@ -45,13 +59,16 @@ export default function ExemploPage() {
 
         <div className="mt-10 grid gap-8 sm:grid-cols-2">
           {PAGINAS.map((p) => (
-            <figure key={p.src} className="overflow-hidden rounded-lg border border-border bg-paper shadow-sm">
+            <figure
+              key={p.src}
+              className={`overflow-hidden rounded-lg border border-border bg-paper shadow-sm ${p.largo ? "sm:col-span-2" : ""}`}
+            >
               <Image
                 src={p.src}
                 alt={p.titulo}
                 width={p.largura}
                 height={p.altura}
-                sizes="(min-width: 640px) 50vw, 90vw"
+                sizes={p.largo ? "(min-width: 640px) 90vw, 90vw" : "(min-width: 640px) 50vw, 90vw"}
                 className="w-full h-auto"
               />
               <figcaption className="border-t border-border px-4 py-3 text-left text-sm font-semibold text-navy">{p.titulo}</figcaption>

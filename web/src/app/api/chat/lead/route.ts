@@ -20,7 +20,9 @@ export async function POST(request: Request) {
   if (!hasSupabaseAdmin) return NextResponse.json({ error: "Serviço indisponível de momento. Tenta novamente mais tarde." }, { status: 503 });
 
   try {
-    await criarLead(trimmed, "chatbot");
+    // Este fluxo não tem checkbox de consentimento RGPD — regista
+    // consentimento_rgpd = false com precisão, em vez de assumir.
+    await criarLead(trimmed, false, "chatbot");
   } catch (err) {
     console.error("[chat/lead] falha ao guardar:", err);
     return NextResponse.json({ error: "Não foi possível guardar o teu email." }, { status: 500 });
