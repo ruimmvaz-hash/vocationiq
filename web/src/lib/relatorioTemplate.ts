@@ -227,8 +227,34 @@ const FORCA_LABEL: Record<ForcaValor, string> = {
   fraca: "Suporte fraco",
 };
 
+/**
+ * Correcção do especialista ("candidata voltou, pior") — depois de uma
+ * instrução explícita e destacada na prompt (INSTRUCAO_NUNCA_CANDIDATA)
+ * a palavra "candidata" apareceu MAIS no texto visível, não menos. A
+ * explicação mais provável: essa instrução, ao explicar a proibição,
+ * repetia a própria palavra "candidata" cerca de 9 vezes num único
+ * parágrafo — um padrão conhecido de fazer o LLM piorar (repetir a
+ * palavra proibida, mesmo em contexto de proibição, aumenta a
+ * probabilidade de a gerar, não diminui). Mesmo padrão de falha já
+ * visto com EXPLICAÇÃO_GRÁFICO nesta sessão: depois de instrução
+ * repetida e reforçada não resolver, deixa de se depender do LLM —
+ * substituição determinística e garantida, aqui, no único sítio por
+ * onde passa toda a prosa livre do relatório (`markdownParaHtml` é
+ * chamada por todas as secções de texto do LLM). Nomes/rótulos
+ * (`op.nome`, `c.nome`, etc.) nunca passam por aqui — só a prosa livre
+ * — por isso não há risco de alterar um nome próprio.
+ */
+function semPalavraCandidata(texto: string): string {
+  return texto
+    .replace(/\bcandidaturas\b/gi, (m) => (m === m.toUpperCase() ? "OPÇÕES" : m[0] === m[0].toUpperCase() ? "Opções" : "opções"))
+    .replace(/\bcandidatas\b/gi, (m) => (m === m.toUpperCase() ? "OPÇÕES" : m[0] === m[0].toUpperCase() ? "Opções" : "opções"))
+    .replace(/\bcandidatura\b/gi, (m) => (m === m.toUpperCase() ? "OPÇÃO" : m[0] === m[0].toUpperCase() ? "Opção" : "opção"))
+    .replace(/\bcandidata\b/gi, (m) => (m === m.toUpperCase() ? "OPÇÃO" : m[0] === m[0].toUpperCase() ? "Opção" : "opção"));
+}
+
 /** Conversor minimalista de markdown -> HTML: parágrafos, listas numeradas, **negrito**. Suficiente para prosa de relatório — não um parser de markdown completo. */
-function markdownParaHtml(bloco: string): string {
+function markdownParaHtml(blocoOriginal: string): string {
+  const bloco = semPalavraCandidata(blocoOriginal);
   const linhas = bloco.trim().split("\n");
   const partes: string[] = [];
   let paragrafoActual: string[] = [];
@@ -344,7 +370,7 @@ function parseLeituraPorOpcao(corpo: string): { opcoes: LeituraOpcao[]; textoSem
 
     const insightRegex = new RegExp(`^${MARCADORES.insight}\\s*(.*)$`, "m");
     const insightMatch = semForca.match(insightRegex);
-    const insight = insightMatch?.[1]?.trim() || null;
+    const insight = insightMatch?.[1]?.trim() ? semPalavraCandidata(insightMatch[1].trim()) : null;
     semForca = semForca.replace(insightRegex, "").trim();
 
     const indices: number[] = [];
@@ -512,7 +538,7 @@ function removerBlocosExplicacaoGrafico(texto: string): string {
 function parsePlano(corpo: string): { corpo: string; primeiroPasso: string | null } {
   const regex = new RegExp(`^.*${MARCADORES.primeiroPasso}\\s*(.*)$`, "m");
   const match = corpo.match(regex);
-  const primeiroPasso = match?.[1]?.trim() ?? null;
+  const primeiroPasso = match?.[1]?.trim() ? semPalavraCandidata(match[1].trim()) : null;
   const resto = corpo.replace(regex, "").trim();
   return { corpo: resto, primeiroPasso };
 }
@@ -532,13 +558,13 @@ function parseSeccaoQuemE(corpo: string): SeccaoQuemE {
 
   const doms: string[] = [];
   let m: RegExpExecArray | null;
-  while ((m = domRegex.exec(corpo))) if (m[1].trim()) doms.push(m[1].trim());
+  while ((m = domRegex.exec(corpo))) if (m[1].trim()) doms.push(semPalavraCandidata(m[1].trim()));
 
   const limitacoes: string[] = [];
-  while ((m = limitacaoRegex.exec(corpo))) if (m[1].trim()) limitacoes.push(m[1].trim());
+  while ((m = limitacaoRegex.exec(corpo))) if (m[1].trim()) limitacoes.push(semPalavraCandidata(m[1].trim()));
 
   const sinteseMatch = corpo.match(sinteseRegex);
-  const sintese = sinteseMatch?.[1]?.trim() || null;
+  const sintese = sinteseMatch?.[1]?.trim() ? semPalavraCandidata(sinteseMatch[1].trim()) : null;
 
   const oQueValoriza = corpo.replace(domRegex, "").replace(limitacaoRegex, "").replace(sinteseRegex, "").trim();
 
@@ -549,14 +575,14 @@ function parseSeccaoQuemE(corpo: string): SeccaoQuemE {
 function parseIdentidade(textoCompleto: string): string | null {
   const regex = new RegExp(`^${MARCADORES.identidade}\\s*(.+)$`, "m");
   const match = textoCompleto.match(regex);
-  return match?.[1]?.trim() || null;
+  return match?.[1]?.trim() ? semPalavraCandidata(match[1].trim()) : null;
 }
 
 /** Melhorias visuais ao template (Parte 1A) — extrai "FRASE_ABERTURA: <frase>", também antes do 1º cabeçalho, mesma lógica de parseIdentidade. */
 function parseFraseAbertura(textoCompleto: string): string | null {
   const regex = new RegExp(`^${MARCADORES.fraseAbertura}\\s*(.+)$`, "m");
   const match = textoCompleto.match(regex);
-  return match?.[1]?.trim() || null;
+  return match?.[1]?.trim() ? semPalavraCandidata(match[1].trim()) : null;
 }
 
 function formatarDataLonga(iso: string): string {
@@ -1795,7 +1821,7 @@ const DETALHE_CARACTERISTICA_PESO: Record<string, DetalheCaracteristica> = {
  * geral, texto fixo do especialista.
  */
 const CANDIDATAS_FIXO_PESO: Partial<Record<string, string>> = {
-  Venus: "área a trabalhar conscientemente, independentemente da candidata escolhida — não é o motor a \"evitar\" caminhos, é uma competência a desenvolver em paralelo, sobretudo se a via envolver negociar directamente o próprio valor.",
+  Venus: "área a trabalhar conscientemente, independentemente da opção escolhida — não é o motor a \"evitar\" caminhos, é uma competência a desenvolver em paralelo, sobretudo se a via envolver negociar directamente o próprio valor.",
   Mercury: "é por isto que o primeiro passo do relatório manda trabalhar comunicação e auto-valorização antes de qualquer decisão de carreira.",
 };
 
@@ -1819,7 +1845,7 @@ function explicacaoPesoDeterministica(pesos: PesoPlaneta[], usarTu: boolean, axe
       `${usarTu ? "No teu" : "No seu"} perfil, peso ${p.peso.toFixed(2)} — ${classificacao}. Está ${estadoPt}, na casa ${p.casa} (${p.signo}).`,
       detalhe ? `Bom: ${detalhe.bom}` : "",
       detalhe ? `A vigiar: ${detalhe.aVigiar}` : "",
-      `Candidatas: ${linhaCandidatas}`,
+      `Opções: ${linhaCandidatas}`,
     ].filter(Boolean);
     porCategoria[PLANETA_PT[p.planeta] ?? p.planeta] = partes.join(" ");
   }
@@ -1909,7 +1935,7 @@ function explicacaoCompetenciasDeterministica(eixos: { nome: string; valor: numb
       `${usarTu ? "No teu" : "No seu"} perfil, ${e.valor.toFixed(1)}/10 — ${classificacaoDez(e.valor)}.`,
       detalhe ? `Bom: ${detalhe.bom}` : "",
       detalhe ? `A vigiar: ${detalhe.aVigiar}` : "",
-      `Candidatas: ${linhaCandidatas}`,
+      `Opções: ${linhaCandidatas}`,
     ].filter(Boolean);
     porCategoria[e.nome] = partes.join(" ");
   }
@@ -1994,7 +2020,7 @@ function explicacaoVidaDeterministica(dimensoes: DimensaoVida[], usarTu: boolean
       `${usarTu ? "No teu" : "No seu"} perfil, ${d.valor.toFixed(1)}/10 — ${classificacaoDez(d.valor)}.`,
       detalhe ? `Bom: ${detalhe.bom}` : "",
       detalhe ? `A vigiar: ${detalhe.aVigiar}` : "",
-      `Candidatas: ${linhaCandidatas}`,
+      `Opções: ${linhaCandidatas}`,
     ].filter(Boolean);
     porCategoria[d.nome] = partes.join(" ");
   }
@@ -2063,7 +2089,7 @@ function explicacaoGanhoDeterministica(earningModes: EarningMode[], dominantes: 
     }
     const detalhe = DETALHE_MODO_GANHO[e.house];
     const linhaCandidatas = fraseCandidatasDinamica(candidatasPorCasa(e.house, candidatasEscritas));
-    const partes = [texto, detalhe ? `Bom: ${detalhe.bom}` : "", detalhe ? `A vigiar: ${detalhe.aVigiar}` : "", `Candidatas: ${linhaCandidatas}`].filter(Boolean);
+    const partes = [texto, detalhe ? `Bom: ${detalhe.bom}` : "", detalhe ? `A vigiar: ${detalhe.aVigiar}` : "", `Opções: ${linhaCandidatas}`].filter(Boolean);
     porCategoria[`Casa ${e.house}`] = partes.join(" ");
   }
   return { abertura, porCategoria };

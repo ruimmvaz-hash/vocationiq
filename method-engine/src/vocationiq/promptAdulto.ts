@@ -737,16 +737,22 @@ ${MARCADORES.grupo} Administração Pública; Gestão
 Este grupo partilha a convergência do Modo de Ganho na casa 10...
 A diferença entre os dois é só a etiqueta no início da linha — nunca "**Nome** —", sempre "${MARCADORES.candidata} Nome" (ou "${MARCADORES.grupo} nome1; nome2; ..." para grupos, com a lista de nomes separada por ";", nunca só um título descritivo).`;
 
-// Correcção do especialista ("ORDEM — 4 correcções + 1 pista", ponto 1)
-// — a palavra "candidata" escapou para uma caixa de grupo num PDF real:
-// "Estas três candidatas partilham a convergência mais forte...". As
-// instruções deste ficheiro usam "candidata" pesadamente como
-// vocabulário interno de trabalho (falando COM o LLM sobre a tarefa) —
-// sem uma regra explícita e destacada, o LLM tende a espelhar esse
-// vocabulário no texto que a pessoa lê. Constante partilhada (usada por
-// promptAdulto.ts e promptAdolescente.ts) em vez de duplicada, para
-// nunca divergir entre os dois motores.
-export const INSTRUCAO_NUNCA_CANDIDATA = `NUNCA A PALAVRA "CANDIDATA(S)" NO TEXTO VISÍVEL: em toda a prosa que a pessoa lê — texto partilhado de grupo, texto individual, qualquer secção — usa sempre "opção"/"opções", nunca "candidata"/"candidatas". "Candidata" remete para concurso de beleza, não é o tom deste relatório. As instruções deste documento (e os dados técnicos) usam "candidata" como vocabulário interno de trabalho, falando contigo sobre a tarefa — isso nunca pode ecoar para o texto que a pessoa lê. Aplica-se em particular ao FORMATO DE GRUPO: nunca "estas candidatas têm em comum" ou "estas três candidatas partilham...", sempre "estas opções têm em comum"/"estas três opções partilham...".`;
+// Correcção do especialista ("candidata voltou, pior") — a 1ª versão
+// desta regra ("NUNCA A PALAVRA CANDIDATA(S)...") explicava a proibição
+// repetindo a própria palavra proibida cerca de 9 vezes num único
+// parágrafo. Resultado real: a palavra apareceu MAIS no texto visível
+// depois desta instrução, não menos — o padrão clássico de "não penses
+// num elefante", onde repetir uma palavra (mesmo a proibir) aumenta a
+// probabilidade de o LLM a gerar. Reescrita para nunca nomear a palavra
+// proibida — só descreve o comportamento desejado, uma vez, em
+// linguagem positiva. A garantia real já não depende disto: o template
+// (`web/src/lib/relatorioTemplate.ts`, função `semPalavraCandidata`)
+// substitui deterministicamente qualquer ocorrência que ainda escape,
+// exactamente pelo mesmo motivo que EXPLICAÇÃO_GRÁFICO deixou de
+// depender do LLM nesta sessão — esta instrução é só a 1ª linha de
+// defesa, não a garantia. Constante partilhada (promptAdulto.ts e
+// promptAdolescente.ts) para nunca divergir entre os dois motores.
+export const INSTRUCAO_NUNCA_CANDIDATA = `Na prosa que a pessoa lê — abertura de grupo, texto de cada opção, qualquer secção — chama a cada uma destas áreas "opção" ou "opções". O termo usado nos dados técnicos abaixo é só para uso interno teu, nunca para o texto final.`;
 
 // Correcção do especialista ("dom/talento em vez de percurso", pós-PDF
 // real) — as descrições de cada candidata estavam centradas em duração
@@ -1006,7 +1012,7 @@ Se essa secção lista 1 ou mais candidatas, primeiro escreve o bloco único "${
 
 FORMATO INDIVIDUAL (candidata sem grupo, ou grupo reduzido a 1 sobrevivente depois do Passo 1) — "${MARCADORES.candidata} <nome exacto>" seguido do texto explicativo dessa candidata, NESTA ORDEM (ver INSTRUCAO_ABERTURA_CANDIDATAS): (1) a frase de dom, usando o FACTOR DE DOM já dado; (2) 1 a 3 frases sobre porque é que esta área faz sentido especificamente dentro deste perfil (que outros sinais reforçam a ligação). NUNCA menciona percurso, formação ou duração no corpo do texto — essa informação vive só nas linhas "${MARCADORES.viaResumida}"/"${MARCADORES.custoPrincipal}" (ver instrução própria abaixo). Usa só as camadas exactas já listadas para ela na pool (nunca inventes camadas novas nem omitas as que vêm calculadas).
 
-FORMATO DE GRUPO (2 ou mais candidatas da secção "Grupos de candidatas" acima que passaram o Passo 1) — "${MARCADORES.grupo} <nome1>; <nome2>; <nome3 ...>" (os nomes exactos dos membros deste grupo que passaram o Passo 1, separados por ";", pela ordem em que os blocos "${MARCADORES.candidata}" a seguir vão aparecer) seguido do texto da convergência astrológica de base PARTILHADA por todo o grupo — o que estas opções têm em comum (nunca "candidatas" no texto — ver regra acima), escrito UMA SÓ VEZ. Logo a seguir, um bloco "${MARCADORES.candidata} <nome exacto>" por cada membro listado no "${MARCADORES.grupo}", nesta ordem, cada um com só a sua diferenciação específica (1-3 linhas: porquê esta e não as outras do mesmo grupo faz sentido dentro deste perfil) — nunca percurso/formação, e NUNCA repetir a convergência de base já escrita no bloco "${MARCADORES.grupo}".
+FORMATO DE GRUPO (2 ou mais candidatas da secção "Grupos de candidatas" acima que passaram o Passo 1) — "${MARCADORES.grupo} <nome1>; <nome2>; <nome3 ...>" (os nomes exactos dos membros deste grupo que passaram o Passo 1, separados por ";", pela ordem em que os blocos "${MARCADORES.candidata}" a seguir vão aparecer) seguido do texto da convergência astrológica de base PARTILHADA por todo o grupo — o que estas opções têm em comum, escrito UMA SÓ VEZ. Logo a seguir, um bloco "${MARCADORES.candidata} <nome exacto>" por cada membro listado no "${MARCADORES.grupo}", nesta ordem, cada um com só a sua diferenciação específica (1-3 linhas: porquê esta e não as outras do mesmo grupo faz sentido dentro deste perfil) — nunca percurso/formação, e NUNCA repetir a convergência de base já escrita no bloco "${MARCADORES.grupo}".
 
 Repete este padrão (individual ou de grupo) para toda a pool que passou o Passo 1 — nunca pares a meio, nunca omitas uma candidata elegível para "não alongar a secção". A ordem de aparição dos grupos/individuais no texto segue o Passo 2 (soma de pesos) — a ordem NÃO é ranking (ver regra abaixo).
 
