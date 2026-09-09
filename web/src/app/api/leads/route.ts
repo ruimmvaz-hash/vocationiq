@@ -26,7 +26,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Não foi possível guardar o teu email." }, { status: 500 });
   }
 
-  sendLeadMagnetEmail({ to: trimmed }).catch((err) => console.error("[leads] falha ao enviar email de exemplo:", err));
+  // Aguarda o envio (em vez de fire-and-forget) para o formulário só
+  // mostrar "enviámos" quando o email realmente saiu — antes disto, uma
+  // falha no envio (ex.: RESEND_API_KEY em falta) ficava só no log do
+  // servidor e o utilizador via sempre sucesso sem nunca receber nada.
+  const envio = await sendLeadMagnetEmail({ to: trimmed });
+  if (!envio.ok) {
+    console.error("[leads] falha ao enviar email de exemplo:", envio.detail);
+    return NextResponse.json({ error: "O teu email ficou registado, mas não foi possível enviar agora. Tenta novamente em alguns minutos." }, { status: 502 });
+  }
 
   return NextResponse.json({ ok: true });
 }
