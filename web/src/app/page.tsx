@@ -15,9 +15,8 @@ const SITUACAO_LABEL = Object.fromEntries(SITUACAO_TESTEMUNHO.map((s) => [s.valo
 // sem bater no Supabase em cada visita.
 export const revalidate = 300;
 
-// Imagens Unsplash (licença gratuita, hotlink directo ao CDN — ver commit).
-const HERO_IMG = "https://images.unsplash.com/photo-1620355402809-5bc3f630b2ac?auto=format&fit=crop&w=1920&q=75";
-const LEITURA_IMG = "https://images.unsplash.com/photo-1681396059172-7532b1ef8b47?auto=format&fit=crop&w=1000&q=75";
+const HERO_IMG = "https://images.unsplash.com/photo-1620355402809-5bc3f630b2ac?auto=format&fit=crop&w=1920&q=75"; // Unsplash, licença gratuita, hotlink directo ao CDN
+const LEITURA_IMG = "/images/relatorio-preview-fan.png"; // exemplo real anonimizado ("Verónica S.")
 
 const PUBLICOS = [
   {
@@ -175,10 +174,10 @@ export default async function HomePage() {
                 ))}
               </ul>
             </div>
-            <div className="relative order-first aspect-[4/5] w-full overflow-hidden rounded-lg shadow-md md:order-last">
+            <div className="relative order-first aspect-[5/3] w-full overflow-hidden rounded-lg shadow-md md:order-last">
               <Image
                 src={LEITURA_IMG}
-                alt="Pessoa a ler um documento à luz natural"
+                alt="Exemplo de relatório VocationIQ"
                 fill
                 sizes="(min-width: 768px) 40vw, 90vw"
                 className="object-cover"
