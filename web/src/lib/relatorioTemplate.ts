@@ -2165,7 +2165,8 @@ export function gerarHTMLRelatorio(
   @page :first { margin: 0; }
   :root { --azul: ${AZUL}; --ambar: ${AMBAR}; --cinza-claro: ${CINZA_CLARO}; }
   * { box-sizing: border-box; }
-  body { font-family: "Inter", Arial, Helvetica, sans-serif; color: #1A1A1A; background: #FFFFFF; margin: 0; padding: 0; }
+  /* Correcção do especialista ("alinhamento à direita", diagnóstico confirmado ao vivo — sem overflow-wrap/word-break em lado nenhum, uma palavra/termo composto longo sem espaços transbordava 253px para a direita do seu contentor, sem quebrar, visível porque overflow é "visible" em toda a cadeia de contentores. Propriedades herdadas — aplicadas uma vez aqui, protegem todo o texto do relatório. */
+  body { font-family: "Inter", Arial, Helvetica, sans-serif; color: #1A1A1A; background: #FFFFFF; margin: 0; padding: 0; overflow-wrap: break-word; word-break: break-word; }
   .capa { min-height: 297mm; background: var(--azul); padding: 40mm 20mm; text-align: center; page-break-after: always; display: flex; flex-direction: column; justify-content: center; align-items: center; }
   .capa-logo { font-size: 36px; font-weight: 800; letter-spacing: 0.5px; color: #FFFFFF; }
   .capa-logo .iq { color: var(--ambar); }
