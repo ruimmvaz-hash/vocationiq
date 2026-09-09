@@ -5,7 +5,6 @@
 
 import type { VocationIQAxes, EarningModeHouse } from "../lifeReport/vocationIQ";
 import type { PesoPlaneta, SavPorCasa } from "./pesosPlanetas";
-import { valorCasaUnificado } from "./pesosPlanetas";
 import type { ClassicalGraha } from "../lifeReport/types";
 import type { ResultadoCatalogoVocacional } from "./catalogoVocacional";
 import { computeRodaDaVida } from "./rodaDaVida";
@@ -125,20 +124,15 @@ export const MARCADORES = {
    */
   grupo: "GRUPO:",
   /**
-   * Correcção do especialista ("explicação completa de todos os
-   * gráficos, linha a linha") — abre a explicação de UM gráfico
-   * específico. Formato exigido na mesma linha do marcador: o
-   * identificador do gráfico, um destes 4 exactos: "peso", "competencias",
-   * "vida", "ganho". O texto a seguir, até ao primeiro
-   * "LINHA_GRÁFICO:" ou ao próximo "EXPLICAÇÃO_GRÁFICO:", é o
-   * parágrafo de abertura desse gráfico (o que é, de onde vêm os
-   * números, como ler as cores/escala, o que mede e porquê). A posição
-   * exacta destes 4 blocos no texto NÃO importa — o template
-   * extrai-os por marcador e recoloca cada um junto do seu próprio
-   * gráfico (mesmo mecanismo já usado para FRASE_ABERTURA/IDENTIDADE).
+   * LEGADO (correcção do especialista — "EXPLICAÇÃO_GRÁFICO, mudança de
+   * abordagem") — já não é pedido ao LLM (ver a nota junto de
+   * INSTRUCAO_VARGOTTAMA sobre porquê). Mantido só para
+   * `relatorioTemplate.ts` conseguir limpar defensivamente este
+   * marcador de rascunhos guardados ANTES desta correcção, que ainda o
+   * possam conter — nunca aparece num rascunho novo.
    */
   explicacaoGrafico: "EXPLICAÇÃO_GRÁFICO:",
-  /** Ver `explicacaoGrafico` — uma por linha/categoria do gráfico activo (nome exacto da categoria na mesma linha do marcador), seguida do texto de explicação dessa linha (camada geral + camada personalizada, ver INSTRUCAO_EXPLICACAO_GRAFICOS). */
+  /** LEGADO — ver `explicacaoGrafico`. */
   linhaGrafico: "LINHA_GRÁFICO:",
 } as const;
 
@@ -491,31 +485,6 @@ export function blocoRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], 
   return dimensoes.map((d) => `${d.nome}: ${d.valor.toFixed(1)}/10${d.valor <= 4 || d.valor >= 7 ? " — EXTREMO, tem de ser referenciado no texto" : ""}`).join("\n");
 }
 
-/**
- * Correcção do especialista ("explicação completa de todos os gráficos,
- * linha a linha") — o "Perfil de Competências" (6 eixos: Comunicação/
- * Liderança/Criatividade/Estrutura/Relação/Execução) era, até agora,
- * calculado SÓ no template (`relatorioTemplate.ts`), nunca surgia ao
- * LLM — por isso o LLM não tinha como escrever nada personalizado sobre
- * ele. Mesma fórmula usada pelo template (`valorCasaUnificado`, casas
- * fixas 2/10/5/6/7/1) — nunca inventada de novo, nunca pode divergir do
- * gráfico que o cliente vê (mesma exigência já aplicada à Roda da Vida
- * e ao Anexo).
- */
-export function blocoPerfilCompetencias(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], regentesCasas: Record<number, ClassicalGraha>): string {
-  const savDe = (casa: number) => savPorCasa.find((h) => h.casa === casa)?.pontuacao ?? 0;
-  const valor = (casa: number) => valorCasaUnificado(savDe(casa), casa, pesos, regentesCasas).valor;
-  const eixos = [
-    { nome: "Comunicação", valor: valor(2) },
-    { nome: "Liderança", valor: valor(10) },
-    { nome: "Criatividade", valor: valor(5) },
-    { nome: "Estrutura", valor: valor(6) },
-    { nome: "Relação", valor: valor(7) },
-    { nome: "Execução", valor: valor(1) },
-  ];
-  return eixos.map((e) => `${e.nome}: ${e.valor.toFixed(1)}/10`).join("\n");
-}
-
 const ASPECTO_PT: Record<string, string> = {
   Conjuncao: "conjunção",
   Sextil: "sextil",
@@ -783,36 +752,21 @@ GRUPOS COM NÍVEIS MISTOS (correcção do especialista — agrupamento por clust
 // relatório desde uma correcção anterior (TAREFA 3D).
 export const INSTRUCAO_VARGOTTAMA = `VARGOTTAMA — INSTRUÇÃO OBRIGATÓRIA: se existe planeta Vargottama, a secção "${SECCAO_TITULOS.quemE}" DEVE conter uma frase com este padrão exacto: "[Nome do planeta em português] é o traço mais estável deste perfil — aparece com a mesma força em duas dimensões independentes do perfil, o que significa que não muda com as circunstâncias nem depende de esforço para existir." Esta frase é obrigatória. Se não existe planeta Vargottama, não mencionar.`;
 
-// Correcção do especialista ("explicação completa de todos os gráficos,
-// linha a linha", pós-PDF real) — o relatório mostra 4 gráficos
-// numéricos (peso de cada característica, Perfil de Competências, Perfil
-// de Vida, Como ganha melhor) sem NENHUMA explicação escrita pelo LLM —
-// só legendas fixas, genéricas, iguais para toda a gente. Confirmado no
-// PDF real: a barra dominante de "Como ganha melhor" diz "Liderando
-// publicamente" sem qualquer nuance, contradizendo visualmente o texto
-// que já fala em reconhecimento via bastidores (ver
-// NUANCE_REGENTE_EM_BASTIDORES) — quem só vê o gráfico sai com a leitura
-// errada. Esta instrução fecha essa lacuna: cada gráfico ganha um
-// parágrafo de abertura (o que é, de onde vêm os números, como ler a
-// escala) e uma explicação própria por linha (o que a categoria
-// significa em geral + o que o valor desta pessoa nessa linha significa
-// especificamente), escritos pelo LLM a partir dos dados técnicos reais
-// abaixo — nunca inventados, sempre rastreáveis a um número calculado.
-export const INSTRUCAO_EXPLICACAO_GRAFICOS = `EXPLICAÇÃO COMPLETA DOS GRÁFICOS — OBRIGATÓRIO, SEM EXCEPÇÃO: o relatório tem 4 gráficos numéricos ("${MARCADORES.explicacaoGrafico}" um por cada, identificador exacto entre parênteses): o peso de cada característica (peso), o Perfil de Competências (competencias), o Perfil de Vida (vida), e Como ganha melhor (ganho). NENHUM número ou linha destes gráficos pode chegar ao cliente sem estar explicado antes de ser apresentado — o relatório tem de ser minucioso e altamente profissional em toda esta secção, nunca um corte numérico solto.
-Para CADA um dos 4 gráficos, escreve um bloco "${MARCADORES.explicacaoGrafico} <identificador>" (identificador exacto: peso / competencias / vida / ganho, sem acentos, minúsculas) com este conteúdo, nesta ordem:
-1. PARÁGRAFO DE ABERTURA (antes de qualquer linha): o que este gráfico é, de onde vêm os números (que dado técnico os gera), como ler as cores/escala, e — mais importante — O QUE ESTÁ DE FACTO A MEDIR e porquê essa escala existe. Nunca só "isto mostra X" — explica o mecanismo por trás do número.
-2. Uma linha "${MARCADORES.linhaGrafico} <nome exacto da categoria>" por CADA categoria do gráfico (7 para "peso": Sol/Lua/Marte/Mercúrio/Júpiter/Vénus/Saturno; 6 para "competencias": Comunicação/Liderança/Criatividade/Estrutura/Relação/Execução; 8 para "vida": as 8 dimensões dadas nos dados técnicos, nome exacto; 3 para "ganho": as três Artha Trikonas, casa 2/6/10, nome exacto "Casa 2"/"Casa 6"/"Casa 10") — NUNCA omitir nenhuma categoria, mesmo as que parecem menos relevantes. Cada linha é seguida de um texto com DUAS CAMADAS, sempre as duas, na mesma explicação: (a) o que esta categoria representa em geral (uma definição curta, factual); (b) o que o VALOR ESPECÍFICO desta pessoa nesta categoria significa no perfil dela — personalizado, nunca genérico, citando o número real dado nos dados técnicos.
-CASO ESPECIAL — "ganho": a barra dominante do gráfico tem sempre o rótulo fixo da casa vencedora (ex.: casa 10 = "Liderando publicamente") — isto é um rótulo curto do desenho do gráfico, nunca muda. A linha "${MARCADORES.linhaGrafico} Casa 10" (ou a que for dominante) TEM de nomear explicitamente esse rótulo do gráfico e, se o regente dessa casa estiver sentado numa casa de bastidores (ver a nuance já dada em "-- Modo de Ganho --" acima, quando aplicável), TEM de esclarecer a aparente contradição de frente — nunca deixá-la por resolver. Padrão: "O gráfico mostra '[rótulo do gráfico]' como o seu modo dominante — mas no seu caso isto não significa [leitura óbvia do rótulo]; significa [leitura real, com a nuance de bastidores]." Se o regente NÃO estiver numa casa de bastidores, a linha confirma a leitura directa do rótulo, sem nuance forçada onde não existe.
-Nunca inventar nenhum número — usa sempre os valores exactos dados nos blocos técnicos "-- Peso de cada planeta --", "-- Perfil de Competências --", "-- Roda da Vida --" e "-- Modo de Ganho --". A posição destes 4 blocos no teu texto não importa (o template extrai-os e recoloca-os junto do gráfico correspondente) — mas os 4 têm de existir, sempre, um por gráfico, sem excepção.
-ERRO CONFIRMADO EM GERAÇÕES REAIS (correcção do especialista — nunca repetir isto): em 4 gerações seguidas, estes 4 blocos ficaram totalmente AUSENTES — nem em formato errado, ausentes por inteiro, apesar de estarem descritos aqui e na lista de marcadores obrigatórios. Não é um formato alternativo aceitável escrever a explicação como prosa solta dentro de outra secção (ex.: mencionar o peso do Sol dentro de "Quem é") — isso não substitui o bloco, porque o template só sabe colocar texto junto ao gráfico se vier marcado exactamente assim:
-ERRADO (não é um bloco reconhecido, mesmo que o conteúdo esteja certo):
-O gráfico de peso mostra a força de cada planeta. O Sol, o mais forte do seu perfil, representa a sua direcção mais profunda...
-CERTO (o único formato que o template reconhece):
-${MARCADORES.explicacaoGrafico} peso
-Este gráfico mostra a força relativa de cada planeta, calculada a partir do estado (exaltado/próprio/debilitado/etc.) e da força da casa onde está sentado — quanto mais alto o valor, mais esse traço domina como o perfil actua no mundo.
-${MARCADORES.linhaGrafico} Sol
-O Sol representa a direcção mais profunda do perfil em geral. No seu caso é o planeta mais forte (peso mais alto de toda a carta) — a sua identidade central não é opcional, é o motor de tudo o resto.
-Repete este padrão para as restantes 6 linhas de "peso", e para os outros 3 gráficos (competencias, vida, ganho) — SEMPRE com o marcador "${MARCADORES.explicacaoGrafico} <id>" a abrir o bloco, nunca substituído por um título, um cabeçalho bold, ou a explicação disfarçada de prosa noutra secção.`;
+// DESVIO (correcção do especialista — "EXPLICAÇÃO_GRÁFICO, mudança de
+// abordagem") — chegou a existir aqui uma INSTRUCAO_EXPLICACAO_GRAFICOS,
+// pedindo ao LLM para escrever 4 blocos machine-readable explicando os
+// gráficos "peso"/"competencias"/"vida"/"ganho", linha a linha. Depois
+// de 5 gerações reais seguidas sem NENHUMA ocorrência desses blocos —
+// apesar da instrução, de exemplos negativos explícitos, e de um
+// critério na crítica automática a forçar reescrita quando faltassem —
+// a decisão foi abandonar esta secção como responsabilidade do LLM. A
+// explicação dos 4 gráficos é agora gerada 100% por código, directamente
+// em relatorioTemplate.ts (funções `explicacaoXDeterministica`), a
+// partir dos mesmos dados que os próprios gráficos usam. Os marcadores
+// "EXPLICAÇÃO_GRÁFICO:"/"LINHA_GRÁFICO:" continuam em MARCADORES só
+// para o template conseguir limpar defensivamente texto residual de
+// rascunhos antigos (gerados antes desta correcção) — nunca mais são
+// pedidos ao LLM.
 
 export function construirPromptAdulto(
   intake: VocationiqIntakeAdulto,
@@ -853,7 +807,7 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - PLANETA FRACO + ÁREA ACTUAL: Se a área actual é governada por um planeta fraco (peso < 0,9), isso explica o porquê da insatisfação com precisão. É obrigatório nomear. EXEMPLO: Vénus fraca + estética = "passou anos no campo do planeta mais fraco do seu perfil — explica o desgaste, não invalida o talento."
 - OPÇÃO DECLARADA — TRADUZIR SEMPRE: A opção que a pessoa declarou é o vocabulário que tinha à mão. SEMPRE traduzir: o que quis dizer, nos termos do perfil? "Quero ser consultora SAP" pode significar "quero ser autoridade que ensina e aconselha com nome próprio" — testar essa tradução, nunca aceitar a opção ao pé da letra.
 - MAHADASHA — CLASSIFICAÇÃO E REGRA: O tom da Mahadasha actual ABRE a secção do plano, antes de qualquer data ou passo. Classificação: Ketu = dissolução/fecho ("prepare e feche, não colha"); Vénus = expansão/prazer/colheita ("avance, o ciclo favorece"); Sol = afirmação/autoridade ("afirme e visibilize"); Lua = emoção/fluxo/intuição ("siga o que sente, não o plano"); Marte = acção/lançamento/conflito ("avance com força e decisão"); Rahu = ambição/disrupção/ilusão ("risco real, oportunidade real"); Júpiter = crescimento/sabedoria/expansão ("expanda com intenção"); Saturno = estrutura/colheita lenta/responsabilidade ("construa devagar, vai durar"); Mercúrio = comunicação/adaptação/aprendizagem ("aprenda e comunique"). A colheita a sério só abre depois do fim da Mahadasha actual — sempre nomear essa data.
-- MARCADORES OBRIGATÓRIOS (recapitulação — cada um já está descrito no lugar exacto onde vai abaixo, mas fica aqui reunido para nunca esquecer nenhum): antes de ${MARCADORES.identidade} "${MARCADORES.fraseAbertura} <frase de 10-15 palavras, poderosa e específica>"; dentro de cada bloco "### <opção>", antes do ponto 1: "${MARCADORES.insight} <frase de síntese em menos de 15 palavras>"; na secção "${SECCAO_TITULOS.candidataForaDaLista}", antes de qualquer "${MARCADORES.candidata}": "${MARCADORES.seleccaoCandidatas} <raciocínio da escolha entre a pool completa>" (só quando há pelo menos 1 candidata na pool); e — confirmado em falta em 3 gerações reais seguidas, reforçado aqui por isso — os 4 blocos "${MARCADORES.explicacaoGrafico} peso" / "${MARCADORES.explicacaoGrafico} competencias" / "${MARCADORES.explicacaoGrafico} vida" / "${MARCADORES.explicacaoGrafico} ganho" (ver INSTRUCAO_EXPLICACAO_GRAFICOS), cada um com o seu parágrafo de abertura e uma linha "${MARCADORES.linhaGrafico}" por categoria — os 4 têm de existir, sempre, nunca 3 nem 2. São machine-readable e obrigatórios — nunca omitir.
+- MARCADORES OBRIGATÓRIOS (recapitulação — cada um já está descrito no lugar exacto onde vai abaixo, mas fica aqui reunido para nunca esquecer nenhum): antes de ${MARCADORES.identidade} "${MARCADORES.fraseAbertura} <frase de 10-15 palavras, poderosa e específica>"; dentro de cada bloco "### <opção>", antes do ponto 1: "${MARCADORES.insight} <frase de síntese em menos de 15 palavras>"; na secção "${SECCAO_TITULOS.candidataForaDaLista}", antes de qualquer "${MARCADORES.candidata}": "${MARCADORES.seleccaoCandidatas} <raciocínio da escolha entre a pool completa>" (só quando há pelo menos 1 candidata na pool). São machine-readable e obrigatórios — nunca omitir.
 - COERÊNCIA COM OS VISUAIS: o relatório tem elementos visuais gerados automaticamente — gráfico de forças (7 planetas com pesos calculados), radar de competências (6 eixos), Roda da Vida (8 dimensões), tabela de tensões. O texto DEVE referenciar estes visuais quando relevante ("Como mostra o gráfico de forças...", "A sua roda de vida revela...", "O radar de competências confirma..."). NUNCA contradizer o que os visuais mostram — se um visual mostra um valor fraco, o texto não pode dizer que é forte.
 - VALOR ALTO NUM ELEMENTO VISUAL NÃO É O TEMA CENTRAL DA VIDA (correcção do especialista): uma casa com valor alto no gráfico (Roda da Vida, Anexo) pode reflectir onde o planeta mais forte do perfil está fisicamente posicionado — não necessariamente o tema mais importante da vida da pessoa. O tema central é determinado pelo Eixo da Missão e pelo Modo de Ganho, nunca pelo valor mais alto da roda. Exemplo: se "Saúde/Energia" ou "Como lida com obstáculos e o trabalho do dia a dia" (casa 6) aparecer com o valor mais alto de toda a Roda da Vida só porque o planeta mais forte do perfil está fisicamente aí, o texto nunca pode tratar essa área como o propósito central da pessoa — referencia o valor (é obrigatório, ver regra dos extremos), mas contextualiza-o como "onde a força física do perfil se concentra", nunca como substituto do Eixo da Missão/Modo de Ganho ao decidir do que este relatório trata.
 - ESCALA DE CONFIANÇA (correcção do especialista, obrigatória em todo o relatório) — a linguagem usada tem de bater sempre com o nº de camadas que sustentam a afirmação, nunca mais confiante do que os dados permitem:
@@ -867,7 +821,6 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - ${INSTRUCAO_CONJUNCOES}
 - ${INSTRUCAO_YOGAS}
 - ${INSTRUCAO_VARGOTTAMA}
-- ${INSTRUCAO_EXPLICACAO_GRAFICOS}
 - ${INSTRUCAO_CONSISTENCIA_TECNICA}
 - ${INSTRUCAO_SELECCAO_CANDIDATAS}
 - ${INSTRUCAO_ABERTURA_CANDIDATAS}
@@ -926,9 +879,6 @@ ${blocoCatalogoVocacional(catalogo, cursosPorDestino)}
 -- Roda da Vida (8 dimensões, 0-10) --
 ${blocoRodaDaVida(savPorCasa, pesosPlanetas, axes.regentesCasas)}
 Para cada dimensão marcada EXTREMO (≤4 ou ≥7), o texto tem de ter pelo menos uma frase que explique o que esse valor significa para esta pessoa especificamente — nunca deixar um extremo sem menção.
-
--- Perfil de Competências (6 eixos, 0-10 — mesma fórmula da Roda da Vida, casas fixas 2/10/5/6/7/1) --
-${blocoPerfilCompetencias(savPorCasa, pesosPlanetas, axes.regentesCasas)}
 
 -- Perfil de elementos e modalidades --
 ${blocoElementosModalidades(elementosModalidades)}

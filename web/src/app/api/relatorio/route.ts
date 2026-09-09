@@ -133,6 +133,24 @@ export async function POST(request: Request) {
     const textoCritica = await gerarTexto(client, promptCritica, MAX_TOKENS_CRITICA);
     const resultadoCritica = parseCritica(textoCritica);
 
+    // Correcção do especialista ("provar que o critério corre de
+    // facto") — log estruturado, por geração, do que a crítica avaliou
+    // e decidiu — visível nos logs do servidor (Vercel/Render) sem
+    // precisar de abrir o admin. Generaliza a qualquer critério, não só
+    // o 26: se um dia outro critério parecer "decorativo", esta linha
+    // mostra imediatamente se ele chegou a ser avaliado e com que
+    // resultado. O texto completo da crítica (com o número e o
+    // veredicto exacto de CADA critério) já fica guardado em
+    // `criticaLlm` (ver `guardarRascunho` abaixo) e é visível em
+    // /admin/relatorios/[id] — este log é só para não precisar de abrir
+    // o admin a cada geração para confirmar que o mecanismo correu.
+    const criterio26 = resultadoCritica.criterios.find((c) => c.numero === 26);
+    console.log(
+      `[crítica][intake=${intakeId}] critérios extraídos=${resultadoCritica.criterios.length} falhas=${resultadoCritica.falhas.length} ` +
+        `critério26=${criterio26 ? (criterio26.passa ? "PASSA" : `FALHA — ${criterio26.detalhe ?? "(sem detalhe)"}`) : "AUSENTE da resposta da crítica (não avaliado ou não formatado)"} ` +
+        `decisão=${resultadoCritica.falhas.length > 0 ? "REESCREVER" : "ACEITAR"}`,
+    );
+
     // Passo 3 — reescrever, só se pelo menos um critério falhou de facto
     // (nunca quando a crítica não seguiu o formato pedido — não se força
     // uma reescrita sobre dados não interpretáveis, ver criticaRelatorio.ts).

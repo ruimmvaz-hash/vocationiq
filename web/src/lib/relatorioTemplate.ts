@@ -6,6 +6,7 @@ import {
   normalizarTextoLivre,
   computeApoioPorAreaDeVida,
   valorCasaUnificado,
+  ESTADO_PT,
   type ClassicalGraha,
   type VocationIQAxes,
   type PesoPlaneta,
@@ -453,12 +454,7 @@ function parseGruposCandidatas(corpo: string): GrupoCandidatasTexto[] {
   }).filter((g) => g.membros.length >= 2);
 }
 
-interface ExplicacaoGrafico {
-  abertura: string;
-  linhas: { categoria: string; texto: string }[];
-}
-
-/** Sem acentos, minúsculas — para emparelhar a linha do LLM com o identificador do gráfico mesmo com variações de grafia/maiúsculas. */
+/** Sem acentos, minúsculas — usado por `normalizarBlocosCandidataImplicitos` para reconhecer "grupo" mesmo com variações de grafia/maiúsculas. */
 function semAcentos(s: string): string {
   return s
     .normalize("NFD")
@@ -467,72 +463,15 @@ function semAcentos(s: string): string {
 }
 
 /**
- * Correcção do especialista (bug real, confirmado por 3 gerações reais
- * seguidas — PDF 8, 9, 10: os 4 gráficos continuavam com a legenda
- * genérica de sempre, mesmo depois da correcção das fronteiras) — a
- * causa não era o bloco a ser apagado (esse bug já estava corrigido);
- * era este parser exigir uma correspondência EXACTA e ÚNICA na mesma
- * linha do marcador ("EXPLICAÇÃO_GRÁFICO: peso", nada mais na linha,
- * `$` a fechar) — qualquer desvio natural do LLM (escrever "Perfil de
- * Competências" em vez do código árido "competencias", maiúsculas,
- * pontuação a seguir) fazia o `match` falhar por inteiro, sem nenhum
- * aviso, caindo sempre na legenda antiga. Corrigido: já não exige
- * correspondência exacta — procura, entre TODOS os blocos
- * "EXPLICAÇÃO_GRÁFICO:" existentes, o primeiro cuja linha (sem acentos,
- * minúsculas) CONTÉM a palavra-chave do gráfico (ex.: "competenc"
- * apanha "competencias", "Competências", "Perfil de Competências").
- * Continua a extrair de QUALQUER ponto do texto completo (nunca scoped
- * a uma secção "## " — mesmo mecanismo posicional de FRASE_ABERTURA/
- * IDENTIDADE). `null` só quando o LLM genuinamente não escreveu nenhum
- * bloco reconhecível para este gráfico — nunca rebenta, cai para a
- * legenda determinística já existente.
- */
-const PALAVRAS_CHAVE_GRAFICO: Record<string, string[]> = {
-  peso: ["peso"],
-  competencias: ["competenc"],
-  vida: ["vida"],
-  ganho: ["ganho"],
-};
-
-function parseExplicacaoGrafico(textoCompleto: string, id: string): ExplicacaoGrafico | null {
-  const regexTodos = new RegExp(`^${MARCADORES.explicacaoGrafico}\\s*(.*)$`, "gim");
-  const todos = [...textoCompleto.matchAll(regexTodos)];
-  const palavrasChave = PALAVRAS_CHAVE_GRAFICO[id] ?? [id];
-  const blocoMatch = todos.find((m) => palavrasChave.some((p) => semAcentos(m[1] ?? "").includes(p)));
-  if (!blocoMatch) return null;
-  const inicioBloco = blocoMatch.index! + blocoMatch[0].length;
-  // Correcção do especialista (bug real — 2 rondas: primeiro só um
-  // cabeçalho "## " seguinte limitava o bloco, o que já ajudou; depois
-  // confirmado por geração real que também precisa de parar em
-  // CANDIDATA:/GRUPO:/SELECÇÃO_CANDIDATAS: — ver `proximoIndiceDeMarcador`)
-  // — sem isso, um bloco EXPLICAÇÃO_GRÁFICO escrito perto da secção
-  // "Candidata fora da lista" engolia candidatas inteiras.
-  const fimBloco = proximoIndiceDeMarcador(textoCompleto, inicioBloco, FRONTEIRA_CANDIDATA);
-  const bloco = textoCompleto.slice(inicioBloco, fimBloco);
-
-  const regexLinha = new RegExp(`^${MARCADORES.linhaGrafico}\\s*(.*)$`, "gim");
-  const linhasMatches = [...bloco.matchAll(regexLinha)];
-  const abertura = (linhasMatches.length ? bloco.slice(0, linhasMatches[0].index!) : bloco).trim();
-  const linhas = linhasMatches
-    .map((m, i) => {
-      const categoria = m[1]?.trim() ?? "";
-      const inicio = m.index! + m[0].length;
-      const fim = i + 1 < linhasMatches.length ? linhasMatches[i + 1].index! : bloco.length;
-      return { categoria, texto: bloco.slice(inicio, fim).trim() };
-    })
-    .filter((l) => l.categoria);
-  return { abertura, linhas };
-}
-
-/**
- * Correcção do especialista (bug real, encontrado por teste antes de
- * publicar) — os blocos "EXPLICAÇÃO_GRÁFICO:"/"LINHA_GRÁFICO:" são
- * extraídos e recolocados junto do gráfico certo (`parseExplicacaoGrafico`),
- * mas nunca eram REMOVIDOS de onde o LLM os escreveu no texto bruto —
- * se caíssem dentro de uma secção "## " normal (ex.: "## Abertura"),
- * reapareciam em bruto quando essa secção era renderizada pela via
- * normal (`markdownParaHtml`). Chamado ANTES de dividir o texto em
- * secções, para nenhuma secção alguma vez ver este texto.
+ * Correcção do especialista ("EXPLICAÇÃO_GRÁFICO, mudança de
+ * abordagem") — a explicação dos 4 gráficos já não depende do LLM (ver
+ * as funções `explicacaoXDeterministica` mais abaixo, chamadas em
+ * `gerarHTMLRelatorio`). Esta função fica só como limpeza DEFENSIVA de
+ * texto ANTIGO — rascunhos já guardados antes desta correcção podem
+ * ainda ter os marcadores "EXPLICAÇÃO_GRÁFICO:"/"LINHA_GRÁFICO:"; sem
+ * isto, reapareceriam em bruto se um desses relatórios fosse
+ * re-renderizado. Chamada ANTES de dividir o texto em secções, para
+ * nenhuma secção alguma vez ver este texto residual.
  */
 function removerBlocosExplicacaoGrafico(texto: string): string {
   const regexBloco = new RegExp(`^${MARCADORES.explicacaoGrafico}.*$`, "gm");
@@ -554,20 +493,6 @@ function removerBlocosExplicacaoGrafico(texto: string): string {
   }
   resultado += texto.slice(cursor);
   return resultado.trim();
-}
-
-/** Procura, sem sensibilidade a maiúsculas/acentos/espaços, a explicação de uma categoria dentro do bloco já parseado — para emparelhar "Sol"/"Casa 10"/nome exacto da Roda da Vida com a linha que o LLM escreveu, mesmo com pequenas variações de grafia. */
-function linhaExplicacaoPara(explicacao: ExplicacaoGrafico | null, categoria: string): string | null {
-  if (!explicacao) return null;
-  const normalizar = (s: string) =>
-    s
-      .normalize("NFD")
-      .replace(/[̀-ͯ]/g, "")
-      .toLowerCase()
-      .trim();
-  const alvo = normalizar(categoria);
-  const linha = explicacao.linhas.find((l) => normalizar(l.categoria) === alvo);
-  return linha?.texto || null;
 }
 
 /** Separa a linha "PRIMEIRO PASSO: ..." do resto da secção "O plano". */
@@ -946,19 +871,19 @@ function svgRadarCompetencias(eixos: EixoCompetencia[]): string {
   </svg>`;
 }
 
-function blocoRadarCompetencias(pesos: PesoPlaneta[], savPorCasa: SavPorCasa[], regentesCasas: Record<number, ClassicalGraha>, usarTu: boolean, explicacao: ExplicacaoGrafico | null): string {
+function blocoRadarCompetencias(pesos: PesoPlaneta[], savPorCasa: SavPorCasa[], regentesCasas: Record<number, ClassicalGraha>, usarTu: boolean, explicacao: ExplicacaoGraficoDeterministica): string {
   const eixos = computeRadarCompetencias(pesos, savPorCasa, regentesCasas);
   return `
     <div class="radar-wrap">
       <p class="bloco-titulo" style="text-align:center">${usarTu ? "O teu perfil de competências" : "O seu perfil de competências"}</p>
       <p class="roda-vida-subtitulo" style="text-align:center">${usarTu ? "Onde o teu perfil tem força natural" : "Onde o seu perfil tem força natural"}</p>
-      ${explicacao?.abertura ? `<div class="caixa-neutra grafico-explicacao-llm">${markdownParaHtml(explicacao.abertura)}</div>` : ""}
+      <div class="caixa-neutra grafico-explicacao-llm">${markdownParaHtml(explicacao.abertura)}</div>
       <div class="grafico-wrap grafico-centrado">${svgRadarCompetencias(eixos)}</div>
       <p class="grafico-legenda" style="text-align:center">${usarTu ? "Valores calculados a partir da força real do teu perfil — não são avaliações de personalidade." : "Valores calculados a partir da força real do seu perfil — não são avaliações de personalidade."}</p>
       <ul class="lista-caracteristicas">
         ${eixos
           .map((e) => {
-            const personalizado = linhaExplicacaoPara(explicacao, e.nome);
+            const personalizado = linhaExplicacaoDeterministica(explicacao, e.nome);
             return personalizado ? `<li><strong>${escapeHtml(e.nome)}</strong> — <span class="linha-explicacao-llm">${escapeHtml(personalizado)}</span></li>` : "";
           })
           .join("")}
@@ -1182,11 +1107,11 @@ function blocoDiagramaIdentidade(pesos: PesoPlaneta[], identidade: string | null
     </section>`;
 }
 
-function blocoRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], regentesCasas: Record<number, ClassicalGraha>, usarTu: boolean, explicacao: ExplicacaoGrafico | null): string {
+function blocoRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], regentesCasas: Record<number, ClassicalGraha>, usarTu: boolean, explicacao: ExplicacaoGraficoDeterministica): string {
   const dimensoes = computeRodaDaVida(savPorCasa, pesos, regentesCasas, usarTu);
   const lista = dimensoes
     .map((d) => {
-      const personalizado = linhaExplicacaoPara(explicacao, d.nome);
+      const personalizado = linhaExplicacaoDeterministica(explicacao, d.nome);
       return `
       <div class="dimensao-vida-item">
         <span class="dimensao-vida-nome">${escapeHtml(d.nome)}</span>
@@ -1209,7 +1134,7 @@ function blocoRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], regente
             ? "Esta roda mostra onde o teu perfil tem força natural e onde pede mais esforço. Não é um julgamento — é um mapa. Áreas mais preenchidas indicam onde o teu perfil flui naturalmente. Áreas menos preenchidas indicam onde vais precisar de construir com mais intenção."
             : "Esta roda mostra onde o seu perfil tem força natural e onde pede mais esforço. Não é um julgamento — é um mapa. Áreas mais preenchidas indicam onde o seu perfil flui naturalmente. Áreas menos preenchidas indicam onde vai precisar de construir com mais intenção."
         }</p>
-        ${explicacao?.abertura ? markdownParaHtml(explicacao.abertura) : ""}
+        ${markdownParaHtml(explicacao.abertura)}
       </div>
       <div class="dimensao-vida-lista">${lista}</div>
     </div>`;
@@ -1686,6 +1611,112 @@ function seccaoComoLer(usarTu: boolean): string {
   return `<div class="caixa-neutra">${paragrafos.map((p) => `<p>${p}</p>`).join("")}</div>`;
 }
 
+interface ExplicacaoGraficoDeterministica {
+  abertura: string;
+  porCategoria: Record<string, string>;
+}
+
+/**
+ * Correcção do especialista ("EXPLICAÇÃO_GRÁFICO, mudança de
+ * abordagem") — depois de 5 gerações reais seguidas sem os blocos
+ * EXPLICAÇÃO_GRÁFICO:/LINHA_GRÁFICO:, apesar de estarem na prompt
+ * (INSTRUCAO_EXPLICACAO_GRAFICOS) E no critério 26 da crítica
+ * automática (confirmado por leitura de código que ambos chegam ao
+ * caminho real — o problema nunca foi ligação, foi o LLM a ignorar a
+ * instrução mesmo depois de ser mandado reescrever), a explicação dos 4
+ * gráficos deixa de depender do LLM escrever nada. É gerada AQUI,
+ * determinística e exclusivamente a partir dos mesmos dados que os
+ * próprios gráficos usam (pesos, savPorCasa, regentesCasas,
+ * earningModes) — garante 100% de presença, sempre, sem excepção.
+ * Perde-se a variação de prosa que só um LLM dá; ganha-se a garantia
+ * que o requisito pedia como não-negociável.
+ */
+function explicacaoPesoDeterministica(pesos: PesoPlaneta[], usarTu: boolean): ExplicacaoGraficoDeterministica {
+  const abertura = `Este gráfico mede a força real de cada planeta ${usarTu ? "do teu" : "do seu"} perfil — não é sorte nem intuição, é o resultado de dois factores combinados: o estado do planeta (exaltado, em signo próprio, debilitado, etc.) e a força da casa onde está fisicamente sentado, medida pelo Sarvashtakavarga (uma tabela clássica de pontos de apoio, casa a casa). Quanto mais alto o número, mais esse planeta consegue sustentar o que promete no dia a dia — mais baixo não significa "mau", significa que precisa de mais esforço deliberado para render.`;
+  const porCategoria: Record<string, string> = {};
+  for (const p of pesos) {
+    const classificacao = p.peso >= 1.3 ? "força natural, fácil de usar" : p.peso >= 0.9 ? "suporte moderado" : "o esforço vai ser maior aqui — não impossível, só menos natural";
+    const estadoPt = ESTADO_PT[p.estado] ?? p.estado;
+    porCategoria[PLANETA_PT[p.planeta] ?? p.planeta] = `${usarTu ? "No teu" : "No seu"} perfil, peso ${p.peso.toFixed(2)} — ${classificacao}. Está ${estadoPt}, na casa ${p.casa} (${p.signo}).`;
+  }
+  return { abertura, porCategoria };
+}
+
+const DEFINICAO_COMPETENCIA: Record<string, string> = {
+  Comunicação: "A capacidade de comunicar, ensinar e converter conhecimento em valor através da palavra.",
+  Liderança: "A capacidade de assumir posições de autoridade e visibilidade pública.",
+  Criatividade: "A capacidade de criar, expressar-se e gerar algo original a partir de si.",
+  Estrutura: "A capacidade de manter disciplina, rotina, e resolver problemas concretos do dia a dia.",
+  Relação: "A capacidade de negociar, colaborar e construir parcerias duradouras.",
+  Execução: "A capacidade de agir, iniciar, e dar corpo próprio às decisões.",
+};
+
+/** Mesmos cortes já usados na Roda da Vida/Anexo (≥7 forte, 4-7 equilíbrio, <4 pede construção) — nunca inventar um corte novo para este gráfico. */
+function classificacaoDez(valor: number): string {
+  if (valor >= 7) return "força natural";
+  if (valor >= 4) return "equilíbrio — nem o mais forte nem o mais fraco do perfil";
+  return "pede mais construção deliberada";
+}
+
+function explicacaoCompetenciasDeterministica(eixos: { nome: string; valor: number }[], usarTu: boolean): ExplicacaoGraficoDeterministica {
+  const abertura = `Este radar mede seis competências, cada uma ligada a uma casa clássica fixa ${usarTu ? "do teu" : "do seu"} perfil (Comunicação → casa 2, Liderança → casa 10, Criatividade → casa 5, Estrutura → casa 6, Relação → casa 7, Execução → casa 1) — a mesma fórmula usada na Roda da Vida e no Anexo, para nunca haver números diferentes para o mesmo sinal. Não são avaliações de personalidade — são a força real que o perfil sustenta em cada área.`;
+  const porCategoria: Record<string, string> = {};
+  for (const e of eixos) {
+    porCategoria[e.nome] = `${DEFINICAO_COMPETENCIA[e.nome] ?? ""} ${usarTu ? "No teu" : "No seu"} perfil, ${e.valor.toFixed(1)}/10 — ${classificacaoDez(e.valor)}.`;
+  }
+  return { abertura, porCategoria };
+}
+
+function explicacaoVidaDeterministica(dimensoes: DimensaoVida[], usarTu: boolean): ExplicacaoGraficoDeterministica {
+  const abertura = `Esta roda usa a mesma fórmula da Roda da Vida clássica, aplicada às casas ${usarTu ? "do teu" : "do seu"} perfil: cada fatia mede quanto suporte real (planetas presentes + peso do regente da área) essa área da vida recebe. Não é um julgamento — é um mapa de onde a energia flui com naturalidade e onde pede mais construção deliberada.`;
+  const porCategoria: Record<string, string> = {};
+  for (const d of dimensoes) {
+    porCategoria[d.nome] = `${d.descricao}. ${usarTu ? "No teu" : "No seu"} perfil, ${d.valor.toFixed(1)}/10 — ${classificacaoDez(d.valor)}.`;
+  }
+  return { abertura, porCategoria };
+}
+
+const CASAS_DE_BASTIDORES_TEMPLATE = new Set([6, 8, 12]);
+const ROTULO_GANHO_BASE: Record<number, string> = {
+  2: "ganha pela voz — consultoria, ensino, comunicação directa do que sabe",
+  6: "ganha por resolver o problema de outra pessoa — cura, crise, serviço, análise",
+  10: "ganha por assumir a cara pública de uma coisa — liderança, execução, empreendedorismo visível",
+};
+
+/**
+ * Mesma lógica de "casa de bastidores" já aplicada ao Modo de Ganho no
+ * prompt (promptAdulto.ts, blocoModoDeGanho) — replicada aqui de forma
+ * determinística para a barra dominante nunca deixar a contradição
+ * visual por resolver (o gráfico mostra sempre o rótulo fixo da casa
+ * vencedora, ex. "Liderando publicamente", mesmo quando o regente está
+ * sentado numa casa de serviço/bastidores).
+ */
+function explicacaoGanhoDeterministica(earningModes: EarningMode[], dominantes: number[], pesos: PesoPlaneta[], regentesCasas: Record<number, ClassicalGraha>, usarTu: boolean): ExplicacaoGraficoDeterministica {
+  const abertura = `Este gráfico mostra qual das três formas clássicas de gerar valor (Artha Trikona: casas 2, 6 e 10) ${usarTu ? "o teu" : "o seu"} perfil mais sustenta — a barra azul é a dominante, calculada a partir da dignidade do regente de cada casa, de quem está fisicamente lá dentro, e do peso real de cada um.`;
+  const porCategoria: Record<string, string> = {};
+  for (const e of earningModes) {
+    const isDominante = dominantes.includes(e.house);
+    const rotulo = ROTULO_GANHO_BASE[e.house] ?? "";
+    const regente = regentesCasas[e.house];
+    const casaDoRegente = pesos.find((p) => p.planeta === regente)?.casa;
+    const emBastidores = casaDoRegente !== undefined && CASAS_DE_BASTIDORES_TEMPLATE.has(casaDoRegente);
+    const rotuloVisual = (CASA_LABEL_LINHAS[e.house] ?? ["", ""]).join(" ").trim();
+    let texto = `Pontuação ${e.score} — esta forma significa ${rotulo}.`;
+    if (isDominante) {
+      texto = `Este é ${usarTu ? "o teu" : "o seu"} modo dominante (pontuação ${e.score}, a mais alta das três) — o gráfico destaca esta barra a azul.`;
+      texto += emBastidores
+        ? ` O rótulo do gráfico diz "${rotuloVisual}" — mas ${usarTu ? "no teu" : "no seu"} caso isto não significa procurar exposição directa: o regente desta casa está sentado numa casa de bastidores, o que significa que o reconhecimento chega por se tornar imprescindível através do que sustenta por trás, não por procurar palco.`
+        : ` O rótulo do gráfico ("${rotuloVisual}") reflecte bem esta posição — o regente está numa posição de exposição directa, coerente com o que a barra promete.`;
+    }
+    porCategoria[`Casa ${e.house}`] = texto;
+  }
+  return { abertura, porCategoria };
+}
+
+function linhaExplicacaoDeterministica(explicacao: ExplicacaoGraficoDeterministica, categoria: string): string | null {
+  return explicacao.porCategoria[categoria] ?? null;
+}
+
 export function gerarHTMLRelatorio(
   dados: DadosParaTemplate,
   texto: string,
@@ -1696,21 +1727,12 @@ export function gerarHTMLRelatorio(
   savPorCasa: SavPorCasa[],
   catalogoResultados: ResultadoCatalogoVocacional,
 ): string {
-  // Correcção do especialista ("explicação completa de todos os
-  // gráficos, linha a linha", pós-PDF real) — os 4 blocos são extraídos
-  // do texto BRUTO original (a posição em que o LLM os escreveu não
-  // importa, ver `parseExplicacaoGrafico`) ANTES de dividir em secções —
-  // se dividíssemos primeiro, um bloco caído dentro de "## Abertura" ou
-  // "## O que o perfil sustenta" ficava preso lá e reaparecia em bruto
-  // (marcador "EXPLICAÇÃO_GRÁFICO:"/"LINHA_GRÁFICO:" visível ao
-  // cliente) quando essa secção fosse renderizada normalmente — bug
-  // confirmado por teste antes de publicar. `removerBlocosExplicacaoGrafico`
-  // limpa esses blocos do texto ANTES de tudo o resto (divisão em
-  // secções, IDENTIDADE, FRASE_ABERTURA) precisar de o ler.
-  const explicacaoPeso = parseExplicacaoGrafico(texto, "peso");
-  const explicacaoCompetencias = parseExplicacaoGrafico(texto, "competencias");
-  const explicacaoVida = parseExplicacaoGrafico(texto, "vida");
-  const explicacaoGanho = parseExplicacaoGrafico(texto, "ganho");
+  // Correcção do especialista — `removerBlocosExplicacaoGrafico` fica só
+  // como limpeza defensiva de texto ANTIGO (rascunhos guardados antes
+  // desta correcção, que ainda possam ter os marcadores
+  // EXPLICAÇÃO_GRÁFICO:/LINHA_GRÁFICO:) — já não é preciso ler o
+  // conteúdo deles, a explicação dos 4 gráficos é sempre gerada por
+  // código (ver as 4 funções deterministicas acima).
   const textoLimpo = removerBlocosExplicacaoGrafico(texto);
 
   const seccoes = dividirEmSeccoes(textoLimpo);
@@ -1725,6 +1747,15 @@ export function gerarHTMLRelatorio(
   // dele — nunca dois flags a dizerem coisas diferentes sobre o mesmo
   // relatório.
   const usarTu = dados.ehAdolescente === true;
+
+  // Explicações dos 4 gráficos — sempre geradas por código (ver as 4
+  // funções deterministicas acima), nunca dependentes do LLM.
+  const explicacaoPeso = explicacaoPesoDeterministica(pesos, usarTu);
+  const eixosCompetencias = computeRadarCompetencias(pesos, savPorCasa, axes.regentesCasas);
+  const explicacaoCompetencias = explicacaoCompetenciasDeterministica(eixosCompetencias, usarTu);
+  const dimensoesVida = computeRodaDaVida(savPorCasa, pesos, axes.regentesCasas, usarTu);
+  const explicacaoVida = explicacaoVidaDeterministica(dimensoesVida, usarTu);
+  const explicacaoGanho = explicacaoGanhoDeterministica(earningModes, axes.earningModeDominante.map((e) => e.house), pesos, axes.regentesCasas, usarTu);
 
   return `<!doctype html>
 <html lang="pt">
@@ -1956,14 +1987,14 @@ export function gerarHTMLRelatorio(
             ? "Este gráfico mostra a força relativa de cada característica do teu perfil. Valores acima de 1,3 indicam onde tens força natural; abaixo de 0,9 indicam onde o esforço vai ser maior."
             : "Este gráfico mostra a força relativa de cada característica do seu perfil. Valores acima de 1,3 indicam onde tem força natural; abaixo de 0,9 indicam onde o esforço vai ser maior."
         }</p>
-        ${explicacaoPeso?.abertura ? `<div class="caixa-neutra grafico-explicacao-llm">${markdownParaHtml(explicacaoPeso.abertura)}</div>` : ""}
+        <div class="caixa-neutra grafico-explicacao-llm">${markdownParaHtml(explicacaoPeso.abertura)}</div>
         <div class="grafico-wrap">${svgGraficoForcas(pesos, usarTu)}</div>
         <p class="grafico-legenda">Verde = o perfil apoia com força · Âmbar = suporte moderado · Vermelho = suporte fraco</p>
         <ul class="lista-caracteristicas">
           ${[...pesos]
             .sort((a, b) => b.peso - a.peso)
             .map((p) => {
-              const personalizado = linhaExplicacaoPara(explicacaoPeso, PLANETA_PT[p.planeta] ?? p.planeta) ?? linhaExplicacaoPara(explicacaoPeso, caracteristicaPt(p.planeta, false));
+              const personalizado = linhaExplicacaoDeterministica(explicacaoPeso, PLANETA_PT[p.planeta] ?? p.planeta);
               return `<li><strong>${escapeHtml(caracteristicaPt(p.planeta, usarTu))}</strong> — ${escapeHtml(CARACTERISTICA_EXPLICACAO[p.planeta] ?? "")}${personalizado ? ` <span class="linha-explicacao-llm">${escapeHtml(personalizado)}</span>` : ""}</li>`;
             })
             .join("")}
@@ -1979,13 +2010,13 @@ export function gerarHTMLRelatorio(
 
     <section class="seccao">
       <h2 class="titulo-seccao">${usarTu ? "Como ganhas melhor" : "Como ganha melhor"}</h2>
-      ${explicacaoGanho?.abertura ? `<div class="caixa-neutra grafico-explicacao-llm">${markdownParaHtml(explicacaoGanho.abertura)}</div>` : ""}
+      <div class="caixa-neutra grafico-explicacao-llm">${markdownParaHtml(explicacaoGanho.abertura)}</div>
       <div class="grafico-wrap grafico-3barras">${svgModoDeGanho(earningModes, axes.earningModeDominante.map((e) => e.house))}</div>
       <p class="grafico-legenda" style="text-align:center">${usarTu ? "A barra em azul é o modo dominante — a forma que o teu perfil mais sustenta para gerar valor." : "A barra em azul é o modo dominante — a forma que o seu perfil mais sustenta para gerar valor."}</p>
       <ul class="lista-caracteristicas">
         ${earningModes
           .map((e) => {
-            const personalizado = linhaExplicacaoPara(explicacaoGanho, `Casa ${e.house}`);
+            const personalizado = linhaExplicacaoDeterministica(explicacaoGanho, `Casa ${e.house}`);
             return personalizado ? `<li><strong>${usarTu ? "Casa" : "Casa"} ${e.house}</strong> — <span class="linha-explicacao-llm">${escapeHtml(personalizado)}</span></li>` : "";
           })
           .join("")}

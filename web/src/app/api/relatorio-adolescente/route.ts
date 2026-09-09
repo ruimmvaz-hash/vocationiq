@@ -161,6 +161,15 @@ export async function POST(request: Request) {
     const textoCritica = await gerarTexto(client, promptCritica, MAX_TOKENS_CRITICA);
     const resultadoCritica = parseCritica(textoCritica);
 
+    // Correcção do especialista ("provar que o critério corre de facto")
+    // — mesmo log estruturado do ramo adulto, ver route.ts.
+    const criterio26Adolescente = resultadoCritica.criterios.find((c) => c.numero === 26);
+    console.log(
+      `[crítica-adolescente][intake=${intakeId}] critérios extraídos=${resultadoCritica.criterios.length} falhas=${resultadoCritica.falhas.length} ` +
+        `critério26=${criterio26Adolescente ? (criterio26Adolescente.passa ? "PASSA" : `FALHA — ${criterio26Adolescente.detalhe ?? "(sem detalhe)"}`) : "AUSENTE da resposta da crítica (não avaliado ou não formatado)"} ` +
+        `decisão=${resultadoCritica.falhas.length > 0 ? "REESCREVER" : "ACEITAR"}`,
+    );
+
     let textoFinal = textoOriginal;
     let rascunhoReescrito: string | null = null;
     if (resultadoCritica.falhas.length > 0) {

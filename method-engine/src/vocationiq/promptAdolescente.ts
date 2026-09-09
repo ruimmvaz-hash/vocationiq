@@ -60,12 +60,10 @@ import {
   blocoYogas,
   blocoVargottama,
   blocoRodaDaVida,
-  blocoPerfilCompetencias,
   INSTRUCAO_AVASTHAS,
   INSTRUCAO_CONJUNCOES,
   INSTRUCAO_YOGAS,
   INSTRUCAO_VARGOTTAMA,
-  INSTRUCAO_EXPLICACAO_GRAFICOS,
   INSTRUCAO_CONSISTENCIA_TECNICA,
   INSTRUCAO_SELECCAO_CANDIDATAS,
   INSTRUCAO_ABERTURA_CANDIDATAS,
@@ -181,7 +179,6 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - ${INSTRUCAO_CONJUNCOES}
 - ${INSTRUCAO_YOGAS}
 - ${INSTRUCAO_VARGOTTAMA}
-- ${INSTRUCAO_EXPLICACAO_GRAFICOS}
 - ${INSTRUCAO_CONSISTENCIA_TECNICA}
 - ${INSTRUCAO_SELECCAO_CANDIDATAS}
 - ${INSTRUCAO_ABERTURA_CANDIDATAS}
@@ -211,9 +208,6 @@ ${blocoPesos(pesosPlanetas)}
 
 -- Roda da Vida (8 dimensões, 0-10) --
 ${blocoRodaDaVida(savPorCasa, pesosPlanetas, axes.regentesCasas)}
-
--- Perfil de Competências (6 eixos, 0-10) --
-${blocoPerfilCompetencias(savPorCasa, pesosPlanetas, axes.regentesCasas)}
 
 -- Avasthas (maturidade dos planetas) --
 ${blocoAvasthas(d1)}
