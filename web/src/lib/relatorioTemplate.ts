@@ -297,22 +297,49 @@ function dividirEmSeccoes(texto: string): Record<string, string> {
 
 interface LeituraOpcao {
   nome: string;
-  forca: ForcaValor;
+  /**
+   * Correcção do especialista ("4 correcções + 1 pista", ponto 2) — a
+   * força NUNCA é inventada. Quando o cliente não declara nenhuma
+   * opção concreta, o LLM não escreve nenhum bloco "### <nome>" com
+   * "${MARCADORES.forca}" (ver `parseLeituraPorOpcao` — corpo sem
+   * nenhum cabeçalho "### " vira `textoSemOpcao`, nunca um `LeituraOpcao`
+   * fabricado). `null` só pode acontecer se um bloco real vier sem a
+   * linha FORÇA: (formato malformado) — nesse caso o template não
+   * mostra etiqueta nenhuma, em vez de inventar uma pontuação.
+   */
+  forca: ForcaValor | null;
   insight: string | null;
   partes: string[];
 }
 
-/** Divide o corpo da secção "Leitura por opção" pelos cabeçalhos "### <nome>" que o prompt exige, extrai a linha FORÇA:, a linha INSIGHT: (melhorias visuais, Parte 1B) e as 4 partes numeradas de cada opção. */
-function parseLeituraPorOpcao(corpo: string): LeituraOpcao[] {
+/**
+ * Divide o corpo da secção "Leitura por opção" pelos cabeçalhos "### <nome>" que o prompt exige, extrai a linha FORÇA:, a linha INSIGHT: (melhorias visuais, Parte 1B) e as 4 partes numeradas de cada opção.
+ *
+ * Correcção do especialista ("4 correcções + 1 pista", ponto 2) — quando
+ * o cliente não declara nenhuma opção concreta ("ainda não sei"), o
+ * corpo desta secção não tem NENHUM cabeçalho "### " (o LLM escreve
+ * antes uma explicação honesta de que não há nada para testar, ver
+ * prompt). O `.split()` antigo não distinguia este caso de um bloco
+ * real — devolvia o corpo inteiro como um único "LeituraOpcao" fabricado
+ * (nome = 1ª linha da explicação, força = "moderada" por defeito, sem
+ * nunca ter vindo nenhuma pontuação real) — daí a etiqueta "Suporte
+ * moderado" a aparecer numa caixa que explicitamente diz não haver nada
+ * a avaliar. Agora devolve `{ opcoes: [], textoSemOpcao: corpo }` nesse
+ * caso, tal como `parseCandidataForaDaLista` já faz para "nenhuma".
+ */
+function parseLeituraPorOpcao(corpo: string): { opcoes: LeituraOpcao[]; textoSemOpcao: string } {
+  if (!/^###\s+/m.test(corpo)) {
+    return { opcoes: [], textoSemOpcao: corpo };
+  }
   const blocos = corpo.split(/^###\s+/m).filter((b) => b.trim());
-  return blocos.map((bloco) => {
+  const opcoes = blocos.map((bloco) => {
     const linhas = bloco.split("\n");
     const nome = linhas[0].trim();
     const resto = linhas.slice(1).join("\n");
 
     const forcaRegex = new RegExp(`${MARCADORES.forca}\\s*(forte|moderada|fraca)`, "i");
     const forcaMatch = resto.match(forcaRegex);
-    const forca = (forcaMatch?.[1]?.toLowerCase() as ForcaValor) ?? "moderada";
+    const forca = (forcaMatch?.[1]?.toLowerCase() as ForcaValor | undefined) ?? null;
     let semForca = resto.replace(forcaRegex, "").trim();
 
     const insightRegex = new RegExp(`^${MARCADORES.insight}\\s*(.*)$`, "m");
@@ -331,6 +358,7 @@ function parseLeituraPorOpcao(corpo: string): LeituraOpcao[] {
 
     return { nome, forca, insight, partes };
   });
+  return { opcoes, textoSemOpcao: "" };
 }
 
 /**
@@ -1206,7 +1234,7 @@ function cardOpcao(op: LeituraOpcao, dados: DadosParaTemplate, pesos: PesoPlanet
     <div class="card-opcao">
       <div class="card-opcao-header">
         <span>${escapeHtml(op.nome)}</span>
-        <span class="badge-forca" style="background:${corForca(op.forca)}">${FORCA_LABEL[op.forca]}</span>
+        ${op.forca ? `<span class="badge-forca" style="background:${corForca(op.forca)}">${FORCA_LABEL[op.forca]}</span>` : ""}
       </div>
       ${dados.ehAdolescente ? "" : blocoDiagramaPonte(dados, pesos, axes)}
       ${op.insight ? `<div class="caixa-insight"><p>${escapeHtml(op.insight)}</p></div>` : ""}
@@ -1508,9 +1536,43 @@ function blocoCandidataForaDaLista(corpo: string, catalogo: ResultadoCatalogoVoc
   return `${introOpcoesForaDaLista(minConvergencia, usarTu)}\n${cartoes}\n${blocoTabelaResumoCandidatas(resumoParaTabela)}`;
 }
 
+const MS_POR_ANO = 365.25 * 24 * 60 * 60 * 1000;
+const MS_POR_MES = 30.44 * 24 * 60 * 60 * 1000;
+
+/**
+ * Correcção do especialista ("4 correcções + 1 pista", ponto 3) —
+ * "O seu calendário" mostrava "Período actual: VÉNUS" e, logo a
+ * seguir, uma linha do tempo a destacar "Ketu 08/2025–10/2026" sem
+ * nunca explicar que são dois níveis do MESMO sistema (Mahadasha, o
+ * ciclo maior, com uma Antardasha, o ciclo menor, aninhada lá dentro)
+ * — um leitor sem contexto lê os dois nomes de planeta como coisas
+ * separadas ou contraditórias. Duração calculada a partir das datas
+ * REAIS já computadas (`inicio`/`fim`), nunca de uma duração-tabela
+ * genérica — o Mahadasha actual de uma pessoa pode ser mais curto do
+ * que o ciclo completo do planeta se for o 1º dasha da vida dela
+ * (resto do que já estava a decorrer à nascença). Reaproveita
+ * `DASHA_O_QUE_PEDE`, já usado no Anexo "Os seus períodos", em vez de
+ * inventar uma segunda explicação.
+ */
+function introSistemaPeriodos(datas: DadosDatas, usarTu: boolean): string {
+  const dicionarioOQuePede = usarTu ? DASHA_O_QUE_PEDE_TU : DASHA_O_QUE_PEDE;
+  const anos = Math.max(1, Math.round((datas.mahadashaAtual.fim.getTime() - datas.mahadashaAtual.inicio.getTime()) / MS_POR_ANO));
+  const meses = Math.max(1, Math.round((datas.antardashaAtual.fim.getTime() - datas.antardashaAtual.inicio.getTime()) / MS_POR_MES));
+  const nomeMaha = PLANETA_PT[datas.mahadashaAtual.senhor] ?? datas.mahadashaAtual.senhor;
+  const nomeAntar = PLANETA_PT[datas.antardashaAtual.senhor] ?? datas.antardashaAtual.senhor;
+  const pedeMaha = dicionarioOQuePede[datas.mahadashaAtual.senhor] ?? "";
+  const pedeAntar = dicionarioOQuePede[datas.antardashaAtual.senhor] ?? "";
+  return `
+    <div class="caixa-neutra">
+      <p>${usarTu ? "O teu" : "O seu"} calendário funciona em dois níveis, sempre aninhados um dentro do outro — nunca dois sistemas separados. Um ciclo maior (chamado Mahadasha) dura vários anos: ${usarTu ? "o teu" : "o seu"} ciclo actual é o de ${nomeMaha}, com cerca de ${anos} ano${anos === 1 ? "" : "s"}. Dentro dele corre sempre um ciclo mais curto (a Antardasha), que dura meses — ${usarTu ? "estás" : "está"} agora no de ${nomeAntar}, com cerca de ${meses} mes${meses === 1 ? "" : "es"}.</p>
+      <p>${nomeMaha} ${pedeMaha ? pedeMaha.charAt(0).toLowerCase() + pedeMaha.slice(1) : ""} — esse é o tom de fundo dos próximos anos. ${nomeAntar} ${pedeAntar ? pedeAntar.charAt(0).toLowerCase() + pedeAntar.slice(1) : ""} — é o que pede mais atenção agora mesmo, dentro desse tom de fundo.</p>
+    </div>`;
+}
+
 function blocoOPlano(corpo: string, datas: DadosDatas, usarTu: boolean): string {
   const { corpo: resto, primeiroPasso } = parsePlano(corpo);
   return `
+    ${introSistemaPeriodos(datas, usarTu)}
     ${blocoCaixaPeriodoActual(datas)}
     <div class="timeline-wrap">${svgTimeline(datas)}</div>
     <p class="grafico-legenda">Âmbar = o período em que ${usarTu ? "estás" : "está"} agora · Azul-claro = os períodos seguintes.</p>
@@ -1567,7 +1629,20 @@ function tabelaApoioPorAreaDeVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[]
   const nota = forteForaDaTese.length
     ? `<p class="anexo-nota">Nota: ${forteForaDaTese.map((h) => escapeHtml(areaVidaPt(h.casa, usarTu))).join(", ")} ${plural ? "aparecem" : "aparece"} com apoio Forte, mas ${plural ? "não são casas centrais" : "não é uma das casas centrais"} desta leitura (Eixo da Missão / Modo de Ganho) — reflecte${plural ? "m" : ""} sobretudo onde a força física do perfil está posicionada, não o tema principal da ${usarTu ? "tua" : "sua"} vocação.</p>`
     : "";
+  // Correcção do especialista ("4 correcções + 1 pista", ponto 4) — esta
+  // tabela usa a MESMA fórmula da Roda da Vida (visto mais cedo no
+  // relatório, ver comentário em `computeRadarCompetencias`) — sem
+  // explicação, lê-se como um número repetido sem função. A diferença
+  // real: a Roda agrupa as 12 casas em 8 áreas de vida com leitura
+  // narrativa; aqui vêm as 12 casas clássicas uma a uma, sem agrupar —
+  // inclui casas que a Roda nem nomeia isoladamente (3, 8, 12) — para
+  // quem quer verificar, casa a casa, os números técnicos que sustentam
+  // o resto do relatório.
+  const introTabela = usarTu
+    ? "Esta tabela usa a mesma fórmula da Roda da Vida que já viste — mas em bruto, casa a casa, sem as agrupar em 8 áreas com leitura narrativa. Inclui também casas que a Roda não nomeia isoladamente. Serve para verificar, uma a uma, os números técnicos que sustentam o resto do relatório."
+    : "Esta tabela usa a mesma fórmula da Roda da Vida já mostrada — mas em bruto, casa a casa, sem as agrupar em 8 áreas com leitura narrativa. Inclui também casas que a Roda não nomeia isoladamente. Serve para verificar, uma a uma, os números técnicos que sustentam o resto do relatório.";
   return `
+    <p class="anexo-intro">${introTabela}</p>
     <table class="tabela-anexo">
       <thead><tr><th>Área de vida</th><th class="col-numero">Apoio</th><th>Classificação</th></tr></thead>
       <tbody>${linhas}</tbody>
@@ -2019,7 +2094,7 @@ export function gerarHTMLRelatorio(
   const seccoes = dividirEmSeccoes(textoLimpo);
   const dataGeracao = new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "long", year: "numeric" }).format(new Date());
 
-  const opcoes = parseLeituraPorOpcao(seccoes[SECCAO_TITULOS.leituraPorOpcao] ?? "");
+  const { opcoes, textoSemOpcao } = parseLeituraPorOpcao(seccoes[SECCAO_TITULOS.leituraPorOpcao] ?? "");
   const identidade = parseIdentidade(textoLimpo);
   const fraseAbertura = parseFraseAbertura(textoLimpo);
   // TAREFA 1 (correcção do especialista) — deriva o registo tu/você
@@ -2184,6 +2259,7 @@ export function gerarHTMLRelatorio(
   .tabela-anexo td { padding: 8px 10px; border-bottom: 1px solid #E6E6E6; vertical-align: top; }
   .tabela-anexo .col-numero { text-align: right; font-weight: 600; }
   .anexo-nota { font-size: 12px; color: #666; margin: 8px 0 0; font-style: italic; }
+  .anexo-intro { font-size: 13px; color: #4A4A4A; margin: 0 0 12px; }
   .badge-classificacao { display: inline-block; font-size: 11px; font-weight: 700; color: #FFFFFF; padding: 3px 10px; border-radius: 999px; }
   .caixa-neutra p { font-size: 14px; margin: 0 0 12px; }
   .caixa-neutra p:last-child { margin-bottom: 0; }
@@ -2317,7 +2393,7 @@ export function gerarHTMLRelatorio(
 
     <section class="seccao">
       <h2 class="titulo-seccao">${escapeHtml(SECCAO_TITULOS.leituraPorOpcao)}</h2>
-      ${opcoes.map((op) => cardOpcao(op, dados, pesos, axes)).join("")}
+      ${opcoes.length ? opcoes.map((op) => cardOpcao(op, dados, pesos, axes)).join("") : `<div class="caixa-neutra">${markdownParaHtml(textoSemOpcao)}</div>`}
     </section>
 
     <section class="seccao">
