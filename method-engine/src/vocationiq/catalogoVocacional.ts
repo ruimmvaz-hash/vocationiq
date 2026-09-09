@@ -862,6 +862,20 @@ export interface CandidataForaDaLista {
    * candidatas da pool — nunca como critério principal de escolha.
    */
   somaPesoCamadas: number;
+  /**
+   * Correcção do especialista ("dom/talento em vez de percurso", pós-PDF
+   * real) — a camada que satisfaz o portão de Nível 1/2 desta candidata
+   * (Planeta de maior peso, Atmakaraka, Amatyakaraka, Stellium, ou
+   * Regente da casa dignificado — a mesma prioridade de `nivelDeConfianca`),
+   * já traduzida para linguagem humana por `rotuloHumanoCamada()` — o
+   * MESMO mecanismo já usado nos cartões de convergência, nunca um
+   * segundo tradutor a divergir dele. Dá ao LLM o factor astrológico
+   * exacto e já em português simples para ancorar a frase de dom que
+   * abre a descrição de cada candidata (ver INSTRUCAO_ABERTURA_CANDIDATAS)
+   * — nunca inventado, sempre rastreável à mesma camada que já
+   * qualificou a candidata.
+   */
+  fatorDeDom: string;
 }
 
 export interface IntakeParaCatalogo {
@@ -1003,6 +1017,63 @@ function diferencaSimetrica(a: Set<string>, b: Set<string>): number {
   for (const x of a) if (!b.has(x)) dif++;
   for (const x of b) if (!a.has(x)) dif++;
   return dif;
+}
+
+/**
+ * Correcção do especialista ("dom/talento em vez de percurso" +
+ * redesenho do diagrama de convergência, pós-PDF real) — traduz UMA
+ * camada de jargão Jyotish para linguagem humana curta, preservando o
+ * número de casa quando presente (informação específica desta carta,
+ * nunca jargão genérico). Movida de `relatorioTemplate.ts` (web) para
+ * aqui — usada agora em DOIS sítios que nunca podem divergir: o cartão
+ * "Porque esta opção não é acidente" (web, visual) e o campo
+ * `fatorDeDom` de cada candidata (aqui, dados técnicos para o prompt) —
+ * exactamente o pedido explícito de reutilizar o mecanismo já existente
+ * em vez de construir um novo. Lista sincronizada com os
+ * `camadas.push(...)` de `camadasParaDestino()` acima — qualquer tipo
+ * novo aí precisa de uma entrada aqui.
+ */
+export function rotuloHumanoCamada(camada: string): string {
+  if (camada.startsWith("Planeta de maior peso — também o Atmakaraka")) return "O ponto mais forte do seu perfil";
+  if (camada.startsWith("Atmakaraka")) return "O seu traço mais amadurecido";
+  if (camada.startsWith("Amatyakaraka")) return "A sua ferramenta de trabalho do dia a dia";
+  if (camada.startsWith("Planeta de maior peso")) return "O ponto mais forte do seu perfil";
+  if (camada.startsWith("Nakshatra do Atmakaraka")) return "Uma nuance mais fina da sua força principal";
+  if (camada.startsWith("Combinação")) return "Duas forças do seu perfil a actuar juntas";
+  if (camada.startsWith("Regente do Modo de Ganho dominante")) return "O que rege a sua forma de ganhar";
+  if (camada.startsWith("Eixo do rendimento")) return "O eixo do que lhe traz retorno";
+  const casaTematica = camada.match(/^Casa temática forte \(casa (\d+)\)/);
+  if (casaTematica) return `Uma área de vida estruturalmente forte (casa ${casaTematica[1]})`;
+  const stellium = camada.match(/^Stellium na casa (\d+)/);
+  if (stellium) return `Uma concentração de força numa área (casa ${stellium[1]})`;
+  const regenteDignificado = camada.match(/^Regente da casa (\d+) dignificado/);
+  if (regenteDignificado) return `O regente dessa área, no seu melhor (casa ${regenteDignificado[1]})`;
+  const parivartana = camada.match(/^Parivartana entre regente da casa (\d+) e regente da casa (\d+)/);
+  if (parivartana) return `Duas áreas de vida a trocar força entre si (casas ${parivartana[1]} e ${parivartana[2]})`;
+  if (camada.startsWith("Sinais estruturados da área")) return "Vários sinais do seu perfil confirmam esta área";
+  if (camada.startsWith("Área actual declarada")) return "A área que já disse que está a trabalhar";
+  if (camada.startsWith("Ideia concreta partilhada")) return "A ideia concreta que partilhou";
+  // Nunca deveria chegar aqui (lista sincronizada acima) — mas nunca
+  // rebenta nem deixa um rótulo vazio: cai para o corte por "(" ou ":"
+  // já usado antes desta correcção.
+  const separador = camada.search(/[(:]/);
+  return (separador > 0 ? camada.slice(0, separador) : camada).trim();
+}
+
+/**
+ * Correcção do especialista ("dom/talento em vez de percurso") — a
+ * camada que satisfaz o portão de Nível 1/2 desta candidata, na mesma
+ * ordem de prioridade de `nivelDeConfianca` (Planeta de maior peso
+ * primeiro — Nível 1; senão Atmakaraka/Amatyakaraka/Stellium/Regente da
+ * casa dignificado — Nível 2). `null` só quando nenhuma das camadas
+ * dadas qualifica (nunca deveria acontecer para uma candidata que já
+ * passou o portão, mas o chamador nunca deve assumir isso sem
+ * verificar).
+ */
+function camadaDeAncora(camadas: string[]): string | null {
+  const maiorPeso = camadas.find((c) => c.startsWith("Planeta de maior peso"));
+  if (maiorPeso) return maiorPeso;
+  return camadas.find((c) => c.startsWith("Atmakaraka") || c.startsWith("Amatyakaraka") || c.startsWith("Stellium na casa") || (c.startsWith("Regente da casa") && c.includes("dignificado"))) ?? null;
 }
 
 /**
@@ -1261,14 +1332,18 @@ export function catalogarDestinos(
     if (b.destino.convergencia !== a.destino.convergencia) return b.destino.convergencia - a.destino.convergencia;
     return compararCandidatasEmpatadas(a.destino, b.destino);
   });
-  const candidatasForaDaLista: CandidataForaDaLista[] = poolOrdenada.map(({ destino: d, nivel }) => ({
-    nome: d.nome,
-    id: d.id,
-    camadas: d.camadas,
-    convergencia: d.convergencia,
-    nivelConfianca: nivel,
-    somaPesoCamadas: d.somaPesoCamadas,
-  }));
+  const candidatasForaDaLista: CandidataForaDaLista[] = poolOrdenada.map(({ destino: d, nivel }) => {
+    const ancora = camadaDeAncora(d.camadas);
+    return {
+      nome: d.nome,
+      id: d.id,
+      camadas: d.camadas,
+      convergencia: d.convergencia,
+      nivelConfianca: nivel,
+      somaPesoCamadas: d.somaPesoCamadas,
+      fatorDeDom: ancora ? rotuloHumanoCamada(ancora) : "O que já a distingue no seu perfil",
+    };
+  });
 
   const notaCondicao5 = eixoDoRendimentoActivo.find((a) => a.planetas.length === 0);
   const gruposCandidatas = agruparCandidatasPorAssinatura(candidatasForaDaLista);

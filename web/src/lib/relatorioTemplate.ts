@@ -7,6 +7,7 @@ import {
   computeApoioPorAreaDeVida,
   valorCasaUnificado,
   ESTADO_PT,
+  rotuloHumanoCamada,
   type ClassicalGraha,
   type VocationIQAxes,
   type PesoPlaneta,
@@ -969,124 +970,29 @@ function blocoDiagramaPonte(dados: DadosParaTemplate, pesos: PesoPlaneta[], axes
 }
 
 /**
- * Diagrama de convergência da candidata fora da lista (melhorias
- * visuais, Parte 2C) — um nó por camada que convergiu (o catálogo já dá
- * a lista completa, com texto humano — nunca inventado aqui). Só chamado
- * quando há candidata (ver blocoCandidataForaDaLista).
+ * Correcção do especialista ("redesenhar 'Porque esta opção não é
+ * acidente'", pós-PDF real) — o diagrama radial anterior (círculo
+ * central + linhas a convergir) tinha densidade visual inconsistente
+ * entre cartões: 2 a 7 camadas por candidata produziam diagramas de
+ * tamanho e peso muito diferentes, sem lógica aparente para quem lê
+ * vários seguidos. Substituído pelo MESMO estilo de cartão já usado e
+ * confirmado elegante nos cartões "Dom"/"A desenvolver" da secção "Quem
+ * é" (borda colorida à esquerda + fundo suave + título + lista simples)
+ * — mesma informação (as camadas traduzidas por `rotuloHumanoCamada`,
+ * importada de `@naveya/method-engine`, o mesmo mecanismo usado agora
+ * também na frase de dom de cada candidata — nunca um segundo
+ * tradutor), sem diagrama. Nome da candidata já aparece no cartão de
+ * texto logo a seguir (`card-candidata-nome`) — não precisa de se
+ * repetir aqui.
  */
-/**
- * Correcção do especialista ("jargão técnico em bruto nos diagramas",
- * pós-PDF real) — o rótulo de cada nó do diagrama "Porque esta opção
- * não é acidente" era o texto da camada cortado no primeiro "(" ou ":",
- * o que preservava termos técnicos em bruto (Atmakaraka, Amatyakaraka,
- * Nakshatra do Atmakaraka, "Parivartana entre regente da casa X e Y",
- * "Regente da casa X dignificado") — a secção mais visível do relatório
- * a contradizer a regra de zero jargão que o resto do texto respeita.
- * Traduz cada tipo de camada para linguagem humana, preservando o
- * número de casa quando a camada o tiver (é informação específica desta
- * carta, não jargão) — nunca genérico a ponto de perder a
- * especificidade. Lista sincronizada com os `camadas.push(...)` de
- * `camadasParaDestino()` (method-engine/catalogoVocacional.ts) — 14
- * tipos, os mesmos já classificados em `TIPOS_CAMADA_PARA_ASSINATURA`
- * para o agrupamento de candidatas.
- */
-function rotuloHumanoCamada(camada: string): string {
-  if (camada.startsWith("Planeta de maior peso — também o Atmakaraka")) return "O ponto mais forte do seu perfil";
-  if (camada.startsWith("Atmakaraka")) return "O seu traço mais amadurecido";
-  if (camada.startsWith("Amatyakaraka")) return "A sua ferramenta de trabalho do dia a dia";
-  if (camada.startsWith("Planeta de maior peso")) return "O ponto mais forte do seu perfil";
-  if (camada.startsWith("Nakshatra do Atmakaraka")) return "Uma nuance mais fina da sua força principal";
-  if (camada.startsWith("Combinação")) return "Duas forças do seu perfil a actuar juntas";
-  if (camada.startsWith("Regente do Modo de Ganho dominante")) return "O que rege a sua forma de ganhar";
-  if (camada.startsWith("Eixo do rendimento")) return "O eixo do que lhe traz retorno";
-  const casaTematica = camada.match(/^Casa temática forte \(casa (\d+)\)/);
-  if (casaTematica) return `Uma área de vida estruturalmente forte (casa ${casaTematica[1]})`;
-  const stellium = camada.match(/^Stellium na casa (\d+)/);
-  if (stellium) return `Uma concentração de força numa área (casa ${stellium[1]})`;
-  const regenteDignificado = camada.match(/^Regente da casa (\d+) dignificado/);
-  if (regenteDignificado) return `O regente dessa área, no seu melhor (casa ${regenteDignificado[1]})`;
-  const parivartana = camada.match(/^Parivartana entre regente da casa (\d+) e regente da casa (\d+)/);
-  if (parivartana) return `Duas áreas de vida a trocar força entre si (casas ${parivartana[1]} e ${parivartana[2]})`;
-  if (camada.startsWith("Sinais estruturados da área")) return "Vários sinais do seu perfil confirmam esta área";
-  if (camada.startsWith("Área actual declarada")) return "A área que já disse que está a trabalhar";
-  if (camada.startsWith("Ideia concreta partilhada")) return "A ideia concreta que partilhou";
-  // Nunca deveria chegar aqui (lista sincronizada acima) — mas nunca
-  // rebenta nem deixa um rótulo vazio: cai para o corte por "(" ou ":"
-  // já usado antes desta correcção.
-  const separador = camada.search(/[(:]/);
-  return (separador > 0 ? camada.slice(0, separador) : camada).trim();
-}
-
-function svgDiagramaConvergencia(nomeCandidata: string, camadas: string[]): string {
-  const largura = 760;
-  const raioCentro = 80;
-  const lineHeight = 15;
-  const gapEntreNos = 14;
-  const topo = 20;
-  const maxCarLinhaRotulo = 34;
-  // O círculo fica encostado à direita (não ao centro) — a coluna de
-  // rótulos, à esquerda, precisa de ficar toda FORA da faixa horizontal
-  // do círculo, ou o círculo (pintado por cima) tapa o texto sempre que
-  // um nó cai na sua faixa vertical.
-  const cx = largura - raioCentro - 30;
-  const margemTexto = cx - raioCentro - 40;
-  const pontoDeEntrada = cx - raioCentro - 8;
-
-  // Dois bugs corrigidos (relatório impresso, pág. 16 — diagrama de
-  // convergência da candidata fora da lista):
-  // 1. O rótulo de uma camada sem "(" nem ":" perto do início (ex.:
-  //    "Ideia concreta partilhada aponta para este destino") usava a
-  //    FRASE INTEIRA como rótulo, numa só linha sem quebra — saía dos
-  //    limites do SVG à esquerda. Corrigido com `quebrarLinhas` + altura
-  //    de cada nó calculada a partir do nº real de linhas (antes era um
-  //    espaçamento fixo de 30px que não sabia quantas linhas ia ocupar).
-  // 2. O círculo da candidata ficava no centro do SVG (cx = largura/2) e
-  //    a coluna de texto acabava perto o suficiente do centro para o
-  //    círculo (pintado por cima, depois do texto) tapar metade dos
-  //    rótulos sempre que a sua altura calhava dentro da faixa vertical
-  //    do círculo — a causa mais provável do "sobreposto e ilegível".
-  //    Corrigido movendo o círculo para a direita e definindo
-  //    `margemTexto` com folga (40px) à esquerda da borda do círculo.
-  let cursorY = topo;
-  const nos = camadas.map((c) => {
-    const rotulo = rotuloHumanoCamada(c);
-    const linhasRotulo = quebrarLinhas(rotulo, maxCarLinhaRotulo);
-    const blocoAltura = linhasRotulo.length * lineHeight;
-    const centroY = cursorY + blocoAltura / 2;
-    cursorY += blocoAltura + gapEntreNos;
-    const primeiraLinhaY = centroY - ((linhasRotulo.length - 1) * lineHeight) / 2 + 4;
-    const textoTspans = linhasRotulo.map((l, i) => `<tspan x="${margemTexto - 8}" y="${primeiraLinhaY + i * lineHeight}">${escapeHtml(l)}</tspan>`).join("");
-    return { centroY, textoTspans };
-  });
-
-  const alturaNos = cursorY - gapEntreNos - topo;
-  const cy = Math.max(topo + alturaNos / 2, raioCentro + 20);
-  const altura = Math.max(cy + raioCentro + 20, topo + alturaNos + 20);
-
-  const linhasCandidata = quebrarLinhas(nomeCandidata, 16);
-  const inicioY = cy - ((linhasCandidata.length - 1) * 10) / 2;
-  const tspans = linhasCandidata.map((l, i) => `<tspan x="${cx}" y="${inicioY + i * 20}">${escapeHtml(l)}</tspan>`).join("");
-
-  return `<svg viewBox="0 0 ${largura} ${altura}" width="100%" style="max-width:${largura}px;height:auto" xmlns="http://www.w3.org/2000/svg">
-    ${nos
-      .map(
-        (n) => `
-      <text text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="${AZUL}">${n.textoTspans}</text>
-      <path d="M ${margemTexto} ${n.centroY} L ${pontoDeEntrada} ${cy}" stroke="${AMBAR}" stroke-width="2" fill="none" opacity="0.8" />
-      <circle cx="${margemTexto}" cy="${n.centroY}" r="3" fill="${AMBAR}" />`,
-      )
-      .join("")}
-    <circle cx="${cx}" cy="${cy}" r="${raioCentro}" fill="${AZUL}" />
-    <text text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#FFFFFF">${tspans}</text>
-  </svg>`;
-}
-
-function blocoDiagramaConvergencia(nome: string, camadas: string[]): string {
+function blocoDiagramaConvergencia(_nome: string, camadas: string[]): string {
   if (!camadas.length) return "";
   return `
-    <div class="convergencia-wrap">
-      <p class="bloco-titulo" style="text-align:center">Porque esta opção não é acidente</p>
-      <div class="grafico-wrap grafico-centrado">${svgDiagramaConvergencia(nome, camadas)}</div>
+    <div class="card-convergencia">
+      <p class="card-convergencia-titulo">Porque esta opção não é acidente</p>
+      <ul>
+        ${camadas.map((c) => `<li>${escapeHtml(rotuloHumanoCamada(c))}</li>`).join("")}
+      </ul>
     </div>`;
 }
 
@@ -1170,9 +1076,11 @@ interface ItemAtrito {
  * aqui, ver FALTA 2), um nó por planeta fraco (peso < 0,9 — mesmos dados
  * reais de sempre, nunca texto inventado), rótulo "O que resiste:
  * <planeta>" + a implicação prática (IMPLICACAO_PRATICA_PLANETA, já
- * existente, TAREFA 4 de uma ronda anterior). Mesma técnica de
- * posicionamento dinâmico de svgDiagramaConvergencia (altura de cada nó
- * calculada a partir do nº real de linhas do seu texto).
+ * existente, TAREFA 4 de uma ronda anterior). Posicionamento dinâmico —
+ * altura de cada nó calculada a partir do nº real de linhas do seu
+ * texto (o diagrama de convergência da candidata fora da lista usava a
+ * mesma técnica; foi substituído por um cartão simples, ver
+ * `blocoDiagramaConvergencia`).
  */
 function svgDiagramaAtrito(identidade: string, itens: ItemAtrito[]): string {
   const largura = 720;
@@ -1456,6 +1364,65 @@ function normalizarBlocosCandidataImplicitos(corpo: string): string {
   });
 }
 
+interface ResumoCandidata {
+  textoLimpo: string;
+  via: string | null;
+  custo: string | null;
+}
+
+/**
+ * Correcção do especialista ("tabela resumo final das candidatas") —
+ * extrai "VIA_RESUMIDA:"/"CUSTO_PRINCIPAL:" do corpo de UMA candidata
+ * (mesmo mecanismo de marcador embutido já confirmado fiável para
+ * CANDIDATA:/GRUPO:) e remove-as do texto visível do cartão — nunca
+ * aparecem duas vezes (uma na tabela, outra solta no meio do texto).
+ * `via`/`custo` ficam `null` quando o LLM não escreveu a linha — a
+ * tabela mostra "—" nessa célula, nunca rebenta.
+ */
+function extrairResumoCandidata(texto: string): ResumoCandidata {
+  const regexVia = new RegExp(`^${MARCADORES.viaResumida}\\s*(.*)$`, "im");
+  const regexCusto = new RegExp(`^${MARCADORES.custoPrincipal}\\s*(.*)$`, "im");
+  const via = texto.match(regexVia)?.[1]?.trim() || null;
+  const custo = texto.match(regexCusto)?.[1]?.trim() || null;
+  const textoLimpo = texto
+    .replace(new RegExp(`^${MARCADORES.viaResumida}\\s*(.*)$`, "gim"), "")
+    .replace(new RegExp(`^${MARCADORES.custoPrincipal}\\s*(.*)$`, "gim"), "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return { textoLimpo, via, custo };
+}
+
+/**
+ * Correcção do especialista ("tabela resumo final das candidatas") —
+ * complemento aos cartões detalhados, nunca substituição: uma linha por
+ * candidata apresentada (Opção, Nível — 100% determinístico, vem do
+ * catálogo, nunca do LLM — Via de entrada resumida, Custo principal).
+ * Reutiliza o estilo `.tabela-anexo` já usado no Anexo, em vez de
+ * inventar um novo.
+ */
+function blocoTabelaResumoCandidatas(resumo: { nome: string; nivel: 1 | 2 | undefined; via: string | null; custo: string | null }[]): string {
+  if (!resumo.length) return "";
+  const linhas = resumo
+    .map(
+      (r) => `
+      <tr>
+        <td>${escapeHtml(r.nome)}</td>
+        <td class="col-numero">${r.nivel ?? "—"}</td>
+        <td>${escapeHtml(r.via ?? "—")}</td>
+        <td>${escapeHtml(r.custo ?? "—")}</td>
+      </tr>`,
+    )
+    .join("");
+  return `
+    <div class="tabela-resumo-candidatas-wrap">
+      <p class="bloco-titulo">Resumo das candidatas</p>
+      <table class="tabela-anexo">
+        <thead><tr><th>Opção</th><th class="col-numero">Nível</th><th>Via de entrada</th><th>Custo principal</th></tr></thead>
+        <tbody>${linhas}</tbody>
+      </table>
+    </div>`;
+}
+
 function blocoCandidataForaDaLista(corpo: string, catalogo: ResultadoCatalogoVocacional | null, usarTu: boolean): string {
   const corpoNormalizado = normalizarBlocosCandidataImplicitos(corpo);
   const { candidatas, textoSemCandidata } = parseCandidataForaDaLista(corpoNormalizado);
@@ -1466,10 +1433,14 @@ function blocoCandidataForaDaLista(corpo: string, catalogo: ResultadoCatalogoVoc
   const grupoPorNome = new Map<string, GrupoCandidatasTexto>();
   for (const g of grupos) for (const nome of g.membros) grupoPorNome.set(nome, g);
   const gruposJaRenderizados = new Set<GrupoCandidatasTexto>();
+  const resumoParaTabela: { nome: string; nivel: 1 | 2 | undefined; via: string | null; custo: string | null }[] = [];
 
-  return candidatas
+  const cartoes = candidatas
     .map((c) => {
-      const camadas = catalogo?.candidatasForaDaLista.find((cat) => cat.nome === c.nome)?.camadas ?? [];
+      const dadosCatalogo = catalogo?.candidatasForaDaLista.find((cat) => cat.nome === c.nome);
+      const camadas = dadosCatalogo?.camadas ?? [];
+      const { textoLimpo, via, custo } = extrairResumoCandidata(c.texto);
+      resumoParaTabela.push({ nome: c.nome, nivel: dadosCatalogo?.nivelConfianca, via, custo });
       const grupo = grupoPorNome.get(c.nome);
       let introGrupo = "";
       if (grupo && !gruposJaRenderizados.has(grupo)) {
@@ -1497,10 +1468,12 @@ function blocoCandidataForaDaLista(corpo: string, catalogo: ResultadoCatalogoVoc
       <div class="card-candidata${grupo ? " card-candidata-agrupada" : ""}">
         <p class="card-candidata-header">${usarTu ? "Uma opção que ainda não consideraste" : "Uma opção que ainda não considerou"}</p>
         <p class="card-candidata-nome">${escapeHtml(c.nome)}</p>
-        ${markdownParaHtml(c.texto)}
+        ${markdownParaHtml(textoLimpo)}
       </div>`;
     })
     .join("\n");
+
+  return `${cartoes}\n${blocoTabelaResumoCandidatas(resumoParaTabela)}`;
 }
 
 function blocoOPlano(corpo: string, datas: DadosDatas, usarTu: boolean): string {
@@ -1820,7 +1793,7 @@ export function gerarHTMLRelatorio(
   .grafico-centrado { display: flex; justify-content: center; }
   .peso-fraco { color: #6B6B6B; font-size: 12px; }
   /* TAREFA 3B (correcção do especialista) — legenda linha-a-linha de cada característica do gráfico "O peso de cada característica". */
-  .lista-caracteristicas { margin: 14px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.7; color: #4A4A4A; }
+  .lista-caracteristicas { margin: 14px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.7; color: #4A4A4A; text-align: left; }
   .lista-caracteristicas strong { color: var(--azul); }
   /* Correcção do especialista ("explicação completa de todos os gráficos, linha a linha", pós-PDF real) — parágrafo de abertura escrito pelo LLM (o que o gráfico mede, de onde vêm os números), e a camada personalizada por linha/categoria, sempre a seguir à explicação geral já existente, nunca a substituir. */
   .grafico-explicacao-llm { font-size: 14px; margin: 10px 0 16px; max-width: 620px; }
@@ -1867,6 +1840,13 @@ export function gerarHTMLRelatorio(
   .caixa-sintese-quemE { background: var(--azul); color: #FFFFFF; border-radius: 10px; padding: 20px 22px; margin-top: 8px; }
   .caixa-sintese-quemE p { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.6; }
 
+  /* Correcção do especialista ("redesenhar 'Porque esta opção não é acidente'", pós-PDF real) — substitui o diagrama radial (densidade visual inconsistente, 2-7 linhas a convergir por candidata) pelo mesmo estilo de cartão já confirmado elegante em .card-dom/.card-limitacao — borda âmbar à esquerda + fundo suave + título + lista simples, densidade sempre previsível independentemente do nº de camadas. */
+  .card-convergencia { background: #fff8e1; border-left: 3px solid var(--ambar); border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; page-break-inside: avoid; break-inside: avoid; }
+  .card-convergencia-titulo { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--ambar); margin: 0 0 8px; }
+  .card-convergencia ul { margin: 0; padding-left: 18px; }
+  .card-convergencia li { font-size: 14px; line-height: 1.6; margin-bottom: 3px; }
+  .card-convergencia li:last-child { margin-bottom: 0; }
+
   .card-candidata { border: 2px solid var(--ambar); border-radius: 10px; padding: 20px; page-break-inside: avoid; break-inside: avoid; }
   .card-candidata-header { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--ambar); margin: 0 0 6px; }
   .card-candidata-nome { font-size: 18px; font-weight: 700; color: var(--azul); margin: 0 0 12px; }
@@ -1883,6 +1863,8 @@ export function gerarHTMLRelatorio(
   .destaque-passo p:last-child { font-size: 16px; font-weight: 600; color: var(--azul); }
 
   .anexo-espaco { margin-top: 32px; }
+  /* Correcção do especialista ("tabela resumo final das candidatas") — complemento aos cartões, fim da secção, antes de "O plano". */
+  .tabela-resumo-candidatas-wrap { margin-top: 28px; }
   .tabela-anexo { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
   .tabela-anexo th { text-align: left; font-weight: 700; color: var(--azul); padding: 8px 10px; border-bottom: 2px solid var(--ambar); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
   .tabela-anexo td { padding: 8px 10px; border-bottom: 1px solid #E6E6E6; vertical-align: top; }
@@ -1916,7 +1898,7 @@ export function gerarHTMLRelatorio(
   .caixa-primeiro-passo p:last-child { font-size: 18px; font-weight: 700; margin: 0; line-height: 1.5; }
 
   /* Melhorias visuais ao template — Parte 2 (diagramas SVG novos) */
-  .radar-wrap, .convergencia-wrap { margin-top: 20px; text-align: center; }
+  .radar-wrap { margin-top: 20px; text-align: center; }
 
   .ponte-wrap { background: var(--cinza-claro); border-radius: 10px; padding: 20px; margin-bottom: 18px; }
   .ponte-grelha { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; margin-top: 14px; }
@@ -1982,11 +1964,6 @@ export function gerarHTMLRelatorio(
 
       <div class="subseccao">
         <p class="bloco-titulo">${usarTu ? "O peso de cada característica do teu perfil" : "O peso de cada característica do seu perfil"}</p>
-        <p class="grafico-explicacao">${
-          usarTu
-            ? "Este gráfico mostra a força relativa de cada característica do teu perfil. Valores acima de 1,3 indicam onde tens força natural; abaixo de 0,9 indicam onde o esforço vai ser maior."
-            : "Este gráfico mostra a força relativa de cada característica do seu perfil. Valores acima de 1,3 indicam onde tem força natural; abaixo de 0,9 indicam onde o esforço vai ser maior."
-        }</p>
         <div class="caixa-neutra grafico-explicacao-llm">${markdownParaHtml(explicacaoPeso.abertura)}</div>
         <div class="grafico-wrap">${svgGraficoForcas(pesos, usarTu)}</div>
         <p class="grafico-legenda">Verde = o perfil apoia com força · Âmbar = suporte moderado · Vermelho = suporte fraco</p>

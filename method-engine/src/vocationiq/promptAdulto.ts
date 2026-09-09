@@ -134,6 +134,21 @@ export const MARCADORES = {
   explicacaoGrafico: "EXPLICAÇÃO_GRÁFICO:",
   /** LEGADO — ver `explicacaoGrafico`. */
   linhaGrafico: "LINHA_GRÁFICO:",
+  /**
+   * Correcção do especialista ("tabela resumo final das candidatas") —
+   * uma linha por candidata (dentro do próprio bloco "candidata", nunca
+   * um bloco à parte — o mesmo princípio que faz CANDIDATA:/GRUPO:
+   * serem fiáveis: embutido num contexto já confirmado a funcionar,
+   * nunca um marcador novo isolado) com o principal custo/trade-off de
+   * escolher esta via, em 3-8 palavras. Alimenta a coluna "Custo
+   * principal" da tabela resumo (ver `blocoTabelaResumoCandidatas`,
+   * relatorioTemplate.ts) — extraída e removida do corpo visível da
+   * candidata (nunca aparece duas vezes). Se faltar, a tabela mostra
+   * "—" nessa célula — nunca rebenta, nunca inventa.
+   */
+  custoPrincipal: "CUSTO_PRINCIPAL:",
+  /** Ver `custoPrincipal` — mesmo mecanismo, para a coluna "Via de entrada" da tabela resumo: resume, em 3-8 palavras, a "-- Via concreta para <nome> --" já dada nos dados técnicos (nunca inventa uma via nova). */
+  viaResumida: "VIA_RESUMIDA:",
 } as const;
 
 export const FORCA_VALORES = ["forte", "moderada", "fraca"] as const;
@@ -430,7 +445,7 @@ export function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional, c
     ? catalogo.candidatasForaDaLista
         .map(
           (c) =>
-            `- ${c.nome}: convergência ${c.convergencia}, Nível ${c.nivelConfianca} (${c.nivelConfianca === 1 ? "inclui o planeta de maior peso — confiança plena" : "âncora pessoal (Atmakaraka/Amatyakaraka/Stellium/Regente de casa dignificado), sem o planeta de maior peso — confiança reduzida"}), soma de pesos das camadas ${c.somaPesoCamadas.toFixed(2)} (${c.camadas.join("; ")}).`,
+            `- ${c.nome}: convergência ${c.convergencia}, Nível ${c.nivelConfianca} (${c.nivelConfianca === 1 ? "inclui o planeta de maior peso — confiança plena" : "âncora pessoal (Atmakaraka/Amatyakaraka/Stellium/Regente de casa dignificado), sem o planeta de maior peso — confiança reduzida"}), soma de pesos das camadas ${c.somaPesoCamadas.toFixed(2)} (${c.camadas.join("; ")}). FACTOR DE DOM (já traduzido para linguagem humana, usa isto — nunca inventes outro): "${c.fatorDeDom}".`,
         )
         .join("\n")
     : "nenhuma — nenhum destino reuniu 4 camadas independentes incluindo um indicador pessoal (planeta de maior peso, Atmakaraka ou Amatyakaraka).";
@@ -716,10 +731,23 @@ ${MARCADORES.grupo} Administração Pública; Gestão
 Este grupo partilha a convergência do Modo de Ganho na casa 10...
 A diferença entre os dois é só a etiqueta no início da linha — nunca "**Nome** —", sempre "${MARCADORES.candidata} Nome" (ou "${MARCADORES.grupo} nome1; nome2; ..." para grupos, com a lista de nomes separada por ";", nunca só um título descritivo).`;
 
-export const INSTRUCAO_ABERTURA_CANDIDATAS = `CANDIDATA FORA DA LISTA — LIGAÇÃO OBRIGATÓRIA A DOM JÁ NOMEADO: antes de qualquer menção às camadas técnicas (Atmakaraka, eixo do rendimento, sinais estruturados, etc.), cada candidata INDIVIDUAL (sem grupo) DEVE abrir com uma frase que a ligue explicitamente a um dom ou traço já nomeado na secção "${SECCAO_TITULOS.quemE}" deste mesmo relatório.
-Padrão obrigatório: "Isto liga-se directamente a [nome do dom/traço já nomeado em ${SECCAO_TITULOS.quemE}, citado quase literalmente] que já foi nomeado acima — é essa mesma força aplicada a um território concreto."
-Só depois desta frase é que o texto pode introduzir as camadas técnicas de convergência.
-GRUPOS (correcção do especialista — agrupamento por cluster): quando várias candidatas partilham bloco "${MARCADORES.grupo}", esta ligação a um dom já nomeado é feita UMA VEZ no bloco "${MARCADORES.grupo}" (a convergência de base do grupo inteiro nasce desse dom) — os blocos "${MARCADORES.candidata}" dentro do grupo NÃO repetem a frase de abertura, vão directos à diferenciação específica de cada uma.
+// Correcção do especialista ("dom/talento em vez de percurso", pós-PDF
+// real) — as descrições de cada candidata estavam centradas em duração
+// de curso e trajecto académico, sem nunca dizer o essencial: PORQUÊ
+// esta pessoa tem talento nato para esta área. A instrução anterior
+// ("liga-se a um dom já nomeado em Quem é") ainda deixava a ligação
+// vaga — o LLM tinha de escolher livremente A QUE dom ligar. Agora o
+// factor concreto já vem dado, por candidata, calculado deterministica-
+// mente pelo mesmo portão que já decidiu o Nível dela (Planeta de maior
+// peso, Atmakaraka, Amatyakaraka, Stellium, ou Regente da casa
+// dignificado) e já traduzido para linguagem humana por
+// `rotuloHumanoCamada()` — o MESMO tradutor usado no cartão "Porque
+// esta opção não é acidente", nunca um segundo mecanismo a divergir
+// dele. O LLM nunca escolhe nem traduz o factor — só o usa.
+export const INSTRUCAO_ABERTURA_CANDIDATAS = `CANDIDATA FORA DA LISTA — ABRE SEMPRE COM O DOM, NUNCA COM O PERCURSO: antes de qualquer menção a duração de formação, trajecto académico ou entrada no mercado, cada candidata (individual, ou o bloco "${MARCADORES.grupo}" partilhado) DEVE abrir com uma frase sobre o dom/talento inato que a liga a esta área.
+A frase de dom usa sempre o "FACTOR DE DOM" já dado nos dados técnicos desta candidata (já traduzido para linguagem humana — nunca inventes outro factor, nunca traduzas tu mesmo o jargão astrológico, usa a tradução exacta dada, citada quase literalmente). Padrão obrigatório: "O seu [FACTOR DE DOM] indica uma capacidade natural para [qualidade concreta e específica ligada a esta área — nunca genérica, nunca "tens talento para liderança" sem mais nada], é isto que a distingue nesta candidatura, mais do que o percurso em si."
+Só depois desta frase de dom é que o texto pode mencionar percurso/formação/via de entrada — no MÁXIMO 1 linha, nunca mais, e só quando ajuda a decidir (ex.: "curso de Medicina, 6 anos"). Nunca eliminar o percurso por completo — reduzir drasticamente, nunca ao ponto de a pessoa não saber por onde começar. Ordem sempre: dom primeiro (porquê esta área encaixa na pessoa), percurso depois e breve.
+GRUPOS (correcção do especialista — agrupamento por cluster): quando várias candidatas partilham bloco "${MARCADORES.grupo}", a frase de dom é escrita UMA VEZ nesse bloco (usa o "FACTOR DE DOM" da primeira candidata do grupo — os membros de um grupo partilham quase sempre o mesmo factor, por serem a mesma convergência de base) — os blocos "${MARCADORES.candidata}" dentro do grupo NÃO repetem a frase de dom, vão directos à diferenciação específica de cada uma (onde a via concreta reduzida de cada uma pode aparecer).
 Obrigatório em todas as candidatas apresentadas, individuais ou em grupo (uma vez por grupo, uma vez por individual), sem excepção — nunca omitir só porque a pool tem muitas candidatas.`;
 
 // TAREFA #38 (correcção do especialista, sistema em dois níveis) —
@@ -958,15 +986,20 @@ Se essa secção diz "nenhuma", a primeira e única linha é "${MARCADORES.candi
 
 Se essa secção lista 1 ou mais candidatas, primeiro escreve o bloco único "${MARCADORES.seleccaoCandidatas}" (ver INSTRUCAO_SELECCAO_CANDIDATAS para o conteúdo exacto exigido). Depois, para cada candidata que passou o Passo 1, um de dois formatos — nunca misturar os dois para a mesma candidata:
 
-FORMATO INDIVIDUAL (candidata sem grupo, ou grupo reduzido a 1 sobrevivente depois do Passo 1) — igual ao formato já usado antes desta correcção: "${MARCADORES.candidata} <nome exacto>" seguido do texto explicativo COMPLETO dessa candidata (ligação ao dom, camadas, via concreta, prós/contras), usando só as camadas exactas já listadas para ela na pool (nunca inventes camadas novas nem omitas as que vêm calculadas).
+FORMATO INDIVIDUAL (candidata sem grupo, ou grupo reduzido a 1 sobrevivente depois do Passo 1) — "${MARCADORES.candidata} <nome exacto>" seguido do texto explicativo dessa candidata, NESTA ORDEM (ver INSTRUCAO_ABERTURA_CANDIDATAS): (1) a frase de dom, usando o FACTOR DE DOM já dado; (2) o que essa capacidade natural sustenta concretamente nesta área; (3) no máximo 1 linha de via concreta/percurso (nunca mais); (4) prós e contras específicos. Usa só as camadas exactas já listadas para ela na pool (nunca inventes camadas novas nem omitas as que vêm calculadas).
 
 FORMATO DE GRUPO (2 ou mais candidatas da secção "Grupos de candidatas" acima que passaram o Passo 1) — "${MARCADORES.grupo} <nome1>; <nome2>; <nome3 ...>" (os nomes exactos dos membros deste grupo que passaram o Passo 1, separados por ";", pela ordem em que os blocos "${MARCADORES.candidata}" a seguir vão aparecer) seguido do texto da convergência astrológica de base PARTILHADA por todo o grupo — o que estas candidatas têm em comum, escrito UMA SÓ VEZ. Logo a seguir, um bloco "${MARCADORES.candidata} <nome exacto>" por cada membro listado no "${MARCADORES.grupo}", nesta ordem, cada um com só a sua diferenciação específica (2-4 linhas: porquê esta e não as outras do mesmo grupo, a via concreta dela, prós e contras específicos) — NUNCA repetir a convergência de base já escrita no bloco "${MARCADORES.grupo}".
 
 Repete este padrão (individual ou de grupo) para toda a pool que passou o Passo 1 — nunca pares a meio, nunca omitas uma candidata elegível para "não alongar a secção". A ordem de aparição dos grupos/individuais no texto segue o Passo 2 (soma de pesos) — a ordem NÃO é ranking (ver regra abaixo).
 
-VIA CONCRETA (correcção do especialista, TAREFA 3): cada candidata da pool tem um bloco próprio "-- Via concreta para <nome> --" na secção "Candidatas do catálogo" acima, com o tipo de formação, a certificação profissional, como se entra, e o tempo médio até trabalhar na área. Cita esta informação no texto de CADA candidata apresentada (individual ou dentro de um grupo) — nunca a omitas, nunca a inventes, nunca nomeies uma entidade concreta (nem "a escola", nem uma ordem profissional pelo nome) mesmo que o dado bruto pareça convidar a isso.
+VIA CONCRETA — REDUZIDA, NUNCA ELIMINADA (correcção do especialista — "dom em vez de percurso", pós-PDF real: as descrições reais estavam centradas em duração de curso e trajecto, sem nunca dizer o porquê do talento): cada candidata da pool tem um bloco próprio "-- Via concreta para <nome> --" na secção "Candidatas do catálogo" acima, com o tipo de formação, a certificação profissional, como se entra, e o tempo médio até trabalhar na área. Usa isto só para resumir, no MÁXIMO 1 linha, DEPOIS da frase de dom (nunca antes) — nunca reproduzas o bloco inteiro nem alongues em duração/trajecto. Nunca inventes, nunca nomeies uma entidade concreta (nem "a escola", nem uma ordem profissional pelo nome) mesmo que o dado bruto pareça convidar a isso.
 
 REGRA ABSOLUTA — SEM RANKING ENTRE CANDIDATAS (correcção do especialista, estendida ao agrupamento por cluster): candidatas e grupos apresentam-se sempre em PÉ DE IGUALDADE — nunca entre si, nem dentro do mesmo grupo. PROIBIDO: "1ª escolha", "2ª escolha", "a mais forte", "a mais provável", "em primeiro lugar", qualquer numeração ordinal, ou tratar uma candidata/grupo como "menção honrosa"/"nota à parte"/de segunda categoria. Dentro de um grupo, "porquê esta e não as outras" (a diferenciação pedida) é sobre ENCAIXE (que via concreta serve melhor esta pessoa), nunca sobre qual candidata é "melhor" ou "mais forte" do que a outra — todas no grupo já convergem com a mesma força de base, só a via difere. Cada candidata/grupo tem a sua própria justificação, completa e independente das outras — a comparação entre candidatas da pool só acontece dentro do bloco "${MARCADORES.seleccaoCandidatas}", nunca no texto visível ao cliente.
+
+TABELA RESUMO — VIA_RESUMIDA e CUSTO_PRINCIPAL (correcção do especialista, "tabela resumo final das candidatas") — dentro do texto de CADA candidata apresentada (individual ou membro de grupo), inclui DUAS linhas próprias, cada uma na sua própria linha:
+"${MARCADORES.viaResumida} <3-8 palavras>" — resume a "-- Via concreta para <nome> --" já dada nos dados técnicos (nunca inventa uma via nova, nunca nomeia uma entidade concreta) — ex.: "${MARCADORES.viaResumida} curso superior + estágio, 3-4 anos", "${MARCADORES.viaResumida} certificação profissional, entrada directa".
+"${MARCADORES.custoPrincipal} <3-8 palavras>" com o principal custo/trade-off de escolher esta via — ex.: "${MARCADORES.custoPrincipal} anos de formação longa antes de rendimento", "${MARCADORES.custoPrincipal} instabilidade inicial sem estrutura fixa".
+Ambas curtas e específicas desta candidata — nunca genéricas, nunca repetidas iguais para duas candidatas diferentes. Alimentam uma tabela resumo no fim da secção — nunca aparecem como frase solta no meio do texto, são sempre a própria linha do marcador.
 
 REGRA ABSOLUTA — CANDIDATA FORA DA LISTA (correcção do especialista): PROIBIDO nomear qualquer candidata, mesmo como pista abaixo do limiar, sem que venha explicitamente da secção "Candidatas do catálogo" acima. Se nenhuma candidata do catálogo atingiu ≥4 camadas, a resposta é "${MARCADORES.candidata} nenhuma" — explica honestamente que o perfil não aponta a nada fora do que já foi pensado. NUNCA preenchas com estereótipos de profissão ou associações livres a arquétipos abstractos. Exemplo do que NÃO fazer: sugerir "engenharia, auditoria, saúde pública" por associação livre a "Saturno = estrutura/rigor" — essas profissões não vieram do catálogo, vieram de associação livre; isto é invenção, não leitura, e é exactamente o que esta regra proíbe.
 

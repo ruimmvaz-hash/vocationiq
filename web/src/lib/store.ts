@@ -254,19 +254,32 @@ export async function marcarRevisaoEmailEnviado(intakeId: string, marco: "90" | 
   if (error) throw new Error(`Falha ao marcar email de revisão (${marco}d) como enviado: ${error.message}`);
 }
 
-/** Pedidos pagos há mais de 36h sem relatório entregue, ainda sem alerta enviado ao admin. */
+/**
+ * Pedidos pagos há mais de 36h sem relatório entregue, ainda sem alerta
+ * enviado ao admin.
+ *
+ * Correcção do especialista ("email de 36h não disparou", pedido real
+ * confirmado) — `.neq("report_status", "delivered")` e
+ * `.eq("alerta_36h_enviado", false)` excluem, em SQL, qualquer linha
+ * onde essas colunas sejam NULL na base de dados (NULL != valor e
+ * NULL = false avaliam sempre para NULL, nunca para true, em Postgres —
+ * a linha é silenciosamente omitida do resultado). O tipo `IntakeRow`
+ * declara-as como não-nulas, mas isso é só uma promessa do TypeScript
+ * em tempo de compilação — não impede uma linha antiga (anterior à
+ * migração que criou `alerta_36h_enviado`, ou nunca escrita
+ * explicitamente) de ter NULL de facto na base de dados. Um pedido
+ * genuinamente pendente há mais de 36h podia ficar invisível a este
+ * alerta exactamente por isso. Corrigido: filtra na Supabase só por
+ * `payment_status`/`paid_at` (nunca ambíguo), e aplica a condição
+ * "não entregue, sem alerta ainda" em memória — `!== "delivered"` e
+ * `!== true` tratam `null`/`undefined` correctamente como "ainda não".
+ */
 export async function listarPendentesAlerta36h(): Promise<IntakeRow[]> {
   const supabase = await getSupabaseAdmin();
   const cutoff = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
-  const { data, error } = await supabase
-    .from("vocationiq_intakes")
-    .select("*")
-    .eq("payment_status", "paid")
-    .neq("report_status", "delivered")
-    .eq("alerta_36h_enviado", false)
-    .lt("paid_at", cutoff);
+  const { data, error } = await supabase.from("vocationiq_intakes").select("*").eq("payment_status", "paid").lt("paid_at", cutoff);
   if (error) throw new Error(`Falha ao listar pendentes para alerta de 36h: ${error.message}`);
-  return (data ?? []) as IntakeRow[];
+  return ((data ?? []) as IntakeRow[]).filter((r) => (r.report_status as string | null) !== "delivered" && (r.alerta_36h_enviado as boolean | null) !== true);
 }
 
 export async function marcarAlerta36hEnviado(intakeId: string): Promise<void> {

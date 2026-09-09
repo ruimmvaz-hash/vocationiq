@@ -124,6 +124,7 @@ export {
 export {
   catalogarDestinos,
   depurarCamadasDestino,
+  rotuloHumanoCamada,
   type ResultadoCatalogoVocacional,
   type DestinoConvergente,
   type CandidataForaDaLista,

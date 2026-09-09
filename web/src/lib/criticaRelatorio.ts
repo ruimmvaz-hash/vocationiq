@@ -209,6 +209,28 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
      como substituto, por mais parecido que o formato final pareça ao
      humano).
 
+ 27. DOM ANTES DO PERCURSO, VIA_RESUMIDA E CUSTO_PRINCIPAL PRESENTES
+     (correcção do especialista — "dom/talento em vez de percurso", pós-
+     PDF real: as descrições estavam centradas em duração de curso e
+     trajecto, sem nunca dizer o porquê do talento):
+     (a) Cada candidata (individual ou bloco GRUPO partilhado) abre
+         mesmo com uma frase de dom baseada no "FACTOR DE DOM" dado nos
+         dados técnicos — nunca com quanto tempo demora a formação, nem
+         com "esta via exige..."? Encontraste alguma candidata a abrir
+         directamente pelo percurso/duração, sem a frase de dom antes:
+         FALHA — cita o nome exacto.
+     (b) O percurso/via de entrada, quando mencionado, fica reduzido a
+         no máximo 1 linha? Encontraste um parágrafo inteiro sobre
+         duração de curso, trajecto académico ou entrada no mercado:
+         FALHA — cita o nome exacto.
+     (c) TODA candidata apresentada tem, dentro do seu próprio texto, as
+         linhas "VIA_RESUMIDA:" e "CUSTO_PRINCIPAL:" (marcador literal,
+         3-8 palavras cada, específicas desta candidata)? Falta alguma
+         das duas em alguma candidata: FALHA — cita o nome exacto e qual
+         das duas falta.
+     Se falhar (a), (b) ou (c): FALHA — força reescrita das candidatas
+     afectadas, nunca do relatório inteiro.
+
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
  Formato:
@@ -423,6 +445,28 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
      usando sempre os marcadores literais exactos (nunca markdown bold
      como substituto, por mais parecido que o formato final pareça ao
      humano).
+
+ 27. DOM ANTES DO PERCURSO, VIA_RESUMIDA E CUSTO_PRINCIPAL PRESENTES
+     (correcção do especialista — "dom/talento em vez de percurso", pós-
+     PDF real: as descrições estavam centradas em duração de curso e
+     trajecto, sem nunca dizer o porquê do talento):
+     (a) Cada candidata (individual ou bloco GRUPO partilhado) abre
+         mesmo com uma frase de dom baseada no "FACTOR DE DOM" dado nos
+         dados técnicos — nunca com quanto tempo demora a formação, nem
+         com "esta via exige..."? Encontraste alguma candidata a abrir
+         directamente pelo percurso/duração, sem a frase de dom antes:
+         FALHA — cita o nome exacto.
+     (b) O percurso/via de entrada, quando mencionado, fica reduzido a
+         no máximo 1 linha? Encontraste um parágrafo inteiro sobre
+         duração de curso, trajecto académico ou entrada no mercado:
+         FALHA — cita o nome exacto.
+     (c) TODA candidata apresentada tem, dentro do seu próprio texto, as
+         linhas "VIA_RESUMIDA:" e "CUSTO_PRINCIPAL:" (marcador literal,
+         3-8 palavras cada, específicas desta candidata)? Falta alguma
+         das duas em alguma candidata: FALHA — cita o nome exacto e qual
+         das duas falta.
+     Se falhar (a), (b) ou (c): FALHA — força reescrita das candidatas
+     afectadas, nunca do relatório inteiro.
 
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.

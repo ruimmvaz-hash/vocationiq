@@ -142,6 +142,7 @@ async function main() {
         convergencia: 6,
         nivelConfianca: 1,
         somaPesoCamadas: 1.76,
+        fatorDeDom: "O ponto mais forte do seu perfil",
         camadas: [
           "Planeta de maior peso (Saturn, peso 1.76) aponta para este destino",
           "Regente do Modo de Ganho dominante (Saturn, casa 10) — eixo do rendimento aponta para este destino",
