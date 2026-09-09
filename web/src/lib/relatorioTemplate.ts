@@ -7,7 +7,6 @@ import {
   computeApoioPorAreaDeVida,
   valorCasaUnificado,
   ESTADO_PT,
-  rotuloHumanoCamada,
   type ClassicalGraha,
   type VocationIQAxes,
   type PesoPlaneta,
@@ -555,7 +554,11 @@ function svgGraficoForcas(pesos: PesoPlaneta[], usarTu: boolean): string {
   const ordenados = [...pesos].sort((a, b) => b.peso - a.peso);
   const largura = 620;
   const alturaLinha = 42;
-  const margemEsquerda = 250;
+  // Correcção do especialista ("ORDEM — nomenclatura/cor") — margem
+  // aumentada de 250 para 270 para caber os novos títulos renomeados
+  // (mais longos que os antigos rótulos de `caracteristicaPt`), partidos
+  // em 2 linhas por `CARACTERISTICA_TITULO_TABELA_PESO_LINHAS`.
+  const margemEsquerda = 270;
   const margemDireita = 55;
   const escalaMax = 2.0;
   const areaBarra = largura - margemEsquerda - margemDireita;
@@ -566,9 +569,10 @@ function svgGraficoForcas(pesos: PesoPlaneta[], usarTu: boolean): string {
       const y = i * alturaLinha + 8;
       const larguraBarra = Math.max(2, Math.min(p.peso / escalaMax, 1) * areaBarra);
       const cor = corPeso(p.peso);
-      const label = caracteristicaPt(p.planeta, usarTu);
+      const [linha1, linha2] = CARACTERISTICA_TITULO_TABELA_PESO_LINHAS[p.planeta] ?? [caracteristicaPt(p.planeta, usarTu), ""];
       return `
-      <text x="${margemEsquerda - 14}" y="${y + 21}" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="14" fill="#1A1A1A">${escapeHtml(label)}</text>
+      <text x="${margemEsquerda - 14}" y="${y + 14}" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="11" font-weight="700" fill="#1A1A1A">${escapeHtml(linha1)}</text>
+      <text x="${margemEsquerda - 14}" y="${y + 27}" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="11" font-weight="700" fill="#1A1A1A">${escapeHtml(linha2)}</text>
       <rect x="${margemEsquerda}" y="${y + 5}" width="${areaBarra}" height="20" fill="${CINZA_CLARO}" rx="4" />
       <rect x="${margemEsquerda}" y="${y + 5}" width="${larguraBarra}" height="20" fill="${cor}" rx="4" />
       <text x="${margemEsquerda + larguraBarra + 10}" y="${y + 20}" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="${AZUL}">${p.peso.toFixed(2)}</text>`;
@@ -589,17 +593,22 @@ function svgModoDeGanho(earningModes: EarningMode[], casasDominantes: number[]):
 
   // Correcção do especialista (A4, "ORDEM MESTRA") — as barras passam a
   // aparecer sempre ordenadas por pontuação decrescente (a mais forte
-  // primeiro), nunca pela ordem fixa das casas 2/6/10. E as barras não
-  // dominantes deixam de usar cinzento — cinzento comunica "fraco/
-  // inexistente", o que contradiz a filosofia do relatório (pontuação
-  // baixa = mais esforço, nunca ausência de força). Usam-se tons mais
-  // claros da própria cor de marca (AZUL), em vez de uma cor à parte.
+  // primeiro), nunca pela ordem fixa das casas 2/6/10 — essa parte já
+  // estava certa e mantém-se. Correcção do especialista ("ORDEM —
+  // nomenclatura/cor") — os tons de azul não ficaram bem; substituídos
+  // por um gradiente laranja→amarelo (cor de marca), barra dominante
+  // mais escura/saturada, as outras mais claras.
   const porCasa = [2, 6, 10]
     .map((casa) => earningModes.find((e) => e.house === casa))
     .filter((e): e is EarningMode => !!e)
     .sort((a, b) => b.score - a.score);
   const maiorScore = Math.max(...porCasa.map((e) => e.score), 1);
-  const TONS_AZUL_NAO_DOMINANTE = ["#6B7F9F", "#AFBACB"];
+  // Barra(s) dominante(s) sempre no laranja mais escuro/saturado — as
+  // não dominantes ficam progressivamente mais claras, na ordem em que
+  // aparecem (já ordenadas por pontuação decrescente). Preserva o
+  // destaque das DUAS barras em caso de empate total (TAREFA 2).
+  const LARANJA_DOMINANTE = "#D9720F";
+  const TONS_GANHO_NAO_DOMINANTE = ["#F5A623", "#FBD98A"];
   let rankNaoDominante = 0;
 
   const barras = porCasa
@@ -612,7 +621,7 @@ function svgModoDeGanho(earningModes: EarningMode[], casasDominantes: number[]):
       // desempate/co-dominância da TAREFA 2), não de recalcular o máximo
       // aqui — evita divergir, e destaca as DUAS barras em caso de empate.
       const dominante = casasDominantes.includes(e.house);
-      const cor = dominante ? AZUL : (TONS_AZUL_NAO_DOMINANTE[rankNaoDominante++] ?? TONS_AZUL_NAO_DOMINANTE[TONS_AZUL_NAO_DOMINANTE.length - 1]);
+      const cor = dominante ? LARANJA_DOMINANTE : (TONS_GANHO_NAO_DOMINANTE[rankNaoDominante++] ?? TONS_GANHO_NAO_DOMINANTE[TONS_GANHO_NAO_DOMINANTE.length - 1]);
       const corTexto = AZUL;
       const [linha1, linha2] = CASA_LABEL_LINHAS[e.house] ?? ["", ""];
       return `
@@ -675,22 +684,28 @@ function quebrarLinhas(texto: string, maxCarPorLinha: number): string[] {
 }
 
 /** Diagrama de identidade — linhas de convergência dos 7 sinais (características, por peso decrescente) para um círculo central com a frase IDENTIDADE: do LLM. Os sinais e as suas posições são sempre determinísticos; só o texto dentro do círculo vem do LLM. */
-function svgDiagramaIdentidade(sinais: string[], identidade: string): string {
+function svgDiagramaIdentidade(sinais: [string, string][], identidade: string): string {
   const largura = 680;
-  const margemTexto = 230;
+  // Correcção do especialista ("ORDEM — nomenclatura/cor") — os novos
+  // títulos renomeados (mesmos da tabela de peso, "mesma característica,
+  // mesmo nome em todo o relatório") são mais longos que os antigos —
+  // margem e espaçamento entre linhas aumentados, e cada sinal passa a
+  // ter 2 linhas (`sinaisIdentidade` já devolve o par pronto).
+  const margemTexto = 250;
   const cxCirculo = 490;
   const raioCirculo = 92;
-  const gapLinha = 34;
+  const gapLinha = 46;
   const topo = 20;
   const alturaSinais = sinais.length * gapLinha;
   const cyCirculo = Math.max(topo + alturaSinais / 2, raioCirculo + 16);
   const altura = Math.max(cyCirculo + raioCirculo + 20, topo + alturaSinais + 20);
 
   const linhas = sinais
-    .map((s, i) => {
+    .map(([linha1, linha2], i) => {
       const y = topo + i * gapLinha + gapLinha / 2;
       return `
-      <text x="${margemTexto - 10}" y="${y + 5}" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="14" fill="#1A1A1A">${escapeHtml(s)}</text>
+      <text x="${margemTexto - 10}" y="${y - 5}" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="11" font-weight="700" fill="#1A1A1A">${escapeHtml(linha1)}</text>
+      <text x="${margemTexto - 10}" y="${y + 8}" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="11" font-weight="700" fill="#1A1A1A">${escapeHtml(linha2)}</text>
       <path d="M ${margemTexto} ${y} L ${cxCirculo - raioCirculo - 6} ${cyCirculo}" stroke="${AMBAR}" stroke-width="1.5" fill="none" opacity="0.75" />
       <circle cx="${margemTexto}" cy="${y}" r="3" fill="${AMBAR}" />`;
     })
@@ -966,38 +981,12 @@ function blocoDiagramaPonte(dados: DadosParaTemplate, pesos: PesoPlaneta[], axes
     </div>`;
 }
 
-/**
- * Correcção do especialista ("redesenhar 'Porque esta opção não é
- * acidente'", pós-PDF real) — o diagrama radial anterior (círculo
- * central + linhas a convergir) tinha densidade visual inconsistente
- * entre cartões: 2 a 7 camadas por candidata produziam diagramas de
- * tamanho e peso muito diferentes, sem lógica aparente para quem lê
- * vários seguidos. Substituído pelo MESMO estilo de cartão já usado e
- * confirmado elegante nos cartões "Dom"/"A desenvolver" da secção "Quem
- * é" (borda colorida à esquerda + fundo suave + título + lista simples)
- * — mesma informação (as camadas traduzidas por `rotuloHumanoCamada`,
- * importada de `@naveya/method-engine`, o mesmo mecanismo usado agora
- * também na frase de dom de cada candidata — nunca um segundo
- * tradutor), sem diagrama. Nome da candidata já aparece no cartão de
- * texto logo a seguir (`card-candidata-nome`) — não precisa de se
- * repetir aqui.
- */
-function blocoDiagramaConvergencia(_nome: string, camadas: string[]): string {
-  if (!camadas.length) return "";
-  return `
-    <div class="card-convergencia">
-      <p class="card-convergencia-titulo">Porque esta opção não é acidente</p>
-      <ul>
-        ${camadas.map((c) => `<li>${escapeHtml(rotuloHumanoCamada(c))}</li>`).join("")}
-      </ul>
-    </div>`;
-}
-
 // ---------- Blocos HTML ----------
 
 /** Os "sinais" do diagrama de identidade — reaproveita os mesmos rótulos humanos já usados no gráfico "O peso de cada característica" (caracteristicaPt), ordenados por peso decrescente. Sempre determinístico, nunca do LLM. */
-function sinaisIdentidade(pesos: PesoPlaneta[], usarTu: boolean): string[] {
-  return [...pesos].sort((a, b) => b.peso - a.peso).map((p) => caracteristicaPt(p.planeta, usarTu));
+/** Correcção do especialista ("ORDEM — nomenclatura/cor") — usa os MESMOS nomes renomeados da tabela de peso (`CARACTERISTICA_TITULO_TABELA_PESO_LINHAS`), nunca os rótulos antigos de `caracteristicaPt` — mesma característica, mesmo nome em todo o relatório. */
+function sinaisIdentidade(pesos: PesoPlaneta[], usarTu: boolean): [string, string][] {
+  return [...pesos].sort((a, b) => b.peso - a.peso).map((p) => CARACTERISTICA_TITULO_TABELA_PESO_LINHAS[p.planeta] ?? [caracteristicaPt(p.planeta, usarTu), ""]);
 }
 
 function blocoDiagramaIdentidade(pesos: PesoPlaneta[], identidade: string | null, usarTu: boolean): string {
@@ -1067,73 +1056,13 @@ interface ItemAtrito {
 }
 
 /**
- * TAREFA 3C (correcção do especialista) — substitui a tabela "Onde o
- * perfil tem atrito" por um diagrama SVG: centro = a tese central do
- * relatório (marcador IDENTIDADE: já escrito pelo LLM — nunca inventado
- * aqui, ver FALTA 2), um nó por planeta fraco (peso < 0,9 — mesmos dados
- * reais de sempre, nunca texto inventado), rótulo "O que resiste:
- * <planeta>" + a implicação prática (IMPLICACAO_PRATICA_PLANETA, já
- * existente, TAREFA 4 de uma ronda anterior). Posicionamento dinâmico —
- * altura de cada nó calculada a partir do nº real de linhas do seu
- * texto (o diagrama de convergência da candidata fora da lista usava a
- * mesma técnica; foi substituído por um cartão simples, ver
- * `blocoDiagramaConvergencia`).
+ * Correcção do especialista ("ORDEM — nomenclatura/cor") — substitui o
+ * diagrama radial SVG que aqui existia (círculo central + linhas para
+ * Mercúrio/Vénus/Marte, "desalinhado e pouco profissional") pelo mesmo
+ * estilo de cartão já confirmado elegante em `.card-dom`/
+ * `.card-limitacao` — borda colorida à esquerda + fundo suave + título
+ * + lista simples, sem linhas radiais.
  */
-function svgDiagramaAtrito(identidade: string, itens: ItemAtrito[]): string {
-  const largura = 720;
-  const raioCentro = 85;
-  const lineHeightRotulo = 15;
-  const lineHeightImplicacao = 13;
-  const gapEntreNos = 20;
-  const topo = 20;
-  const maxCarLinhaRotulo = 30;
-  const maxCarLinhaImplicacao = 38;
-  const cx = largura - raioCentro - 40;
-  const margemTexto = cx - raioCentro - 46;
-  const pontoDeEntrada = cx - raioCentro - 8;
-  const raioNoX = 9;
-  const raioNoY = 6;
-
-  let cursorY = topo;
-  const nos = itens.map((item) => {
-    const rotulo = `O que resiste: ${PLANETA_PT[item.planeta] ?? item.planeta}`;
-    const linhasRotulo = quebrarLinhas(rotulo, maxCarLinhaRotulo);
-    const linhasImplicacao = quebrarLinhas(item.implicacao, maxCarLinhaImplicacao);
-    const alturaRotulo = linhasRotulo.length * lineHeightRotulo;
-    const alturaImplicacao = linhasImplicacao.length * lineHeightImplicacao;
-    const blocoAltura = alturaRotulo + 4 + alturaImplicacao;
-    const centroY = cursorY + blocoAltura / 2;
-    cursorY += blocoAltura + gapEntreNos;
-    const primeiraLinhaRotuloY = centroY - blocoAltura / 2 + lineHeightRotulo - 2;
-    const tspansRotulo = linhasRotulo.map((l, i) => `<tspan x="${margemTexto - 8}" y="${primeiraLinhaRotuloY + i * lineHeightRotulo}">${escapeHtml(l)}</tspan>`).join("");
-    const inicioImplicacaoY = primeiraLinhaRotuloY + (linhasRotulo.length - 1) * lineHeightRotulo + lineHeightImplicacao + 2;
-    const tspansImplicacao = linhasImplicacao.map((l, i) => `<tspan x="${margemTexto - 8}" y="${inicioImplicacaoY + i * lineHeightImplicacao}">${escapeHtml(l)}</tspan>`).join("");
-    return { centroY, tspansRotulo, tspansImplicacao };
-  });
-
-  const alturaNos = cursorY - gapEntreNos - topo;
-  const cy = Math.max(topo + alturaNos / 2, raioCentro + 20);
-  const altura = Math.max(cy + raioCentro + 20, topo + alturaNos + 20);
-
-  const linhasIdentidade = quebrarLinhas(identidade, 15);
-  const inicioY = cy - (linhasIdentidade.length - 1) * 9;
-  const tspansIdentidade = linhasIdentidade.map((l, i) => `<tspan x="${cx}" y="${inicioY + i * 18}">${escapeHtml(l)}</tspan>`).join("");
-
-  return `<svg viewBox="0 0 ${largura} ${altura}" width="100%" style="max-width:${largura}px;height:auto" xmlns="http://www.w3.org/2000/svg">
-    ${nos
-      .map(
-        (n) => `
-      <text text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="${VERMELHO}">${n.tspansRotulo}</text>
-      <text text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="11" fill="#4A4A4A">${n.tspansImplicacao}</text>
-      <path d="M ${margemTexto} ${n.centroY} L ${pontoDeEntrada} ${cy}" stroke="${AMBAR}" stroke-width="2" fill="none" opacity="0.8" />
-      <ellipse cx="${margemTexto}" cy="${n.centroY}" rx="${raioNoX}" ry="${raioNoY}" fill="${VERMELHO}" />`,
-      )
-      .join("")}
-    <circle cx="${cx}" cy="${cy}" r="${raioCentro}" fill="${AZUL}" />
-    <text text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#FFFFFF">${tspansIdentidade}</text>
-  </svg>`;
-}
-
 function blocoDiagramaAtrito(pesos: PesoPlaneta[], identidade: string | null): string {
   const fracos = [...pesos].filter((p) => p.peso < 0.9).sort((a, b) => a.peso - b.peso);
   if (!fracos.length) return "";
@@ -1143,9 +1072,14 @@ function blocoDiagramaAtrito(pesos: PesoPlaneta[], identidade: string | null): s
     implicacao: IMPLICACAO_PRATICA_PLANETA[p.planeta] ?? "Esta parte do perfil está enfraquecida — o que a tese central pede aqui não é natural, tem de ser construído com esforço consciente.",
   }));
   return `
-    <div class="anexo-espaco atrito-wrap">
+    <div class="anexo-espaco">
       <p class="rotulo-pequeno" style="text-align:center">Onde o perfil tem atrito</p>
-      <div class="grafico-wrap grafico-centrado">${svgDiagramaAtrito(identidade ?? "O que este perfil sustenta", itens)}</div>
+      <div class="card-atrito">
+        <p class="card-atrito-titulo">O que resiste a "${escapeHtml(identidade ?? "o que este perfil sustenta")}"</p>
+        <ul>
+          ${itens.map((item) => `<li><strong>${escapeHtml(PLANETA_PT[item.planeta] ?? item.planeta)}</strong> — ${escapeHtml(item.implicacao)}</li>`).join("")}
+        </ul>
+      </div>
     </div>`;
 }
 
@@ -1412,7 +1346,7 @@ function blocoTabelaResumoCandidatas(resumo: { nome: string; nivel: 1 | 2 | unde
     .join("");
   return `
     <div class="tabela-resumo-candidatas-wrap">
-      <p class="bloco-titulo">Resumo das candidatas</p>
+      <p class="bloco-titulo">Resumo das Opções</p>
       <table class="tabela-anexo">
         <thead><tr><th>Opção</th><th class="col-numero">Nível</th><th>Via de entrada</th><th>Custo principal</th></tr></thead>
         <tbody>${linhas}</tbody>
@@ -1499,6 +1433,26 @@ function candidatasPorCasas(casas: number[], candidatas: CandidataForaDaLista[])
   return [...encontrados.values()];
 }
 
+/**
+ * Correcção do especialista ("ORDEM — nomenclatura/cor", 6c) — texto de
+ * síntese que abre o capítulo, ANTES de qualquer opção listada:
+ * o que o capítulo faz, porque estas áreas estão a ser consideradas à
+ * luz do perfil, e porque a pessoa deve olhar para elas especificamente
+ * a partir da leitura da sua carta. Determinístico (nunca do LLM) — o
+ * mesmo padrão já aplicado às explicações dos 4 gráficos: uma frase de
+ * síntese fixa não tem risco de omissão, ao contrário de pedir ao LLM
+ * para a escrever a cada geração.
+ */
+function introOpcoesForaDaLista(minConvergencia: number, usarTu: boolean): string {
+  const seu = usarTu ? "teu" : "seu";
+  const sua = usarTu ? "tua" : "sua";
+  return `
+    <div class="caixa-neutra">
+      <p>${usarTu ? "Esta secção reúne áreas que o teu perfil sustenta com força" : "Esta secção reúne áreas que o seu perfil sustenta com força"} — mesmo sem terem estado na ${sua} lista original de opções. Nenhuma delas é uma sugestão genérica: cada uma só chega até aqui quando pelo menos ${minConvergencia} sinais independentes da ${sua} carta — regência de casa, dignidade planetária, o planeta mais forte do ${seu} perfil, entre outros — convergem na mesma direcção. Nenhuma é acidente.</p>
+      <p>${usarTu ? "Olha para elas" : "Vale a pena olhar para elas"} porque a leitura que se segue não vem de uma lista de profissões populares — vem especificamente do ${seu} mapa. O que cada uma explica, a seguir, é só isso: porque faz sentido dentro do que a ${sua} carta já sustenta. A duração de formação, a via de entrada e o custo principal de cada opção estão resumidos numa tabela no fim desta secção — não repetidos aqui.</p>
+    </div>`;
+}
+
 function blocoCandidataForaDaLista(corpo: string, catalogo: ResultadoCatalogoVocacional | null, usarTu: boolean): string {
   const corpoNormalizado = normalizarBlocosCandidataImplicitos(corpo);
   const { candidatas, textoSemCandidata } = parseCandidataForaDaLista(corpoNormalizado);
@@ -1510,46 +1464,48 @@ function blocoCandidataForaDaLista(corpo: string, catalogo: ResultadoCatalogoVoc
   for (const g of grupos) for (const nome of g.membros) grupoPorNome.set(nome, g);
   const gruposJaRenderizados = new Set<GrupoCandidatasTexto>();
   const resumoParaTabela: { nome: string; nivel: 1 | 2 | undefined; via: string | null; custo: string | null }[] = [];
+  const dadosPorNome = new Map(candidatas.map((c) => [c.nome, catalogo?.candidatasForaDaLista.find((cat) => cat.nome === c.nome)]));
+  // 4 é o limiar mínimo de convergência que `catalogarDestinos()` exige
+  // para uma opção sequer entrar na pool (LIMIAR_MINIMO_CANDIDATA em
+  // catalogoVocacional.ts) — só serve de fallback se, por algum motivo,
+  // uma opção escrita pelo LLM não tiver dados correspondentes no
+  // catálogo (não deveria acontecer em condições normais).
+  const minConvergencia = Math.min(...[...dadosPorNome.values()].map((d) => d?.convergencia ?? 4));
 
+  // Correcção do especialista ("ORDEM — nomenclatura/cor", 6b/6d) — a
+  // caixa "Porque esta opção não é acidente" (antigo `blocoDiagramaConvergencia`)
+  // deixa de se repetir por opção (24 caixas repetidas no PDF real) — a
+  // ideia já fica dita UMA VEZ em `introOpcoesForaDaLista`. E a caixa
+  // âmbar `.card-candidata` por opção também desaparece — cada opção
+  // passa a ser só nome como subtítulo + parágrafo, com uma divisória
+  // fina entre opções (`.opcao-item`), nunca uma caixa colorida
+  // individual. Os grupos mantêm a frase de abertura partilhada, como
+  // já acontecia.
   const cartoes = candidatas
     .map((c) => {
-      const dadosCatalogo = catalogo?.candidatasForaDaLista.find((cat) => cat.nome === c.nome);
-      const camadas = dadosCatalogo?.camadas ?? [];
+      const dadosCatalogo = dadosPorNome.get(c.nome);
       const { textoLimpo, via, custo } = extrairResumoCandidata(c.texto);
       resumoParaTabela.push({ nome: c.nome, nivel: dadosCatalogo?.nivelConfianca, via, custo });
       const grupo = grupoPorNome.get(c.nome);
       let introGrupo = "";
       if (grupo && !gruposJaRenderizados.has(grupo)) {
         gruposJaRenderizados.add(grupo);
-        // Correcção do especialista (preview visual, cluster de 13 da
-        // Alice) — o diagrama repetia as mesmas 4 etiquetas em cada
-        // membro do grupo (a assinatura de tipos é, por definição, a
-        // mesma dentro de um grupo) — informação 100% redundante com o
-        // parágrafo partilhado, e pesada a partir da 3ª repetição. Agora
-        // o diagrama do grupo aparece UMA VEZ, junto da caixa partilhada,
-        // usando as camadas do 1º membro (a mesma assinatura de tipos de
-        // todos — as candidatas individuais dentro do grupo já não levam
-        // diagrama próprio, só o cartão de texto compacto).
         introGrupo = `
-        ${blocoDiagramaConvergencia(c.nome, camadas)}
         <div class="caixa-grupo-candidatas">
           <p class="card-candidata-header">${usarTu ? "Um conjunto de opções com a mesma convergência de base" : "Um conjunto de opções com a mesma convergência de base"}</p>
           ${markdownParaHtml(grupo.textoPartilhado)}
         </div>`;
       }
-      const diagramaIndividual = grupo ? "" : blocoDiagramaConvergencia(c.nome, camadas);
       return `
       ${introGrupo}
-      ${diagramaIndividual}
-      <div class="card-candidata${grupo ? " card-candidata-agrupada" : ""}">
-        <p class="card-candidata-header">${usarTu ? "Uma opção que ainda não consideraste" : "Uma opção que ainda não considerou"}</p>
-        <p class="card-candidata-nome">${escapeHtml(c.nome)}</p>
+      <div class="opcao-item">
+        <p class="opcao-nome">${escapeHtml(c.nome)}</p>
         ${markdownParaHtml(textoLimpo)}
       </div>`;
     })
     .join("\n");
 
-  return `${cartoes}\n${blocoTabelaResumoCandidatas(resumoParaTabela)}`;
+  return `${introOpcoesForaDaLista(minConvergencia, usarTu)}\n${cartoes}\n${blocoTabelaResumoCandidatas(resumoParaTabela)}`;
 }
 
 function blocoOPlano(corpo: string, datas: DadosDatas, usarTu: boolean): string {
@@ -1695,6 +1651,17 @@ const CARACTERISTICA_TITULO_TABELA_PESO: Record<string, string> = {
   Jupiter: "EXPANSÃO E DIRECÇÃO DE CRESCIMENTO (JÚPITER)",
   Venus: "VALOR PRÓPRIO E PRAZER (VÉNUS)",
   Saturn: "RESISTÊNCIA, DISCIPLINA E EXIGÊNCIA (SATURNO)",
+};
+
+/** Mesmo título de `CARACTERISTICA_TITULO_TABELA_PESO`, partido em 2 linhas para caber no eixo Y do gráfico de barras SVG (correcção do especialista — os novos títulos, mais longos que os antigos, precisam do rótulo dividido para não sair cortado). */
+const CARACTERISTICA_TITULO_TABELA_PESO_LINHAS: Record<string, [string, string]> = {
+  Sun: ["PROPÓSITO E", "IDENTIDADE (SOL)"],
+  Moon: ["INTUIÇÃO E RESPOSTA", "EMOCIONAL (LUA)"],
+  Mars: ["INICIATIVA E ACÇÃO", "(MARTE)"],
+  Mercury: ["COMUNICAÇÃO E", "DECISÃO (MERCÚRIO)"],
+  Jupiter: ["EXPANSÃO E DIRECÇÃO", "DE CRESCIMENTO (JÚPITER)"],
+  Venus: ["VALOR PRÓPRIO E", "PRAZER (VÉNUS)"],
+  Saturn: ["RESISTÊNCIA, DISCIPLINA", "E EXIGÊNCIA (SATURNO)"],
 };
 
 interface DetalheCaracteristica {
@@ -2148,8 +2115,6 @@ export function gerarHTMLRelatorio(
   .grafico-explicacao-llm p { margin: 0 0 10px; }
   .grafico-explicacao-llm p:last-child { margin-bottom: 0; }
   .linha-explicacao-llm { display: block; font-style: normal; color: #4A4A4A; margin-top: 2px; }
-  /* TAREFA 3C — diagrama "Onde o perfil tem atrito" (substitui a tabela anterior). */
-  .atrito-wrap { text-align: center; }
 
   .roda-vida-wrap { margin-top: 20px; text-align: center; }
   .roda-vida-titulo { text-align: center; margin-bottom: 2px; }
@@ -2188,23 +2153,24 @@ export function gerarHTMLRelatorio(
   .caixa-sintese-quemE { background: var(--azul); color: #FFFFFF; border-radius: 10px; padding: 20px 22px; margin-top: 8px; }
   .caixa-sintese-quemE p { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.6; }
 
-  /* Correcção do especialista ("redesenhar 'Porque esta opção não é acidente'", pós-PDF real) — substitui o diagrama radial (densidade visual inconsistente, 2-7 linhas a convergir por candidata) pelo mesmo estilo de cartão já confirmado elegante em .card-dom/.card-limitacao — borda âmbar à esquerda + fundo suave + título + lista simples, densidade sempre previsível independentemente do nº de camadas. */
-  .card-convergencia { background: #fff8e1; border-left: 3px solid var(--ambar); border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; page-break-inside: avoid; break-inside: avoid; }
-  .card-convergencia-titulo { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--ambar); margin: 0 0 8px; }
-  .card-convergencia ul { margin: 0; padding-left: 18px; }
-  .card-convergencia li { font-size: 14px; line-height: 1.6; margin-bottom: 3px; }
-  .card-convergencia li:last-child { margin-bottom: 0; }
+  /* Correcção do especialista ("ORDEM — nomenclatura/cor") — substitui o diagrama radial "Onde o perfil tem atrito" pelo mesmo estilo de cartão já confirmado elegante em .card-dom/.card-limitacao, com a cor de aviso (vermelho) em vez de âmbar — mantém a leitura "isto pede atenção" que o vermelho já tinha no diagrama antigo. */
+  .card-atrito { background: #fbeee9; border-left: 3px solid ${VERMELHO}; border-radius: 8px; padding: 14px 16px; page-break-inside: avoid; break-inside: avoid; }
+  .card-atrito-titulo { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: ${VERMELHO}; margin: 0 0 8px; }
+  .card-atrito ul { margin: 0; padding-left: 18px; }
+  .card-atrito li { font-size: 14px; line-height: 1.6; margin-bottom: 6px; }
+  .card-atrito li:last-child { margin-bottom: 0; }
 
-  .card-candidata { border: 2px solid var(--ambar); border-radius: 10px; padding: 20px; page-break-inside: avoid; break-inside: avoid; }
   .card-candidata-header { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--ambar); margin: 0 0 6px; }
-  .card-candidata-nome { font-size: 18px; font-weight: 700; color: var(--azul); margin: 0 0 12px; }
   .caixa-neutra { background: var(--cinza-claro); border-radius: 10px; padding: 20px; }
 
-  /* Correcção do especialista ("remover o tecto fixo de 3, com agrupamento por cluster") — caixa da convergência de base partilhada, uma vez por grupo; os cards individuais a seguir ficam mais compactos (só a diferenciação). page-break-inside: avoid em ambas — bug visto no preview impresso (PDF): "Formação de Professores", o último item do cluster de 13, perdia a moldura ao atravessar uma quebra de página porque nem o card nem a caixa do grupo tinham esta regra. */
+  /* Correcção do especialista ("ORDEM — nomenclatura/cor", 6d) — a caixa âmbar por opção (antigo .card-candidata) some: 24 caixas repetidas no PDF real não eram elegantes. Cada opção passa a ser só nome como subtítulo + parágrafo, com uma divisória fina acima (a primeira opção fica separada do texto de síntese que a antecede pela mesma divisória — leitura consistente). */
+  .opcao-item { border-top: 1px solid #E6E6E6; padding-top: 14px; margin-top: 14px; page-break-inside: avoid; break-inside: avoid; }
+  .opcao-nome { font-size: 18px; font-weight: 700; color: var(--azul); margin: 0 0 8px; }
+
+  /* Correcção do especialista ("remover o tecto fixo de 3, com agrupamento por cluster") — caixa da convergência de base partilhada, uma vez por grupo. page-break-inside: avoid — bug visto no preview impresso (PDF): "Formação de Professores", o último item do cluster de 13, perdia a moldura ao atravessar uma quebra de página porque a caixa do grupo não tinha esta regra. */
   .caixa-grupo-candidatas { background: var(--cinza-claro); border-left: 4px solid var(--ambar); border-radius: 10px; padding: 18px 20px; margin-bottom: 6px; page-break-inside: avoid; break-inside: avoid; }
   .caixa-grupo-candidatas p { font-size: 14px; margin: 0 0 10px; }
   .caixa-grupo-candidatas p:last-child { margin-bottom: 0; }
-  .card-candidata-agrupada { padding: 16px 20px; margin-bottom: 20px; page-break-inside: avoid; break-inside: avoid; }
 
   .timeline-wrap { overflow-x: auto; margin-bottom: 8px; }
   .destaque-passo { margin-top: 24px; }
@@ -2355,7 +2321,7 @@ export function gerarHTMLRelatorio(
     </section>
 
     <section class="seccao">
-      <h2 class="titulo-seccao">${escapeHtml(SECCAO_TITULOS.candidataForaDaLista)}</h2>
+      <h2 class="titulo-seccao">${usarTu ? "Opções que ainda não consideraste" : "Opções que ainda não considerou"}</h2>
       ${blocoCandidataForaDaLista(seccoes[SECCAO_TITULOS.candidataForaDaLista] ?? "", catalogoResultados, usarTu)}
     </section>
 

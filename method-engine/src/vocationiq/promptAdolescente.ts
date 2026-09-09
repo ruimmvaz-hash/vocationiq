@@ -149,10 +149,16 @@ ${MARCADORES.insight} <uma frase que resume a leitura desta opção em menos de 
   // Passo 1 (ligação narrativa), agrupadas por convergência de base quase
   // idêntica quando aplicável (INSTRUCAO_SELECCAO_CANDIDATAS, importada
   // de promptAdulto.ts — mesma regra nos dois motores, nunca duplicada).
-  const instrucaoCandidata = `Se a pool tiver 1 ou mais candidatas, primeiro escreve o bloco único "${MARCADORES.seleccaoCandidatas}" (ver INSTRUCAO_SELECCAO_CANDIDATAS). Depois, para cada candidata que passou o Passo 1 (ligação narrativa), um de dois formatos — em AMBOS, abre sempre com a frase de dom (ver INSTRUCAO_ABERTURA_CANDIDATAS: usa o FACTOR DE DOM já dado e traduzido, nunca a duração do curso primeiro):
-FORMATO INDIVIDUAL (sem grupo): "${MARCADORES.candidata} <nome exacto>" seguido da frase de dom, depois no máximo 1 linha de via concreta (resume "-- Via concreta para <nome> --" da secção "Candidatas do catálogo" acima — nunca reproduzas o bloco inteiro), depois prós/contras. Nunca nomeies uma entidade concreta.
-FORMATO DE GRUPO (2+ candidatas da secção "Grupos de candidatas" que passaram o Passo 1): "${MARCADORES.grupo} <nome1>; <nome2>; ..." seguido da frase de dom + convergência de base partilhada por todo o grupo, escrita uma só vez — depois um bloco "${MARCADORES.candidata} <nome exacto>" por membro, cada um só com a sua diferenciação (2-4 linhas: no máximo 1 linha de via concreta dela, prós/contras, porquê esta e não as outras do grupo), sem repetir a frase de dom nem a convergência de base.
-Em cada candidata (individual ou membro de grupo), inclui também duas linhas próprias: "${MARCADORES.viaResumida} <3-8 palavras>" (resume a via concreta já dada) e "${MARCADORES.custoPrincipal} <3-8 palavras>" com o principal custo/trade-off desta via — ambas curtas, específicas, nunca genéricas nem repetidas iguais entre candidatas.
+  // Correcção do especialista ("ORDEM — nomenclatura/cor", 6e) — a
+  // menção de percurso/duração no corpo do texto foi removida (fica só
+  // nas linhas VIA_RESUMIDA:/CUSTO_PRINCIPAL:, que alimentam a
+  // tabela-resumo) — repeti-la como prosa era redundante com a tabela.
+  // Cada opção passa a explicar só uma coisa: porque faz sentido dentro
+  // deste perfil especificamente.
+  const instrucaoCandidata = `Se a pool tiver 1 ou mais candidatas, primeiro escreve o bloco único "${MARCADORES.seleccaoCandidatas}" (ver INSTRUCAO_SELECCAO_CANDIDATAS). Depois, para cada candidata que passou o Passo 1 (ligação narrativa), um de dois formatos — em AMBOS, abre sempre com a frase de dom (ver INSTRUCAO_ABERTURA_CANDIDATAS: usa o FACTOR DE DOM já dado e traduzido) e NUNCA menciona duração de curso, trajecto ou via de entrada no corpo do texto:
+FORMATO INDIVIDUAL (sem grupo): "${MARCADORES.candidata} <nome exacto>" seguido da frase de dom, depois 1 a 3 frases sobre porque esta área faz sentido especificamente dentro deste perfil (que outros sinais reforçam a ligação). Nunca percurso/formação, nunca nomeies uma entidade concreta.
+FORMATO DE GRUPO (2+ candidatas da secção "Grupos de candidatas" que passaram o Passo 1): "${MARCADORES.grupo} <nome1>; <nome2>; ..." seguido da frase de dom + convergência de base partilhada por todo o grupo, escrita uma só vez — depois um bloco "${MARCADORES.candidata} <nome exacto>" por membro, cada um só com a sua diferenciação (1-3 linhas: porquê esta e não as outras do grupo, nunca via concreta), sem repetir a frase de dom nem a convergência de base.
+Em cada candidata (individual ou membro de grupo), inclui também duas linhas próprias: "${MARCADORES.viaResumida} <3-8 palavras>" (resume a via concreta já dada) e "${MARCADORES.custoPrincipal} <3-8 palavras>" com o principal custo/trade-off desta via — ambas curtas, específicas, nunca genéricas nem repetidas iguais entre candidatas. É AQUI, e só aqui, que a via/duração pode aparecer.
 Apresenta TODAS as candidatas que passaram o Passo 1, sem limite de 3 — nunca "escolher até 3", isso já não é a regra.`;
 
   return `
