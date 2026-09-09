@@ -90,9 +90,19 @@ export async function POST(request: Request) {
   const intake = await obterIntake(intakeId);
   if (!intake) return NextResponse.json({ error: "Pedido não encontrado." }, { status: 404 });
   if (intake.payment_status !== "paid") return NextResponse.json({ error: "Este pedido ainda não está pago." }, { status: 400 });
-  // VOCATIONIQ-ADULTO-metodologia.md só cobre o ramo "trabalho-quero-mudar" (secção 6).
-  if (intake.situacao !== "trabalho-quero-mudar") {
-    return NextResponse.json({ error: `Motor de geração ainda só suporta o ramo "Já trabalho e quero mudar" (este pedido: "${SITUACAO_LABEL[intake.situacao] ?? intake.situacao}").` }, { status: 400 });
+  // VOCATIONIQ-ADULTO-metodologia.md cobre a fundo só o ramo "trabalho-
+  // quero-mudar" (secção 6). Correcção do especialista (solução de
+  // emergência — 2 pedidos pagos com BETA200 bloqueados, "universidade"/
+  // "outra" nunca tiveram ramo próprio construído) — passam agora pelo
+  // MESMO motor adulto, com o quadro de dados adaptado minimamente em
+  // `construirIntakeAdulto` (relatorioAdultoCompute.ts): "área actual"/
+  // "anos de experiência" deixam de ficar em branco, mas o resto do
+  // prompt/metodologia é idêntico ao ramo "trabalho-quero-mudar" — nunca
+  // uma metodologia própria escrita para estes 2 ramos. Formulário de
+  // intake deixa de oferecer estas 2 opções (IntakeForm.tsx) enquanto não
+  // houver um ramo dedicado a sério.
+  if (intake.situacao !== "trabalho-quero-mudar" && intake.situacao !== "universidade" && intake.situacao !== "outra") {
+    return NextResponse.json({ error: `Motor de geração ainda só suporta os ramos "Já trabalho e quero mudar", "Estou na universidade" e "Outra situação" (este pedido: "${SITUACAO_LABEL[intake.situacao] ?? intake.situacao}").` }, { status: 400 });
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;

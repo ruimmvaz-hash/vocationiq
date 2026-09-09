@@ -83,12 +83,18 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
   // Motor de geração cobre o ramo "trabalho-quero-mudar" (adulto,
   // VOCATIONIQ-ADULTO-metodologia.md) e, desde a TAREFA 1 (correcção do
   // especialista, ronda de produção do motor adolescente), também
-  // "9-ou-menos"/"10-11-12" — as secções 2 (Mapa técnico)/3 (Rascunho)/4
-  // (Auditoria)/5 (Prompt) ficam vazias/desactivadas nos restantes ramos
-  // ("universidade"/"outra").
+  // "9-ou-menos"/"10-11-12". Correcção do especialista (solução de
+  // emergência — 2 pedidos pagos bloqueados, "universidade"/"outra" nunca
+  // tiveram ramo próprio construído) — passam a usar o MESMO motor adulto,
+  // com o quadro de dados adaptado em `construirIntakeAdulto`
+  // (relatorioAdultoCompute.ts) — nunca uma metodologia nova escrita para
+  // estes 2 ramos. Formulário de intake deixa de os oferecer a partir de
+  // agora (IntakeForm.tsx); mantém-se aqui só para os pedidos já
+  // existentes com esta situação.
   const SITUACOES_ADOLESCENTE = new Set(["9-ou-menos", "10-11-12"]);
+  const SITUACOES_ADULTO_ADAPTADO = new Set(["trabalho-quero-mudar", "universidade", "outra"]);
   const ehAdolescente = SITUACOES_ADOLESCENTE.has(intake.situacao);
-  const podeGerarAutomatico = intake.situacao === "trabalho-quero-mudar" || ehAdolescente;
+  const podeGerarAutomatico = SITUACOES_ADULTO_ADAPTADO.has(intake.situacao) || ehAdolescente;
   const apiBaseRascunho = ehAdolescente ? "/api/relatorio-adolescente" : "/api/relatorio";
 
   const [rascunho, relatorioEntregue] = await Promise.all([

@@ -118,13 +118,50 @@ function construirDadosDatas(birth: BirthInput, agora: Date): DadosDatas {
   };
 }
 
+/**
+ * Correcção do especialista (solução de emergência — 2 pedidos pagos com
+ * BETA200 bloqueados: "universidade"/"outra" nunca tiveram ramo próprio
+ * construído, e o motor rejeitava-os com HTTP 400). Estes dois ramos
+ * passam a usar o MESMO motor/prompt do ramo "trabalho-quero-mudar" —
+ * nunca uma metodologia nova — só com "área actual"/"anos de
+ * experiência" adaptados para não ficarem em branco (as colunas
+ * `area_trabalho_actual`/`anos_experiencia` nunca são preenchidas por
+ * estes 2 ramos no formulário). Nunca inventa experiência profissional
+ * que a pessoa não tem — diz honestamente que não se aplica.
+ *
+ * "Estudante do ensino superior" (não "Estudante universitária/o") por
+ * ser neutro em género — o pedido original dava um exemplo com género
+ * marcado, mas este texto vai para qualquer pessoa que escolha
+ * "Estou na universidade", não só para os 2 pedidos desta emergência.
+ * `curso_actual`, quando preenchido, entra directamente (dado real, não
+ * inventado). `descricao_situacao` (a única entrada de texto livre do
+ * ramo "outra") alimenta `oQueNaoFunciona` — é literalmente a pessoa a
+ * descrever a sua situação nas próprias palavras, o mesmo papel que
+ * esse campo já tem no ramo "trabalho-quero-mudar".
+ */
+function areaActualAdaptada(intake: IntakeRow): string {
+  if (intake.situacao === "universidade") return intake.curso_actual ? `Estudante de ${intake.curso_actual}` : "Estudante do ensino superior";
+  if (intake.situacao === "outra") return "Situação não especificada";
+  return intake.area_trabalho_actual ?? "";
+}
+
+function anosExperienciaAdaptada(intake: IntakeRow): string {
+  if (intake.situacao === "universidade" || intake.situacao === "outra") return "Não aplicável — sem experiência profissional na área declarada";
+  return (intake.anos_experiencia && ANOS_LABEL[intake.anos_experiencia]) ?? "";
+}
+
+function oQueNaoFuncionaAdaptado(intake: IntakeRow): string | undefined {
+  if (intake.situacao === "outra") return intake.descricao_situacao ?? undefined;
+  return intake.o_que_nao_funciona ?? undefined;
+}
+
 function construirIntakeAdulto(intake: IntakeRow): VocationiqIntakeAdulto {
   return {
     nome: intake.nome,
     situacaoDeclarada: SITUACAO_LABEL[intake.situacao] ?? intake.situacao,
-    areaActual: intake.area_trabalho_actual ?? "",
-    anosExperiencia: (intake.anos_experiencia && ANOS_LABEL[intake.anos_experiencia]) ?? "",
-    oQueNaoFunciona: intake.o_que_nao_funciona ?? undefined,
+    areaActual: areaActualAdaptada(intake),
+    anosExperiencia: anosExperienciaAdaptada(intake),
+    oQueNaoFunciona: oQueNaoFuncionaAdaptado(intake),
     paraOndeQuerIr: intake.para_onde_quer_ir ?? undefined,
     perguntaEspecifica: intake.pergunta_especifica ?? undefined,
     ideiaConcreta: intake.ideia_concreta ?? undefined,

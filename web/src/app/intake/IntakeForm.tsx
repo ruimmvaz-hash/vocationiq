@@ -18,6 +18,17 @@ import {
 } from "@/lib/validation";
 import { logFunnelEvent } from "@/lib/eventLog";
 
+// Correcção do especialista (solução de emergência — 2 pedidos pagos
+// bloqueados por "universidade"/"outra" nunca terem ramo próprio
+// construído) — estes 2 ramos passaram a usar o motor adulto adaptado
+// (relatorioAdultoCompute.ts) como medida de emergência, mas não têm
+// metodologia própria a sério. Escondidos do formulário para novos
+// pedidos não caírem no mesmo caminho de emergência — `SITUACOES`
+// (validation.ts) mantém-se completo, para os pedidos já existentes
+// com esta situação continuarem a aparecer correctamente em todo o
+// resto do site (admin, emails, etc.).
+const SITUACOES_DISPONIVEIS = SITUACOES.filter((s) => s.valor !== "universidade" && s.valor !== "outra");
+
 interface FormState {
   nome: string;
   dataNascimento: string;
@@ -282,7 +293,7 @@ export function IntakeForm() {
               <option value="" disabled>
                 Escolhe uma opção
               </option>
-              {SITUACOES.map((s) => (
+              {SITUACOES_DISPONIVEIS.map((s) => (
                 <option key={s.valor} value={s.valor}>
                   {s.label}
                 </option>
