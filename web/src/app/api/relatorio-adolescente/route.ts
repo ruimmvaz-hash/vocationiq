@@ -33,7 +33,11 @@ const MAX_TOKENS = 16000;
 // de truncar a resposta a meio e perder critérios do fim sem aviso.
 const MAX_TOKENS_CRITICA = 8192;
 
-const SITUACOES_ADOLESCENTE = new Set(["9-ou-menos", "10-11-12"]);
+// "universidade" entrou (correcção do especialista) — ver o mesmo
+// comentário em relatorioAdultoCompute.ts: mesmo questionário e motor do
+// ramo adolescente, registo adulto via `ehPos12` (anoEscolaridade
+// gravado sempre como "pos-12" para este ramo).
+const SITUACOES_ADOLESCENTE = new Set(["9-ou-menos", "10-11-12", "universidade"]);
 
 /** Idêntica à de api/relatorio/route.ts — thinking sempre desligado, mesmo diagnóstico de "sem bloco de texto". */
 async function gerarTexto(client: Anthropic, prompt: string, maxTokens: number): Promise<string> {
@@ -77,7 +81,7 @@ export async function POST(request: Request) {
   if (!intake) return NextResponse.json({ error: "Pedido não encontrado." }, { status: 404 });
   if (intake.payment_status !== "paid") return NextResponse.json({ error: "Este pedido ainda não está pago." }, { status: 400 });
   if (!SITUACOES_ADOLESCENTE.has(intake.situacao)) {
-    return NextResponse.json({ error: `Esta rota só serve o ramo adolescente ("9º ano ou menos"/"10º-12º ano") — este pedido é "${intake.situacao}". Usa /api/relatorio para o ramo adulto.` }, { status: 400 });
+    return NextResponse.json({ error: `Esta rota só serve o ramo adolescente ("9º ano ou menos"/"10º-12º ano"/"universidade") — este pedido é "${intake.situacao}". Usa /api/relatorio para o ramo adulto.` }, { status: 400 });
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;

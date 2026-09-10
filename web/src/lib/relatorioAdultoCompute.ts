@@ -119,34 +119,37 @@ function construirDadosDatas(birth: BirthInput, agora: Date): DadosDatas {
 }
 
 /**
- * Correcção do especialista (solução de emergência — 2 pedidos pagos com
- * BETA200 bloqueados: "universidade"/"outra" nunca tiveram ramo próprio
- * construído, e o motor rejeitava-os com HTTP 400). Estes dois ramos
- * passam a usar o MESMO motor/prompt do ramo "trabalho-quero-mudar" —
- * nunca uma metodologia nova — só com "área actual"/"anos de
- * experiência" adaptados para não ficarem em branco (as colunas
- * `area_trabalho_actual`/`anos_experiencia` nunca são preenchidas por
- * estes 2 ramos no formulário). Nunca inventa experiência profissional
- * que a pessoa não tem — diz honestamente que não se aplica.
+ * Correcção do especialista (solução de emergência — 1 pedido pago com
+ * BETA200 bloqueado: "outra" nunca teve ramo próprio construído, e o
+ * motor rejeitava-o com HTTP 400). Este ramo passa a usar o MESMO
+ * motor/prompt do ramo "trabalho-quero-mudar" — nunca uma metodologia
+ * nova — só com "área actual"/"anos de experiência" adaptados para não
+ * ficarem em branco (as colunas `area_trabalho_actual`/`anos_experiencia`
+ * nunca são preenchidas por este ramo no formulário). Nunca inventa
+ * experiência profissional que a pessoa não tem — diz honestamente que
+ * não se aplica.
  *
- * "Estudante do ensino superior" (não "Estudante universitária/o") por
- * ser neutro em género — o pedido original dava um exemplo com género
- * marcado, mas este texto vai para qualquer pessoa que escolha
- * "Estou na universidade", não só para os 2 pedidos desta emergência.
- * `curso_actual`, quando preenchido, entra directamente (dado real, não
- * inventado). `descricao_situacao` (a única entrada de texto livre do
- * ramo "outra") alimenta `oQueNaoFunciona` — é literalmente a pessoa a
- * descrever a sua situação nas próprias palavras, o mesmo papel que
- * esse campo já tem no ramo "trabalho-quero-mudar".
+ * "universidade" SAIU desta adaptação (correcção do especialista) —
+ * deixou de ser um ramo "adulto adaptado": o questionário e o motor de
+ * geração são agora os mesmos do ramo adolescente (ver
+ * SITUACOES_ADOLESCENTE mais abaixo), por isso `construirIntakeAdulto`
+ * nunca chega a ser chamada para este situacao — as colunas
+ * `curso_actual`/`satisfacao_curso` só continuam a existir para os
+ * pedidos antigos, já entregues antes desta correcção (ver
+ * RespostasSituacao em admin/relatorios/[id]/page.tsx).
+ *
+ * `descricao_situacao` (a única entrada de texto livre do ramo "outra")
+ * alimenta `oQueNaoFunciona` — é literalmente a pessoa a descrever a sua
+ * situação nas próprias palavras, o mesmo papel que esse campo já tem no
+ * ramo "trabalho-quero-mudar".
  */
 function areaActualAdaptada(intake: IntakeRow): string {
-  if (intake.situacao === "universidade") return intake.curso_actual ? `Estudante de ${intake.curso_actual}` : "Estudante do ensino superior";
   if (intake.situacao === "outra") return "Situação não especificada";
   return intake.area_trabalho_actual ?? "";
 }
 
 function anosExperienciaAdaptada(intake: IntakeRow): string {
-  if (intake.situacao === "universidade" || intake.situacao === "outra") return "Não aplicável — sem experiência profissional na área declarada";
+  if (intake.situacao === "outra") return "Não aplicável — sem experiência profissional na área declarada";
   return (intake.anos_experiencia && ANOS_LABEL[intake.anos_experiencia]) ?? "";
 }
 
@@ -431,7 +434,13 @@ export async function calcularDadosAstrologicosAdolescente(intake: IntakeRow, co
   };
 }
 
-const SITUACOES_ADOLESCENTE = new Set(["9-ou-menos", "10-11-12"]);
+// "universidade" entrou (correcção do especialista) — deixou de ser um
+// ramo "adulto adaptado" (ver comentário em areaActualAdaptada acima):
+// usa o mesmo questionário e o mesmo motor do ramo adolescente, com o
+// registo adulto ("você") vindo do mecanismo `ehPos12` já existente
+// (anoEscolaridade gravado sempre como "pos-12" para este ramo, ver
+// IntakeForm.tsx), nunca uma terceira metodologia.
+const SITUACOES_ADOLESCENTE = new Set(["9-ou-menos", "10-11-12", "universidade"]);
 
 export interface RelatorioParaExibir {
   html: string;

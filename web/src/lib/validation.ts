@@ -1,7 +1,7 @@
 export const SITUACOES = [
   { valor: "9-ou-menos", label: "Estou no 9º ano ou menos" },
   { valor: "10-11-12", label: "Estou no 10º, 11º ou 12º ano" },
-  { valor: "universidade", label: "Estou na universidade" },
+  { valor: "universidade", label: "Estou na universidade ou já terminei o secundário" },
   { valor: "trabalho-quero-mudar", label: "Já trabalho e quero mudar" },
   { valor: "outra", label: "Outra situação" },
 ] as const;
@@ -217,7 +217,7 @@ export function validarIntake(body: unknown): { ok: true; dados: IntakePayload }
     situacao: situacao as Situacao,
   };
 
-  if (situacao === "9-ou-menos" || situacao === "10-11-12") {
+  if (situacao === "9-ou-menos" || situacao === "10-11-12" || situacao === "universidade") {
     const clarezaIdeia = typeof b.clarezaIdeia === "string" ? b.clarezaIdeia : "";
     if (!CLAREZA_IDEIA.some((c) => c.valor === clarezaIdeia)) return { ok: false, erro: "Falta responder se já tens ideia do que queres seguir." };
     dados.clarezaIdeia = clarezaIdeia as ClarezaIdeia;
@@ -240,18 +240,11 @@ export function validarIntake(body: unknown): { ok: true; dados: IntakePayload }
     dados.opcaoMaisProvavel = textoOpcional(b.opcaoMaisProvavel);
 
     // TAREFA 2 (correcção do especialista, ronda seguinte) — opcional, nunca bloqueia (rascunhos antigos/pessoa que não respondeu).
+    // Correcção do especialista — "universidade" nunca mostra este campo
+    // no formulário (IntakeForm.tsx) e envia sempre "pos-12" — aceite
+    // aqui pelo mesmo mecanismo, sem validação extra por situação.
     const anoEscolaridadeBruto = typeof b.anoEscolaridade === "string" ? b.anoEscolaridade : "";
     if (ANO_ESCOLARIDADE.some((a) => a.valor === anoEscolaridadeBruto)) dados.anoEscolaridade = anoEscolaridadeBruto as AnoEscolaridade;
-  } else if (situacao === "universidade") {
-    const cursoActual = typeof b.cursoActual === "string" ? b.cursoActual.trim() : "";
-    if (!cursoActual) return { ok: false, erro: "Falta indicar que curso estás a fazer." };
-    dados.cursoActual = cursoActual.slice(0, TEXTO_MAX);
-
-    const satisfacaoCurso = typeof b.satisfacaoCurso === "string" ? b.satisfacaoCurso : "";
-    if (!SATISFACAO_CURSO.some((s) => s.valor === satisfacaoCurso)) return { ok: false, erro: "Falta responder como te sentes em relação ao teu curso." };
-    dados.satisfacaoCurso = satisfacaoCurso as SatisfacaoCurso;
-
-    dados.paraOndeQuerIr = textoOpcional(b.paraOndeQuerIr);
   } else if (situacao === "trabalho-quero-mudar") {
     const areaTrabalhoActual = typeof b.areaTrabalhoActual === "string" ? b.areaTrabalhoActual.trim() : "";
     if (!areaTrabalhoActual) return { ok: false, erro: "Falta indicar em que área trabalhas actualmente." };

@@ -84,15 +84,24 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
   // VOCATIONIQ-ADULTO-metodologia.md) e, desde a TAREFA 1 (correcção do
   // especialista, ronda de produção do motor adolescente), também
   // "9-ou-menos"/"10-11-12". Correcção do especialista (solução de
-  // emergência — 2 pedidos pagos bloqueados, "universidade"/"outra" nunca
-  // tiveram ramo próprio construído) — passam a usar o MESMO motor adulto,
-  // com o quadro de dados adaptado em `construirIntakeAdulto`
-  // (relatorioAdultoCompute.ts) — nunca uma metodologia nova escrita para
-  // estes 2 ramos. Formulário de intake deixa de os oferecer a partir de
-  // agora (IntakeForm.tsx); mantém-se aqui só para os pedidos já
-  // existentes com esta situação.
-  const SITUACOES_ADOLESCENTE = new Set(["9-ou-menos", "10-11-12"]);
-  const SITUACOES_ADULTO_ADAPTADO = new Set(["trabalho-quero-mudar", "universidade", "outra"]);
+  // emergência — pedido pago bloqueado, "outra" nunca teve ramo próprio
+  // construído) — passa a usar o MESMO motor adulto, com o quadro de
+  // dados adaptado em `construirIntakeAdulto` (relatorioAdultoCompute.ts)
+  // — nunca uma metodologia nova escrita para este ramo. Formulário de
+  // intake deixa de o oferecer a partir de agora (IntakeForm.tsx);
+  // mantém-se aqui só para os pedidos já existentes com esta situação.
+  //
+  // "universidade" SAIU de SITUACOES_ADULTO_ADAPTADO e entrou em
+  // SITUACOES_ADOLESCENTE (correcção do especialista) — deixou de ser um
+  // ramo "adulto adaptado": usa agora o mesmo questionário e motor do
+  // ramo adolescente, com registo adulto ("você") via o mecanismo
+  // `ehPos12` já existente (anoEscolaridade gravado sempre como "pos-12"
+  // para este ramo, ver IntakeForm.tsx) — nunca uma terceira
+  // metodologia. `RespostasSituacao` abaixo continua a saber mostrar os
+  // pedidos "universidade" antigos (formato curso_actual/satisfacao_curso,
+  // anteriores a esta correcção).
+  const SITUACOES_ADOLESCENTE = new Set(["9-ou-menos", "10-11-12", "universidade"]);
+  const SITUACOES_ADULTO_ADAPTADO = new Set(["trabalho-quero-mudar", "outra"]);
   const ehAdolescente = SITUACOES_ADOLESCENTE.has(intake.situacao);
   const podeGerarAutomatico = SITUACOES_ADULTO_ADAPTADO.has(intake.situacao) || ehAdolescente;
   const apiBaseRascunho = ehAdolescente ? "/api/relatorio-adolescente" : "/api/relatorio";
@@ -285,9 +294,23 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
   );
 }
 
-/** Só mostra os campos relevantes para a situação declarada — nunca os das outras 4. */
+/**
+ * Só mostra os campos relevantes para a situação declarada — nunca os
+ * das outras 4.
+ *
+ * "universidade" (correcção do especialista) — passou a usar o
+ * questionário adolescente (ver IntakeForm.tsx), mas pedidos ANTIGOS com
+ * esta situação (anteriores à correcção) têm o formato antigo
+ * (curso_actual/satisfacao_curso/para_onde_quer_ir) — nunca
+ * clareza_ideia/opcoes_adolescente, porque esse formulário não existia
+ * ainda. Distingue pela PRESENÇA de dados, não só pelo valor de
+ * `situacao`, para nunca mostrar um formulário vazio a um pedido que na
+ * realidade respondeu ao outro.
+ */
 function RespostasSituacao({ intake }: { intake: IntakeRow }) {
-  if (intake.situacao === "9-ou-menos" || intake.situacao === "10-11-12") {
+  const universidadeFormatoNovo = intake.situacao === "universidade" && (!!intake.clareza_ideia || (intake.opcoes_adolescente && intake.opcoes_adolescente.length > 0));
+
+  if (intake.situacao === "9-ou-menos" || intake.situacao === "10-11-12" || universidadeFormatoNovo) {
     return (
       <Seccao titulo="Situação declarada">
         <Campo label="Opção escolhida" valor={SITUACAO_LABEL[intake.situacao] ?? intake.situacao} />

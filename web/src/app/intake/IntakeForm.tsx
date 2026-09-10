@@ -5,7 +5,6 @@ import {
   SITUACOES,
   CLAREZA_IDEIA,
   AREAS_CONSIDERADAS,
-  SATISFACAO_CURSO,
   ANOS_EXPERIENCIA,
   TIPO_MUDANCA,
   AREAS_DESTINO,
@@ -18,16 +17,25 @@ import {
 } from "@/lib/validation";
 import { logFunnelEvent } from "@/lib/eventLog";
 
-// Correcção do especialista (solução de emergência — 2 pedidos pagos
-// bloqueados por "universidade"/"outra" nunca terem ramo próprio
-// construído) — estes 2 ramos passaram a usar o motor adulto adaptado
-// (relatorioAdultoCompute.ts) como medida de emergência, mas não têm
-// metodologia própria a sério. Escondidos do formulário para novos
-// pedidos não caírem no mesmo caminho de emergência — `SITUACOES`
-// (validation.ts) mantém-se completo, para os pedidos já existentes
-// com esta situação continuarem a aparecer correctamente em todo o
-// resto do site (admin, emails, etc.).
-const SITUACOES_DISPONIVEIS = SITUACOES.filter((s) => s.valor !== "universidade" && s.valor !== "outra");
+// Correcção do especialista (solução de emergência — pedido pago
+// bloqueado por "outra" nunca ter ramo próprio construído) — este ramo
+// passou a usar o motor adulto adaptado (relatorioAdultoCompute.ts) como
+// medida de emergência, mas não tem metodologia própria a sério.
+// Escondido do formulário para novos pedidos não caírem no mesmo
+// caminho de emergência — `SITUACOES` (validation.ts) mantém-se
+// completo, para os pedidos já existentes com esta situação continuarem
+// a aparecer correctamente em todo o resto do site (admin, emails, etc.).
+//
+// "universidade" voltou a ser oferecido (correcção do especialista) —
+// deixou de ser um ramo "adulto adaptado": passa a usar exactamente o
+// mesmo questionário do ramo adolescente (ver o bloco de perguntas
+// partilhado abaixo) — a única diferença é que, para este ramo, o
+// "ano de escolaridade" nunca é perguntado (já se sabe a resposta) e é
+// sempre gravado como "pos-12", o que já fazia o motor gerar num
+// registo adulto ("você") através do mecanismo `ehPos12` existente
+// (ver api/relatorio-adolescente/route.ts) — nunca uma terceira
+// metodologia escrita de raiz.
+const SITUACOES_DISPONIVEIS = SITUACOES.filter((s) => s.valor !== "outra");
 
 interface FormState {
   nome: string;
@@ -97,8 +105,7 @@ const ESTADO_INICIAL: FormState = {
 
 function passo2Valido(f: FormState): boolean {
   if (!f.situacao) return false;
-  if (f.situacao === "9-ou-menos" || f.situacao === "10-11-12") return !!f.clarezaIdeia;
-  if (f.situacao === "universidade") return !!f.cursoActual.trim() && !!f.satisfacaoCurso;
+  if (f.situacao === "9-ou-menos" || f.situacao === "10-11-12" || f.situacao === "universidade") return !!f.clarezaIdeia;
   if (f.situacao === "trabalho-quero-mudar") {
     if (!f.areaTrabalhoActual.trim() || !f.anosExperiencia) return false;
     if (f.areasDestino.includes("outra") && !f.areasDestinoOutra.trim()) return false;
@@ -194,7 +201,13 @@ export function IntakeForm() {
         .map((o) => o.trim())
         .filter(Boolean),
       opcaoMaisProvavel: f.opcaoMaisProvavel,
-      anoEscolaridade: f.anoEscolaridade,
+      // Correcção do especialista — quem escolhe "Estou na universidade
+      // ou já terminei o secundário" nunca responde a esta pergunta (o
+      // campo nem é mostrado, ver JSX abaixo) — grava-se sempre como
+      // "pos-12", o mesmo valor que já fazia o motor gerar em registo
+      // adulto ("você") para quem terminou o secundário dentro do ramo
+      // adolescente (ver `ehPos12`, api/relatorio-adolescente/route.ts).
+      anoEscolaridade: f.situacao === "universidade" ? "pos-12" : f.anoEscolaridade,
       cursoActual: f.cursoActual,
       satisfacaoCurso: f.satisfacaoCurso,
       areaTrabalhoActual: f.areaTrabalhoActual,
@@ -301,7 +314,7 @@ export function IntakeForm() {
             </select>
           </Campo>
 
-          {(f.situacao === "9-ou-menos" || f.situacao === "10-11-12") && (
+          {(f.situacao === "9-ou-menos" || f.situacao === "10-11-12" || f.situacao === "universidade") && (
             <>
               <Campo label="Já tens alguma ideia do que queres seguir?" required>
                 <select value={f.clarezaIdeia} onChange={(e) => set("clarezaIdeia", e.target.value)} className={inputClass}>
@@ -316,16 +329,18 @@ export function IntakeForm() {
                 </select>
               </Campo>
 
-              <Campo label="Em que ano de escolaridade estás?" hint="Opcional, mas ajuda o relatório a adaptar-se ao momento de decisão certo.">
-                <select value={f.anoEscolaridade} onChange={(e) => set("anoEscolaridade", e.target.value)} className={inputClass}>
-                  <option value="">Prefiro não dizer</option>
-                  {ANO_ESCOLARIDADE.map((a) => (
-                    <option key={a.valor} value={a.valor}>
-                      {a.label}
-                    </option>
-                  ))}
-                </select>
-              </Campo>
+              {f.situacao !== "universidade" && (
+                <Campo label="Em que ano de escolaridade estás?" hint="Opcional, mas ajuda o relatório a adaptar-se ao momento de decisão certo.">
+                  <select value={f.anoEscolaridade} onChange={(e) => set("anoEscolaridade", e.target.value)} className={inputClass}>
+                    <option value="">Prefiro não dizer</option>
+                    {ANO_ESCOLARIDADE.map((a) => (
+                      <option key={a.valor} value={a.valor}>
+                        {a.label}
+                      </option>
+                    ))}
+                  </select>
+                </Campo>
+              )}
 
               <Campo label="Que áreas estás a considerar?">
                 <div className="grid gap-2 sm:grid-cols-2">
@@ -373,35 +388,6 @@ export function IntakeForm() {
                   placeholder="A que mais pensas neste momento..."
                   value={f.opcaoMaisProvavel}
                   onChange={(e) => set("opcaoMaisProvavel", e.target.value)}
-                  className={inputClass}
-                />
-              </Campo>
-            </>
-          )}
-
-          {f.situacao === "universidade" && (
-            <>
-              <Campo label="Que curso estás a fazer?" required>
-                <input type="text" value={f.cursoActual} onChange={(e) => set("cursoActual", e.target.value)} className={inputClass} />
-              </Campo>
-              <Campo label="Como te sentes em relação ao teu curso actual?" required>
-                <select value={f.satisfacaoCurso} onChange={(e) => set("satisfacaoCurso", e.target.value)} className={inputClass}>
-                  <option value="" disabled>
-                    Escolhe uma opção
-                  </option>
-                  {SATISFACAO_CURSO.map((s) => (
-                    <option key={s.valor} value={s.valor}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-              </Campo>
-              <Campo label="Se estás a pensar mudar, para onde?" hint="Opcional.">
-                <textarea
-                  placeholder="Ex: estou em gestão mas estou a pensar mudar para psicologia..."
-                  rows={3}
-                  value={f.paraOndeQuerIr}
-                  onChange={(e) => set("paraOndeQuerIr", e.target.value)}
                   className={inputClass}
                 />
               </Campo>
