@@ -933,6 +933,15 @@ export interface ResultadoCatalogoVocacional {
   notaAreaGenerica: string | null;
   /** Correcção do especialista (TAREFA 4a) — a condição 5 de eixo_do_rendimento ("casas 2 e 11 sem ligação à 10") nunca aponta para um destino específico; quando activa, fica aqui para o prompt citar com a `regraDeEscrita` curada (nunca como condenação). `null` quando a condição não se verifica nesta carta. */
   notaEixoDoRendimento: NotaEixoRendimento | null;
+  /**
+   * Correcção do especialista ("novo parágrafo de abertura em 'Opções
+   * que ainda não considerou', anti 'isto dá para tudo'") — duas
+   * candidatas reais da pool que partilham convergência de base, para o
+   * prompt citar no padrão "a mesma raiz que sustenta X sustenta também
+   * Y" — nunca hardcoded (ver `escolherParOpcoesContraste`). `null` só
+   * quando a pool tem menos de 2 candidatas.
+   */
+  parOpcoesContraste: [string, string] | null;
 }
 
 const LIMIAR_MINIMO_CANDIDATA = 4;
@@ -1138,6 +1147,89 @@ function agruparCandidatasPorAssinatura(candidatas: CandidataForaDaLista[]): str
     }
   }
   return grupos;
+}
+
+/** "Direito"/"Administração Pública" partilham a palavra "administração" só entre si — usado para preferir, dentro de um mesmo grupo/par, os dois nomes que soam mais afastados um do outro (nunca dois nomes que já pareçam parecidos, isso derrotaria o efeito retórico do parágrafo). 0 = nomes idênticos em palavras, 1 = nenhuma palavra partilhada. */
+function distanciaSuperficialNomes(a: string, b: string): number {
+  const palavrasA = new Set(palavrasSignificativas(a));
+  const palavrasB = new Set(palavrasSignificativas(b));
+  if (!palavrasA.size || !palavrasB.size) return 1;
+  const intersecao = [...palavrasA].filter((p) => palavrasB.has(p)).length;
+  const uniao = new Set([...palavrasA, ...palavrasB]).size;
+  return uniao === 0 ? 0 : 1 - intersecao / uniao;
+}
+
+/** O par, dentro de uma lista de nomes, com a maior distância superficial entre si — `null` só se a lista tiver menos de 2 nomes. */
+function parMaisAfastado(nomes: string[]): [string, string] | null {
+  if (nomes.length < 2) return null;
+  let melhor: [string, string] | null = null;
+  let melhorDistancia = -1;
+  for (let i = 0; i < nomes.length; i++) {
+    for (let j = i + 1; j < nomes.length; j++) {
+      const d = distanciaSuperficialNomes(nomes[i], nomes[j]);
+      if (d > melhorDistancia) {
+        melhorDistancia = d;
+        melhor = [nomes[i], nomes[j]];
+      }
+    }
+  }
+  return melhor;
+}
+
+/**
+ * Correcção do especialista ("novo parágrafo de abertura em 'Opções que
+ * ainda não considerou', anti 'isto dá para tudo'") — as duas opções
+ * citadas nesse parágrafo ("a mesma raiz que sustenta X sustenta também
+ * Y") têm de vir de dados reais desta pessoa, nunca hardcoded (ver
+ * ORDEM do especialista). Reaproveita exactamente a mesma lógica que já
+ * forma os "Grupos de candidatas" (`agruparCandidatasPorAssinatura`
+ * acima) — nunca uma segunda noção de "convergência partilhada" a
+ * divergir dela.
+ *
+ * 1º — se existe pelo menos um grupo formal (≥2 membros com assinatura
+ *      de camadas idêntica ou quase idêntica), escolhe o MAIOR grupo
+ *      (mais evidência de convergência partilhada) e, dentro dele, o
+ *      par de nomes mais afastado à superfície (`parMaisAfastado`) —
+ *      maximiza o efeito retórico ("isto não tinha nada a ver e afinal
+ *      tem") sem nunca inventar um par que não exista de facto no
+ *      grupo.
+ * 2º — se não existe nenhum grupo formal (ex.: só candidatas Nível 1
+ *      individuais, todas com assinaturas distintas), cai para "as duas
+ *      opções com maior convergência partilhada nos dados existentes":
+ *      testa TODOS os pares da pool completa pela mesma métrica de
+ *      diferença simétrica de assinatura (quanto menor, mais tipos de
+ *      camada partilham) e escolhe o par com menor diferença — em caso
+ *      de empate, o mais afastado à superfície entre os empatados.
+ * 3º — `null` só quando a pool tem menos de 2 candidatas ao todo (nunca
+ *      há par nenhum para formar) — o prompt trata isso como "secção
+ *      sem candidatas", já coberto por regra própria.
+ */
+function escolherParOpcoesContraste(candidatas: CandidataForaDaLista[], grupos: string[][]): [string, string] | null {
+  if (candidatas.length < 2) return null;
+
+  const maiorGrupo = grupos.length ? [...grupos].sort((a, b) => b.length - a.length)[0] : null;
+  if (maiorGrupo && maiorGrupo.length >= 2) {
+    const par = parMaisAfastado(maiorGrupo);
+    if (par) return par;
+  }
+
+  // Fallback — sem grupo formal: testa todos os pares da pool completa.
+  const comAssinatura = candidatas.map((c) => ({ nome: c.nome, sig: assinaturaTiposDeCamada(c.camadas) }));
+  let melhorPar: [string, string] | null = null;
+  let melhorDiferenca = Infinity;
+  let melhorDistanciaSuperficie = -1;
+  for (let i = 0; i < comAssinatura.length; i++) {
+    for (let j = i + 1; j < comAssinatura.length; j++) {
+      const dif = diferencaSimetrica(comAssinatura[i].sig, comAssinatura[j].sig);
+      const distSup = distanciaSuperficialNomes(comAssinatura[i].nome, comAssinatura[j].nome);
+      if (dif < melhorDiferenca || (dif === melhorDiferenca && distSup > melhorDistanciaSuperficie)) {
+        melhorDiferenca = dif;
+        melhorDistanciaSuperficie = distSup;
+        melhorPar = [comAssinatura[i].nome, comAssinatura[j].nome];
+      }
+    }
+  }
+  return melhorPar;
 }
 
 export function catalogarDestinos(
@@ -1375,6 +1467,7 @@ export function catalogarDestinos(
 
   const notaCondicao5 = eixoDoRendimentoActivo.find((a) => a.planetas.length === 0);
   const gruposCandidatas = agruparCandidatasPorAssinatura(candidatasForaDaLista);
+  const parOpcoesContraste = escolherParOpcoesContraste(candidatasForaDaLista, gruposCandidatas);
 
   return {
     destinosDeAreaActual,
@@ -1383,5 +1476,6 @@ export function catalogarDestinos(
     gruposCandidatas,
     notaAreaGenerica: areaGenerica ? `área actual não tem sector específico ("${intake.areaActual}") — candidatas derivadas só do perfil (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações activas)` : null,
     notaEixoDoRendimento: notaCondicao5 ? notaCondicao5.nota : null,
+    parOpcoesContraste,
   };
 }

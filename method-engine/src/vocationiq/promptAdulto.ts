@@ -890,6 +890,48 @@ Correcto: "Falar com um profissional da área X durante 30 minutos sobre o dia a
 // inventar categorias novas.
 export const INSTRUCAO_FACILIDADES_NATURAIS = `PARA QUE TEM FACILIDADE NATURAL: esta secção já vem calculada nos dados técnicos ("-- Para que tem facilidade natural --" abaixo) — 6 categorias fixas, cada uma já com o nível (Alto/Médio/Baixo) resolvido a partir dos pesos planetários desta pessoa. Na secção "${SECCAO_TITULOS.quemE}", referencia pelo menos 2 das categorias marcadas "Alto" como confirmação adicional dos dons já nomeados — nunca inventes uma categoria que não esteja nesta lista, nunca mudes o nível dado, e nunca a apresentes como uma secção à parte (os cartões visuais já existem fora do teu texto — a tua tarefa é só tecê-la na narrativa de "${SECCAO_TITULOS.quemE}").`;
 
+/**
+ * ORDEM do especialista ("novo parágrafo de abertura em 'Opções que
+ * ainda não considerou', anti 'isto dá para tudo'") — risco real do
+ * cliente concluir "isto dá para tudo, não é específico para mim" ao
+ * ler a lista de candidatas, o que mina a credibilidade central do
+ * produto. Texto evergreen, aplica-se a qualquer cliente — a ÚNICA
+ * parte variável são as duas opções citadas como exemplo de convergência
+ * partilhada, e essas vêm SEMPRE de `catalogo.parOpcoesContraste`
+ * (`escolherParOpcoesContraste`, catalogoVocacional.ts — reaproveita a
+ * mesma lógica que já forma os "Grupos de candidatas", nunca hardcoded,
+ * nunca inventado). O parágrafo inteiro (já com as duas opções reais
+ * substituídas) é dado ao LLM PRONTO A COPIAR — nunca pedido ao LLM
+ * para preencher {OPÇÃO_A}/{OPÇÃO_B} ele próprio, o mesmo motivo por
+ * trás de EXPLICAÇÃO_GRÁFICO ter deixado de depender do LLM: texto que
+ * tem de sair exactamente igual não pode depender de reprodução fiel
+ * por geração — só a DECISÃO de quais duas opções usar é que precisa
+ * de dados reais, e essa já vem resolvida por código antes de chegar
+ * aqui.
+ *
+ * DESVIO — o texto original do especialista dizia "concentrada no seu
+ * mapa"; "mapa" (como "carta"/"mapa astral"/"mapa natal") está proibido
+ * em todo o relatório desde a TAREFA 3D — substituído por "perfil",
+ * sem alterar o sentido, para não reintroduzir a própria palavra que
+ * essa correcção anterior existe para banir.
+ *
+ * `null` quando `parOpcoesContraste` é `null` (pool com menos de 2
+ * candidatas) — nesse caso a secção já cai na regra "nenhuma"/candidata
+ * única, e o risco "dá para tudo" não se aplica.
+ */
+export function paragrafoAntiDaParaTudo(par: [string, string] | null, usarTu: boolean): string | null {
+  if (!par) return null;
+  const [opcaoA, opcaoB] = par;
+  if (usarTu) {
+    return `Vais reparar que esta lista atravessa áreas muito diferentes entre si — algumas técnicas, outras humanistas, outras de contacto directo com pessoas, outras de trabalho solitário. Isso não significa que o teu perfil sirva para tudo. Significa precisamente o contrário: existe uma força concreta e concentrada no teu perfil — não um conjunto disperso de talentos genéricos — que pode encontrar expressão em superfícies muito diferentes. A mesma raiz que sustenta ${opcaoA} sustenta também ${opcaoB} — duas áreas que, à primeira vista, pouco têm em comum. O nome da profissão muda; a raiz que a sustenta é sempre a mesma — e é essa raiz, não a lista de nomes, que é a informação real deste capítulo.
+
+Por isso, a forma certa de ler o que se segue não é perguntar "para quantas destas é que eu sirvo?" — é perguntar "qual destas, ao lê-la, me faz parar?". Não precisas de escolher nenhuma agora, nem de levar todas a sério com o mesmo peso. Precisas só de notar qual delas ressoa quando a lês — é aí, e só aí, que esta lista se torna útil para ti, e não uma colecção de possibilidades quaisquer.`;
+  }
+  return `Vai reparar que esta lista atravessa áreas muito diferentes entre si — algumas técnicas, outras humanistas, outras de contacto directo com pessoas, outras de trabalho solitário. Isso não significa que o seu perfil sirva para tudo. Significa precisamente o contrário: existe uma força concreta e concentrada no seu perfil — não um conjunto disperso de talentos genéricos — que pode encontrar expressão em superfícies muito diferentes. A mesma raiz que sustenta ${opcaoA} sustenta também ${opcaoB} — duas áreas que, à primeira vista, pouco têm em comum. O nome da profissão muda; a raiz que a sustenta é sempre a mesma — e é essa raiz, não a lista de nomes, que é a informação real deste capítulo.
+
+Por isso, a forma certa de ler o que se segue não é perguntar "para quantas destas é que eu sirvo?" — é perguntar "qual destas, ao lê-la, me faz parar?". Não precisa de escolher nenhuma agora, nem de levar todas a sério com o mesmo peso. Precisa só de notar qual delas ressoa quando a lê — é aí, e só aí, que esta lista se torna útil para si, e não uma colecção de possibilidades quaisquer.`;
+}
+
 export function construirPromptAdulto(
   intake: VocationiqIntakeAdulto,
   axes: VocationIQAxes,
@@ -926,6 +968,11 @@ export function construirPromptAdulto(
     !candidatas.length && intake.ideiaConcreta && `Ideia concreta: ${normalizarTextoLivre(intake.ideiaConcreta)}`,
   ].filter((l): l is string => Boolean(l));
   const blocoTextoLivre = linhasTextoLivre.length ? linhasTextoLivre.join("\n") : !candidatas.length ? "(nenhum texto livre preenchido — escreve só a partir do que o perfil sustenta em geral.)" : "";
+
+  // ORDEM do especialista ("novo parágrafo de abertura em 'Opções que
+  // ainda não considerou', anti 'isto dá para tudo'") — ver
+  // paragrafoAntiDaParaTudo acima.
+  const paragrafoAntiDaParaTudoTexto = paragrafoAntiDaParaTudo(catalogo.parOpcoesContraste, false);
 
   return `
 És um especialista em análise vocacional. Vais escrever um relatório personalizado para ${intake.nome} com base nos dados técnicos fornecidos abaixo. Segue as regras rigorosamente:
@@ -1107,6 +1154,12 @@ Repete o bloco "### <nome> / ${MARCADORES.forca} / ${MARCADORES.insight} / 1. / 
 
 ## ${SECCAO_TITULOS.candidataForaDaLista}
 As candidatas elegíveis já vêm calculadas deterministicamente na secção "Candidatas do catálogo" acima — a POOL COMPLETA, SEM LIMITE nenhum. NÃO calcules a tua própria convergência, NÃO inventes nenhuma candidata diferente das listadas lá. A tua tarefa nesta secção é APRESENTAR TODAS as candidatas da pool que passam o Passo 1 — ligação narrativa a um dom já nomeado (ver INSTRUCAO_SELECCAO_CANDIDATAS) —, agrupando as que partilham convergência de base quase idêntica (Passo 3, mesma instrução), e escrever o bloco de raciocínio obrigatório antes delas. Nunca "escolher até 3" — isso já não é a regra.
+
+Escreve primeiro a tua própria frase de abertura da secção (1-2 frases, o enquadramento habitual). ${
+    paragrafoAntiDaParaTudoTexto
+      ? `Logo a seguir a essa frase, ANTES de qualquer candidata ou bloco de raciocínio, insere este parágrafo — EXACTO, sem alterar uma única palavra nem parafrasear (as duas opções já vêm resolvidas dos dados reais desta pessoa, nunca as substituas por outras): "${paragrafoAntiDaParaTudoTexto}"`
+      : "(esta pessoa tem menos de 2 candidatas na pool — não insiras nenhum parágrafo extra aqui, segue directamente para a regra \"nenhuma\"/candidata única abaixo.)"
+  }
 
 Se essa secção diz "nenhuma", a primeira e única linha é "${MARCADORES.candidata} nenhuma" — "o seu perfil não aponta a nada fora do que já pensava" é uma resposta válida e completa, não a evites. Não é preciso bloco de raciocínio quando não há nenhuma candidata na pool.
 

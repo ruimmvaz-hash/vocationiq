@@ -1312,6 +1312,51 @@ function corNivelFacilidade(nivel: FacilidadeNatural["nivel"]): string {
 }
 
 /**
+ * Correcção do especialista — os emoji a cores (🤝💡⚙️🔍📣🎯) nunca
+ * apareciam no PDF: o Chromium mínimo usado em produção
+ * (@sparticuz/chromium, ver htmlToPdf.ts) não inclui um tipo de letra de
+ * emoji a cores (mantém o binário pequeno para a Vercel), por isso o
+ * glifo fica em branco — confirmado por leitura dos codepoints (sem
+ * corrupção de dados) e pelo facto de todos os outros ícones do
+ * relatório usarem entidades HTML simples (&#10003;/&#9888;/&#8594;),
+ * nunca emoji a cores. Substituídos por SVG inline — o mesmo mecanismo
+ * já usado nos restantes gráficos do relatório (Roda da Vida, gráfico
+ * de forças) — que renderiza sempre, em qualquer Chromium, sem depender
+ * de tipo de letra nenhum. Cor = cor do nível do cartão (mesmo padrão de
+ * `.card-dom-icone`/`.card-limitacao-icone`, que já usam a cor do cartão
+ * em vez de uma cor fixa).
+ */
+function iconeFacilidade(categoria: string, cor: string): string {
+  const s = `stroke="${cor}" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"`;
+  if (categoria === "Pessoas") {
+    return `<circle cx="9" cy="12" r="5.5" ${s}/><circle cx="15" cy="12" r="5.5" ${s}/>`;
+  }
+  if (categoria === "Ideias") {
+    return `<path d="M12 3.5a6 6 0 0 0-3.4 10.9c.5.35.8.95.8 1.6v.4h5.2v-.4c0-.65.3-1.25.8-1.6A6 6 0 0 0 12 3.5z" ${s}/><line x1="9.8" y1="19" x2="14.2" y2="19" ${s}/><line x1="10.4" y1="21.3" x2="13.6" y2="21.3" ${s}/>`;
+  }
+  if (categoria === "Execução") {
+    const centro = 12;
+    const dentes = Array.from({ length: 8 }, (_, i) => {
+      const angulo = (i * Math.PI) / 4;
+      const x1 = centro + 7.2 * Math.cos(angulo);
+      const y1 = centro + 7.2 * Math.sin(angulo);
+      const x2 = centro + 9.6 * Math.cos(angulo);
+      const y2 = centro + 9.6 * Math.sin(angulo);
+      return `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" ${s}/>`;
+    }).join("");
+    return `${dentes}<circle cx="12" cy="12" r="6.2" ${s}/><circle cx="12" cy="12" r="2.2" fill="${cor}" stroke="none"/>`;
+  }
+  if (categoria === "Investigação") {
+    return `<circle cx="10" cy="10" r="6" ${s}/><line x1="14.6" y1="14.6" x2="20.2" y2="20.2" ${s}/>`;
+  }
+  if (categoria === "Comunicação") {
+    return `<path d="M4 10v4h3l6.5 4V6L7 10H4z" ${s}/><path d="M16.5 9.3a5 5 0 0 1 0 5.4" ${s}/><path d="M19 7.3a8 8 0 0 1 0 9.4" ${s}/>`;
+  }
+  // "Liderança" e qualquer categoria futura sem ícone próprio — alvo/bullseye, leitura universal de "foco/objectivo".
+  return `<circle cx="12" cy="12" r="8" ${s}/><circle cx="12" cy="12" r="5" ${s}/><circle cx="12" cy="12" r="2" fill="${cor}" stroke="none"/>`;
+}
+
+/**
  * Correcção do especialista — nova secção "Para que tem facilidade
  * natural", entre "Quem é" e "O que o perfil sustenta". 6 cartões fixos
  * (Pessoas/Ideias/Execução/Investigação/Comunicação/Liderança), cor por
@@ -1323,15 +1368,16 @@ function corNivelFacilidade(nivel: FacilidadeNatural["nivel"]): string {
 function blocoFacilidadesNaturais(pesos: PesoPlaneta[]): string {
   const facilidades = calcularFacilidadesNaturais(pesos);
   const cards = facilidades
-    .map(
-      (f) => `
-      <div class="card-facilidade" style="background:${corNivelFacilidade(f.nivel)}1a; border-left: 3px solid ${corNivelFacilidade(f.nivel)};">
-        <p class="card-facilidade-emoji">${f.emoji}</p>
-        <p class="card-facilidade-titulo" style="color:${corNivelFacilidade(f.nivel)};">${escapeHtml(f.categoria)}</p>
-        <span class="badge-nivel-facilidade" style="background:${corNivelFacilidade(f.nivel)};">${escapeHtml(f.nivel)}</span>
+    .map((f) => {
+      const cor = corNivelFacilidade(f.nivel);
+      return `
+      <div class="card-facilidade" style="background:${cor}1a; border-left: 3px solid ${cor};">
+        <svg class="card-facilidade-icone" viewBox="0 0 24 24" width="28" height="28">${iconeFacilidade(f.categoria, cor)}</svg>
+        <p class="card-facilidade-titulo" style="color:${cor};">${escapeHtml(f.categoria)}</p>
+        <span class="badge-nivel-facilidade" style="background:${cor};">${escapeHtml(f.nivel)}</span>
         <p class="card-facilidade-frase">${escapeHtml(f.frase)}</p>
-      </div>`,
-    )
+      </div>`;
+    })
     .join("");
 
   return `
@@ -2109,7 +2155,7 @@ const DETALHE_MODO_GANHO: Record<number, DetalheCaracteristica> = {
 };
 
 function explicacaoGanhoDeterministica(earningModes: EarningMode[], dominantes: number[], pesos: PesoPlaneta[], regentesCasas: Record<number, ClassicalGraha>, usarTu: boolean, candidatasEscritas: CandidataForaDaLista[]): ExplicacaoGraficoDeterministica {
-  const abertura = `Este gráfico mostra qual das três formas clássicas de gerar valor (Artha Trikona: casas 2, 6 e 10) ${usarTu ? "o teu" : "o seu"} perfil mais sustenta — a barra azul é a dominante, calculada a partir da dignidade do regente de cada casa, de quem está fisicamente lá dentro, e do peso real de cada um.`;
+  const abertura = `Este gráfico mostra qual das três formas clássicas de gerar valor (Artha Trikona: casas 2, 6 e 10) ${usarTu ? "o teu" : "o seu"} perfil mais sustenta — a barra laranja mais escura é a dominante, calculada a partir da dignidade do regente de cada casa, de quem está fisicamente lá dentro, e do peso real de cada um.`;
   const porCategoria: Record<string, string> = {};
   for (const e of earningModes) {
     const isDominante = dominantes.includes(e.house);
@@ -2120,7 +2166,7 @@ function explicacaoGanhoDeterministica(earningModes: EarningMode[], dominantes: 
     const rotuloVisual = (CASA_LABEL_LINHAS[e.house] ?? ["", ""]).join(" ").trim();
     let texto = `Pontuação ${e.score} — esta forma significa ${rotulo}.`;
     if (isDominante) {
-      texto = `Este é ${usarTu ? "o teu" : "o seu"} modo dominante (pontuação ${e.score}, a mais alta das três) — o gráfico destaca esta barra a azul.`;
+      texto = `Este é ${usarTu ? "o teu" : "o seu"} modo dominante (pontuação ${e.score}, a mais alta das três) — o gráfico destaca esta barra a laranja mais escuro.`;
       texto += emBastidores
         ? ` O rótulo do gráfico diz "${rotuloVisual}" — mas ${usarTu ? "no teu" : "no seu"} caso isto não significa procurar exposição directa: o regente desta casa está sentado numa casa de bastidores, o que significa que o reconhecimento chega por se tornar imprescindível através do que sustenta por trás, não por procurar palco.`
         : ` O rótulo do gráfico ("${rotuloVisual}") reflecte bem esta posição — o regente está numa posição de exposição directa, coerente com o que a barra promete.`;
@@ -2296,7 +2342,7 @@ export function gerarHTMLRelatorio(
   /* Correcção do especialista — secção "Para que tem facilidade natural": 6 cartões fixos, cor por nível (verde/âmbar/vermelho suave), calculados 100% deterministicamente (nunca pelo LLM) — mesmo padrão de .card-dom/.card-limitacao acima. */
   .grelha-facilidades { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
   .card-facilidade { border-radius: 8px; padding: 14px 16px; page-break-inside: avoid; break-inside: avoid; }
-  .card-facilidade-emoji { font-size: 22px; margin: 0 0 6px; line-height: 1; }
+  .card-facilidade-icone { display: block; margin: 0 0 8px; }
   .card-facilidade-titulo { font-size: 13px; font-weight: 700; margin: 0 0 6px; }
   .badge-nivel-facilidade { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #FFFFFF; border-radius: 999px; padding: 2px 9px; margin-bottom: 8px; }
   .card-facilidade-frase { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink, #1A1A1A); }
@@ -2455,7 +2501,7 @@ export function gerarHTMLRelatorio(
       <h2 class="titulo-seccao">${usarTu ? "Como ganhas melhor" : "Como ganha melhor"}</h2>
       <div class="caixa-neutra grafico-explicacao-llm">${markdownParaHtml(explicacaoGanho.abertura)}</div>
       <div class="grafico-wrap grafico-3barras">${svgModoDeGanho(earningModes, axes.earningModeDominante.map((e) => e.house))}</div>
-      <p class="grafico-legenda" style="text-align:center">${usarTu ? "A barra em azul é o modo dominante — a forma que o teu perfil mais sustenta para gerar valor." : "A barra em azul é o modo dominante — a forma que o seu perfil mais sustenta para gerar valor."}</p>
+      <p class="grafico-legenda" style="text-align:center">${usarTu ? "A barra em laranja mais escuro é o modo dominante — a forma que o teu perfil mais sustenta para gerar valor." : "A barra em laranja mais escuro é o modo dominante — a forma que o seu perfil mais sustenta para gerar valor."}</p>
       <ul class="lista-caracteristicas">
         ${earningModes
           .map((e) => {

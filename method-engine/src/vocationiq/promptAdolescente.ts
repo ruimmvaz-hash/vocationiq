@@ -75,6 +75,7 @@ import {
   INSTRUCAO_PLANO_PERIODOS_RELATIVOS,
   INSTRUCAO_FACILIDADES_NATURAIS,
   blocoFacilidadesNaturais,
+  paragrafoAntiDaParaTudo,
   TERMOS_PROIBIDOS,
   SECCAO_TITULOS,
   MARCADORES,
@@ -147,6 +148,11 @@ export function construirPromptAdolescente(
   // INSTRUCAO_ABERTURA_RESPONDE têm de responder de frente, nos dois
   // motores pela mesma regra.
   const perguntaImplicita = intake.opcaoMaisProvavel ? `É "${intake.opcaoMaisProvavel}" mesmo a mais provável, à luz do perfil?` : null;
+
+  // ORDEM do especialista ("novo parágrafo de abertura em 'Opções que
+  // ainda não considerou', anti 'isto dá para tudo'") — mesma função
+  // partilhada de promptAdulto.ts, em registo "tu".
+  const paragrafoAntiDaParaTudoTexto = paragrafoAntiDaParaTudo(catalogo.parOpcoesContraste, true);
 
   const blocoCandidatasCatalogo = blocoCatalogoVocacional(catalogo, cursosPorDestino);
 
@@ -299,6 +305,12 @@ ${instrucaoLeituraPorOpcao}
 
 ## ${SECCAO_TITULOS.candidataForaDaLista}
 As candidatas elegíveis já vêm calculadas deterministicamente na secção "Candidatas do catálogo" acima — a POOL COMPLETA, SEM LIMITE nenhum. NÃO calcules a tua própria convergência, NÃO inventes nenhuma candidata diferente. A tua tarefa é APRESENTAR TODAS as que passam o Passo 1 (ligação narrativa, ver INSTRUCAO_SELECCAO_CANDIDATAS), agrupando as de convergência de base quase idêntica, e escrever o bloco de raciocínio obrigatório antes delas. Nunca "escolher até 3".
+
+Escreve primeiro a tua própria frase de abertura da secção (1-2 frases, o enquadramento habitual). ${
+    paragrafoAntiDaParaTudoTexto
+      ? `Logo a seguir a essa frase, ANTES de qualquer candidata ou bloco de raciocínio, insere este parágrafo — EXACTO, sem alterar uma única palavra nem parafrasear (as duas opções já vêm resolvidas dos dados reais desta pessoa, nunca as substituas por outras): "${paragrafoAntiDaParaTudoTexto}"`
+      : "(esta pessoa tem menos de 2 candidatas na pool — não insiras nenhum parágrafo extra aqui, segue directamente para a regra \"nenhuma\"/candidata única abaixo.)"
+  }
 
 Se essa secção diz "nenhuma", a primeira e única linha é "${MARCADORES.candidata} nenhuma". Não é preciso bloco de raciocínio quando não há nenhuma candidata na pool.
 

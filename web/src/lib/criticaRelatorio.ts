@@ -277,6 +277,26 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
      inventado e cada acção genérica encontrada. Se falhar qualquer uma
      das duas condições: FALHA — reescrita obrigatória da secção.
 
+ 32. PARÁGRAFO ANTI "ISTO DÁ PARA TUDO" (correcção do especialista —
+     ORDEM, "novo parágrafo de abertura em 'Opções que ainda não
+     considerou'"): o prompt técnico (A, abaixo) dá o parágrafo EXACTO a
+     inserir logo a seguir à frase de abertura da secção "Candidata fora
+     da lista" (procura "insere este parágrafo — EXACTO" em A). Quando o
+     prompt técnico dá esse parágrafo (ou seja, quando existem pelo
+     menos 2 candidatas na pool):
+     (a) o rascunho contém esse parágrafo, palavra por palavra, sem
+         paráfrase nem resumo?
+     (b) as duas opções citadas no parágrafo ("a mesma raiz que sustenta
+         X sustenta também Y") são exactamente as duas dadas no prompt
+         técnico — nunca duas outras, nunca inventadas pelo LLM?
+     (c) o parágrafo aparece ANTES de qualquer candidata/grupo, logo a
+         seguir à frase de abertura da secção?
+     Se o prompt técnico NÃO dá nenhum parágrafo (menos de 2 candidatas
+     na pool), este critério não se aplica — PASSA automaticamente.
+     Se falhar (a), (b) ou (c): FALHA — reescrita obrigatória da
+     abertura desta secção, reproduzindo o parágrafo exactamente como
+     dado no prompt técnico.
+
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
  Formato:
@@ -562,6 +582,26 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
      equivalente genérico)? Lista cada data fixa/mês de calendário
      inventado e cada acção genérica encontrada. Se falhar qualquer uma
      das duas condições: FALHA — reescrita obrigatória da secção.
+
+ 32. PARÁGRAFO ANTI "ISTO DÁ PARA TUDO" (correcção do especialista —
+     ORDEM, "novo parágrafo de abertura em 'Opções que ainda não
+     considerou'"): o prompt técnico (A, abaixo) dá o parágrafo EXACTO a
+     inserir logo a seguir à frase de abertura da secção "Candidata fora
+     da lista" (procura "insere este parágrafo — EXACTO" em A). Quando o
+     prompt técnico dá esse parágrafo (ou seja, quando existem pelo
+     menos 2 candidatas na pool):
+     (a) o rascunho contém esse parágrafo, palavra por palavra, sem
+         paráfrase nem resumo?
+     (b) as duas opções citadas no parágrafo ("a mesma raiz que sustenta
+         X sustenta também Y") são exactamente as duas dadas no prompt
+         técnico — nunca duas outras, nunca inventadas pelo LLM?
+     (c) o parágrafo aparece ANTES de qualquer candidata/grupo, logo a
+         seguir à frase de abertura da secção?
+     Se o prompt técnico NÃO dá nenhum parágrafo (menos de 2 candidatas
+     na pool), este critério não se aplica — PASSA automaticamente.
+     Se falhar (a), (b) ou (c): FALHA — reescrita obrigatória da
+     abertura desta secção, reproduzindo o parágrafo exactamente como
+     dado no prompt técnico.
 
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
