@@ -103,6 +103,15 @@ describe("catalogarDestinos — carta real da Melina (São Paulo, 11/12/1984 08:
     expect(direito?.camadas.some((c: string) => c.startsWith("Planeta de maior peso"))).toBe(true);
   });
 
+  it("correcção do especialista (bug crítico — cursos repetidos nas candidatas): uma opção já declarada em 'opcoesDeclaradas' nunca aparece como candidata fora da lista, mesmo tendo camadas suficientes para tal — 'Direito' desaparece da pool quando declarado, mas continua a aparecer quando não é", () => {
+    const { axes, pesos, savPorCasa, atmakarakaInfo } = carregarMelina();
+    const semDeclaracao = catalogarDestinos(axes, pesos, savPorCasa, { areaActual: "", anosExperiencia: "" }, atmakarakaInfo);
+    expect(semDeclaracao.candidatasForaDaLista.some((c) => c.nome === "Direito")).toBe(true);
+
+    const comDeclaracao = catalogarDestinos(axes, pesos, savPorCasa, { areaActual: "", anosExperiencia: "", opcoesDeclaradas: ["Direito"] }, atmakarakaInfo);
+    expect(comDeclaracao.candidatasForaDaLista.some((c) => c.nome === "Direito")).toBe(false);
+  });
+
   it("área actual 'Estética' encontra destinos de estética/cosmética no catálogo (bug real da Melina)", () => {
     const { axes, pesos, savPorCasa, atmakarakaInfo } = carregarMelina();
     const resultado = catalogarDestinos(axes, pesos, savPorCasa, { areaActual: "Estética", anosExperiencia: "5 a 10 anos" }, atmakarakaInfo);

@@ -69,6 +69,12 @@ import {
   INSTRUCAO_ABERTURA_CANDIDATAS,
   INSTRUCAO_NIVEL_CANDIDATAS,
   INSTRUCAO_NUNCA_CANDIDATA,
+  INSTRUCAO_PERGUNTA_ESPECIFICA,
+  INSTRUCAO_ABERTURA_RESPONDE,
+  INSTRUCAO_VALIDACAO_OPCOES,
+  INSTRUCAO_PLANO_PERIODOS_RELATIVOS,
+  INSTRUCAO_FACILIDADES_NATURAIS,
+  blocoFacilidadesNaturais,
   TERMOS_PROIBIDOS,
   SECCAO_TITULOS,
   MARCADORES,
@@ -132,9 +138,19 @@ export function construirPromptAdolescente(
         .join("\n\n")
     : "(nenhuma opção declarada — escreve a partir do que o perfil sustenta em geral e da candidata fora da lista.)";
 
+  // Correcção do especialista (bug crítico — pergunta concreta sem
+  // resposta directa / abertura não responde à situação) — o
+  // adolescente não tem um campo de texto livre "pergunta específica"
+  // como o adulto; o equivalente mais próximo é "opcaoMaisProvavel"
+  // ("qual delas te parece a mais provável hoje?", SPEC-vocacional.md) —
+  // é essa a pergunta implícita que INSTRUCAO_PERGUNTA_ESPECIFICA/
+  // INSTRUCAO_ABERTURA_RESPONDE têm de responder de frente, nos dois
+  // motores pela mesma regra.
+  const perguntaImplicita = intake.opcaoMaisProvavel ? `É "${intake.opcaoMaisProvavel}" mesmo a mais provável, à luz do perfil?` : null;
+
   const blocoCandidatasCatalogo = blocoCatalogoVocacional(catalogo, cursosPorDestino);
 
-  const instrucaoLeituraPorOpcao = `Para CADA opção em cima da mesa, este formato EXACTO — o cabeçalho "### " e a linha "${MARCADORES.forca}" são obrigatórios:
+  const instrucaoLeituraPorOpcao = `${perguntaImplicita ? `Esta secção abre, ANTES do primeiro bloco "### ", com a resposta directa a "${perguntaImplicita}" no formato exigido por INSTRUCAO_PERGUNTA_ESPECIFICA — retomada aqui, nunca contradita face ao que já foi respondido em "${SECCAO_TITULOS.abertura}".\n\n` : ""}Para CADA opção em cima da mesa, este formato EXACTO — o cabeçalho "### " e a linha "${MARCADORES.forca}" são obrigatórios:
 
 ### <nome exacto da opção>
 ${MARCADORES.forca} <forte, moderada ou fraca>
@@ -142,7 +158,8 @@ ${MARCADORES.insight} <uma frase que resume a leitura desta opção em menos de 
 1. O que o teu perfil sustenta nesta opção — cita pelo menos duas fontes independentes.
 2. O que esta opção te vai pedir na formação (o esforço específico DESTE perfil, nunca o risco genérico da área).
 3. O curso concreto e a via de entrada — usa sempre os dados já listados acima em "Opções em cima da mesa" (nome do curso, nível, QNQ, duração, tipo de instituição, entrada no mercado). NUNCA nomeies uma instituição concreta.
-4. Onde entra a tua matéria nesta opção — a forma/função, nunca só o sector.`;
+4. Onde entra a tua matéria nesta opção — a forma/função, nunca só o sector.
+5. Conclusão explícita — ver INSTRUCAO_VALIDACAO_OPCOES: uma das três frases-molde exactas (sustenta com clareza / sustenta parcialmente / não sustenta de forma natural), nunca omitida.`;
 
   // Correcção do especialista ("remover o tecto fixo de 3, com
   // agrupamento por cluster") — a secção "Candidatas do catálogo" traz a
@@ -192,6 +209,11 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - ${INSTRUCAO_SELECCAO_CANDIDATAS}
 - ${INSTRUCAO_ABERTURA_CANDIDATAS}
 - ${INSTRUCAO_NIVEL_CANDIDATAS}
+- ${INSTRUCAO_PERGUNTA_ESPECIFICA}
+- ${INSTRUCAO_ABERTURA_RESPONDE}
+- ${INSTRUCAO_VALIDACAO_OPCOES}
+- ${INSTRUCAO_PLANO_PERIODOS_RELATIVOS}
+- ${INSTRUCAO_FACILIDADES_NATURAIS}
 - HORIZONTE TEMPORAL: até 18 meses, afirmações directas. Entre 18 meses e 3 anos, com cautela ("tende a", "favorece"). Mais de 3 anos, só como pano de fundo.
 - A lista de opções entrega-se sempre com a moldura explícita, no início e no fim da secção "Leitura por opção": isto é para reconhecer, não para obedecer — o critério final é o reconhecimento interno do jovem, nunca o documento.
 - Ao nomear um caminho fora do sistema formal, indica sempre a via de sustento associada — nunca "o teu caminho é X" sem dizer o que paga as contas enquanto X cresce.
@@ -205,6 +227,7 @@ ${horaNascimentoFornecida ? "" : "\nNOTA INTERNA — hora de nascimento não for
 Nome: ${intake.nome}
 Situação declarada: ${intake.situacaoDeclarada}
 ${intake.preferenciaFamilia ? `Preferência da família (contexto, nunca decide): "${intake.preferenciaFamilia}"` : ""}
+${perguntaImplicita ? `Pergunta específica (implícita — ver INSTRUCAO_PERGUNTA_ESPECIFICA/INSTRUCAO_ABERTURA_RESPONDE): ${perguntaImplicita}` : ""}
 
 -- Eixo da Missão --
 ${blocoEixoMissao(axes)}
@@ -214,6 +237,9 @@ ${blocoModoDeGanho(axes, pesosPlanetas)}
 
 -- Peso de cada planeta --
 ${blocoPesos(pesosPlanetas)}
+
+-- Para que tem facilidade natural (já calculado — ver INSTRUCAO_FACILIDADES_NATURAIS) --
+${blocoFacilidadesNaturais(pesosPlanetas)}
 
 -- Roda da Vida (8 dimensões, 0-10) --
 ${blocoRodaDaVida(savPorCasa, pesosPlanetas, axes.regentesCasas)}
@@ -248,7 +274,7 @@ ${opcoesTexto}
 === ESTRUTURA DO RELATÓRIO — exactamente estas 6 secções, por esta ordem ===
 
 ## ${SECCAO_TITULOS.abertura}
-Quadro de dados (nome, situação escolar) e o enquadramento da pergunta que a pessoa trouxe. Nunca abrir sem este quadro.
+O primeiro parágrafo é a resposta directa ou a âncora — ver INSTRUCAO_ABERTURA_RESPONDE, obrigatório, nunca dados técnicos nem análise abstracta antes disto. Só depois desse parágrafo: quadro de dados (nome, situação escolar) e o enquadramento da pergunta que a pessoa trouxe.
 
 ## ${SECCAO_TITULOS.quemE}
 Um retrato de personalidade, ANTES de qualquer opção ser mencionada. Formato EXACTO, obrigatório e machine-readable:
@@ -283,6 +309,6 @@ REGRA ABSOLUTA — SEM RANKING ENTRE CANDIDATAS: candidatas e grupos apresentam-
 REGRA ABSOLUTA — CANDIDATA FORA DA LISTA: proibido nomear qualquer candidata sem que venha explicitamente da secção "Candidatas do catálogo" acima. Nunca preenchas com estereótipos de profissão ou associações livres a arquétipos abstractos.
 
 ## ${SECCAO_TITULOS.oPlano}
-CONTEXTO (diferente do relatório adulto): este plano é orientado para a PRÓXIMA DECISÃO ESCOLAR/ACADÉMICA (ex.: escolha de curso, candidatura ao ensino superior) — NUNCA para uma transição profissional, que ainda não existe. Abre com o tom da classificação da Mahadasha actual (secção "Datas reais" acima). Usa as datas reais dessa secção. Destaca o primeiro passo accionável para esta semana numa linha própria, prefixada exactamente por "${MARCADORES.primeiroPasso} " — ligado à decisão escolar concreta que a pessoa tem à frente, nunca um passo genérico de "explorar carreiras".
+CONTEXTO (diferente do relatório adulto): este plano é orientado para a PRÓXIMA DECISÃO ESCOLAR/ACADÉMICA (ex.: escolha de curso, candidatura ao ensino superior) — NUNCA para uma transição profissional, que ainda não existe. Abre com o tom da classificação da Mahadasha actual (secção "Datas reais" acima). Depois disso, segue exactamente o formato de INSTRUCAO_PLANO_PERIODOS_RELATIVOS (períodos relativos — nunca datas fixas nem meses do calendário, excepto a data real de fim da Mahadasha/Antardasha actual). Destaca o primeiro passo accionável das "próximas 2 semanas" numa linha própria, prefixada exactamente por "${MARCADORES.primeiroPasso} " — ligado à decisão escolar concreta que a pessoa tem à frente, nunca um passo genérico de "explorar carreiras".
 `.trim();
 }

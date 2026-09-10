@@ -133,6 +133,8 @@ export {
   type NotaEixoRendimento,
 } from "./vocationiq/catalogoVocacional";
 export { computeRodaDaVida, type DimensaoVida } from "./vocationiq/rodaDaVida";
+// Correcção do especialista — secção "Para que tem facilidade natural" (entre "Quem é" e "O que o perfil sustenta"), calculada 100% deterministicamente a partir dos pesos planetários — nunca pelo LLM.
+export { calcularFacilidadesNaturais, type FacilidadeNatural, type NivelFacilidade, type CategoriaFacilidade } from "./vocationiq/facilidadesNaturais";
 // CAMADA 3 (correcção do especialista, ronda seguinte) — 3 yogas vocacionais construídos de raiz (Raja/Dhana/Viparita Raja), nunca Neecha Bhanga (ver detectarNeechaBhanga acima).
 export { detectarYogasVocacionais } from "./vocationiq/yogasVocationais";
 // TAREFA 4 (correcção do especialista) — elementos/modalidades tropicais e aspectos entre planetas pessoais, lidos de computeWesternTable.

@@ -303,7 +303,16 @@ export async function calcularDadosAstrologicos(intake: IntakeRow, coordenadasEx
     axes,
     pesosPlanetas,
     savPorCasa,
-    { areaActual: intakeAdulto.areaActual, anosExperiencia: intakeAdulto.anosExperiencia, ideiaConcreta: intakeAdulto.ideiaConcreta },
+    {
+      areaActual: intakeAdulto.areaActual,
+      anosExperiencia: intakeAdulto.anosExperiencia,
+      ideiaConcreta: intakeAdulto.ideiaConcreta,
+      // Correcção do especialista (bug crítico — cursos repetidos nas
+      // candidatas) — as opções já declaradas nunca podem voltar a
+      // aparecer como "candidata fora da lista" (ver comentário em
+      // catalogoVocacional.ts).
+      opcoesDeclaradas: intakeAdulto.areasDestino.concat(intakeAdulto.areasDestinoOutra ? [intakeAdulto.areasDestinoOutra] : []),
+    },
     { planeta: atmakaraka, nakshatra: d1.rows[atmakaraka].nakshatra },
     regenteAscendenteOcidental,
   );
@@ -393,7 +402,11 @@ export async function calcularDadosAstrologicosAdolescente(intake: IntakeRow, co
     axes,
     pesosPlanetas,
     savPorCasa,
-    { areaActual: "", anosExperiencia: "" },
+    // Correcção do especialista (bug crítico — cursos repetidos nas
+    // candidatas) — as opções já declaradas nunca podem voltar a
+    // aparecer como "candidata fora da lista" (ver comentário em
+    // catalogoVocacional.ts).
+    { areaActual: "", anosExperiencia: "", opcoesDeclaradas: intakeAdolescente.opcoesAdolescente },
     { planeta: atmakaraka, nakshatra: d1.rows[atmakaraka].nakshatra },
     regenteAscendenteOcidental,
   );

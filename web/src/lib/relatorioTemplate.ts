@@ -18,6 +18,8 @@ import {
   type DimensaoVida,
   type ResultadoCatalogoVocacional,
   type CandidataForaDaLista,
+  calcularFacilidadesNaturais,
+  type FacilidadeNatural,
 } from "@naveya/method-engine";
 
 export { computeRodaDaVida, type DimensaoVida };
@@ -1303,6 +1305,42 @@ function blocoSeccaoQuemE(corpo: string): string {
     </section>`;
 }
 
+function corNivelFacilidade(nivel: FacilidadeNatural["nivel"]): string {
+  if (nivel === "Alto") return VERDE;
+  if (nivel === "Médio") return AMBAR;
+  return VERMELHO;
+}
+
+/**
+ * Correcção do especialista — nova secção "Para que tem facilidade
+ * natural", entre "Quem é" e "O que o perfil sustenta". 6 cartões fixos
+ * (Pessoas/Ideias/Execução/Investigação/Comunicação/Liderança), cor por
+ * nível (verde/âmbar/vermelho suave) — tudo calculado por
+ * `calcularFacilidadesNaturais` (method-engine), nunca pelo LLM. Mesmo
+ * padrão visual de `.card-dom`/`.card-limitacao` acima, generalizado
+ * para 3 cores em vez de 2.
+ */
+function blocoFacilidadesNaturais(pesos: PesoPlaneta[]): string {
+  const facilidades = calcularFacilidadesNaturais(pesos);
+  const cards = facilidades
+    .map(
+      (f) => `
+      <div class="card-facilidade" style="background:${corNivelFacilidade(f.nivel)}1a; border-left: 3px solid ${corNivelFacilidade(f.nivel)};">
+        <p class="card-facilidade-emoji">${f.emoji}</p>
+        <p class="card-facilidade-titulo" style="color:${corNivelFacilidade(f.nivel)};">${escapeHtml(f.categoria)}</p>
+        <span class="badge-nivel-facilidade" style="background:${corNivelFacilidade(f.nivel)};">${escapeHtml(f.nivel)}</span>
+        <p class="card-facilidade-frase">${escapeHtml(f.frase)}</p>
+      </div>`,
+    )
+    .join("");
+
+  return `
+    <section class="seccao">
+      <h2 class="titulo-seccao">Para que tem facilidade natural</h2>
+      <div class="grelha-facilidades">${cards}</div>
+    </section>`;
+}
+
 /**
  * Correcção do especialista ("remover o tecto fixo de 3, com agrupamento
  * por cluster") — sem limite de candidatas, cada uma com o seu próprio
@@ -2255,6 +2293,14 @@ export function gerarHTMLRelatorio(
   .caixa-sintese-quemE { background: var(--azul); color: #FFFFFF; border-radius: 10px; padding: 20px 22px; margin-top: 8px; }
   .caixa-sintese-quemE p { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.6; }
 
+  /* Correcção do especialista — secção "Para que tem facilidade natural": 6 cartões fixos, cor por nível (verde/âmbar/vermelho suave), calculados 100% deterministicamente (nunca pelo LLM) — mesmo padrão de .card-dom/.card-limitacao acima. */
+  .grelha-facilidades { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .card-facilidade { border-radius: 8px; padding: 14px 16px; page-break-inside: avoid; break-inside: avoid; }
+  .card-facilidade-emoji { font-size: 22px; margin: 0 0 6px; line-height: 1; }
+  .card-facilidade-titulo { font-size: 13px; font-weight: 700; margin: 0 0 6px; }
+  .badge-nivel-facilidade { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #FFFFFF; border-radius: 999px; padding: 2px 9px; margin-bottom: 8px; }
+  .card-facilidade-frase { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink, #1A1A1A); }
+
   /* Correcção do especialista ("ORDEM — nomenclatura/cor") — substitui o diagrama radial "Onde o perfil tem atrito" pelo mesmo estilo de cartão já confirmado elegante em .card-dom/.card-limitacao, com a cor de aviso (vermelho) em vez de âmbar — mantém a leitura "isto pede atenção" que o vermelho já tinha no diagrama antigo. */
   .card-atrito { background: #fbeee9; border-left: 3px solid ${VERMELHO}; border-radius: 8px; padding: 14px 16px; page-break-inside: avoid; break-inside: avoid; }
   .card-atrito-titulo { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: ${VERMELHO}; margin: 0 0 8px; }
@@ -2374,6 +2420,8 @@ export function gerarHTMLRelatorio(
     </section>
 
     ${blocoSeccaoQuemE(seccoes[SECCAO_TITULOS.quemE] ?? "")}
+
+    ${blocoFacilidadesNaturais(pesos)}
 
     <section class="seccao">
       <h2 class="titulo-seccao">${escapeHtml(SECCAO_TITULOS.oQueACartaSustenta)}</h2>

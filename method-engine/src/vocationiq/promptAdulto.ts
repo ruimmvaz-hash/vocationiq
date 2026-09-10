@@ -12,6 +12,7 @@ import type { PerfilElementosModalidades, AspectoPessoal } from "./elementosEAsp
 import type { CursosSugeridos } from "./catalogoCursos";
 import type { D1TableResult } from "../lifeReport/d1Table";
 import type { YogaHit } from "../lifeReport/yogas";
+import { calcularFacilidadesNaturais } from "./facilidadesNaturais";
 
 /**
  * Dados já resolvidos para texto humano pelo chamador (o site) — os
@@ -401,6 +402,19 @@ export function blocoPesos(pesos: PesoPlaneta[]): string {
       return p.notaCancelamento ? `${base} NOTA: ${p.notaCancelamento}.` : base;
     });
   return linhas.join("\n");
+}
+
+/**
+ * Correcção do especialista (nova secção "Para que tem facilidade
+ * natural", entre "Quem é" e "O que o perfil sustenta") — texto para o
+ * bloco de dados técnicos do prompt; os cartões visuais (cor por nível,
+ * ícone) são gerados à parte, por código, em relatorioTemplate.ts —
+ * nunca pelo LLM (`calcularFacilidadesNaturais` é 100% determinística).
+ */
+export function blocoFacilidadesNaturais(pesos: PesoPlaneta[]): string {
+  return calcularFacilidadesNaturais(pesos)
+    .map((f) => `${f.emoji} ${f.categoria} (${f.nivel}): ${f.frase}`)
+    .join("\n");
 }
 
 export function blocoDatas(datas: DadosDatas): string {
@@ -819,6 +833,63 @@ export const INSTRUCAO_VARGOTTAMA = `VARGOTTAMA — INSTRUÇÃO OBRIGATÓRIA: se
 // rascunhos antigos (gerados antes desta correcção) — nunca mais são
 // pedidos ao LLM.
 
+// Correcção do especialista (bug crítico — pergunta concreta sem
+// resposta directa) — diagnóstico directo com o relatório real da
+// Alexandra: perguntou "seria gestão ou economia?", o relatório
+// respondeu "economia" nalgum ponto do texto mas depois sugeriu
+// "Direito" como candidata fora da lista sem nunca reconhecer que isso
+// contradiz a resposta já dada — as duas afirmações coexistiam sem
+// nenhuma relação entre si. Esta instrução obriga (a) a secção "Leitura
+// por opção" a abrir SEMPRE com a resposta directa, antes de qualquer
+// outra análise, quando existe pergunta específica declarada, e (b) a
+// secção "Candidata fora da lista" a nunca deixar uma contradição
+// directa por explicar. Constante partilhada (promptAdulto.ts e
+// promptAdolescente.ts) — nunca diverge entre os dois motores.
+export const INSTRUCAO_PERGUNTA_ESPECIFICA = `PERGUNTA ESPECÍFICA — OBRIGATÓRIO: se existe uma pergunta específica declarada, a secção "${SECCAO_TITULOS.leituraPorOpcao}" tem de abrir, antes de qualquer outra análise, com a resposta directa a essa pergunta, neste formato: "A pergunta [citar a pergunta tal como foi escrita] tem resposta directa: [resposta clara e sem rodeios]. Aqui está porquê: [razão técnica em linguagem simples]."
+NUNCA apresentar, na secção "${SECCAO_TITULOS.candidataForaDaLista}", uma candidata que contradiga directamente essa resposta sem o dizer de forma explícita — se uma candidata fora da lista vai numa direcção diferente da resposta já dada, o texto dessa candidata tem de reconhecer a tensão ("isto parece contradizer a resposta dada a [pergunta] — mas..." ou equivalente) ou, se a contradição não tiver explicação defensável, essa candidata não é apresentada. Nunca deixar as duas respostas a coexistir sem relação nenhuma entre si — é essa a contradição que esta regra existe para impedir.`;
+
+// Correcção do especialista (bug crítico — abertura não responde à
+// situação da pessoa) — a mesma ronda de diagnóstico da Alexandra
+// confirmou que o primeiro parágrafo do relatório abria por dados
+// técnicos/enquadramento genérico, nunca respondendo de frente à
+// pergunta ou à falta dela. Reaproveita o mesmo formato de
+// INSTRUCAO_PERGUNTA_ESPECIFICA para nunca divergir entre as duas
+// secções que citam a mesma resposta.
+export const INSTRUCAO_ABERTURA_RESPONDE = `ABERTURA DO RELATÓRIO — OBRIGATÓRIO: o primeiro parágrafo da secção "${SECCAO_TITULOS.abertura}" responde directamente à situação da pessoa — nunca começa por dados técnicos, gráficos ou análise abstracta.
+Se existe pergunta específica declarada: usa o mesmo formato exigido em PERGUNTA ESPECÍFICA (ver INSTRUCAO_PERGUNTA_ESPECIFICA) — a resposta directa aparece já aqui, no primeiro parágrafo, e é retomada (nunca contradita) quando a secção "${SECCAO_TITULOS.leituraPorOpcao}" a repetir.
+Se NÃO existe pergunta específica declarada: abre com uma âncora baseada nos dados — nomeia directamente 2 a 3 pontos onde o perfil sustenta força natural, em linguagem directa, sem preâmbulo técnico. Exemplo de formato: "Ainda não há uma direcção clara — e isso é mais comum do que parece. O que os dados mostram é força natural para [X] e [Y]. É por aí que vale começar."
+Proibido abrir com "o perfil mostra", "os dados indicam", o nome de um eixo técnico, ou qualquer formulação abstracta antes desta resposta/âncora.`;
+
+// Correcção do especialista (bug crítico — validação directa das
+// opções declaradas) — a secção "Leitura por opção" descrevia prós e
+// contras de cada opção mas nem sempre chegava a uma conclusão
+// explícita, deixando a pessoa sem saber se o perfil sustenta ou não
+// cada opção que já tinha em cima da mesa.
+export const INSTRUCAO_VALIDACAO_OPCOES = `VALIDAÇÃO DAS OPÇÕES DECLARADAS — OBRIGATÓRIO: para cada opção que a pessoa declarou, a secção "${SECCAO_TITULOS.leituraPorOpcao}" tem de terminar com uma de três conclusões explícitas, sem deixar a leitura em aberto:
+· "O perfil sustenta esta opção com clareza — aqui está porquê: [razão técnica]."
+· "O perfil sustenta esta opção parcialmente — o que vai a favor é [X], o que vai exigir mais esforço é [Y]."
+· "O perfil não sustenta esta opção de forma natural — não é impossível, mas vai custar mais do que as alternativas. Aqui está porquê: [razão técnica]."
+Nunca deixar uma opção sem nenhuma destas três conclusões, e nunca escrever prosa que descreve prós/contras sem chegar a uma delas — a pessoa tem de ficar a saber, sem ambiguidade, qual das três se aplica a cada opção que trouxe.`;
+
+// Correcção do especialista (bug crítico — plano em datas vagas) — "O
+// plano" usava datas fixas do calendário ou períodos vagos ("nos
+// próximos tempos"), que envelhecem mal (um relatório lido 6 meses
+// depois de gerado com uma data fixa perde sentido) e raramente
+// davam uma acção verificável.
+export const INSTRUCAO_PLANO_PERIODOS_RELATIVOS = `O PLANO — FORMATO OBRIGATÓRIO: usa sempre períodos relativos ao momento da leitura, nunca datas fixas nem meses do calendário (excepção: a data em que a Mahadasha/Antardasha actual termina, já dada nos dados técnicos, mantém-se como data real). Estrutura obrigatória, cada uma com uma acção CONCRETA e ESPECÍFICA (nunca genérica):
+"Nas próximas 2 semanas: [acção concreta e específica]."
+"No próximo mês: [acção concreta e específica]."
+"Nos próximos 3 meses: [acção ou decisão concreta]."
+"Nos próximos 6 a 12 meses: [decisão maior]."
+Correcto: "Falar com um profissional da área X durante 30 minutos sobre o dia a dia real da profissão." Proibido: "Explorar opções na área X" ou qualquer acção que sirva para qualquer pessoa em qualquer área — tem de ser rastreável a esta pessoa e a esta opção especificamente.`;
+
+// Correcção do especialista (nova secção "Para que tem facilidade
+// natural") — os níveis já vêm calculados deterministicamente (ver
+// facilidadesNaturais.ts); esta instrução só governa como a secção
+// "Quem é" pode CITAR esse dado já calculado, nunca recalculá-lo nem
+// inventar categorias novas.
+export const INSTRUCAO_FACILIDADES_NATURAIS = `PARA QUE TEM FACILIDADE NATURAL: esta secção já vem calculada nos dados técnicos ("-- Para que tem facilidade natural --" abaixo) — 6 categorias fixas, cada uma já com o nível (Alto/Médio/Baixo) resolvido a partir dos pesos planetários desta pessoa. Na secção "${SECCAO_TITULOS.quemE}", referencia pelo menos 2 das categorias marcadas "Alto" como confirmação adicional dos dons já nomeados — nunca inventes uma categoria que não esteja nesta lista, nunca mudes o nível dado, e nunca a apresentes como uma secção à parte (os cartões visuais já existem fora do teu texto — a tua tarefa é só tecê-la na narrativa de "${SECCAO_TITULOS.quemE}").`;
+
 export function construirPromptAdulto(
   intake: VocationiqIntakeAdulto,
   axes: VocationIQAxes,
@@ -835,6 +906,26 @@ export function construirPromptAdulto(
   yogas: YogaHit[],
 ): string {
   const candidatas = candidatasDeclaradas(intake);
+
+  // Correcção do especialista (bug crítico — pergunta específica
+  // silenciosamente ignorada) — confirmado por verificação directa do
+  // texto do prompt: `perguntaEspecifica`/`paraOndeQuerIr` só eram
+  // mostrados ao LLM quando a pessoa NÃO tinha declarado opções
+  // concretas (`!candidatas.length`). Isto é exactamente o caso mais
+  // comum de todos — alguém que já sabe o que quer ("gestão ou
+  // economia?") e TAMBÉM declara essas opções — e nesse caso a
+  // pergunta desaparecia do prompt por inteiro, mesmo com
+  // INSTRUCAO_PERGUNTA_ESPECIFICA/INSTRUCAO_ABERTURA_RESPONDE a exigir
+  // uma resposta directa a algo que o LLM nunca chegava a ver. A ideia
+  // concreta mantém-se condicionada (já tinha uma 2ª linha própria só
+  // para o caso "com candidatas", ver mais abaixo) — só a pergunta
+  // específica e "para onde quer ir" passam a ser sempre mostradas.
+  const linhasTextoLivre = [
+    intake.paraOndeQuerIr && `"Para onde quer ir": ${normalizarTextoLivre(intake.paraOndeQuerIr)}`,
+    intake.perguntaEspecifica && `Pergunta específica: ${normalizarTextoLivre(intake.perguntaEspecifica)}`,
+    !candidatas.length && intake.ideiaConcreta && `Ideia concreta: ${normalizarTextoLivre(intake.ideiaConcreta)}`,
+  ].filter((l): l is string => Boolean(l));
+  const blocoTextoLivre = linhasTextoLivre.length ? linhasTextoLivre.join("\n") : !candidatas.length ? "(nenhum texto livre preenchido — escreve só a partir do que o perfil sustenta em geral.)" : "";
 
   return `
 És um especialista em análise vocacional. Vais escrever um relatório personalizado para ${intake.nome} com base nos dados técnicos fornecidos abaixo. Segue as regras rigorosamente:
@@ -877,6 +968,11 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - ${INSTRUCAO_SELECCAO_CANDIDATAS}
 - ${INSTRUCAO_ABERTURA_CANDIDATAS}
 - ${INSTRUCAO_NIVEL_CANDIDATAS}
+- ${INSTRUCAO_PERGUNTA_ESPECIFICA}
+- ${INSTRUCAO_ABERTURA_RESPONDE}
+- ${INSTRUCAO_VALIDACAO_OPCOES}
+- ${INSTRUCAO_PLANO_PERIODOS_RELATIVOS}
+- ${INSTRUCAO_FACILIDADES_NATURAIS}
 - Tom adulto, directo, sem gíria de coach, sem emojis.
 
 VOLUME: Cada secção deve ser tão longa quanto os dados sustentam — nunca mais, nunca menos. Se uma secção não tem nada genuinamente novo a acrescentar, é curta. Não preencher para atingir um mínimo. Proibido: repetir para parecer completo. Permitido: ser curto e preciso.
@@ -909,6 +1005,9 @@ Usa estes pesos para calibrar a força de cada afirmação:
 · Peso 0,9 a 1,3: suporte moderado — afirma mas sem excesso de confiança
 · Peso < 0,9: suporte fraco — diz isso com clareza, nunca escrevas com a mesma confiança sobre um planeta de peso 0,58 e um de 1,87
 Nunca trates todos os planetas como equivalentes.
+
+-- Para que tem facilidade natural (já calculado — ver INSTRUCAO_FACILIDADES_NATURAIS) --
+${blocoFacilidadesNaturais(pesosPlanetas)}
 
 -- Avasthas (maturidade dos planetas) --
 ${blocoAvasthas(d1)}
@@ -944,7 +1043,7 @@ ${
     ? `A pessoa declarou estas opções (avalia TODAS, mesmo as que o perfil sustenta fracamente):\n${candidatas.map((c) => `- ${c}`).join("\n")}`
     : `A pessoa NÃO declarou opções concretas${intake.areasDestinoIncluiAindaNaoSei ? ' (escolheu "ainda não sei")' : ""}. Deriva até 3 candidatas plausíveis a partir do texto livre abaixo — se não conseguires nenhuma candidata clara, NÃO bloqueies o relatório: escreve a Secção 2 (o que o perfil sustenta, em geral) e resolve o relatório inteiro pela Secção 4 (candidata fora da lista). Texto livre disponível:`
 }
-${!candidatas.length ? [intake.paraOndeQuerIr && `"Para onde queres ir": ${normalizarTextoLivre(intake.paraOndeQuerIr)}`, intake.perguntaEspecifica && `Pergunta específica: ${normalizarTextoLivre(intake.perguntaEspecifica)}`, intake.ideiaConcreta && `Ideia concreta: ${normalizarTextoLivre(intake.ideiaConcreta)}`].filter(Boolean).join("\n") || "(nenhum texto livre preenchido — escreve só a partir do que o perfil sustenta em geral.)" : ""}
+${blocoTextoLivre}
 ${intake.tipoMudanca.length ? `\nTipo de mudança que a pessoa diz querer (usa para calibrar a parte 4 de cada leitura — ex.: se inclui trabalhar por conta própria ou abrir negócio, responde explicitamente se o perfil sustenta trabalho a solo nessa opção): ${intake.tipoMudanca.join(", ")}.` : ""}
 ${intake.ideiaConcreta && candidatas.length ? `\nIdeia concreta partilhada (contexto adicional, não é uma opção à parte): ${normalizarTextoLivre(intake.ideiaConcreta)}` : ""}
 
@@ -964,7 +1063,7 @@ FORMATO DE SAÍDA (obrigatório): escreve em Markdown. Cada secção começa com
 Se não houver candidata fora da lista (4 camadas não convergiram), inclui o cabeçalho "## ${SECCAO_TITULOS.candidataForaDaLista}" na mesma, seguido só da frase que explica que não há — nunca omitas o cabeçalho.
 
 ## ${SECCAO_TITULOS.abertura}
-Quadro de dados (nome, situação, área actual) e o enquadramento da pergunta que a pessoa trouxe. Nunca abrir sem este quadro. O texto da pergunta do cliente deve ser apresentado tal como foi escrito — não o coloques em maiúsculas nem em destaque tipográfico. Usa-o como contexto, não como título.
+O primeiro parágrafo é a resposta directa ou a âncora — ver INSTRUCAO_ABERTURA_RESPONDE, obrigatório, nunca dados técnicos nem análise abstracta antes disto. Só depois desse parágrafo: quadro de dados (nome, situação, área actual) e o enquadramento da pergunta que a pessoa trouxe. O texto da pergunta do cliente deve ser apresentado tal como foi escrito — não o coloques em maiúsculas nem em destaque tipográfico. Usa-o como contexto, não como título.
 
 ## ${SECCAO_TITULOS.quemE}
 Secção nova (correcção do especialista) — um retrato de personalidade, ANTES de qualquer opção ser mencionada. Formato EXACTO, obrigatório e machine-readable — não omitas nem reordenes os marcadores:
@@ -991,6 +1090,8 @@ Termina a secção com uma linha "${MARCADORES.sinteseQuemE} <frase>" — uma fr
 Traduz o Eixo da Missão e o Modo de Ganho dominante para linguagem humana, sem ainda nomear nenhuma das opções declaradas.
 
 ## ${SECCAO_TITULOS.leituraPorOpcao}
+Se existe pergunta específica declarada, esta secção abre, ANTES do primeiro bloco "### ", com a resposta directa no formato exigido por INSTRUCAO_PERGUNTA_ESPECIFICA — nunca só na "${SECCAO_TITULOS.abertura}", tem de estar retomada aqui também, com a mesma resposta, nunca uma diferente.
+
 Para CADA opção candidata (declarada ou derivada), este formato EXACTO, por esta ordem — o cabeçalho "### " e a linha "${MARCADORES.forca}" são obrigatórios e machine-readable, não os omitas nem os traduzas:
 
 ### <nome exacto da opção, tal como foi declarada ou derivada>
@@ -1000,8 +1101,9 @@ ${MARCADORES.insight} <uma frase que resume a leitura desta opção em menos de 
 2. O que esta opção lhe vai custar (o custo específico DESTE perfil nesta escolha, nunca o risco genérico da profissão).
 3. O que esta opção pede e que falta actualmente — e se é algo que se aprende ou algo que não muda.
 4. Onde entra a matéria desta pessoa nesta opção — nunca o sector como resposta, sempre a forma/função (usa o Modo de Ganho para decidir se entra pela voz, pela resolução directa, ou pela liderança/execução pública).
+5. Conclusão explícita — ver INSTRUCAO_VALIDACAO_OPCOES: uma das três frases-molde exactas (sustenta com clareza / sustenta parcialmente / não sustenta de forma natural), nunca omitida, nunca substituída por prosa que descreve prós/contras sem fechar numa das três.
 
-Repete o bloco "### <nome> / ${MARCADORES.forca} / ${MARCADORES.insight} / 1. / 2. / 3. / 4." para cada opção candidata, uma a seguir à outra.
+Repete o bloco "### <nome> / ${MARCADORES.forca} / ${MARCADORES.insight} / 1. / 2. / 3. / 4. / 5." para cada opção candidata, uma a seguir à outra.
 
 ## ${SECCAO_TITULOS.candidataForaDaLista}
 As candidatas elegíveis já vêm calculadas deterministicamente na secção "Candidatas do catálogo" acima — a POOL COMPLETA, SEM LIMITE nenhum. NÃO calcules a tua própria convergência, NÃO inventes nenhuma candidata diferente das listadas lá. A tua tarefa nesta secção é APRESENTAR TODAS as candidatas da pool que passam o Passo 1 — ligação narrativa a um dom já nomeado (ver INSTRUCAO_SELECCAO_CANDIDATAS) —, agrupando as que partilham convergência de base quase idêntica (Passo 3, mesma instrução), e escrever o bloco de raciocínio obrigatório antes delas. Nunca "escolher até 3" — isso já não é a regra.
@@ -1028,7 +1130,7 @@ Ambas curtas e específicas desta candidata — nunca genéricas, nunca repetida
 REGRA ABSOLUTA — CANDIDATA FORA DA LISTA (correcção do especialista): PROIBIDO nomear qualquer candidata, mesmo como pista abaixo do limiar, sem que venha explicitamente da secção "Candidatas do catálogo" acima. Se nenhuma candidata do catálogo atingiu ≥4 camadas, a resposta é "${MARCADORES.candidata} nenhuma" — explica honestamente que o perfil não aponta a nada fora do que já foi pensado. NUNCA preenchas com estereótipos de profissão ou associações livres a arquétipos abstractos. Exemplo do que NÃO fazer: sugerir "engenharia, auditoria, saúde pública" por associação livre a "Saturno = estrutura/rigor" — essas profissões não vieram do catálogo, vieram de associação livre; isto é invenção, não leitura, e é exactamente o que esta regra proíbe.
 
 ## ${SECCAO_TITULOS.oPlano}
-Abre com o tom da classificação da Mahadasha actual (secção "Datas reais" acima) — antes de qualquer data ou passo. Usa as datas reais dessa secção (nunca datas inventadas). Escreve o corpo do plano livremente, e destaca o primeiro passo accionável para esta semana numa linha própria, prefixada exactamente por "${MARCADORES.primeiroPasso} " (obrigatório, machine-readable, não o omitas) — ex.: "${MARCADORES.primeiroPasso} Contacte duas pessoas que já fazem consultoria a solo e pergunte-lhes o que ninguém conta sobre o primeiro ano." Nunca um plano genérico de 90 dias sem ligação às datas calculadas.
+Abre com o tom da classificação da Mahadasha actual (secção "Datas reais" acima) — antes de qualquer período ou passo. Depois disso, segue exactamente o formato de INSTRUCAO_PLANO_PERIODOS_RELATIVOS (períodos relativos — "nas próximas 2 semanas"/"no próximo mês"/"nos próximos 3 meses"/"nos próximos 6 a 12 meses" — nunca datas fixas nem meses do calendário, excepto a data real de fim da Mahadasha/Antardasha actual). Destaca o primeiro passo accionável das "próximas 2 semanas" numa linha própria, prefixada exactamente por "${MARCADORES.primeiroPasso} " (obrigatório, machine-readable, não o omitas) — ex.: "${MARCADORES.primeiroPasso} Contacte duas pessoas que já fazem consultoria a solo e pergunte-lhes o que ninguém conta sobre o primeiro ano." Nunca um plano genérico sem acção concreta e específica em cada um dos 4 períodos.
 
 HORIZONTE TEMPORAL: até 18 meses, afirmações directas. Entre 18 meses e 3 anos, afirmações com cautela ("tende a", "favorece"). Mais de 3 anos, só como pano de fundo, nunca como previsão. A Mahadasha até ao fim do seu ciclo é contexto, não calendário.
 `.trim();

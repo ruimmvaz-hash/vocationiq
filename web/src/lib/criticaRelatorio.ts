@@ -231,6 +231,52 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
      Se falhar (a), (b) ou (c): FALHA — força reescrita das candidatas
      afectadas, nunca do relatório inteiro.
 
+ 28. RESPOSTA DIRECTA À PERGUNTA ESPECÍFICA (correcção do especialista —
+     bug crítico diagnosticado no relatório real da Alexandra: perguntou
+     "seria gestão ou economia?", o rascunho respondeu "economia" só
+     implicitamente algures no texto mas depois sugeriu "Direito" como
+     candidata fora da lista sem nunca reconhecer a contradição): se os
+     dados técnicos têm uma pergunta específica declarada,
+     (a) a secção "Leitura por opção" abre, antes de qualquer outra
+         análise, com o formato exacto "A pergunta [...] tem resposta
+         directa: [...]. Aqui está porquê: [...]"?
+     (b) essa mesma resposta (não uma diferente) já apareceu no primeiro
+         parágrafo da secção "Abertura"?
+     (c) nenhuma candidata em "Candidata fora da lista" contradiz essa
+         resposta sem o reconhecer explicitamente (ou, na ausência de
+         explicação defensável, sem ter sido omitida)?
+     Se falhar (a) ou (b): FALHA — reescrita obrigatória da abertura da
+     secção afectada. Se falhar (c): cita o nome exacto da candidata que
+     contradiz sem explicação — FALHA, reescrita dessa candidata.
+
+ 29. ABERTURA RESPONDE À SITUAÇÃO DA PESSOA (correcção do especialista):
+     o primeiro parágrafo da secção "Abertura" responde directamente à
+     situação da pessoa (resposta à pergunta específica, ou uma âncora
+     com 2-3 pontos fortes do perfil quando não há pergunta) — ou começa
+     por dados técnicos, gráficos, ou análise abstracta antes disso? Se
+     começa por dados técnicos/análise abstracta: FALHA — reescrita
+     obrigatória do primeiro parágrafo.
+
+ 30. VALIDAÇÃO EXPLÍCITA DAS OPÇÕES DECLARADAS (correcção do
+     especialista): cada opção declarada, na secção "Leitura por opção",
+     termina com uma das três conclusões exactas (sustenta com clareza /
+     sustenta parcialmente, com o que está a favor e o que exige mais
+     esforço / não sustenta de forma natural, com a razão)? Lista
+     qualquer opção que fique sem nenhuma das três, ou cuja conclusão
+     seja substituída por prosa vaga sobre prós/contras sem fechar numa
+     delas. Se faltar em alguma opção: FALHA — reescrita dessa opção.
+
+ 31. PLANO EM PERÍODOS RELATIVOS (correcção do especialista): "O plano"
+     usa sempre períodos relativos ao momento da leitura ("nas próximas
+     2 semanas"/"no próximo mês"/"nos próximos 3 meses"/"nos próximos 6
+     a 12 meses"), nunca datas fixas nem meses do calendário (excepto a
+     data real de fim da Mahadasha/Antardasha actual, que se mantém)? E
+     tem pelo menos 3 acções concretas e específicas (rastreáveis a esta
+     pessoa e a esta opção — nunca "explorar opções na área X" ou
+     equivalente genérico)? Lista cada data fixa/mês de calendário
+     inventado e cada acção genérica encontrada. Se falhar qualquer uma
+     das duas condições: FALHA — reescrita obrigatória da secção.
+
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
  Formato:
@@ -467,6 +513,55 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
          das duas falta.
      Se falhar (a), (b) ou (c): FALHA — força reescrita das candidatas
      afectadas, nunca do relatório inteiro.
+
+ 28. RESPOSTA DIRECTA À PERGUNTA ESPECÍFICA (correcção do especialista —
+     bug crítico diagnosticado no relatório real da Alexandra: perguntou
+     "seria gestão ou economia?", o rascunho respondeu "economia" só
+     implicitamente algures no texto mas depois sugeriu "Direito" como
+     candidata fora da lista sem nunca reconhecer a contradição): se os
+     dados técnicos têm uma pergunta específica (implícita, via "qual
+     opção te parece mais provável hoje?"),
+     (a) a secção "Leitura por opção" abre, antes de qualquer outra
+         análise, com o formato exacto "A pergunta [...] tem resposta
+         directa: [...]. Aqui está porquê: [...]"?
+     (b) essa mesma resposta (não uma diferente) já apareceu no primeiro
+         parágrafo da secção "Abertura"?
+     (c) nenhuma candidata em "Candidata fora da lista" contradiz essa
+         resposta sem o reconhecer explicitamente (ou, na ausência de
+         explicação defensável, sem ter sido omitida)?
+     Se falhar (a) ou (b): FALHA — reescrita obrigatória da abertura da
+     secção afectada. Se falhar (c): cita o nome exacto da candidata que
+     contradiz sem explicação — FALHA, reescrita dessa candidata.
+
+ 29. ABERTURA RESPONDE À SITUAÇÃO DA PESSOA (correcção do especialista):
+     o primeiro parágrafo da secção "Abertura" responde directamente à
+     situação da pessoa (resposta à pergunta implícita, ou uma âncora
+     com 2-3 pontos fortes do perfil quando não há nenhuma opção
+     declarada como "mais provável") — ou começa por dados técnicos,
+     gráficos, ou análise abstracta antes disso? Se começa por dados
+     técnicos/análise abstracta: FALHA — reescrita obrigatória do
+     primeiro parágrafo.
+
+ 30. VALIDAÇÃO EXPLÍCITA DAS OPÇÕES EM CIMA DA MESA (correcção do
+     especialista): cada opção em cima da mesa, na secção "Leitura por
+     opção", termina com uma das três conclusões exactas (sustenta com
+     clareza / sustenta parcialmente, com o que está a favor e o que
+     exige mais esforço / não sustenta de forma natural, com a razão)?
+     Lista qualquer opção que fique sem nenhuma das três, ou cuja
+     conclusão seja substituída por prosa vaga sobre prós/contras sem
+     fechar numa delas. Se faltar em alguma opção: FALHA — reescrita
+     dessa opção.
+
+ 31. PLANO EM PERÍODOS RELATIVOS (correcção do especialista): "O plano"
+     usa sempre períodos relativos ao momento da leitura ("nas próximas
+     2 semanas"/"no próximo mês"/"nos próximos 3 meses"/"nos próximos 6
+     a 12 meses"), nunca datas fixas nem meses do calendário (excepto a
+     data real de fim da Mahadasha/Antardasha actual, que se mantém)? E
+     tem pelo menos 3 acções concretas e específicas (rastreáveis a esta
+     pessoa e a esta decisão escolar — nunca "explorar carreiras" ou
+     equivalente genérico)? Lista cada data fixa/mês de calendário
+     inventado e cada acção genérica encontrada. Se falhar qualquer uma
+     das duas condições: FALHA — reescrita obrigatória da secção.
 
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.

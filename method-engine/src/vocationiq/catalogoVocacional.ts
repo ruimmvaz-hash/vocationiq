@@ -882,6 +882,19 @@ export interface IntakeParaCatalogo {
   areaActual: string;
   anosExperiencia: string;
   ideiaConcreta?: string;
+  /**
+   * Correcção do especialista (bug crítico — cursos repetidos nas
+   * candidatas) — as opções que a pessoa já declarou em cima da mesa
+   * (`areasDestino` no ramo adulto, `opcoesAdolescente` no adolescente),
+   * texto livre tal como foi escrito. `catalogarDestinos` nunca recebia
+   * esta lista antes desta correcção — por isso uma opção já declarada
+   * podia reaparecer como "candidata fora da lista", uma contradição
+   * directa (a mesma área listada duas vezes, uma como escolha da pessoa,
+   * outra como "coisa que ainda não tinha considerado"). Casada contra o
+   * catálogo pelo MESMO mecanismo texto→id já usado em todo o ficheiro
+   * (`buscarDestinosPorTexto`), nunca um segundo mapeamento.
+   */
+  opcoesDeclaradas?: string[];
 }
 
 export interface ResultadoCatalogoVocacional {
@@ -1324,7 +1337,22 @@ export function catalogarDestinos(
   // já escreve "Quem é" — ver INSTRUCAO_SELECCAO_CANDIDATAS em
   // promptAdulto.ts — porque é aí, não aqui, que "liga-se a um dom já
   // nomeado" pode ser avaliado de facto, não aproximado por uma fórmula.
+  //
+  // Correcção do especialista (bug crítico — cursos repetidos nas
+  // candidatas) — uma opção que a pessoa já declarou em cima da mesa
+  // (`intake.opcoesDeclaradas`) nunca pode voltar a aparecer aqui como
+  // "candidata fora da lista": seria a mesma área listada duas vezes, uma
+  // como escolha da pessoa, outra como "coisa que ainda não tinha
+  // considerado" — uma contradição directa, exactamente o bug
+  // diagnosticado com o relatório real da Alexandra. Casa cada opção
+  // declarada contra o catálogo pelo MESMO `buscarDestinosPorTexto` já
+  // usado para "área actual"/"ideia concreta" acima — nunca um segundo
+  // mapeamento texto→id. Filtra ANTES do limiar de ≥4 camadas (não
+  // depois), para nunca gastar uma vaga da pool nem influenciar
+  // convergência/nível de outra candidata.
+  const idsDeclarados = new Set((intake.opcoesDeclaradas ?? []).flatMap((texto) => buscarDestinosPorTexto(texto)));
   const elegveis = destinosAlternativos
+    .filter((d) => !idsDeclarados.has(d.id))
     .filter((d) => d.convergencia >= LIMIAR_MINIMO_CANDIDATA)
     .map((d) => ({ destino: d, nivel: nivelDeConfianca(d.camadas) }))
     .filter((x): x is { destino: DestinoConvergente; nivel: 1 | 2 } => x.nivel !== null);
