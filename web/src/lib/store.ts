@@ -300,21 +300,26 @@ export async function marcarAlerta36hEnviado(intakeId: string): Promise<void> {
 }
 
 /**
- * CORRECÇÃO 1 (prazo 48h → 72h) — pedidos pagos há entre 60h e 64h sem
- * relatório entregue, ainda sem o alerta de 60h enviado. Janela de 4h
- * (não "há mais de 60h", como no alerta de 36h) porque este cron corre
- * de 4 em 4 horas — sem o limite superior, cada pedido em atraso
- * continuaria a aparecer em TODAS as corridas seguintes até ser
- * entregue, reenviando o mesmo alerta repetidamente. Mesma armadilha do
- * NULL em Postgres documentada acima em `listarPendentesAlerta36h` —
- * filtrada em JS pela mesma razão.
+ * CORRECÇÃO 1 (prazo 48h → 72h) — pedidos pagos há mais de 60h sem
+ * relatório entregue, ainda sem o alerta de 60h enviado.
+ *
+ * Correcção sobre o plano original — o pedido original previa este cron
+ * a correr de 4 em 4 horas (janela estreita de 60-64h a condizer); o
+ * deploy falhou porque o plano Hobby da Vercel só permite crons diários
+ * (confirmado no próprio erro da Vercel, que aponta para a documentação
+ * de limites). Decisão do fundador: manter o plano Hobby e passar este
+ * cron a diário (ver vercel.json) — por isso a janela passa a ser "há
+ * mais de 60h" SEM limite superior, o mesmo padrão já usado em
+ * `listarPendentesAlerta36h` (o `alerta_60h_enviado` impede reenviar o
+ * mesmo alerta em corridas seguintes, tal como `alerta_36h_enviado`
+ * faz). Consequência aceite: a janela de aviso deixa de ser ~12h fixas
+ * antes do prazo de 72h e passa a poder variar entre ~8h e ~32h,
+ * consoante a hora do dia em que o pedido foi pago.
  */
 export async function listarPendentesAlerta60h(): Promise<IntakeRow[]> {
   const supabase = await getSupabaseAdmin();
-  const agora = Date.now();
-  const desde = new Date(agora - 64 * 60 * 60 * 1000).toISOString();
-  const ate = new Date(agora - 60 * 60 * 60 * 1000).toISOString();
-  const { data, error } = await supabase.from("vocationiq_intakes").select("*").eq("payment_status", "paid").gte("paid_at", desde).lte("paid_at", ate);
+  const cutoff = new Date(Date.now() - 60 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase.from("vocationiq_intakes").select("*").eq("payment_status", "paid").lt("paid_at", cutoff);
   if (error) throw new Error(`Falha ao listar pendentes para alerta de 60h: ${error.message}`);
   return ((data ?? []) as IntakeRow[]).filter((r) => (r.report_status as string | null) !== "delivered" && (r.alerta_60h_enviado as boolean | null) !== true);
 }

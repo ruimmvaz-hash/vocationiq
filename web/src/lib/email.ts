@@ -226,11 +226,15 @@ export async function sendPending36hAlertEmail(params: { nome: string; email: st
 
 /**
  * CORRECÇÃO 1 — alerta interno de pedido em risco: pago há mais de 60h
- * sem relatório entregue, contra o novo prazo de 72h (antes: 48h).
- * Copy exacta pedida. Enviado pelo cron de 4 em 4 horas
- * (api/cron/alerta-60h/route.ts) — nunca substitui o alerta de 36h
- * (sendPending36hAlertEmail, cron diário), que continua a existir tal
- * como está.
+ * sem relatório entregue, contra o prazo de 72h (antes: 48h). Copy
+ * exacta pedida, com uma correcção: "Tempo restante" era um valor fixo
+ * de "~12 horas" no pedido original, que assumia o cron a correr de 4
+ * em 4 horas (deploy falhado — Hobby da Vercel só permite crons
+ * diários, ver store.ts). Passando o cron a diário, o tempo real até ao
+ * prazo pode variar bastante consoante a hora do dia em que o pedido
+ * foi pago — por isso calculado aqui a partir de `paidAt`, nunca fixo,
+ * incluindo o caso (possível com verificação só 1x/dia) de já ter
+ * passado o prazo quando o alerta chega.
  */
 export async function sendPending60hAlertEmail(params: { nome: string; email: string; paidAt: string; intakeId: string }): Promise<DeliveryResult> {
   if (!RESEND_API_KEY) {
@@ -240,12 +244,14 @@ export async function sendPending60hAlertEmail(params: { nome: string; email: st
 
   const prazoLimite = new Date(new Date(params.paidAt).getTime() + 72 * 60 * 60 * 1000);
   const prazoFormatado = new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(prazoLimite);
+  const horasRestantes = Math.round((prazoLimite.getTime() - Date.now()) / (60 * 60 * 1000));
+  const tempoRestanteTexto = horasRestantes > 0 ? `~${horasRestantes} horas` : "prazo já ultrapassado";
   const link = `${SITE_URL}/admin/relatorios/${params.intakeId}`;
 
   const bodyHtml = `
     ${p(`O pedido de ${escapeHtml(params.nome)} foi pago há mais de 60 horas e ainda não foi entregue.`)}
     <p style="margin:0 0 6px;"><strong>Prazo limite:</strong> ${prazoFormatado}</p>
-    <p style="margin:0 0 16px;"><strong>Tempo restante:</strong> ~12 horas</p>
+    <p style="margin:0 0 16px;"><strong>Tempo restante:</strong> ${tempoRestanteTexto}</p>
     ${botao(link, "Aceder ao backoffice", "ambar")}
   `;
 

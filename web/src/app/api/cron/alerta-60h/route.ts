@@ -3,9 +3,13 @@ import { listarPendentesAlerta60h, marcarAlerta60hEnviado } from "@/lib/store";
 import { sendPending60hAlertEmail } from "@/lib/email";
 
 // CORRECÇÃO 1 (prazo de entrega 48h → 72h) — alerta interno de "pedido
-// em risco" aos 60h, corre de 4 em 4 horas (ver vercel.json). Distinto
-// e adicional ao alerta de 36h já existente (cron diário
-// revisao-emails), que continua sem alterações.
+// em risco" aos 60h. Corre 1x por dia (ver vercel.json) — o pedido
+// original previa 4 em 4 horas, mas isso faz o deploy falhar no plano
+// Hobby da Vercel (só permite crons diários); decisão do fundador foi
+// manter Hobby e passar este cron a diário (ver a janela sem limite
+// superior em listarPendentesAlerta60h, store.ts). Distinto e adicional
+// ao alerta de 36h já existente (cron diário revisao-emails), que
+// continua sem alterações.
 export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) return NextResponse.json({ error: "CRON_SECRET não configurado" }, { status: 500 });

@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/alerta-60h",
-      "schedule": "0 */4 * * *"
+      "schedule": "0 15 * * *"
     },
     {
       "path": "/api/cron/aniversarios",
