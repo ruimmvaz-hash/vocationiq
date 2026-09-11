@@ -127,6 +127,11 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
     criticaCriadaEm: string | null;
     rascunhoReescrito: string | null;
     rascunhoVersao: number;
+    /** CORRECÇÃO 2 — só vem preenchido a partir do rascunho por aprovar (`pdf_path IS NULL`): é a única linha onde "Guardar"/"Gerar"/"Usar versão LLM"/"Restaurar" actuam. O texto do relatório já entregue, mostrado aqui como fallback só de leitura, nunca tem estado de edição activo. */
+    textoLlm: string | null;
+    editadoManualmente: boolean;
+    editadoEm: string | null;
+    versaoAnterior: string | null;
   } | null = rascunho?.texto
     ? {
         id: rascunho.id,
@@ -139,6 +144,10 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
         criticaCriadaEm: rascunho.criticaCriadaEm,
         rascunhoReescrito: rascunho.rascunhoReescrito,
         rascunhoVersao: rascunho.rascunhoVersao,
+        textoLlm: rascunho.textoLlm,
+        editadoManualmente: rascunho.editadoManualmente,
+        editadoEm: rascunho.editadoEm,
+        versaoAnterior: rascunho.versaoAnterior,
       }
     : relatorioEntregue?.rascunhoTexto
       ? {
@@ -152,6 +161,10 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
           criticaCriadaEm: relatorioEntregue.criticaCriadaEm,
           rascunhoReescrito: relatorioEntregue.rascunhoReescrito,
           rascunhoVersao: relatorioEntregue.rascunhoVersao,
+          textoLlm: null,
+          editadoManualmente: false,
+          editadoEm: null,
+          versaoAnterior: null,
         }
       : null;
 
@@ -251,9 +264,12 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
           textoInicial={actual?.texto ?? null}
           criadoEmInicial={rascunho?.criadoEm ?? relatorioEntregue?.rascunhoCriadoEm ?? relatorioEntregue?.criadoEm ?? null}
           rascunhoVersaoInicial={actual?.rascunhoVersao ?? 1}
-          criticaCriadaEmInicial={actual?.criticaCriadaEm ?? null}
           temDraftReal={Boolean(rascunho?.texto)}
           apiBase={apiBaseRascunho}
+          textoLlmInicial={actual?.textoLlm ?? null}
+          editadoManualmenteInicial={actual?.editadoManualmente ?? false}
+          editadoEmInicial={actual?.editadoEm ?? null}
+          versaoAnteriorInicial={actual?.versaoAnterior ?? null}
         />
       </AccordionSection>
 

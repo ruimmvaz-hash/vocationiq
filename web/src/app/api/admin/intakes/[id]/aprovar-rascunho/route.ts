@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { hasSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { obterIntake, atualizarEmailIntake } from "@/lib/store";
+import { obterIntake, atualizarEmailIntake, obterOuCriarCodigoReferralCliente } from "@/lib/store";
 import { obterRascunho, guardarRelatorioPdf, marcarRelatorioEnviado, registarEnvio, atualizarCoordenadasNascimento } from "@/lib/storage";
 import { sendReportEmail } from "@/lib/email";
 import { reconstruirHTMLRelatorio, GeocodeError } from "@/lib/relatorioAdultoCompute";
@@ -54,7 +54,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const bytes = await htmlParaPdf(html);
     const filename = `Relatorio-VocationIQ-${intake.nome.replace(/[^a-zA-Z0-9À-ÿ ]/g, "").trim().replace(/\s+/g, "-")}.pdf`;
 
-    const resultado = await sendReportEmail({ to: email, nome: intake.nome, intakeId: id, pdfBytes: bytes, pdfFilename: filename });
+    const codigoReferral = await obterOuCriarCodigoReferralCliente(intake);
+    const resultado = await sendReportEmail({ to: email, nome: intake.nome, intakeId: id, codigoReferral, pdfBytes: bytes, pdfFilename: filename });
     if (!resultado.ok) return NextResponse.json({ error: resultado.detail ?? "falha ao enviar o email" }, { status: 500 });
 
     if (email !== intake.email) await atualizarEmailIntake(id, email);

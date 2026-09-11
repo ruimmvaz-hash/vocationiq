@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { hasSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { obterIntake, atualizarEmailIntake } from "@/lib/store";
+import { obterIntake, atualizarEmailIntake, obterOuCriarCodigoReferralCliente } from "@/lib/store";
 import { obterRelatorioEntregue, baixarRelatorioPdf, registarEnvio } from "@/lib/storage";
 import { sendReportEmail } from "@/lib/email";
 
@@ -29,7 +29,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   try {
     const bytes = await baixarRelatorioPdf(relatorio.pdfPath);
-    const resultado = await sendReportEmail({ to: email, nome: intake.nome, intakeId: id, pdfBytes: bytes, pdfFilename: relatorio.pdfFilename });
+    const codigoReferral = await obterOuCriarCodigoReferralCliente(intake);
+    const resultado = await sendReportEmail({ to: email, nome: intake.nome, intakeId: id, codigoReferral, pdfBytes: bytes, pdfFilename: relatorio.pdfFilename });
     if (!resultado.ok) return NextResponse.json({ error: resultado.detail ?? "falha ao enviar o email" }, { status: 500 });
 
     await registarEnvio(relatorio.id, email, "reenvio");

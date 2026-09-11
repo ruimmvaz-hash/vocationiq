@@ -12,7 +12,7 @@ const INCLUI = [
   "O que mudou em ti desde o relatório",
   "A tua dúvida actual respondida",
   "O próximo passo concreto",
-  "Entregue em 48 horas",
+  "Entregue em 72 horas",
 ];
 
 export default async function RevisaoPage({ searchParams }: { searchParams: Promise<{ id?: string }> }) {

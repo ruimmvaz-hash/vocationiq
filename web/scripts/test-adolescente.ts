@@ -53,6 +53,7 @@ async function main() {
     revisao_email_enviado: false,
     revisao_email_180_enviado: false,
     alerta_36h_enviado: false,
+    alerta_60h_enviado: false,
     clareza_ideia: "duas-tres-opcoes",
     areas_consideradas: null,
     areas_consideradas_outra: null,
@@ -73,6 +74,11 @@ async function main() {
     descricao_situacao: null,
     contexto_adicional: null,
     pergunta_especifica: null,
+    aniversario_email_enviado_ano: null,
+    mahadasha_alerta_enviado_em: null,
+    mahadasha_alerta_para_data: null,
+    cliente_codigo_referral: null,
+    referral_creditado: false,
   };
 
   console.log("=== Geocodificação de controlo ===");

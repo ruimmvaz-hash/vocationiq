@@ -42,13 +42,13 @@ const RECEBES = [
   "As áreas onde rendes mais",
   "O que pode estar a travar-te",
   "Direcções concretas a explorar",
-  "Entregue em 48 horas",
+  "Entregue em 72 horas",
 ];
 
 const PASSOS = [
   { numero: "1", titulo: "Preenches os teus dados", texto: "Um formulário curto — 2 minutos." },
   { numero: "2", titulo: "Analisamos o teu perfil", texto: "Cruzamos os teus dados com astrologia psicológica." },
-  { numero: "3", titulo: "Recebes o teu relatório", texto: "Por email, pronto a ler, em 48 horas." },
+  { numero: "3", titulo: "Recebes o teu relatório", texto: "Por email, pronto a ler, em 72 horas." },
 ];
 
 const FAQ = [
@@ -68,7 +68,7 @@ const FAQ = [
   },
   {
     pergunta: "Quanto tempo demora?",
-    resposta: "48 horas desde a confirmação do pagamento.",
+    resposta: "72 horas desde a confirmação do pagamento.",
   },
   {
     pergunta: "Como recebo o relatório?",
@@ -85,7 +85,7 @@ const FAQ = [
   },
   {
     pergunta: "O relatório é automático?",
-    resposta: "Não. Cada relatório é revisto por uma pessoa antes de ser entregue. É por isso que demora 48 horas e não 48 segundos.",
+    resposta: "Não. Cada relatório é revisto por uma pessoa antes de ser entregue. É por isso que demora 72 horas e não 72 segundos.",
   },
   {
     pergunta: "Posso fazer perguntas depois de receber o relatório?",
@@ -103,7 +103,7 @@ const FAQ = [
   {
     pergunta: "Posso pedir reembolso?",
     resposta:
-      "Se o relatório não for entregue em 48 horas, reembolsamos na totalidade. Após a entrega, não há reembolsos — o trabalho de análise e revisão já foi feito.",
+      "Se o relatório não for entregue em 72 horas, reembolsamos na totalidade. Após a entrega, não há reembolsos — o trabalho de análise e revisão já foi feito.",
   },
 ];
 
@@ -137,7 +137,7 @@ export default async function HomePage() {
                   Começar a minha análise
                 </TrackedCtaLink>
               </div>
-              <p className="mt-4 text-sm font-semibold text-white/70">€99 · Entrega em 48h</p>
+              <p className="mt-4 text-sm font-semibold text-white/70">€99 · Entrega em 72h</p>
             </div>
           </div>
         </section>
@@ -209,7 +209,7 @@ export default async function HomePage() {
         <section className="bg-navy">
           <div className="mx-auto max-w-5xl px-6 py-16 text-center sm:py-24">
             <p className="text-5xl font-extrabold tracking-tight text-amber">€99</p>
-            <p className="mt-3 text-white/80">Análise personalizada · 48h</p>
+            <p className="mt-3 text-white/80">Análise personalizada · 72h</p>
             <TrackedCtaLink
               href="/intake"
               location="price"

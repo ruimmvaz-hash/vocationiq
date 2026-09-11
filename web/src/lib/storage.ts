@@ -221,15 +221,31 @@ export interface DadosCriticaParaGuardar {
  * (nunca recalculado à parte) — para o backoffice e o rodapé do relatório
  * mostrarem exactamente o timestamp que ficou na BD, nunca um valor
  * aproximado calculado de novo no chamador.
+ *
+ * CORRECÇÃO 2 (editor com preservação de edição manual) — `origem`
+ * decide o que acontece a `rascunho_texto` (a versão que "Ver PDF"/
+ * "Aprovar e enviar" usam sempre):
+ * · "manual" (PUT /api/relatorio, o admin editou a caixa de texto):
+ *   `rascunho_texto` passa a ser sempre o texto dado; marca
+ *   `rascunho_editado_manualmente=true` e grava o texto ANTERIOR em
+ *   `rascunho_versao_anterior` (um único nível de undo — "Restaurar
+ *   versão anterior").
+ * · "geracao" (POST /api/relatorio, chamou a Anthropic): `texto` fica
+ *   SEMPRE em `rascunho_texto_llm` (nunca perdido); só entra também em
+ *   `rascunho_texto` quando NÃO havia edição manual activa — havendo
+ *   uma, `rascunho_texto` fica intacto e o backoffice mostra as duas
+ *   versões lado a lado para o fundador escolher conscientemente
+ *   (nunca substituída em silêncio).
  */
 export async function guardarRascunho(
   intakeId: string,
   texto: string,
+  origem: "geracao" | "manual" = "geracao",
   dadosTecnicos?: DadosTecnicosParaGuardar,
   promptCompleto?: string,
   critica?: DadosCriticaParaGuardar,
   coordenadasNascimento?: CoordenadasNascimento,
-): Promise<{ id: string; criadoEm: string; rascunhoVersao: number }> {
+): Promise<{ id: string; criadoEm: string; rascunhoVersao: number; manualPreservada: boolean }> {
   const sb = await getSupabaseAdmin();
   const agora = new Date().toISOString();
   const houveReescrita = critica !== undefined && critica.rascunhoReescrito !== null;
@@ -244,8 +260,32 @@ export async function guardarRascunho(
     ...(coordenadasNascimento !== undefined ? { coordenadas_nascimento: coordenadasNascimento } : {}),
   };
 
-  const { data: existente, error: buscaError } = await sb.from("viq_relatorios").select("id, rascunho_versao").eq("intake_id", intakeId).is("pdf_path", null).maybeSingle();
+  const { data: existente, error: buscaError } = await sb
+    .from("viq_relatorios")
+    .select("id, rascunho_texto, rascunho_versao, rascunho_editado_manualmente")
+    .eq("intake_id", intakeId)
+    .is("pdf_path", null)
+    .maybeSingle();
   if (buscaError) throw new Error(`Falha ao procurar rascunho existente: ${buscaError.message}`);
+
+  // Decide o destino de `rascunho_texto`/`rascunho_texto_llm` consoante a origem.
+  let camposTexto: Record<string, unknown>;
+  let manualPreservada = false;
+  if (origem === "manual") {
+    camposTexto = {
+      rascunho_texto: texto,
+      rascunho_editado_manualmente: true,
+      rascunho_editado_em: agora,
+      ...(existente?.rascunho_texto ? { rascunho_versao_anterior: existente.rascunho_texto } : {}),
+    };
+  } else {
+    const haviaEdicaoManual = existente?.rascunho_editado_manualmente === true;
+    manualPreservada = haviaEdicaoManual;
+    camposTexto = {
+      rascunho_texto_llm: texto,
+      ...(haviaEdicaoManual ? {} : { rascunho_texto: texto }),
+    };
+  }
 
   if (existente) {
     const versaoActual = (existente.rascunho_versao as number | null) ?? 1;
@@ -253,20 +293,73 @@ export async function guardarRascunho(
     const camposVersao = houveReescrita ? { rascunho_versao: versaoFinal } : {};
     const { error } = await sb
       .from("viq_relatorios")
-      .update({ rascunho_texto: texto, rascunho_criado_em: agora, ...camposExtra, ...camposVersao })
+      .update({ rascunho_criado_em: agora, ...camposTexto, ...camposExtra, ...camposVersao })
       .eq("id", existente.id);
     if (error) throw new Error(`Falha ao actualizar rascunho: ${error.message}`);
-    return { id: existente.id as string, criadoEm: agora, rascunhoVersao: versaoFinal };
+    return { id: existente.id as string, criadoEm: agora, rascunhoVersao: versaoFinal, manualPreservada };
   }
 
   const versaoFinal = houveReescrita ? 2 : 1;
   const { data, error } = await sb
     .from("viq_relatorios")
-    .insert({ intake_id: intakeId, rascunho_texto: texto, rascunho_criado_em: agora, ...camposExtra, ...(houveReescrita ? { rascunho_versao: versaoFinal } : {}) })
+    .insert({ intake_id: intakeId, rascunho_criado_em: agora, ...camposTexto, ...camposExtra, ...(houveReescrita ? { rascunho_versao: versaoFinal } : {}) })
     .select("id")
     .single();
   if (error) throw new Error(`Falha ao guardar rascunho: ${error.message}`);
-  return { id: data.id as string, criadoEm: agora, rascunhoVersao: versaoFinal };
+  return { id: data.id as string, criadoEm: agora, rascunhoVersao: versaoFinal, manualPreservada };
+}
+
+/** CORRECÇÃO 2 — "Usar versão LLM": substitui `rascunho_texto` pela última geração (`rascunho_texto_llm`), preservando a edição manual anterior em `rascunho_versao_anterior` (continua a poder ser restaurada). Só o fundador chama isto, nunca automático. */
+export async function usarVersaoLlmRascunho(intakeId: string): Promise<{ criadoEm: string }> {
+  const sb = await getSupabaseAdmin();
+  const { data: existente, error: buscaError } = await sb
+    .from("viq_relatorios")
+    .select("id, rascunho_texto, rascunho_texto_llm")
+    .eq("intake_id", intakeId)
+    .is("pdf_path", null)
+    .maybeSingle();
+  if (buscaError) throw new Error(`Falha ao procurar rascunho: ${buscaError.message}`);
+  if (!existente || !existente.rascunho_texto_llm) throw new Error("Não há nenhuma versão gerada pela Anthropic para usar.");
+
+  const agora = new Date().toISOString();
+  const { error } = await sb
+    .from("viq_relatorios")
+    .update({
+      rascunho_texto: existente.rascunho_texto_llm,
+      rascunho_versao_anterior: existente.rascunho_texto ?? null,
+      rascunho_editado_manualmente: false,
+      rascunho_criado_em: agora,
+    })
+    .eq("id", existente.id);
+  if (error) throw new Error(`Falha ao adoptar a versão LLM: ${error.message}`);
+  return { criadoEm: agora };
+}
+
+/** CORRECÇÃO 2 — "Restaurar versão anterior": único nível de undo, troca `rascunho_texto` pelo que estava em `rascunho_versao_anterior` e consome-o (fica `null` — não é uma pilha de histórico). */
+export async function restaurarVersaoAnteriorRascunho(intakeId: string): Promise<{ criadoEm: string }> {
+  const sb = await getSupabaseAdmin();
+  const { data: existente, error: buscaError } = await sb
+    .from("viq_relatorios")
+    .select("id, rascunho_versao_anterior")
+    .eq("intake_id", intakeId)
+    .is("pdf_path", null)
+    .maybeSingle();
+  if (buscaError) throw new Error(`Falha ao procurar rascunho: ${buscaError.message}`);
+  if (!existente || !existente.rascunho_versao_anterior) throw new Error("Não há nenhuma versão anterior para restaurar.");
+
+  const agora = new Date().toISOString();
+  const { error } = await sb
+    .from("viq_relatorios")
+    .update({
+      rascunho_texto: existente.rascunho_versao_anterior,
+      rascunho_versao_anterior: null,
+      rascunho_editado_manualmente: true,
+      rascunho_editado_em: agora,
+      rascunho_criado_em: agora,
+    })
+    .eq("id", existente.id);
+  if (error) throw new Error(`Falha ao restaurar a versão anterior: ${error.message}`);
+  return { criadoEm: agora };
 }
 
 export interface RascunhoRelatorio {
@@ -283,6 +376,12 @@ export interface RascunhoRelatorio {
   rascunhoVersao: number;
   /** RISCO ARQUITECTURAL 7 — coordenadas geocodificadas uma única vez para este pedido; `null` em linhas anteriores à migração 0018. */
   coordenadasNascimento: CoordenadasNascimento | null;
+  /** CORRECÇÃO 2 — texto bruto da última geração real pela Anthropic, guardado à parte de `texto` (que pode ser uma edição manual por cima). */
+  textoLlm: string | null;
+  editadoManualmente: boolean;
+  editadoEm: string | null;
+  /** CORRECÇÃO 2 — um único nível de undo; `null` quando não há nada para restaurar. */
+  versaoAnterior: string | null;
 }
 
 /** Último rascunho por gerar/aprovar (pdf_path ainda nulo) para este intake, se existir. */
@@ -290,7 +389,9 @@ export async function obterRascunho(intakeId: string): Promise<RascunhoRelatorio
   const sb = await getSupabaseAdmin();
   const { data, error } = await sb
     .from("viq_relatorios")
-    .select("id, rascunho_texto, rascunho_criado_em, dados_tecnicos, prompt_completo, auditoria_llm, auditoria_criada_em, critica_llm, critica_criada_em, rascunho_reescrito, rascunho_versao, coordenadas_nascimento")
+    .select(
+      "id, rascunho_texto, rascunho_criado_em, dados_tecnicos, prompt_completo, auditoria_llm, auditoria_criada_em, critica_llm, critica_criada_em, rascunho_reescrito, rascunho_versao, coordenadas_nascimento, rascunho_texto_llm, rascunho_editado_manualmente, rascunho_editado_em, rascunho_versao_anterior",
+    )
     .eq("intake_id", intakeId)
     .is("pdf_path", null)
     .not("rascunho_texto", "is", null)
@@ -309,6 +410,10 @@ export async function obterRascunho(intakeId: string): Promise<RascunhoRelatorio
     rascunhoReescrito: (data.rascunho_reescrito as string | null) ?? null,
     rascunhoVersao: (data.rascunho_versao as number | null) ?? 1,
     coordenadasNascimento: (data.coordenadas_nascimento as CoordenadasNascimento | null) ?? null,
+    textoLlm: (data.rascunho_texto_llm as string | null) ?? null,
+    editadoManualmente: (data.rascunho_editado_manualmente as boolean | null) === true,
+    editadoEm: (data.rascunho_editado_em as string | null) ?? null,
+    versaoAnterior: (data.rascunho_versao_anterior as string | null) ?? null,
   };
 }
 

@@ -11,7 +11,7 @@ export default function IntakePage() {
       <Header />
       <main className="mx-auto max-w-xl px-6 py-16 sm:py-20">
         <h1 className="text-2xl font-extrabold tracking-tight text-navy sm:text-3xl">A tua análise VocationIQ</h1>
-        <p className="mt-3 text-ink/70">Preenche os teus dados. Depois do pagamento, o relatório chega por email em 48 horas.</p>
+        <p className="mt-3 text-ink/70">Preenche os teus dados. Depois do pagamento, o relatório chega por email em 72 horas.</p>
         <div className="mt-10">
           <IntakeForm />
         </div>

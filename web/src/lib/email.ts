@@ -81,6 +81,20 @@ function p(texto: string): string {
   return `<p style="margin:0 0 16px;">${texto}</p>`;
 }
 
+/**
+ * Saudação/assunto com nome — os emails de Natal/Ano Novo (FASE 2,
+ * TAREFA 4) vão também para leads (`viq_leads`, que nunca guarda nome,
+ * só email), ao contrário de todos os outros emails desta ficha
+ * (sempre clientes, sempre com `intake.nome`). Em vez de inventar um
+ * nome, cai para uma saudação/assunto neutros quando `nome` vem vazio.
+ */
+function saudacao(nome: string): string {
+  return nome ? `Olá ${escapeHtml(nome)},` : "Olá,";
+}
+function comNome(nome: string, texto: string): string {
+  return nome ? `${texto}, ${nome}` : texto;
+}
+
 /** Email 1 — confirmação de pedido, enviado imediatamente após o pagamento. */
 export async function sendConfirmationEmail(params: { to: string; nome: string }): Promise<DeliveryResult> {
   if (!RESEND_API_KEY) {
@@ -92,12 +106,12 @@ export async function sendConfirmationEmail(params: { to: string; nome: string }
   const bodyHtml = `
     ${p(`Olá ${nome},`)}
     ${p("Recebemos o teu pedido e o pagamento foi confirmado.")}
-    ${p("A tua análise personalizada está agora em preparação e será enviada para este email em até 48 horas.")}
+    ${p("A tua análise personalizada está agora em preparação e será enviada para este email em até 72 horas.")}
     ${seccaoTitulo("O que acontece a seguir")}
     <ol style="margin:0 0 16px;padding-left:20px;">
       <li style="margin-bottom:6px;">A nossa equipa analisa o teu perfil</li>
       <li style="margin-bottom:6px;">O relatório é revisto por uma pessoa</li>
-      <li>Recebes o teu relatório por email em até 48 horas</li>
+      <li>Recebes o teu relatório por email em até 72 horas</li>
     </ol>
     ${p("Se tiveres alguma dúvida, responde directamente a este email.")}
     ${botao(SITE_URL, "Visitar vocationiq.app", "azul")}
@@ -210,8 +224,50 @@ export async function sendPending36hAlertEmail(params: { nome: string; email: st
   }
 }
 
+/**
+ * CORRECÇÃO 1 — alerta interno de pedido em risco: pago há mais de 60h
+ * sem relatório entregue, contra o novo prazo de 72h (antes: 48h).
+ * Copy exacta pedida. Enviado pelo cron de 4 em 4 horas
+ * (api/cron/alerta-60h/route.ts) — nunca substitui o alerta de 36h
+ * (sendPending36hAlertEmail, cron diário), que continua a existir tal
+ * como está.
+ */
+export async function sendPending60hAlertEmail(params: { nome: string; email: string; paidAt: string; intakeId: string }): Promise<DeliveryResult> {
+  if (!RESEND_API_KEY) {
+    console.warn("[vocationiq email] RESEND_API_KEY não configurada — alerta de 60h não enviado.");
+    return { ok: false, detail: "RESEND_API_KEY não configurada" };
+  }
+
+  const prazoLimite = new Date(new Date(params.paidAt).getTime() + 72 * 60 * 60 * 1000);
+  const prazoFormatado = new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(prazoLimite);
+  const link = `${SITE_URL}/admin/relatorios/${params.intakeId}`;
+
+  const bodyHtml = `
+    ${p(`O pedido de ${escapeHtml(params.nome)} foi pago há mais de 60 horas e ainda não foi entregue.`)}
+    <p style="margin:0 0 6px;"><strong>Prazo limite:</strong> ${prazoFormatado}</p>
+    <p style="margin:0 0 16px;"><strong>Tempo restante:</strong> ~12 horas</p>
+    ${botao(link, "Aceder ao backoffice", "ambar")}
+  `;
+
+  const resend = new Resend(RESEND_API_KEY);
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: ADMIN_EMAIL,
+      subject: `⚠ Pedido em risco — ${params.nome} (60h passadas)`,
+      html: wrapper(bodyHtml),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[vocationiq email] falha ao enviar alerta de 60h:", detail);
+    return { ok: false, detail };
+  }
+}
+
 /** Email 2 — entrega do relatório, com PDF anexo. Enviado a partir do modal "Marcar como entregue" em /admin. */
-export async function sendReportEmail(params: { to: string; nome: string; intakeId: string; pdfBytes?: Buffer; pdfFilename?: string }): Promise<DeliveryResult> {
+export async function sendReportEmail(params: { to: string; nome: string; intakeId: string; codigoReferral: string; pdfBytes?: Buffer; pdfFilename?: string }): Promise<DeliveryResult> {
   if (!RESEND_API_KEY) {
     console.warn("[vocationiq email] RESEND_API_KEY não configurada — relatório não enviado.");
     return { ok: false, detail: "RESEND_API_KEY não configurada" };
@@ -234,6 +290,12 @@ export async function sendReportEmail(params: { to: string; nome: string; intake
     ${p("Se conheces um adolescente, jovem ou adulto com dúvidas sobre o seu caminho, podes ganhar por cada pessoa que trouxeres.")}
     ${p("20% de comissão por cada análise vendida — 25% a partir da 5ª venda. Registo gratuito, sem compromisso.")}
     ${botao(`${SITE_URL}/comercial`, "Saber mais sobre o programa de comerciais", "azul")}
+
+    ${seccaoTitulo("O seu código de referência")}
+    ${p("Conhece alguém que possa beneficiar de uma análise VocationIQ?")}
+    <p style="margin:0 0 6px;"><strong>O seu código de referência é:</strong> ${escapeHtml(params.codigoReferral)}</p>
+    ${p(`Partilhe em: <a href="${SITE_URL}/intake" style="color:#1B3A6B;">${SITE_HOST}/intake</a>`)}
+    ${p("Quando alguém usar o seu código e fizer uma análise, recebe automaticamente um desconto.")}
 
     <p style="margin:32px 0 0;padding-top:20px;border-top:1px solid #E6E6E6;">Obrigado por confiares no VocationIQ.</p>
     <p style="margin:8px 0 0;">VocationIQ<br/>hello@vocationiq.app</p>
@@ -309,24 +371,32 @@ export async function sendLeadMagnetEmail(params: { to: string }): Promise<Deliv
   }
 }
 
-/** Email de follow-up aos 90 dias — copy exacta pedida. */
+/**
+ * Email de follow-up aos 90 dias — RETENÇÃO, TAREFA 3B: reescrito para
+ * um tom mais pessoal (copy exacta pedida), a substituir a versão
+ * anterior, mais transaccional. Nota de registo: a copy pedida usa
+ * "você/sua" — mantido tal como especificado, mesmo sendo diferente do
+ * registo "tu" do resto do site (incluindo a versão anterior deste
+ * mesmo email); ver relatório final.
+ */
 export async function sendRevisao90Email(params: { to: string; nome: string; intakeId: string }): Promise<DeliveryResult> {
   if (!RESEND_API_KEY) {
     console.warn("[vocationiq email] RESEND_API_KEY não configurada — email de revisão (90d) não enviado.");
     return { ok: false, detail: "RESEND_API_KEY não configurada" };
   }
 
-  const link = `${SITE_URL}/revisao?id=${params.intakeId}`;
+  const nome = escapeHtml(params.nome);
   const bodyHtml = `
-    ${p(`Olá ${escapeHtml(params.nome)},`)}
-    ${p("Há 3 meses recebeste a tua análise VocationIQ.")}
-    ${p("Muito pode ter mudado desde então — e é exactamente aí que uma revisão faz sentido.")}
-    ${p("A VocationIQ Revisão cruza o que já sabemos sobre o teu perfil com o que está a acontecer agora. Responde à tua dúvida actual com o contexto de quem já te conhece.")}
-    <p style="margin:0 0 16px;font-weight:700;">€49 · Entrega em 48h</p>
-    ${botao(link, "Ver a minha revisão →", "ambar")}
-    <p style="margin:8px 0 16px;font-size:13px;color:#1A1A1A99;">${link.replace(/^https?:\/\//, "")}</p>
-    ${p("Se não precisas agora, guarda este email — podes usar quando precisares.")}
-    <p style="margin:24px 0 0;">VocationIQ</p>
+    ${p(`Olá ${nome},`)}
+    ${p("Há 3 meses recebeu a sua análise VocationIQ. Esperamos que tenha sido útil.")}
+    ${p("Gostaríamos de saber:")}
+    <ul style="margin:0 0 16px;padding-left:20px;">
+      <li style="margin-bottom:6px;">Tomou alguma decisão com base na análise?</li>
+      <li style="margin-bottom:6px;">Há algo que ainda não está claro?</li>
+      <li>Precisou de ajuda a implementar o plano?</li>
+    </ul>
+    ${p("Se quiser partilhar como está a correr — ou se tiver dúvidas — pode responder directamente a este email.")}
+    <p style="margin:24px 0 0;">Com os melhores cumprimentos,<br/>Equipa VocationIQ</p>
   `;
 
   const resend = new Resend(RESEND_API_KEY);
@@ -335,7 +405,7 @@ export async function sendRevisao90Email(params: { to: string; nome: string; int
       from: FROM_EMAIL,
       to: params.to,
       replyTo: REPLY_TO,
-      subject: `Já passaram 3 meses — como está a correr, ${params.nome}?`,
+      subject: `${params.nome}, como está a correr?`,
       html: wrapper(bodyHtml),
     });
     if (error) throw new Error(error.message);
@@ -347,20 +417,31 @@ export async function sendRevisao90Email(params: { to: string; nome: string; int
   }
 }
 
-/** Email de follow-up aos 180 dias — só enviado se ainda não comprou revisão. Copy exacta pedida. */
+/**
+ * Email de follow-up aos 180 dias — só enviado se ainda não comprou
+ * revisão. RETENÇÃO, TAREFA 3B: reescrito (copy exacta pedida). Nota de
+ * registo: mesma ressalva "você/sua" do email de 90 dias acima. Dispara
+ * exactamente aos 180 dias; `sendComoEstaEmail` (FASE 2, TAREFA 2, sem
+ * venda) dispara 2 semanas depois, por decisão do fundador, para nunca
+ * chegarem no mesmo dia.
+ */
 export async function sendRevisao180Email(params: { to: string; nome: string; intakeId: string }): Promise<DeliveryResult> {
   if (!RESEND_API_KEY) {
     console.warn("[vocationiq email] RESEND_API_KEY não configurada — email de revisão (180d) não enviado.");
     return { ok: false, detail: "RESEND_API_KEY não configurada" };
   }
 
-  const link = `${SITE_URL}/revisao?id=${params.intakeId}`;
+  const nome = escapeHtml(params.nome);
+  const linkRevisao = `${SITE_URL}/revisao?id=${params.intakeId}`;
+  const linkTestemunho = `${SITE_URL}/avaliacao?id=${params.intakeId}`;
   const bodyHtml = `
-    ${p(`Olá ${escapeHtml(params.nome)},`)}
-    ${p("6 meses é muito tempo.")}
-    ${p("Se ainda tens dúvidas sobre o teu caminho, a revisão continua disponível por €49.")}
-    ${botao(link, "Ver a minha revisão →", "ambar")}
-    <p style="margin:24px 0 0;">VocationIQ</p>
+    ${p(`Olá ${nome},`)}
+    ${p("Já passaram 6 meses desde que recebeu a sua análise VocationIQ.")}
+    ${p("Muito pode ter mudado desde então. Se sentir que é altura de rever o plano ou explorar novas opções, estamos aqui.")}
+    ${p("E se a análise foi útil, adorávamos ouvir a sua história — um testemunho seu ajuda outras pessoas a tomar a mesma decisão que tomou.")}
+    ${botao(linkTestemunho, "Partilhar a minha história", "azul")}
+    ${botao(linkRevisao, "Rever o meu plano — 20% desconto", "ambar")}
+    <p style="margin:24px 0 0;">Com os melhores cumprimentos,<br/>Equipa VocationIQ</p>
   `;
 
   const resend = new Resend(RESEND_API_KEY);
@@ -369,7 +450,7 @@ export async function sendRevisao180Email(params: { to: string; nome: string; in
       from: FROM_EMAIL,
       to: params.to,
       replyTo: REPLY_TO,
-      subject: "Já passaram 6 meses desde a tua análise VocationIQ",
+      subject: `6 meses depois — ${params.nome}, como está?`,
       html: wrapper(bodyHtml),
     });
     if (error) throw new Error(error.message);
@@ -377,6 +458,330 @@ export async function sendRevisao180Email(params: { to: string; nome: string; in
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
     console.error("[vocationiq email] falha ao enviar revisão (180d):", detail);
+    return { ok: false, detail };
+  }
+}
+
+/** RETENÇÃO, TAREFA 1C — email de aniversário do cliente, com cupão de 20%. Copy exacta pedida. */
+export async function sendAniversarioEmail(params: { to: string; nome: string; codigoCupao: string; dataExpiracao: string }): Promise<DeliveryResult> {
+  if (!RESEND_API_KEY) {
+    console.warn("[vocationiq email] RESEND_API_KEY não configurada — email de aniversário não enviado.");
+    return { ok: false, detail: "RESEND_API_KEY não configurada" };
+  }
+
+  const nome = escapeHtml(params.nome);
+  const dataFormatada = new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(params.dataExpiracao));
+  const bodyHtml = `
+    ${p(`Olá ${nome},`)}
+    ${p("No seu aniversário, queremos agradecer a confiança que depositou em nós.")}
+    ${p("Como presente, aqui está um cupão de 20% desconto para uma nova análise VocationIQ — para si ou para oferecer a alguém especial.")}
+    <p style="margin:0 0 6px;"><strong>Código:</strong> ${escapeHtml(params.codigoCupao)}</p>
+    <p style="margin:0 0 16px;"><strong>Válido até:</strong> ${dataFormatada}</p>
+    ${botao(`${SITE_URL}/intake`, "Usar em vocationiq.app/intake", "ambar")}
+    <p style="margin:24px 0 0;">Com os melhores cumprimentos,<br/>Equipa VocationIQ</p>
+  `;
+
+  const resend = new Resend(RESEND_API_KEY);
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: params.to,
+      replyTo: REPLY_TO,
+      subject: `Parabéns, ${params.nome}! 🎂 Um presente da VocationIQ`,
+      html: wrapper(bodyHtml),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[vocationiq email] falha ao enviar email de aniversário:", detail);
+    return { ok: false, detail };
+  }
+}
+
+/** RETENÇÃO, TAREFA 2B — alerta de mudança de Mahadasha. Copy exacta pedida. */
+export async function sendMahadashaAlertaEmail(params: { to: string; nome: string; mahadashaActual: string; proximaMahadasha: string; descricaoMudanca: string }): Promise<DeliveryResult> {
+  if (!RESEND_API_KEY) {
+    console.warn("[vocationiq email] RESEND_API_KEY não configurada — alerta de Mahadasha não enviado.");
+    return { ok: false, detail: "RESEND_API_KEY não configurada" };
+  }
+
+  const nome = escapeHtml(params.nome);
+  const bodyHtml = `
+    ${p(`Olá ${nome},`)}
+    ${p("A sua análise VocationIQ identificou que está prestes a entrar numa nova fase do seu ciclo pessoal.")}
+    ${p(`O período actual (${escapeHtml(params.mahadashaActual)}) termina em aproximadamente 3 meses. O próximo período (${escapeHtml(params.proximaMahadasha)}) traz consigo ${escapeHtml(params.descricaoMudanca)}.`)}
+    ${p("Este é um bom momento para rever o seu plano e perceber como aproveitar melhor esta transição.")}
+    ${botao(`${SITE_URL}/revisao`, "Reservar uma revisão", "ambar")}
+    <p style="margin:24px 0 0;">Com os melhores cumprimentos,<br/>Equipa VocationIQ</p>
+  `;
+
+  const resend = new Resend(RESEND_API_KEY);
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: params.to,
+      replyTo: REPLY_TO,
+      subject: `O seu ciclo vai mudar em breve — ${params.nome}`,
+      html: wrapper(bodyHtml),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[vocationiq email] falha ao enviar alerta de Mahadasha:", detail);
+    return { ok: false, detail };
+  }
+}
+
+/** RETENÇÃO, TAREFA 4C — agradecimento ao cliente que referiu uma compra confirmada, com cupão de 15%. Copy exacta pedida. */
+export async function sendReferralAgradecimentoEmail(params: { to: string; nome: string; codigoCupao: string }): Promise<DeliveryResult> {
+  if (!RESEND_API_KEY) {
+    console.warn("[vocationiq email] RESEND_API_KEY não configurada — agradecimento de referência não enviado.");
+    return { ok: false, detail: "RESEND_API_KEY não configurada" };
+  }
+
+  const nome = escapeHtml(params.nome);
+  const bodyHtml = `
+    ${p(`Olá ${nome},`)}
+    ${p("Alguém que conhece usou a sua recomendação e fez uma análise VocationIQ.")}
+    ${p("Como agradecimento, aqui está um cupão de 15% desconto para a sua próxima análise ou para oferecer:")}
+    <p style="margin:0 0 6px;"><strong>Código:</strong> ${escapeHtml(params.codigoCupao)}</p>
+    <p style="margin:0 0 16px;"><strong>Válido 60 dias.</strong></p>
+    ${p("Obrigado por confiar em nós o suficiente para recomendar.")}
+    <p style="margin:24px 0 0;">Com os melhores cumprimentos,<br/>Equipa VocationIQ</p>
+  `;
+
+  const resend = new Resend(RESEND_API_KEY);
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: params.to,
+      replyTo: REPLY_TO,
+      subject: `Alguém que conhece confiou em si, ${params.nome}`,
+      html: wrapper(bodyHtml),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[vocationiq email] falha ao enviar agradecimento de referência:", detail);
+    return { ok: false, detail };
+  }
+}
+
+// ---------- RETENÇÃO, FASE 2 ----------
+
+/** FASE 2, TAREFA 1B — aniversário de 1 ano da entrega do relatório, com cupão de 15%. Copy exacta pedida. */
+export async function sendAniversarioRelatorioEmail(params: { to: string; nome: string; codigoCupao: string }): Promise<DeliveryResult> {
+  if (!RESEND_API_KEY) {
+    console.warn("[vocationiq email] RESEND_API_KEY não configurada — email de aniversário do relatório não enviado.");
+    return { ok: false, detail: "RESEND_API_KEY não configurada" };
+  }
+
+  const nome = escapeHtml(params.nome);
+  const bodyHtml = `
+    ${p(`Olá ${nome},`)}
+    ${p("Há exactamente um ano recebeu a sua análise VocationIQ.")}
+    ${p("Muito pode ter mudado desde então — decisões tomadas, caminhos iniciados, perguntas que surgiram.")}
+    ${p("Gostaríamos de saber como correu. Se quiser partilhar, pode responder directamente a este email.")}
+    ${p("E se sentir que é altura de rever o plano ou fazer uma nova análise, temos um desconto especial para si:")}
+    <p style="margin:0 0 6px;"><strong>Código:</strong> ${escapeHtml(params.codigoCupao)}</p>
+    <p style="margin:0 0 16px;"><strong>Válido 30 dias.</strong></p>
+    <p style="margin:24px 0 0;">Com os melhores cumprimentos,<br/>Equipa VocationIQ</p>
+  `;
+
+  const resend = new Resend(RESEND_API_KEY);
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: params.to,
+      replyTo: REPLY_TO,
+      subject: `Há um ano recebeu a sua análise — ${params.nome}, como correu?`,
+      html: wrapper(bodyHtml),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[vocationiq email] falha ao enviar aniversário do relatório:", detail);
+    return { ok: false, detail };
+  }
+}
+
+/** FASE 2, TAREFA 2B — "como está a correr?" aos 6 meses, sem venda, a pedir testemunho. Copy exacta pedida. */
+export async function sendComoEstaEmail(params: { to: string; nome: string; intakeId: string }): Promise<DeliveryResult> {
+  if (!RESEND_API_KEY) {
+    console.warn("[vocationiq email] RESEND_API_KEY não configurada — email 'como está a correr' não enviado.");
+    return { ok: false, detail: "RESEND_API_KEY não configurada" };
+  }
+
+  const nome = escapeHtml(params.nome);
+  const linkTestemunho = `${SITE_URL}/avaliacao?id=${params.intakeId}`;
+  const bodyHtml = `
+    ${p(`Olá ${nome},`)}
+    ${p("Já passaram 6 meses desde que recebeu a sua análise VocationIQ.")}
+    ${p("Não temos nada para vender — só queríamos saber como está a correr.")}
+    <ul style="margin:0 0 16px;padding-left:20px;">
+      <li style="margin-bottom:6px;">Tomou alguma decisão com base na análise?</li>
+      <li style="margin-bottom:6px;">Há algo que ainda não está claro?</li>
+      <li>O plano está a funcionar?</li>
+    </ul>
+    ${p("Se a análise foi útil, adorávamos ouvir a sua história — um testemunho seu ajuda outras pessoas a tomar a mesma decisão que tomou.")}
+    ${botao(linkTestemunho, "Partilhar a minha história", "azul")}
+    ${p("Pode responder directamente a este email.")}
+    <p style="margin:24px 0 0;">Com os melhores cumprimentos,<br/>Equipa VocationIQ</p>
+  `;
+
+  const resend = new Resend(RESEND_API_KEY);
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: params.to,
+      replyTo: REPLY_TO,
+      subject: `6 meses depois, ${params.nome} — como está?`,
+      html: wrapper(bodyHtml),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[vocationiq email] falha ao enviar 'como está a correr':", detail);
+    return { ok: false, detail };
+  }
+}
+
+/** FASE 2, TAREFA 3B — início de ano personalizado, com o período astrológico actual. Copy exacta pedida (o parágrafo de favorável/consolidação é escolhido pelo chamador, nunca inventado aqui). */
+export async function sendInicioAnoEmail(params: { to: string; nome: string; mahadasha: string; antardasha: string; descricaoPeriodo: string; paragrafoExtra: string }): Promise<DeliveryResult> {
+  if (!RESEND_API_KEY) {
+    console.warn("[vocationiq email] RESEND_API_KEY não configurada — email de início de ano não enviado.");
+    return { ok: false, detail: "RESEND_API_KEY não configurada" };
+  }
+
+  const nome = escapeHtml(params.nome);
+  const bodyHtml = `
+    ${p(`Olá ${nome},`)}
+    ${p("Começou um novo ano — e o seu perfil astrológico tem algo a dizer sobre ele.")}
+    ${p(`Está actualmente num período de ${escapeHtml(params.mahadasha)} / ${escapeHtml(params.antardasha)} — ${escapeHtml(params.descricaoPeriodo)}.`)}
+    ${p(params.paragrafoExtra)}
+    ${p("Se quiser rever o seu plano à luz deste novo ciclo, estamos disponíveis.")}
+    <p style="margin:24px 0 0;">Com os melhores cumprimentos,<br/>Equipa VocationIQ</p>
+  `;
+
+  const resend = new Resend(RESEND_API_KEY);
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: params.to,
+      replyTo: REPLY_TO,
+      subject: `O que este ano traz para si, ${params.nome}`,
+      html: wrapper(bodyHtml),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[vocationiq email] falha ao enviar início de ano:", detail);
+    return { ok: false, detail };
+  }
+}
+
+/** FASE 2, TAREFA 4 — cupão de Natal (5-23 Dezembro), 10%. Mesma copy para clientes e leads consentidos — só o código/mecanismo do cupão muda (pessoal vs. genérico de campanha, ver cupoesStore.ts). Copy exacta pedida. */
+export async function sendNatalCupaoEmail(params: { to: string; nome: string; codigoCupao: string }): Promise<DeliveryResult> {
+  if (!RESEND_API_KEY) {
+    console.warn("[vocationiq email] RESEND_API_KEY não configurada — cupão de Natal não enviado.");
+    return { ok: false, detail: "RESEND_API_KEY não configurada" };
+  }
+
+  const bodyHtml = `
+    ${p(saudacao(params.nome))}
+    ${p("O Natal está a aproximar-se e queremos oferecer-lhe um presente.")}
+    ${p("Um cupão de 10% desconto numa análise VocationIQ — para si ou para oferecer a alguém especial.")}
+    <p style="margin:0 0 6px;"><strong>Código:</strong> ${escapeHtml(params.codigoCupao)}</p>
+    <p style="margin:0 0 16px;"><strong>Válido até 31 de Janeiro.</strong></p>
+    ${botao(`${SITE_URL}/intake`, "Usar em vocationiq.app/intake", "ambar")}
+    <p style="margin:24px 0 0;">Boas festas,<br/>Equipa VocationIQ</p>
+  `;
+
+  const resend = new Resend(RESEND_API_KEY);
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: params.to,
+      replyTo: REPLY_TO,
+      subject: comNome(params.nome, "Um presente de Natal da VocationIQ"),
+      html: wrapper(bodyHtml),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[vocationiq email] falha ao enviar cupão de Natal:", detail);
+    return { ok: false, detail };
+  }
+}
+
+/** FASE 2, TAREFA 4 — "Feliz Natal" (25 Dezembro), sem venda. Copy exacta pedida. */
+export async function sendNatalFelizEmail(params: { to: string; nome: string }): Promise<DeliveryResult> {
+  if (!RESEND_API_KEY) {
+    console.warn("[vocationiq email] RESEND_API_KEY não configurada — email de Feliz Natal não enviado.");
+    return { ok: false, detail: "RESEND_API_KEY não configurada" };
+  }
+
+  const bodyHtml = `
+    ${p(saudacao(params.nome))}
+    ${p("Neste dia especial, queremos desejar-lhe um Feliz Natal — a si e a toda a sua família.")}
+    ${p("Que este seja um momento de descanso, celebração e alegria com quem mais importa.")}
+    <p style="margin:24px 0 0;">Com os melhores cumprimentos,<br/>Equipa VocationIQ</p>
+  `;
+
+  const resend = new Resend(RESEND_API_KEY);
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: params.to,
+      replyTo: REPLY_TO,
+      subject: `${comNome(params.nome, "Feliz Natal")} 🎄`,
+      html: wrapper(bodyHtml),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[vocationiq email] falha ao enviar Feliz Natal:", detail);
+    return { ok: false, detail };
+  }
+}
+
+/** FASE 2, TAREFA 4 — "Feliz Ano Novo" (31 Dezembro), sem venda. Copy exacta pedida. */
+export async function sendAnoNovoEmail(params: { to: string; nome: string }): Promise<DeliveryResult> {
+  if (!RESEND_API_KEY) {
+    console.warn("[vocationiq email] RESEND_API_KEY não configurada — email de Ano Novo não enviado.");
+    return { ok: false, detail: "RESEND_API_KEY não configurada" };
+  }
+
+  const anoQueVem = new Date().getUTCFullYear() + 1;
+  const bodyHtml = `
+    ${p(saudacao(params.nome))}
+    ${p("No último dia deste ano, queremos desejar-lhe um Feliz Ano Novo — cheio de clareza, coragem e boas decisões.")}
+    ${p(`Que ${anoQueVem} traga tudo o que procura.`)}
+    <p style="margin:24px 0 0;">Com os melhores cumprimentos,<br/>Equipa VocationIQ</p>
+  `;
+
+  const resend = new Resend(RESEND_API_KEY);
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: params.to,
+      replyTo: REPLY_TO,
+      subject: `${comNome(params.nome, "Feliz Ano Novo")} 🎉`,
+      html: wrapper(bodyHtml),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[vocationiq email] falha ao enviar Feliz Ano Novo:", detail);
     return { ok: false, detail };
   }
 }

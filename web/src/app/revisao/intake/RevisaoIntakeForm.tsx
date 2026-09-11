@@ -201,7 +201,7 @@ export function RevisaoIntakeForm({ intakeIdOriginal }: { intakeIdOriginal: stri
               {loading ? "A preparar o pagamento…" : "Continuar para o pagamento →"}
             </button>
           </div>
-          <p className="text-center text-sm font-semibold text-ink/60">VocationIQ Revisão · €49 · 48h</p>
+          <p className="text-center text-sm font-semibold text-ink/60">VocationIQ Revisão · €49 · 72h</p>
         </div>
       )}
     </div>

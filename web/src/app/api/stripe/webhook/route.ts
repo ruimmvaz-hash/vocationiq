@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
-import { marcarIntakePago, obterIntake } from "@/lib/store";
+import { marcarIntakePago, obterIntake, obterIntakePorCodigoReferralCliente, marcarReferralCreditado } from "@/lib/store";
 import { marcarRevisaoPaga } from "@/lib/revisaoStore";
-import { sendConfirmationEmail, sendNewOrderAdminEmail } from "@/lib/email";
+import { sendConfirmationEmail, sendNewOrderAdminEmail, sendReferralAgradecimentoEmail } from "@/lib/email";
 import { validarCodigoComercial, registarComissao } from "@/lib/comercialStore";
+import { criarCupao, gerarCodigoCupao } from "@/lib/cupoesStore";
 import { registarEventoServidor } from "@/lib/eventLogServer";
 import type Stripe from "stripe";
 
@@ -74,7 +75,38 @@ export async function POST(request: Request) {
           if (comercial) {
             await registarComissao({ comercial, intakeId, orderValueEur: amountCents / 100 });
           } else {
-            console.warn(`[webhook] código de comercial "${referralCode}" não é válido/activo — sem comissão registada.`);
+            // RETENÇÃO, TAREFA 4B — não é um código de comercial; pode ser
+            // o código pessoal de OUTRO cliente (referência entre
+            // clientes, `cliente_codigo_referral`). Correcção do
+            // especialista sobre o pedido literal ("no evento
+            // payment_intent.succeeded"): este webhook só ouve
+            // `checkout.session.completed` (já em uso, acima) — reaproveitado
+            // aqui em vez de adicionar um segundo listener para o mesmo
+            // pagamento. Nunca bloqueia a confirmação do pagamento já
+            // cobrado se isto falhar (mesmo padrão do email interno ao
+            // fundador, acima).
+            try {
+              if (!intakeAntesDoPagamento?.referral_creditado) {
+                const referidor = await obterIntakePorCodigoReferralCliente(referralCode);
+                if (referidor && referidor.id !== intakeId && referidor.email) {
+                  const codigoCupao = gerarCodigoCupao("REF", referidor.id, new Date().getUTCFullYear());
+                  const cupaoReferidor = await criarCupao({
+                    codigo: codigoCupao,
+                    descontoPercentagem: 15,
+                    intakeId: referidor.id,
+                    motivo: "Referência de cliente",
+                    validoDias: 60,
+                    transferivel: true,
+                  });
+                  await sendReferralAgradecimentoEmail({ to: referidor.email, nome: referidor.nome, codigoCupao: cupaoReferidor.codigo });
+                  await marcarReferralCreditado(intakeId);
+                } else {
+                  console.warn(`[webhook] código "${referralCode}" não corresponde a comercial activo nem a código de cliente — sem crédito.`);
+                }
+              }
+            } catch (err) {
+              console.error("[webhook] falha ao processar referência entre clientes:", err);
+            }
           }
         }
       } catch (err) {

@@ -13,7 +13,7 @@ export default function TermsPage() {
         <div className="prose-sm mt-8 space-y-5 text-sm leading-relaxed text-ink/80">
           <p>
             O VocationIQ vende um serviço único: uma análise personalizada, entregue em formato digital por email, no
-            prazo de 48 horas após a confirmação do pagamento.
+            prazo de 72 horas após a confirmação do pagamento.
           </p>
           <p>
             O preço é de €99 por análise, cobrado através da Stripe no momento do pedido. Não é uma subscrição — não há

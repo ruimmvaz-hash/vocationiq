@@ -3,7 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { hasSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { obterIntake } from "@/lib/store";
-import { guardarRascunho, apagarRascunho } from "@/lib/storage";
+import { guardarRascunho, apagarRascunho, usarVersaoLlmRascunho, restaurarVersaoAnteriorRascunho } from "@/lib/storage";
 import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTemplate";
 import { calcularDadosAstrologicosAdolescente, GeocodeError, ANO_ESCOLARIDADE_LABEL } from "@/lib/relatorioAdultoCompute";
 import { construirPromptAdolescente, construirPromptAdulto, type VocationiqIntakeAdulto } from "@naveya/method-engine";
@@ -183,7 +183,7 @@ export async function POST(request: Request) {
     }
 
     const dadosTecnicosParaGuardar = { axes, pesos: pesosPlanetas, earningModes: axes.earningModeAll, earningModeDominante: axes.earningModeDominante, datas, savPorCasa };
-    const rascunho = await guardarRascunho(intakeId, textoFinal, dadosTecnicosParaGuardar, prompt, { criticaLlm: textoCritica, rascunhoReescrito }, coordenadasNascimento);
+    const rascunho = await guardarRascunho(intakeId, textoFinal, "geracao", dadosTecnicosParaGuardar, prompt, { criticaLlm: textoCritica, rascunhoReescrito }, coordenadasNascimento);
 
     // TAREFA 1 (correcção do especialista) — ehAdolescente/anoEscolaridade
     // dizem ao template para não mostrar campos/secções do ramo adulto
@@ -219,7 +219,7 @@ export async function POST(request: Request) {
         };
     const html = gerarHTMLRelatorio(dadosTemplate, textoFinal, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
 
-    return NextResponse.json({ ok: true, rascunhoId: rascunho.id, texto: textoFinal, html, houveReescrita: rascunhoReescrito !== null });
+    return NextResponse.json({ ok: true, rascunhoId: rascunho.id, texto: textoFinal, html, houveReescrita: rascunhoReescrito !== null, manualPreservada: rascunho.manualPreservada });
   } catch (err) {
     if (err instanceof GeocodeError) return NextResponse.json({ error: err.message }, { status: 422 });
     const message = err instanceof Error ? err.message : String(err);
@@ -244,11 +244,35 @@ export async function PUT(request: Request) {
   if (typeof texto !== "string" || !texto.trim()) return NextResponse.json({ error: "O rascunho não pode ficar vazio." }, { status: 400 });
 
   try {
-    const { criadoEm } = await guardarRascunho(intakeId, texto);
+    const { criadoEm } = await guardarRascunho(intakeId, texto, "manual");
     return NextResponse.json({ ok: true, criadoEm });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: `Não foi possível guardar o rascunho: ${message}` }, { status: 500 });
+  }
+}
+
+/** CORRECÇÃO 2 — idêntico ao ramo adulto (mesmo storage). */
+export async function PATCH(request: Request) {
+  if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "não autenticado" }, { status: 401 });
+  if (!hasSupabaseAdmin) return NextResponse.json({ error: "Serviço indisponível de momento." }, { status: 503 });
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Pedido inválido." }, { status: 400 });
+  }
+  const { intakeId, acao } = body as { intakeId?: unknown; acao?: unknown };
+  if (typeof intakeId !== "string" || !intakeId) return NextResponse.json({ error: "Falta intakeId." }, { status: 400 });
+  if (acao !== "usar-llm" && acao !== "restaurar-anterior") return NextResponse.json({ error: "Acção desconhecida." }, { status: 400 });
+
+  try {
+    const { criadoEm } = acao === "usar-llm" ? await usarVersaoLlmRascunho(intakeId) : await restaurarVersaoAnteriorRascunho(intakeId);
+    return NextResponse.json({ ok: true, criadoEm });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
