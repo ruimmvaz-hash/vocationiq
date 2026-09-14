@@ -411,8 +411,8 @@ export function blocoPesos(pesos: PesoPlaneta[]): string {
  * ícone) são gerados à parte, por código, em relatorioTemplate.ts —
  * nunca pelo LLM (`calcularFacilidadesNaturais` é 100% determinística).
  */
-export function blocoFacilidadesNaturais(pesos: PesoPlaneta[]): string {
-  return calcularFacilidadesNaturais(pesos)
+export function blocoFacilidadesNaturais(pesos: PesoPlaneta[], usarTu = false): string {
+  return calcularFacilidadesNaturais(pesos, usarTu)
     .map((f) => `${f.emoji} ${f.categoria} (${f.nivel}): ${f.frase}`)
     .join("\n");
 }
@@ -680,8 +680,19 @@ Esta verificação é obrigatória para TODAS as candidatas escolhidas (até 3),
 // prosa livre sem o termo técnico entre parênteses — torna o critério 18/
 // 19 da crítica automática verificável por padrão de texto, não por
 // interpretação.
+//
+// Correcção do especialista (ronda "relatório Marta", ponto 12) — o
+// formato original pedia DOIS parênteses seguidos na mesma frase
+// ("...está numa fase (avastha) de declínio (Vriddha)...") — tecnicamente
+// verificável, mas lido em voz alta soa a "parênteses dentro de
+// parênteses" (o exemplo real reportado: "energia mais imediata ainda
+// está numa fase (avastha) inicial, quase de arranque (Bala)"). Um único
+// parêntese com os dois termos juntos mantém a mesma verificabilidade
+// (o critério 18 só precisa de confirmar que "avastha" e o nome técnico
+// aparecem os dois, entre parênteses, perto da menção) com metade do
+// ruído visual.
 export const INSTRUCAO_CONSISTENCIA_TECNICA = `CONSISTÊNCIA TÉCNICA ENTRE MOTORES — obrigatório em ambos, adulto e adolescente:
-Sempre que o texto descrever o estado de maturidade de um planeta, a frase DEVE incluir entre parênteses a palavra "avastha" e o nome técnico do estado (Bala/Yuva/Vriddha/Mrita), no formato: "...está numa fase (avastha) de declínio (Vriddha)..."
+Sempre que o texto descrever o estado de maturidade de um planeta, a frase DEVE incluir, num ÚNICO parêntese (nunca dois parênteses seguidos na mesma frase), a palavra "avastha" seguida do nome técnico do estado (Bala/Yuva/Vriddha/Mrita), no formato: "...está numa fase de declínio (avastha Vriddha)..." — nunca "...está numa fase (avastha) de declínio (Vriddha)..." (dois parênteses seguidos, proibido — soa a jargão dentro de jargão).
 Sempre que o texto descrever uma conjunção (dois traços "fundidos" ou "quase como uma coisa só"), a frase DEVE incluir entre parênteses os dois planetas envolvidos: "...(Lua+Marte fundidos)..."`;
 
 /**
@@ -782,7 +793,13 @@ export const INSTRUCAO_NUNCA_CANDIDATA = `Na prosa que a pessoa lê — abertura
 // esta opção não é acidente", nunca um segundo mecanismo a divergir
 // dele. O LLM nunca escolhe nem traduz o factor — só o usa.
 export const INSTRUCAO_ABERTURA_CANDIDATAS = `CANDIDATA FORA DA LISTA — ABRE SEMPRE COM O DOM, E NUNCA MENCIONA PERCURSO/DURAÇÃO/VIA DE ENTRADA NO CORPO DO TEXTO: cada candidata (individual, ou o bloco "${MARCADORES.grupo}" partilhado) DEVE abrir com uma frase sobre o dom/talento inato que a liga a esta área, e o resto do texto explica SÓ isto: porque é que esta área faz sentido especificamente dentro deste perfil. Duração de formação, trajecto académico e via de entrada NUNCA aparecem como frase no corpo do texto — essa informação vive só nas linhas "${MARCADORES.viaResumida}"/"${MARCADORES.custoPrincipal}" (ver instrução própria abaixo), que alimentam a tabela-resumo no fim da secção. Repetir essa informação como prosa é redundante com a tabela — não o faças.
-A frase de dom usa sempre o "FACTOR DE DOM" já dado nos dados técnicos desta candidata (já traduzido para linguagem humana — nunca inventes outro factor, nunca traduzas tu mesmo o jargão astrológico, usa a tradução exacta dada, citada quase literalmente). Padrão obrigatório: "O seu [FACTOR DE DOM] indica uma capacidade natural para [qualidade concreta e específica ligada a esta área — nunca genérica, nunca "tens talento para liderança" sem mais nada], é isto que a distingue nesta opção, mais do que o percurso em si."
+A frase de dom usa sempre o "FACTOR DE DOM" já dado nos dados técnicos desta candidata (já traduzido para linguagem humana — nunca inventes outro factor, nunca traduzas tu mesmo o jargão astrológico, usa a tradução exacta dada, citada quase literalmente).
+CORRECÇÃO DO ESPECIALISTA (ronda "relatório Marta", ponto 9b) — o CONTEÚDO é obrigatório (ligar o FACTOR DE DOM a uma qualidade concreta e específica desta área — nunca genérica, nunca "tens talento para liderança" sem mais nada), mas a FRASE em si tem de VARIAR de candidata para candidata dentro do mesmo relatório — nunca o mesmo molde repetido ipsis verbis dezenas de vezes ao longo da lista, mesmo trocando só o nome da qualidade. Eis exemplos de estruturas diferentes para alternar entre elas (não uma lista fechada — qualquer frase que ligue claramente o FACTOR DE DOM à qualidade concreta e varie a construção serve):
+- "O [FACTOR DE DOM] traduz-se aqui em [qualidade concreta] — [porquê esta área em particular]."
+- "[Qualidade concreta] é o que o [FACTOR DE DOM] já sustenta, e é exactamente isso que esta área pede."
+- "Esta área pede [qualidade concreta] — e é precisamente aí que o [FACTOR DE DOM] mais se nota."
+- "Há uma ligação directa entre o [FACTOR DE DOM] e [qualidade concreta], o que torna esta área um encaixe natural."
+PROIBIDO usar a mesma estrutura de frase (ex.: "[FACTOR] indica uma capacidade natural para [qualidade], é isto que a distingue") em 3 ou mais candidatas seguidas — se notares que vais repetir a mesma construção uma terceira vez seguida, muda de estrutura antes de escrever essa frase.
 Depois da frase de dom, o resto do texto (1 a 3 frases) aprofunda SÓ o porquê estrutural — que outros sinais da carta (regência de casa, dignidade, yoga, o que a carta sustenta noutras secções) reforçam esta ligação. Nunca introduzir percurso/formação aqui.
 GRUPOS (correcção do especialista — agrupamento por cluster): quando várias candidatas partilham bloco "${MARCADORES.grupo}", a frase de dom é escrita UMA VEZ nesse bloco (usa o "FACTOR DE DOM" da primeira candidata do grupo — os membros de um grupo partilham quase sempre o mesmo factor, por serem a mesma convergência de base) — os blocos "${MARCADORES.candidata}" dentro do grupo NÃO repetem a frase de dom, vão directos à diferenciação específica de cada uma (porque É QUE esta em particular, dentro do grupo, faz sentido — nunca percurso).
 Obrigatório em todas as candidatas apresentadas, individuais ou em grupo (uma vez por grupo, uma vez por individual), sem excepção — nunca omitir só porque a pool tem muitas candidatas.`;
@@ -1139,18 +1156,21 @@ Traduz o Eixo da Missão e o Modo de Ganho dominante para linguagem humana, sem 
 ## ${SECCAO_TITULOS.leituraPorOpcao}
 Se existe pergunta específica declarada, esta secção abre, ANTES do primeiro bloco "### ", com a resposta directa no formato exigido por INSTRUCAO_PERGUNTA_ESPECIFICA — nunca só na "${SECCAO_TITULOS.abertura}", tem de estar retomada aqui também, com a mesma resposta, nunca uma diferente.
 
+PROFUNDIDADE OBRIGATÓRIA (correcção do especialista, ronda "relatório Marta", ponto 9a) — quando a pessoa DECLAROU opções reais (o caso mais comum desta secção), esta é a secção que responde directamente à pergunta que a trouxe até aqui: tem de ser a mais desenvolvida do relatório inteiro, nunca a mais resumida. Cada um dos 5 pontos abaixo é um parágrafo próprio de pelo menos 3-4 frases, nunca uma única frase-resumo por ponto — texto corrido e argumentado, no mesmo espírito de uma leitura real feita por um orientador vocacional a sério, nunca 5 caixas curtas telegráficas.
+
 Para CADA opção candidata (declarada ou derivada), este formato EXACTO, por esta ordem — o cabeçalho "### " e a linha "${MARCADORES.forca}" são obrigatórios e machine-readable, não os omitas nem os traduzas:
 
 ### <nome exacto da opção, tal como foi declarada ou derivada>
 ${MARCADORES.forca} <forte, moderada ou fraca — forte se ≥2 fontes independentes fortes convergem, moderada se há suporte real mas não forte, fraca se só um sinal fraco isolado sustenta a opção>
 ${MARCADORES.insight} <uma frase que resume a leitura desta opção em menos de 15 palavras — específica deste perfil, nunca genérica. Obrigatório e machine-readable, não o omitas.>
-1. O que o perfil sustenta nesta opção. Para dizer que o perfil sustenta uma opção, cita pelo menos duas fontes independentes (Eixo da Missão, Modo de Ganho, peso de planeta, Montra de Mercado). Uma opção sustentada por um único sinal fraco não é sustentada — diz isso, e usa "${MARCADORES.forca} fraca" nesse caso.
-2. O que esta opção lhe vai custar (o custo específico DESTE perfil nesta escolha, nunca o risco genérico da profissão).
-3. O que esta opção pede e que falta actualmente — e se é algo que se aprende ou algo que não muda.
-4. Onde entra a matéria desta pessoa nesta opção — nunca o sector como resposta, sempre a forma/função (usa o Modo de Ganho para decidir se entra pela voz, pela resolução directa, ou pela liderança/execução pública).
-5. Conclusão explícita — ver INSTRUCAO_VALIDACAO_OPCOES: uma das três frases-molde exactas (sustenta com clareza / sustenta parcialmente / não sustenta de forma natural), nunca omitida, nunca substituída por prosa que descreve prós/contras sem fechar numa das três.
+1. O que o perfil sustenta nesta opção. Para dizer que o perfil sustenta uma opção, cita pelo menos duas fontes independentes (Eixo da Missão, Modo de Ganho, peso de planeta, Montra de Mercado) — mas não te limites a citá-las: desenvolve o que cada uma significa em termos concretos, e como se traduz especificamente nos dons já nomeados na secção "${SECCAO_TITULOS.quemE}" — nomeia esses dons e explica CONCRETAMENTE como vão ser usados na prática dentro desta área (não "tem facilidade para comunicar", mas o que essa facilidade permite fazer especificamente nesta profissão). Uma opção sustentada por um único sinal fraco não é sustentada — diz isso, e usa "${MARCADORES.forca} fraca" nesse caso.
+2. O que esta opção lhe vai custar — o custo específico DESTE perfil nesta escolha, nunca o risco genérico da profissão. Liga sempre a uma limitação já nomeada na secção "${SECCAO_TITULOS.quemE}": se esta pessoa tem dificuldade nomeada com pressão, confronto directo, exposição pública, trabalho solitário, etc., diz explicitamente o que isso significa escolher esta área em concreto (ex.: se a limitação é dificuldade com confronto directo e a opção é Direito, diz que a prática forense/contenciosa vai exigir mais esforço deliberado do que outras vertentes da área — nunca deixes essa tensão por explicar).
+3. Sub-áreas dentro desta opção que fazem mais sentido para ESTE perfil especificamente — toda área de estudo/profissão tem vertentes internas diferentes (ex.: dentro de Direito: contencioso vs. consultivo vs. corporate; dentro de Psicologia: clínica vs. organizacional vs. investigação); usa os dons e o Modo de Ganho já nomeados para apontar 1-2 vertentes concretas que encaixam melhor neste perfil do que outras dentro da MESMA área, e explica porquê. Nunca inventes uma vertente sem ligação aos dados desta pessoa — a escolha da vertente tem de decorrer do mesmo raciocínio já usado no resto da secção.
+4. O que esta opção pede e que falta actualmente — e se é algo que se aprende ou algo que não muda.
+5. Onde entra a matéria desta pessoa nesta opção — nunca o sector como resposta, sempre a forma/função (usa o Modo de Ganho para decidir se entra pela voz, pela resolução directa, ou pela liderança/execução pública).
+6. Conclusão explícita — ver INSTRUCAO_VALIDACAO_OPCOES: uma das três frases-molde exactas (sustenta com clareza / sustenta parcialmente / não sustenta de forma natural), nunca omitida, nunca substituída por prosa que descreve prós/contras sem fechar numa das três.
 
-Repete o bloco "### <nome> / ${MARCADORES.forca} / ${MARCADORES.insight} / 1. / 2. / 3. / 4. / 5." para cada opção candidata, uma a seguir à outra.
+Repete o bloco "### <nome> / ${MARCADORES.forca} / ${MARCADORES.insight} / 1. / 2. / 3. / 4. / 5. / 6." para cada opção candidata, uma a seguir à outra.
 
 ## ${SECCAO_TITULOS.candidataForaDaLista}
 As candidatas elegíveis já vêm calculadas deterministicamente na secção "Candidatas do catálogo" acima — a POOL COMPLETA, SEM LIMITE nenhum. NÃO calcules a tua própria convergência, NÃO inventes nenhuma candidata diferente das listadas lá. A tua tarefa nesta secção é APRESENTAR TODAS as candidatas da pool que passam o Passo 1 — ligação narrativa a um dom já nomeado (ver INSTRUCAO_SELECCAO_CANDIDATAS) —, agrupando as que partilham convergência de base quase idêntica (Passo 3, mesma instrução), e escrever o bloco de raciocínio obrigatório antes delas. Nunca "escolher até 3" — isso já não é a regra.

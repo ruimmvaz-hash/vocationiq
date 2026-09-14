@@ -86,8 +86,12 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
      — reescrita obrigatória.
 
  18. NOMEAÇÃO TÉCNICA — AVASTHAS: qualquer menção a maturidade
-     planetária sem incluir "(avastha)" e o nome técnico entre
-     parênteses: FALHA — reescrita obrigatória.
+     planetária sem incluir "avastha" e o nome técnico do estado
+     (Bala/Yuva/Vriddha/Mrita) juntos, num ÚNICO parêntese (nunca
+     "avastha" e o nome técnico em dois parênteses seguidos, ex.:
+     "(avastha) de declínio (Vriddha)" — proibido, soa a jargão
+     dentro de jargão; correcto: "de declínio (avastha Vriddha)"):
+     FALHA — reescrita obrigatória.
 
  19. NOMEAÇÃO TÉCNICA — CONJUNÇÕES: qualquer menção a fusão de
      traços sem incluir os dois planetas entre parênteses: FALHA
@@ -389,8 +393,12 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
      — reescrita obrigatória.
 
  18. NOMEAÇÃO TÉCNICA — AVASTHAS: qualquer menção a maturidade
-     planetária sem incluir "(avastha)" e o nome técnico entre
-     parênteses: FALHA — reescrita obrigatória.
+     planetária sem incluir "avastha" e o nome técnico do estado
+     (Bala/Yuva/Vriddha/Mrita) juntos, num ÚNICO parêntese (nunca
+     "avastha" e o nome técnico em dois parênteses seguidos, ex.:
+     "(avastha) de declínio (Vriddha)" — proibido, soa a jargão
+     dentro de jargão; correcto: "de declínio (avastha Vriddha)"):
+     FALHA — reescrita obrigatória.
 
  19. NOMEAÇÃO TÉCNICA — CONJUNÇÕES: qualquer menção a fusão de
      traços sem incluir os dois planetas entre parênteses: FALHA

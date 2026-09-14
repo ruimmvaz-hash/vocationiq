@@ -156,16 +156,19 @@ export function construirPromptAdolescente(
 
   const blocoCandidatasCatalogo = blocoCatalogoVocacional(catalogo, cursosPorDestino);
 
-  const instrucaoLeituraPorOpcao = `${perguntaImplicita ? `Esta secção abre, ANTES do primeiro bloco "### ", com a resposta directa a "${perguntaImplicita}" no formato exigido por INSTRUCAO_PERGUNTA_ESPECIFICA — retomada aqui, nunca contradita face ao que já foi respondido em "${SECCAO_TITULOS.abertura}".\n\n` : ""}Para CADA opção em cima da mesa, este formato EXACTO — o cabeçalho "### " e a linha "${MARCADORES.forca}" são obrigatórios:
+  const instrucaoLeituraPorOpcao = `${perguntaImplicita ? `Esta secção abre, ANTES do primeiro bloco "### ", com a resposta directa a "${perguntaImplicita}" no formato exigido por INSTRUCAO_PERGUNTA_ESPECIFICA — retomada aqui, nunca contradita face ao que já foi respondido em "${SECCAO_TITULOS.abertura}".\n\n` : ""}PROFUNDIDADE OBRIGATÓRIA (correcção do especialista, ronda "relatório Marta", ponto 9a) — quando a pessoa declarou opções reais (o caso mais comum desta secção), esta é a secção que responde directamente à pergunta que a trouxe até aqui: tem de ser a mais desenvolvida do relatório inteiro, nunca a mais resumida. Cada um dos 6 pontos abaixo é um parágrafo próprio de pelo menos 3-4 frases, nunca uma única frase-resumo por ponto — texto corrido e argumentado, nunca 6 caixas curtas telegráficas.
+
+Para CADA opção em cima da mesa, este formato EXACTO — o cabeçalho "### " e a linha "${MARCADORES.forca}" são obrigatórios:
 
 ### <nome exacto da opção>
 ${MARCADORES.forca} <forte, moderada ou fraca>
 ${MARCADORES.insight} <uma frase que resume a leitura desta opção em menos de 15 palavras>
-1. O que o teu perfil sustenta nesta opção — cita pelo menos duas fontes independentes.
-2. O que esta opção te vai pedir na formação (o esforço específico DESTE perfil, nunca o risco genérico da área).
-3. O curso concreto e a via de entrada — usa sempre os dados já listados acima em "Opções em cima da mesa" (nome do curso, nível, QNQ, duração, tipo de instituição, entrada no mercado). NUNCA nomeies uma instituição concreta.
-4. Onde entra a tua matéria nesta opção — a forma/função, nunca só o sector.
-5. Conclusão explícita — ver INSTRUCAO_VALIDACAO_OPCOES: uma das três frases-molde exactas (sustenta com clareza / sustenta parcialmente / não sustenta de forma natural), nunca omitida.`;
+1. O que o teu perfil sustenta nesta opção — cita pelo menos duas fontes independentes, mas não te limites a citá-las: desenvolve o que cada uma significa em termos concretos, e como se traduz especificamente nos dons já nomeados na secção "${SECCAO_TITULOS.quemE}" — nomeia esses dons e explica CONCRETAMENTE como vão ser usados na prática nesta área (não "tens facilidade para comunicar", mas o que essa facilidade permite fazer especificamente neste curso/área).
+2. O que esta opção te vai pedir na formação — o esforço específico DESTE perfil, nunca o risco genérico da área. Liga sempre a uma limitação já nomeada na secção "${SECCAO_TITULOS.quemE}": se tens uma dificuldade nomeada com pressão, confronto directo, exposição pública, trabalho solitário, etc., diz explicitamente o que isso significa escolher esta área em concreto (ex.: se a limitação é dificuldade com confronto directo e a opção é Direito, diz que a vertente forense/contenciosa vai exigir mais esforço deliberado do que outras vertentes do curso — nunca deixes essa tensão por explicar).
+3. O curso concreto e a via de entrada — usa sempre os dados já listados acima em "Opções em cima da mesa" (nome do curso, nível, QNQ, duração, tipo de instituição, entrada no mercado). NUNCA nomeies uma instituição concreta. Sempre que o curso tiver variantes internas conhecidas (ex.: dentro de Direito: forense vs. empresarial vs. internacional; dentro de Psicologia: clínica vs. organizacional), aponta 1-2 que encaixam melhor neste perfil especificamente, usando os dons já nomeados — nunca inventes uma variante sem ligação aos dados desta pessoa.
+4. O que esta opção pede e que falta actualmente — e se é algo que se aprende ou algo que não muda.
+5. Onde entra a tua matéria nesta opção — a forma/função, nunca só o sector.
+6. Conclusão explícita — ver INSTRUCAO_VALIDACAO_OPCOES: uma das três frases-molde exactas (sustenta com clareza / sustenta parcialmente / não sustenta de forma natural), nunca omitida.`;
 
   // Correcção do especialista ("remover o tecto fixo de 3, com
   // agrupamento por cluster") — a secção "Candidatas do catálogo" traz a
@@ -186,13 +189,12 @@ Em cada candidata (individual ou membro de grupo), inclui também duas linhas pr
 Apresenta TODAS as candidatas que passaram o Passo 1, sem limite de 3 — nunca "escolher até 3", isso já não é a regra.`;
 
   return `
-[Versão de produção, TAREFA 2 — ver aviso de maturidade no topo de promptAdolescente.ts: prosa instrucional nova, nunca testada contra geração real antes de hoje.]
-
 És um especialista em orientação vocacional para adolescentes de 15 a 18 anos, ainda sem experiência profissional. Vais escrever um relatório para ${intake.nome} com base nos dados técnicos fornecidos abaixo. Segue as regras rigorosamente:
 - Zero jargão astrológico visível. Nunca escrevas nenhum destes termos (nem sinónimos técnicos óbvios) no texto do relatório — traduz sempre para linguagem simples e concreta:
 ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - O sujeito de cada frase é a pessoa, nunca o planeta ou a técnica ("Tens..." / "O teu perfil sustenta...", nunca "Marte na casa X indica...").
 - TRATAMENTO: usa "tu" — é a pessoa mais nova a quem este relatório se dirige, não um adulto profissional. Nunca "você".
+- EXCEPÇÃO AO "TU" — OS CABEÇALHOS "## ": cada cabeçalho "## <título>" na secção ESTRUTURA DO RELATÓRIO abaixo (ex.: "## ${SECCAO_TITULOS.quemE}", "## ${SECCAO_TITULOS.oQueACartaSustenta}") é um marcador técnico que o código usa para dividir o texto em secções — copia-o EXACTAMENTE como está escrito abaixo, letra por letra, mesmo que pareça estranho em registo "tu" (ex.: "${SECCAO_TITULOS.quemE}", não "Quem és"; "${SECCAO_TITULOS.oQueACartaSustenta}", não "O que o teu perfil sustenta"). O "tu" aplica-se sempre ao TEXTO que escreves a seguir a cada cabeçalho, nunca ao cabeçalho em si.
 - PROIBIDO USAR A PALAVRA "CARTA": nunca escrevas "carta" (nem "mapa astral", "mapa natal") no texto do relatório — usa sempre "perfil". Correcto: "o teu perfil sustenta X". Proibido: "a tua carta sustenta X".
 - TOM: acessível para quem tem 15 a 18 anos e ainda não trabalhou — mais claro e menos abstracto do que um relatório para adultos, NUNCA condescendente ou infantilizado. Sem gíria de coach, sem emojis. Nunca uses "carreira estabelecida", "anos de experiência", ou qualquer referência a um percurso profissional que esta pessoa ainda não teve.
 - PROIBIDO: primeira pessoa do plural ("identificámos", "vimos", "calculámos"). Correcto: "o teu perfil mostra", "os dados indicam".
@@ -245,7 +247,7 @@ ${blocoModoDeGanho(axes, pesosPlanetas)}
 ${blocoPesos(pesosPlanetas)}
 
 -- Para que tem facilidade natural (já calculado — ver INSTRUCAO_FACILIDADES_NATURAIS) --
-${blocoFacilidadesNaturais(pesosPlanetas)}
+${blocoFacilidadesNaturais(pesosPlanetas, true)}
 
 -- Roda da Vida (8 dimensões, 0-10) --
 ${blocoRodaDaVida(savPorCasa, pesosPlanetas, axes.regentesCasas)}

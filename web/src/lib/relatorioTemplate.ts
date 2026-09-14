@@ -6,7 +6,6 @@ import {
   normalizarTextoLivre,
   computeApoioPorAreaDeVida,
   valorCasaUnificado,
-  ESTADO_PT,
   type ClassicalGraha,
   type VocationIQAxes,
   type PesoPlaneta,
@@ -283,6 +282,29 @@ function markdownParaHtml(blocoOriginal: string): string {
     if (!linha) {
       fecharParagrafo();
       fecharLista();
+      continue;
+    }
+    // Defesa (correcção do especialista, ronda "relatório Marta") — uma
+    // linha "---"/"***"/"___" (divisória markdown) ou "## título"/"### "
+    // NUNCA deveria chegar aqui: dividirEmSeccoes/parseLeituraPorOpcao já
+    // deviam ter consumido todos os cabeçalhos reais antes deste ponto.
+    // Se uma chega mesmo assim (ex.: o LLM escreveu um cabeçalho que não
+    // bateu certo com o título esperado, por qualquer razão futura),
+    // nunca a deixa aparecer como texto em bruto ao cliente — a
+    // divisória é simplesmente ignorada (como uma linha em branco); um
+    // cabeçalho a mais é reduzido ao seu texto, sem os "#", como
+    // parágrafo normal.
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(linha)) {
+      fecharParagrafo();
+      fecharLista();
+      continue;
+    }
+    const cabecalhoSolto = linha.match(/^#{1,6}\s+(.*)/);
+    if (cabecalhoSolto) {
+      fecharParagrafo();
+      fecharLista();
+      paragrafoActual.push(inline(cabecalhoSolto[1]));
+      fecharParagrafo();
       continue;
     }
     const itemNumerado = linha.match(/^\d+[.)]\s+(.*)/);
@@ -1094,15 +1116,25 @@ function blocoRodaDaVida(savPorCasa: SavPorCasa[], pesos: PesoPlaneta[], regente
  * genérica repetida). Texto exacto pedido, determinístico — gerado pelo
  * código, nunca pelo LLM (só o diagrama "Onde o perfil tem atrito" a usa;
  * é sempre a mesma independentemente do ramo — não tem pronome pessoal).
+ *
+ * Correcção do especialista (ronda "relatório Marta", ponto 7) —
+ * acrescentada, a cada entrada, uma 2ª frase com um cenário concreto do
+ * dia a dia (nunca um facto astrológico novo, só uma ilustração tangível
+ * da MESMA implicação já descrita na 1ª frase) — a leitura anterior
+ * nomeava o atrito sem dar a sentir como é que ele aparece na prática.
  */
 const IMPLICACAO_PRATICA_PLANETA: Record<string, string> = {
-  Mercury: "A fluidez de explicar e ser entendida precisa de ser construída — não é natural. Apoio externo (editor, coach de comunicação) compensa.",
-  Venus: "O sentido de valor próprio e o que se sente à-vontade a cobrar é a área mais fraca. Risco: sub-cobrar ou aceitar menos do que vale.",
-  Moon: "A gestão emocional em decisões importantes pede atenção — não tomar grandes decisões em momentos de baixa.",
-  Mars: "A capacidade de agir com rapidez e decisão custa mais do que devia — reservar energia para as batalhas que importam.",
-  Sun: "A afirmação pública da identidade profissional precisa de ser construída com intenção — não acontece por acidente.",
-  Jupiter: "A expansão e o crescimento pedem mais esforço do que para outros — crescer devagar é uma estratégia, não uma falha.",
-  Saturn: "A estrutura e a disciplina de longo prazo precisam de sistemas externos — não confiar só na força de vontade.",
+  Mercury:
+    "A fluidez de explicar e ser entendida precisa de ser construída — não é natural. Apoio externo (editor, coach de comunicação) compensa. Na prática, isto pode aparecer como hesitar antes de enviar um email importante, ou reler uma mensagem várias vezes antes de a mandar.",
+  Venus:
+    "O sentido de valor próprio e o que se sente à-vontade a cobrar é a área mais fraca. Risco: sub-cobrar ou aceitar menos do que vale. Na prática, isto pode aparecer como aceitar um preço mais baixo só para evitar desconforto, ou adiar um pedido de aumento mesmo quando o trabalho já o justifica.",
+  Moon: "A gestão emocional em decisões importantes pede atenção — não tomar grandes decisões em momentos de baixa. Na prática, isto pode aparecer como decidir sair de um emprego ou terminar algo importante num dia mau, e arrepender-se semanas depois com a cabeça mais fria.",
+  Mars: "A capacidade de agir com rapidez e decisão custa mais do que devia — reservar energia para as batalhas que importam. Na prática, isto pode aparecer como adiar uma conversa difícil ou uma candidatura até já ser quase tarde demais, por o primeiro passo custar mais do que o esperado.",
+  Sun: "A afirmação pública da identidade profissional precisa de ser construída com intenção — não acontece por acidente. Na prática, isto pode aparecer como fazer um bom trabalho mas nunca o mostrar ou defender publicamente, deixando que outros levem o crédito por omissão.",
+  Jupiter:
+    "A expansão e o crescimento pedem mais esforço do que para outros — crescer devagar é uma estratégia, não uma falha. Na prática, isto pode aparecer como comparar o próprio progresso ao de colegas que avançam mais depressa, e confundir ritmo mais lento com falta de capacidade.",
+  Saturn:
+    'A estrutura e a disciplina de longo prazo precisam de sistemas externos — não confiar só na força de vontade. Na prática, isto pode aparecer como começar projectos de longo prazo com entusiasmo e perder a rotina ao fim de poucas semanas, sem um sistema externo (calendário partilhado, um "parceiro de responsabilização") que ajude a manter o ritmo.',
 };
 
 interface ItemAtrito {
@@ -1231,9 +1263,21 @@ function blocoOQueEsteRelatorioResponde(usarTu: boolean): string {
 }
 
 function cardOpcao(op: LeituraOpcao, dados: DadosParaTemplate, pesos: PesoPlaneta[], axes: VocationIQAxes): string {
+  // Correcção do especialista (ronda "relatório Marta", ponto 9a) — 5º
+  // rótulo, índice 2. Conteúdo do ponto 3 já era DIFERENTE entre os dois
+  // motores antes desta correcção (adulto: nada nesta posição, só 4
+  // pontos; adolescente: sempre foi "curso concreto e via de entrada",
+  // ver promptAdolescente.ts) — mas os dois partilhavam o MESMO rótulo
+  // genérico ("O que pede que falta"), por `cardOpcao` nunca ter sido
+  // condicional ao ramo. Corrigido: rótulo próprio por ramo, a condizer
+  // com o que cada prompt de facto pede nesta posição. O último ponto de
+  // cada prompt (conclusão explícita) nunca teve rótulo próprio aqui —
+  // fica de fora de `op.partes` visualmente (como já estava), validado à
+  // parte pela crítica automática sobre o texto em bruto.
   const PARTE_LABEL = [
     { icone: "&#10003;", titulo: "O que o perfil sustenta" },
     { icone: "&#9888;", titulo: "O que vai custar" },
+    { icone: "&#9733;", titulo: dados.ehAdolescente ? "O curso concreto e a via de entrada" : "Sub-áreas mais alinhadas consigo" },
     { icone: "?", titulo: "O que pede que falta" },
     { icone: "&#8594;", titulo: dados.ehAdolescente ? "Onde entra a tua matéria" : "Onde entra a sua matéria" },
   ];
@@ -1365,8 +1409,8 @@ function iconeFacilidade(categoria: string, cor: string): string {
  * padrão visual de `.card-dom`/`.card-limitacao` acima, generalizado
  * para 3 cores em vez de 2.
  */
-function blocoFacilidadesNaturais(pesos: PesoPlaneta[]): string {
-  const facilidades = calcularFacilidadesNaturais(pesos);
+function blocoFacilidadesNaturais(pesos: PesoPlaneta[], usarTu: boolean): string {
+  const facilidades = calcularFacilidadesNaturais(pesos, usarTu);
   const cards = facilidades
     .map((f) => {
       const cor = corNivelFacilidade(f.nivel);
@@ -1382,7 +1426,7 @@ function blocoFacilidadesNaturais(pesos: PesoPlaneta[]): string {
 
   return `
     <section class="seccao">
-      <h2 class="titulo-seccao">Para que tem facilidade natural</h2>
+      <h2 class="titulo-seccao">${usarTu ? "Para que tens facilidade natural" : "Para que tem facilidade natural"}</h2>
       <div class="grelha-facilidades">${cards}</div>
     </section>`;
 }
@@ -1603,6 +1647,25 @@ function blocoCandidataForaDaLista(corpo: string, catalogo: ResultadoCatalogoVoc
   const gruposJaRenderizados = new Set<GrupoCandidatasTexto>();
   const resumoParaTabela: { nome: string; nivel: 1 | 2 | undefined; via: string | null; custo: string | null }[] = [];
   const dadosPorNome = new Map(candidatas.map((c) => [c.nome, catalogo?.candidatasForaDaLista.find((cat) => cat.nome === c.nome)]));
+
+  // ACRÉSCIMO do especialista (ronda "relatório Marta") — "23 opções numa
+  // lista corrida, sem nenhum critério de agrupamento" agrava o efeito
+  // "isto dá para tudo" que o parágrafo de abertura (`paragrafoAntiDaParaTudo`)
+  // já tenta neutralizar sozinho. Pedido explícito: reaproveitar o MESMO
+  // critério já usado — a convergência de base que forma "Grupos de
+  // candidatas" (`grupos`, acima) — nunca inventar uma taxonomia por área
+  // temática à parte. A partir de 9 opções (decisão técnica, "a definir
+  // por ti" — o ecrã de um cartão individual já ocupa espaço considerável,
+  // por isso um número de dígito único de opções nunca precisou de
+  // navegação; a partir de dois dígitos, sim), os grupos passam a ser
+  // numerados ("Grupo 1", "Grupo 2", ...) e as candidatas sem grupo ganham
+  // um subtítulo "Opções individuais" uma única vez, antes da primeira —
+  // dá à lista uma estrutura navegável sem inventar nenhuma categoria que
+  // o motor não tenha já calculado.
+  const LIMIAR_SEGMENTACAO = 9;
+  const segmentar = candidatas.length >= LIMIAR_SEGMENTACAO;
+  let numeroGrupo = 0;
+  let subtituloIndividuaisEscrito = !segmentar || grupos.length === 0;
   // 4 é o limiar mínimo de convergência que `catalogarDestinos()` exige
   // para uma opção sequer entrar na pool (LIMIAR_MINIMO_CANDIDATA em
   // catalogoVocacional.ts) — só serve de fallback se, por algum motivo,
@@ -1626,16 +1689,27 @@ function blocoCandidataForaDaLista(corpo: string, catalogo: ResultadoCatalogoVoc
       resumoParaTabela.push({ nome: c.nome, nivel: dadosCatalogo?.nivelConfianca, via, custo });
       const grupo = grupoPorNome.get(c.nome);
       let introGrupo = "";
+      let introIndividuais = "";
       if (grupo && !gruposJaRenderizados.has(grupo)) {
         gruposJaRenderizados.add(grupo);
+        numeroGrupo++;
+        const rotuloGrupo = segmentar ? `Grupo ${numeroGrupo} — convergência de base partilhada` : "Um conjunto de opções com a mesma convergência de base";
         introGrupo = `
         <div class="caixa-grupo-candidatas">
-          <p class="card-candidata-header">${usarTu ? "Um conjunto de opções com a mesma convergência de base" : "Um conjunto de opções com a mesma convergência de base"}</p>
+          <p class="card-candidata-header">${rotuloGrupo}</p>
           ${markdownParaHtml(grupo.textoPartilhado)}
         </div>`;
+      } else if (!grupo && !subtituloIndividuaisEscrito) {
+        // Primeira candidata sem grupo, numa lista grande com pelo menos
+        // um grupo já formado — separa visualmente "convergência
+        // partilhada por várias opções" de "sinal próprio, sem outras
+        // opções a partilhá-lo", uma única vez.
+        subtituloIndividuaisEscrito = true;
+        introIndividuais = `<p class="rotulo-pequeno" style="margin-top:24px;">${usarTu ? "Opções individuais — sem convergência partilhada com outras desta lista" : "Opções individuais — sem convergência partilhada com outras desta lista"}</p>`;
       }
       return `
       ${introGrupo}
+      ${introIndividuais}
       <div class="opcao-item">
         <p class="opcao-nome">${escapeHtml(c.nome)}</p>
         ${markdownParaHtml(textoLimpo)}
@@ -1909,27 +1983,60 @@ const CANDIDATAS_FIXO_PESO: Partial<Record<string, string>> = {
   Mercury: "é por isto que o primeiro passo do relatório manda trabalhar comunicação e auto-valorização antes de qualquer decisão de carreira.",
 };
 
-/** Frase "Candidatas:" partilhada pelos 4 gráficos — dinâmica, calculada a cada geração a partir das candidatas REALMENTE escritas neste relatório (nunca uma lista fixa, cada pessoa tem candidatas diferentes). Ver nota de rigor da "ORDEM MESTRA": só afirma ligação quando o motor de facto a faz. */
-function fraseCandidatasDinamica(encontrados: CandidataForaDaLista[]): string {
-  if (!encontrados.length) return "é uma leitura de perfil geral nesta carta — não aparece como filtro directo em nenhuma das opções apresentadas nesta lista.";
+/**
+ * Frase "Opções:" partilhada pelos 4 gráficos — dinâmica, calculada a
+ * cada geração a partir das candidatas REALMENTE escritas neste
+ * relatório (nunca uma lista fixa, cada pessoa tem candidatas
+ * diferentes). Ver nota de rigor da "ORDEM MESTRA": só afirma ligação
+ * quando o motor de facto a faz.
+ *
+ * Correcção do especialista (ronda "relatório Marta", ponto 8) — quando
+ * não há nenhuma candidata ligada a este sinal, `null` (nunca mais a
+ * frase fixa "não aparece como filtro directo em nenhuma das opções") —
+ * essa frase aparecia em TODAS as entradas sem candidata, mesmo sem
+ * nada de relevante para dizer, como preenchimento. Os 4 chamadores
+ * omitem agora a linha "Opções:" inteira quando isto vier `null`.
+ */
+function fraseCandidatasDinamica(encontrados: CandidataForaDaLista[]): string | null {
+  if (!encontrados.length) return null;
   return `este sinal sustenta directamente ${juntarNomesCandidatas(encontrados.map((c) => c.nome))} — é uma das camadas que as leva a aparecer nesta lista.`;
 }
 
+// Correcção do especialista (ronda "relatório Marta", ponto 4) — a
+// dignidade planetária (`p.estado`, ex. "Friend"/"Enemy") só tinha
+// tradução PALAVRA A PALAVRA em ESTADO_PT ("amigo"/"inimigo"/"exaltado"
+// /"debilitado") — jargão técnico exposto directamente ao leitor ("Está
+// amigo, na casa 7"), sem explicar o que isso significa na prática.
+// DIGNIDADE_PLANA traduz para uma frase comum, sem o nome técnico do
+// estado — usada em vez de `ESTADO_PT` nesta linha (ESTADO_PT continua a
+// existir e a ser usado noutros sítios internos/prompt, nunca aqui).
+const DIGNIDADE_PLANA: Record<string, string> = {
+  Exalted: "numa posição que amplifica esta força",
+  Own: "numa posição que lhe é naturalmente favorável",
+  Moolatrikona: "numa posição que lhe é naturalmente favorável",
+  Friend: "numa posição que o favorece",
+  Neutral: "numa posição neutra — nem ajuda nem atrapalha por si só",
+  Enemy: "numa posição que lhe exige mais esforço",
+  Debilitated: "numa posição que lhe exige mais esforço",
+  NeechaBhanga: "numa posição que parecia mais difícil mas está compensada — lida como força",
+  NeechaBhanga_Conjuncao: "numa posição parcialmente compensada — força moderada",
+};
+
 function explicacaoPesoDeterministica(pesos: PesoPlaneta[], usarTu: boolean, axes: VocationIQAxes, candidatasEscritas: CandidataForaDaLista[]): ExplicacaoGraficoDeterministica {
-  const abertura = `Este gráfico mede a força real de cada planeta ${usarTu ? "do teu" : "do seu"} perfil — não é sorte nem intuição, é o resultado de dois factores combinados: o estado do planeta (exaltado, em signo próprio, debilitado, etc.) e a força da casa onde está fisicamente sentado, medida pelo Sarvashtakavarga (uma tabela clássica de pontos de apoio, casa a casa). Quanto mais alto o número, mais esse planeta consegue sustentar o que promete no dia a dia — mais baixo não significa "mau", significa que precisa de mais esforço deliberado para render.`;
+  const abertura = `Este gráfico mede a força real de cada planeta ${usarTu ? "do teu" : "do seu"} perfil — não é sorte nem intuição, é o resultado de dois factores combinados: a posição do planeta (mais ou menos favorável, consoante o signo onde está) e a força da casa onde está fisicamente sentado, medida pelo Sarvashtakavarga (uma tabela clássica de pontos de apoio, casa a casa). Quanto mais alto o número, mais esse planeta consegue sustentar o que promete no dia a dia — mais baixo não significa "mau", significa que precisa de mais esforço deliberado para render.`;
   const porCategoria: Record<string, string> = {};
   for (const p of pesos) {
     const classificacao = p.peso >= 1.3 ? "força natural, fácil de usar" : p.peso >= 0.9 ? "suporte moderado" : "o esforço vai ser maior aqui — não impossível, só menos natural";
-    const estadoPt = ESTADO_PT[p.estado] ?? p.estado;
+    const dignidadePlana = DIGNIDADE_PLANA[p.estado] ?? "numa posição própria neste perfil";
     const detalhe = DETALHE_CARACTERISTICA_PESO[p.planeta];
     const candidatasFixo = CANDIDATAS_FIXO_PESO[p.planeta];
     const linhaCandidatas = candidatasFixo ?? fraseCandidatasDinamica(candidatasPorPlaneta(p.planeta, candidatasEscritas, axes));
     const partes = [
       detalhe ? `Significa: ${detalhe.significa}` : "",
-      `${usarTu ? "No teu" : "No seu"} perfil, peso ${p.peso.toFixed(2)} — ${classificacao}. Está ${estadoPt}, na casa ${p.casa} (${p.signo}).`,
+      `${usarTu ? "No teu" : "No seu"} perfil, peso ${p.peso.toFixed(2)} — ${classificacao}. Está ${dignidadePlana}, na casa ${p.casa} (${p.signo}).`,
       detalhe ? `Bom: ${detalhe.bom}` : "",
       detalhe ? `A vigiar: ${detalhe.aVigiar}` : "",
-      `Opções: ${linhaCandidatas}`,
+      linhaCandidatas ? `Opções: ${linhaCandidatas}` : "",
     ].filter(Boolean);
     porCategoria[PLANETA_PT[p.planeta] ?? p.planeta] = partes.join(" ");
   }
@@ -1945,10 +2052,56 @@ const DEFINICAO_COMPETENCIA: Record<string, string> = {
   Execução: "A capacidade de agir, iniciar, e dar corpo próprio às decisões.",
 };
 
-/** Mesmos cortes já usados na Roda da Vida/Anexo (≥7 forte, 4-7 equilíbrio, <4 pede construção) — nunca inventar um corte novo para este gráfico. */
-function classificacaoDez(valor: number): string {
+// Correcção do especialista (ronda "relatório Marta", ponto 5) — a frase
+// da faixa "equilíbrio" era uma única string fixa, repetida sempre que
+// mais do que uma competência/dimensão caía nesse intervalo (4-7, o mais
+// largo dos três) — no mesmo relatório, várias entradas seguidas com a
+// mesma frase davam a sensação de que a pessoa "não se destaca em nada".
+//
+// CORRECÇÃO SOBRE A 1ª TENTATIVA (o especialista apanhou o problema) — a
+// 1ª versão escolhia a variante por hash do NOME da entrada ("Comunicação",
+// "Saúde / Energia", etc.). Como esses nomes são sempre os mesmos 6-8,
+// para TODOS os relatórios, o hash fixava CADA nome à MESMA variante em
+// TODOS os relatórios de sempre — nalguns pares de nomes (verificado por
+// cálculo directo do hash) calhava a mesma variante às duas (ex.: 3 das 8
+// dimensões da Roda da Vida caíam todas na variante 3) — exactamente o
+// tipo de colisão que isto tinha de evitar, só que fixa e invisível até
+// alguém verificar os números.
+//
+// Fix real: um contador local, incrementado só quando a faixa
+// "equilíbrio" é de facto usada, percorre as variantes por ORDEM (0, 1,
+// 2, 3, 4, 0, ...) — cada `for` que chama isto tem o seu próprio
+// contador (`criarContadorEquilibrio()`). Garante, dentro de UM
+// relatório e UM gráfico, zero repetições entre entradas em equilíbrio
+// até as 5 variantes terem sido todas usadas pelo menos uma vez — nunca
+// dependente do nome da entrada, nunca fixo entre relatórios diferentes
+// (cada geração começa o contador do zero, mas a ORDEM em que as
+// entradas em equilíbrio aparecem já varia consoante os dados reais
+// desta pessoa).
+const VARIANTES_EQUILIBRIO = [
+  "equilíbrio — nem o mais forte nem o mais fraco do perfil",
+  "nível intermédio — presente, mas sem ser o que mais se destaca no perfil",
+  "zona intermédia — nem uma força óbvia, nem um ponto fraco",
+  "um nível médio, a meio caminho entre facilidade natural e esforço adicional",
+  "numa faixa intermédia — funcional, sem ser o traço mais marcante do perfil",
+];
+
+interface ContadorEquilibrio {
+  n: number;
+}
+
+function criarContadorEquilibrio(): ContadorEquilibrio {
+  return { n: 0 };
+}
+
+/** Mesmos cortes já usados na Roda da Vida/Anexo (≥7 forte, 4-7 equilíbrio, <4 pede construção) — nunca inventar um corte novo para este gráfico. `contador` (um por gráfico, criado uma vez antes do `for`) escolhe qual das variantes de "equilíbrio" usar, por ordem — ver VARIANTES_EQUILIBRIO e a nota acima. */
+function classificacaoDez(valor: number, contador: ContadorEquilibrio): string {
   if (valor >= 7) return "força natural";
-  if (valor >= 4) return "equilíbrio — nem o mais forte nem o mais fraco do perfil";
+  if (valor >= 4) {
+    const variante = VARIANTES_EQUILIBRIO[contador.n % VARIANTES_EQUILIBRIO.length];
+    contador.n++;
+    return variante;
+  }
   return "pede mais construção deliberada";
 }
 
@@ -2010,16 +2163,17 @@ const DETALHE_COMPETENCIA: Record<string, DetalheCaracteristica> = {
 function explicacaoCompetenciasDeterministica(eixos: { nome: string; valor: number }[], usarTu: boolean, candidatasEscritas: CandidataForaDaLista[]): ExplicacaoGraficoDeterministica {
   const abertura = `Este radar mede seis competências, cada uma ligada a uma casa clássica fixa ${usarTu ? "do teu" : "do seu"} perfil (Comunicação → casa 2, Liderança → casa 10, Criatividade → casa 5, Estrutura → casa 6, Relação → casa 7, Execução → casa 1) — a mesma fórmula usada na Roda da Vida e no Anexo, para nunca haver números diferentes para o mesmo sinal. Não são avaliações de personalidade — são a força real que o perfil sustenta em cada área.`;
   const porCategoria: Record<string, string> = {};
+  const contadorEquilibrio = criarContadorEquilibrio();
   for (const e of eixos) {
     const detalhe = DETALHE_COMPETENCIA[e.nome];
     const casa = CASA_POR_COMPETENCIA[e.nome];
     const linhaCandidatas = fraseCandidatasDinamica(casa !== undefined ? candidatasPorCasa(casa, candidatasEscritas) : []);
     const partes = [
       `Significa: ${DEFINICAO_COMPETENCIA[e.nome] ?? ""}`,
-      `${usarTu ? "No teu" : "No seu"} perfil, ${e.valor.toFixed(1)}/10 — ${classificacaoDez(e.valor)}.`,
+      `${usarTu ? "No teu" : "No seu"} perfil, ${e.valor.toFixed(1)}/10 — ${classificacaoDez(e.valor, contadorEquilibrio)}.`,
       detalhe ? `Bom: ${detalhe.bom}` : "",
       detalhe ? `A vigiar: ${detalhe.aVigiar}` : "",
-      `Opções: ${linhaCandidatas}`,
+      linhaCandidatas ? `Opções: ${linhaCandidatas}` : "",
     ].filter(Boolean);
     porCategoria[e.nome] = partes.join(" ");
   }
@@ -2093,6 +2247,7 @@ const DETALHE_DIMENSAO_VIDA: Record<string, DetalheCaracteristica> = {
 function explicacaoVidaDeterministica(dimensoes: DimensaoVida[], usarTu: boolean, candidatasEscritas: CandidataForaDaLista[]): ExplicacaoGraficoDeterministica {
   const abertura = `Esta roda usa a mesma fórmula da Roda da Vida clássica, aplicada às casas ${usarTu ? "do teu" : "do seu"} perfil: cada fatia mede quanto suporte real (planetas presentes + peso do regente da área) essa área da vida recebe. Não é um julgamento — é um mapa de onde a energia flui com naturalidade e onde pede mais construção deliberada.`;
   const porCategoria: Record<string, string> = {};
+  const contadorEquilibrio = criarContadorEquilibrio();
   for (const d of dimensoes) {
     const detalhe = DETALHE_DIMENSAO_VIDA[d.nome];
     const casas = CASAS_POR_DIMENSAO_VIDA[d.nome] ?? [];
@@ -2101,10 +2256,10 @@ function explicacaoVidaDeterministica(dimensoes: DimensaoVida[], usarTu: boolean
     // (parágrafo próprio, antes deste bloco) — não repetir aqui, ou o
     // mesmo texto aparece duas vezes seguidas na roda.
     const partes = [
-      `${usarTu ? "No teu" : "No seu"} perfil, ${d.valor.toFixed(1)}/10 — ${classificacaoDez(d.valor)}.`,
+      `${usarTu ? "No teu" : "No seu"} perfil, ${d.valor.toFixed(1)}/10 — ${classificacaoDez(d.valor, contadorEquilibrio)}.`,
       detalhe ? `Bom: ${detalhe.bom}` : "",
       detalhe ? `A vigiar: ${detalhe.aVigiar}` : "",
-      `Opções: ${linhaCandidatas}`,
+      linhaCandidatas ? `Opções: ${linhaCandidatas}` : "",
     ].filter(Boolean);
     porCategoria[d.nome] = partes.join(" ");
   }
@@ -2126,6 +2281,13 @@ const ROTULO_GANHO_BASE: Record<number, string> = {
  * vencedora, ex. "Liderando publicamente", mesmo quando o regente está
  * sentado numa casa de serviço/bastidores).
  */
+/** Nome curto de cada modo, para nomear "o outro modo" numa frase (ver `detalheModoGanho`) — nunca deixar essa referência sem nome. */
+const CASA_GANHO_NOME_CURTO: Record<number, string> = {
+  2: "pela voz",
+  6: "por resolver problemas",
+  10: "por liderar publicamente",
+};
+
 /**
  * Bom/A vigiar de cada Modo de Ganho — texto do especialista, "ORDEM
  * MESTRA" Parte D4. Correcção de rigor (mesma nota da Parte D): o
@@ -2135,28 +2297,58 @@ const ROTULO_GANHO_BASE: Record<number, string> = {
  * pessoa, o que não é garantido para toda a gente. Reescrito para
  * linguagem condicional a "é/não é o modo dominante", nunca a uma casa
  * específica.
+ *
+ * Correcção do especialista (ronda "relatório Marta", ponto 8) — antes
+ * função `Record` estática, "sem o suporte de outro modo" nunca dizia
+ * QUAL — passa a função, recebendo o nome curto do modo dominante desta
+ * pessoa (`nomeDominanteCurto`, `null` só no caso impossível de não
+ * haver nenhum dominante) para nomear sempre que referir "o outro modo".
  */
-const DETALHE_MODO_GANHO: Record<number, DetalheCaracteristica> = {
-  10: {
-    significa: "",
-    bom: "quando é o modo dominante, o reconhecimento chega como consequência de ser imprescindível, não como objectivo em si.",
-    aVigiar: "forçar uma versão \"de palco\" quando o perfil não a sustenta vai sentir-se desconfortável e pouco autêntico.",
-  },
-  6: {
-    significa: "",
-    bom: "alinha-se com a capacidade estrutural do dia a dia — resolver problemas concretos.",
-    aVigiar: "quando não é o modo dominante, funciona melhor como complemento do que como modo principal isolado.",
-  },
-  2: {
-    significa: "",
-    bom: "ainda é um sinal presente — ensinar/aconselhar directamente não está fechado, mesmo quando não é o modo dominante.",
-    aVigiar: "apostar tudo nesta via sozinha, sem o suporte de outro modo, é mais arriscado quando esta casa não é a dominante.",
-  },
-};
+function detalheModoGanho(house: number, nomeDominanteCurto: string | null): DetalheCaracteristica | undefined {
+  const sufixoDominante = nomeDominanteCurto ? ` (${nomeDominanteCurto})` : "";
+  if (house === 10) {
+    return {
+      significa: "",
+      bom: "quando é o modo dominante, o reconhecimento chega como consequência de ser imprescindível, não como objectivo em si.",
+      aVigiar: 'forçar uma versão "de palco" quando o perfil não a sustenta vai sentir-se desconfortável e pouco autêntico.',
+    };
+  }
+  if (house === 6) {
+    return {
+      significa: "",
+      bom: "alinha-se com a capacidade estrutural do dia a dia — resolver problemas concretos.",
+      aVigiar: `quando não é o modo dominante, funciona melhor como complemento ao modo dominante${sufixoDominante} do que como modo principal isolado.`,
+    };
+  }
+  if (house === 2) {
+    return {
+      significa: "",
+      bom: "ainda é um sinal presente — ensinar/aconselhar directamente não está fechado, mesmo quando não é o modo dominante.",
+      aVigiar: `apostar tudo nesta via sozinha, sem o suporte do modo dominante${sufixoDominante}, é mais arriscado quando esta casa não é a dominante.`,
+    };
+  }
+  return undefined;
+}
+
+// Correcção do especialista (ronda "relatório Marta", pontos 8+11) — uma
+// margem pequena entre a pontuação mais alta e a segunda (ex.: 2.3 vs
+// 1.8) era tratada com a mesma linguagem de vitória clara de uma margem
+// larga (ex.: 4.5 vs 3.5 vs 1.5) — "modo dominante" sem qualificação
+// nenhuma nos dois casos. Abaixo deste valor, a linguagem passa a ser
+// cautelosa ("ligeira vantagem", nunca "vitória clara"); a partir dele,
+// mantém-se a linguagem confiante já existente.
+const MARGEM_PEQUENA_GANHO = 0.8;
 
 function explicacaoGanhoDeterministica(earningModes: EarningMode[], dominantes: number[], pesos: PesoPlaneta[], regentesCasas: Record<number, ClassicalGraha>, usarTu: boolean, candidatasEscritas: CandidataForaDaLista[]): ExplicacaoGraficoDeterministica {
   const abertura = `Este gráfico mostra qual das três formas clássicas de gerar valor (Artha Trikona: casas 2, 6 e 10) ${usarTu ? "o teu" : "o seu"} perfil mais sustenta — a barra laranja mais escura é a dominante, calculada a partir da dignidade do regente de cada casa, de quem está fisicamente lá dentro, e do peso real de cada um.`;
   const porCategoria: Record<string, string> = {};
+
+  const ordenados = [...earningModes].sort((a, b) => b.score - a.score);
+  const maior = ordenados[0]?.score ?? 0;
+  const segundo = ordenados[1]?.score ?? maior;
+  const margemPequena = dominantes.length === 1 && maior - segundo < MARGEM_PEQUENA_GANHO;
+  const nomeDominanteCurto = dominantes.length === 1 ? (CASA_GANHO_NOME_CURTO[dominantes[0]] ?? null) : null;
+
   for (const e of earningModes) {
     const isDominante = dominantes.includes(e.house);
     const rotulo = ROTULO_GANHO_BASE[e.house] ?? "";
@@ -2166,14 +2358,19 @@ function explicacaoGanhoDeterministica(earningModes: EarningMode[], dominantes: 
     const rotuloVisual = (CASA_LABEL_LINHAS[e.house] ?? ["", ""]).join(" ").trim();
     let texto = `Pontuação ${e.score} — esta forma significa ${rotulo}.`;
     if (isDominante) {
-      texto = `Este é ${usarTu ? "o teu" : "o seu"} modo dominante (pontuação ${e.score}, a mais alta das três) — o gráfico destaca esta barra a laranja mais escuro.`;
+      texto =
+        dominantes.length > 1
+          ? `Este modo empata com pelo menos outro como o mais alto ${usarTu ? "do teu" : "do seu"} perfil (pontuação ${e.score}) — não há um único modo dominante claro, os empatados destacam-se igualmente no gráfico.`
+          : margemPequena
+            ? `Este modo tem uma ligeira vantagem ${usarTu ? "no teu" : "no seu"} perfil (pontuação ${e.score}, à frente da segunda forma por uma margem pequena) — não é uma vitória clara sobre as outras, mas é a que mais se destaca hoje.`
+            : `Este é ${usarTu ? "o teu" : "o seu"} modo dominante (pontuação ${e.score}, a mais alta das três) — o gráfico destaca esta barra a laranja mais escuro.`;
       texto += emBastidores
         ? ` O rótulo do gráfico diz "${rotuloVisual}" — mas ${usarTu ? "no teu" : "no seu"} caso isto não significa procurar exposição directa: o regente desta casa está sentado numa casa de bastidores, o que significa que o reconhecimento chega por se tornar imprescindível através do que sustenta por trás, não por procurar palco.`
         : ` O rótulo do gráfico ("${rotuloVisual}") reflecte bem esta posição — o regente está numa posição de exposição directa, coerente com o que a barra promete.`;
     }
-    const detalhe = DETALHE_MODO_GANHO[e.house];
+    const detalhe = detalheModoGanho(e.house, nomeDominanteCurto);
     const linhaCandidatas = fraseCandidatasDinamica(candidatasPorCasa(e.house, candidatasEscritas));
-    const partes = [texto, detalhe ? `Bom: ${detalhe.bom}` : "", detalhe ? `A vigiar: ${detalhe.aVigiar}` : "", `Opções: ${linhaCandidatas}`].filter(Boolean);
+    const partes = [texto, detalhe ? `Bom: ${detalhe.bom}` : "", detalhe ? `A vigiar: ${detalhe.aVigiar}` : "", linhaCandidatas ? `Opções: ${linhaCandidatas}` : ""].filter(Boolean);
     porCategoria[`Casa ${e.house}`] = partes.join(" ");
   }
   return { abertura, porCategoria };
@@ -2467,7 +2664,7 @@ export function gerarHTMLRelatorio(
 
     ${blocoSeccaoQuemE(seccoes[SECCAO_TITULOS.quemE] ?? "")}
 
-    ${blocoFacilidadesNaturais(pesos)}
+    ${blocoFacilidadesNaturais(pesos, usarTu)}
 
     <section class="seccao">
       <h2 class="titulo-seccao">${escapeHtml(SECCAO_TITULOS.oQueACartaSustenta)}</h2>
