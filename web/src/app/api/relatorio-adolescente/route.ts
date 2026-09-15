@@ -3,9 +3,9 @@ import Anthropic from "@anthropic-ai/sdk";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { hasSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { obterIntake } from "@/lib/store";
-import { guardarRascunho, apagarRascunho, usarVersaoLlmRascunho, restaurarVersaoAnteriorRascunho } from "@/lib/storage";
+import { guardarRascunho, obterRascunho, apagarRascunho, usarVersaoLlmRascunho, restaurarVersaoAnteriorRascunho } from "@/lib/storage";
 import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTemplate";
-import { calcularDadosAstrologicosAdolescente, GeocodeError, ANO_ESCOLARIDADE_LABEL } from "@/lib/relatorioAdultoCompute";
+import { calcularDadosAstrologicosAdolescente, reconstruirHTMLRelatorio, GeocodeError, ANO_ESCOLARIDADE_LABEL } from "@/lib/relatorioAdultoCompute";
 import { construirPromptAdolescente, construirPromptAdulto, type VocationiqIntakeAdulto } from "@naveya/method-engine";
 import { construirPromptCritica, construirPromptCriticaAdolescente, parseCritica, construirPromptReescrita } from "@/lib/criticaRelatorio";
 
@@ -24,6 +24,16 @@ import { construirPromptCritica, construirPromptCriticaAdolescente, parseCritica
 // real. Recomenda-se um lote de teste revisto pelo fundador antes de usar
 // esta rota com clientes pagantes.
 export const dynamic = "force-dynamic";
+// BUG REAL, corrigido (ronda "regeneração Alexandra" — confirmado nos
+// logs reais da Vercel: "Vercel Runtime Timeout Error: Task timed out
+// after 280 seconds", disparado sempre que a crítica pedia reescrita).
+// Gerar+criticar+reescrever eram 3 chamadas sequenciais à Anthropic
+// dentro do MESMO pedido HTTP — um timeout aqui é morto pela plataforma
+// antes de chegar ao try/catch da rota, por isso o frontend nunca via
+// `data.error`, só o fallback genérico "Não foi possível gerar o
+// rascunho." (ver SeccaoRascunho.tsx). A reescrita (passo 3) saiu para o
+// seu próprio pedido (PATCH acao="reescrever", abaixo) — cada pedido HTTP
+// fica com no máximo 2 chamadas à Anthropic, bem dentro dos 280s.
 export const maxDuration = 280;
 
 const MODEL = process.env.REPORT_MODEL || "claude-sonnet-5";
@@ -174,16 +184,14 @@ export async function POST(request: Request) {
         `decisão=${resultadoCritica.falhas.length > 0 ? "REESCREVER" : "ACEITAR"}`,
     );
 
-    let textoFinal = textoOriginal;
-    let rascunhoReescrito: string | null = null;
-    if (resultadoCritica.falhas.length > 0) {
-      const promptReescrita = construirPromptReescrita(prompt, textoOriginal, resultadoCritica.falhas);
-      rascunhoReescrito = await gerarTexto(client, promptReescrita, MAX_TOKENS);
-      textoFinal = rascunhoReescrito;
-    }
-
+    // BUG REAL, corrigido (ronda "regeneração Alexandra") — a reescrita
+    // (3ª chamada à Anthropic) saiu deste pedido para PATCH
+    // acao="reescrever" (abaixo) — ver comentário em `maxDuration`. Este
+    // pedido guarda sempre o rascunho ORIGINAL (nunca reescrito); o
+    // chamador decide se vale a pena pedir a reescrita a seguir, olhando
+    // para `precisaReescrita` na resposta.
     const dadosTecnicosParaGuardar = { axes, pesos: pesosPlanetas, earningModes: axes.earningModeAll, earningModeDominante: axes.earningModeDominante, datas, savPorCasa };
-    const rascunho = await guardarRascunho(intakeId, textoFinal, "geracao", dadosTecnicosParaGuardar, prompt, { criticaLlm: textoCritica, rascunhoReescrito }, coordenadasNascimento);
+    const rascunho = await guardarRascunho(intakeId, textoOriginal, "geracao", dadosTecnicosParaGuardar, prompt, { criticaLlm: textoCritica, rascunhoReescrito: null }, coordenadasNascimento);
 
     // TAREFA 1 (correcção do especialista) — ehAdolescente/anoEscolaridade
     // dizem ao template para não mostrar campos/secções do ramo adulto
@@ -232,9 +240,19 @@ export async function POST(request: Request) {
           oQueNaoFunciona: oQueNaoFuncionaLegado,
           rascunhoCriadoEm: rascunho.criadoEm,
         };
-    const html = gerarHTMLRelatorio(dadosTemplate, textoFinal, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
+    const html = gerarHTMLRelatorio(dadosTemplate, textoOriginal, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
 
-    return NextResponse.json({ ok: true, rascunhoId: rascunho.id, texto: textoFinal, html, houveReescrita: rascunhoReescrito !== null, manualPreservada: rascunho.manualPreservada });
+    return NextResponse.json({
+      ok: true,
+      rascunhoId: rascunho.id,
+      texto: textoOriginal,
+      html,
+      // O chamador (SeccaoRascunho.tsx) pede a reescrita a seguir, num
+      // pedido HTTP separado (PATCH acao="reescrever"), só quando isto
+      // vier true — ver comentário em `maxDuration`.
+      precisaReescrita: resultadoCritica.falhas.length > 0,
+      manualPreservada: rascunho.manualPreservada,
+    });
   } catch (err) {
     if (err instanceof GeocodeError) return NextResponse.json({ error: err.message }, { status: 422 });
     const message = err instanceof Error ? err.message : String(err);
@@ -267,7 +285,19 @@ export async function PUT(request: Request) {
   }
 }
 
-/** CORRECÇÃO 2 — idêntico ao ramo adulto (mesmo storage). */
+/**
+ * CORRECÇÃO 2 — "Usar versão LLM"/"Restaurar versão anterior", idêntico
+ * ao ramo adulto (mesmo storage).
+ *
+ * BUG REAL, corrigido (ronda "regeneração Alexandra") — acao="reescrever"
+ * é o antigo Passo 3 (reescrita) do POST acima, agora num pedido HTTP
+ * próprio (ver comentário em `maxDuration`): lê o prompt técnico e a
+ * crítica já guardados por POST (nunca recalcula a astrologia nem chama a
+ * crítica outra vez — só a 3ª chamada, a reescrita em si), grava o
+ * resultado e devolve o HTML reconstruído. Chamado automaticamente pelo
+ * frontend logo a seguir a um POST cuja resposta veio com
+ * `precisaReescrita: true` — nunca por clique directo do fundador.
+ */
 export async function PATCH(request: Request) {
   if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "não autenticado" }, { status: 401 });
   if (!hasSupabaseAdmin) return NextResponse.json({ error: "Serviço indisponível de momento." }, { status: 503 });
@@ -280,7 +310,49 @@ export async function PATCH(request: Request) {
   }
   const { intakeId, acao } = body as { intakeId?: unknown; acao?: unknown };
   if (typeof intakeId !== "string" || !intakeId) return NextResponse.json({ error: "Falta intakeId." }, { status: 400 });
-  if (acao !== "usar-llm" && acao !== "restaurar-anterior") return NextResponse.json({ error: "Acção desconhecida." }, { status: 400 });
+  if (acao !== "usar-llm" && acao !== "restaurar-anterior" && acao !== "reescrever") return NextResponse.json({ error: "Acção desconhecida." }, { status: 400 });
+
+  if (acao === "reescrever") {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) return NextResponse.json({ error: "ANTHROPIC_API_KEY não configurada." }, { status: 503 });
+
+    try {
+      const intake = await obterIntake(intakeId);
+      if (!intake) return NextResponse.json({ error: "Pedido não encontrado." }, { status: 404 });
+
+      const rascunho = await obterRascunho(intakeId);
+      if (!rascunho || !rascunho.promptCompleto || !rascunho.criticaLlm) {
+        return NextResponse.json({ error: "Não há uma crítica associada a este rascunho — gera o rascunho primeiro." }, { status: 400 });
+      }
+
+      const resultadoCritica = parseCritica(rascunho.criticaLlm);
+      if (resultadoCritica.falhas.length === 0) {
+        // Nada a corrigir (ou a crítica guardada não seguiu o formato
+        // esperado — nunca se força uma reescrita sobre dados não
+        // interpretáveis, mesma regra do POST). Devolve o estado actual
+        // sem gastar uma chamada à Anthropic.
+        const { html } = await reconstruirHTMLRelatorio(intake, rascunho.texto, rascunho.coordenadasNascimento, rascunho.criadoEm);
+        return NextResponse.json({ ok: true, criadoEm: rascunho.criadoEm, texto: rascunho.texto, html, houveReescrita: false, manualPreservada: false });
+      }
+
+      // A base da reescrita é sempre a ÚLTIMA geração real da Anthropic
+      // (`textoLlm`), nunca `texto` — que pode já ser uma edição manual
+      // por cima (ver guardarRascunho/RascunhoRelatorio).
+      const textoBase = rascunho.textoLlm ?? rascunho.texto;
+      const client = new Anthropic({ apiKey });
+      const promptReescrita = construirPromptReescrita(rascunho.promptCompleto, textoBase, resultadoCritica.falhas);
+      const textoReescrito = await gerarTexto(client, promptReescrita, MAX_TOKENS);
+
+      const resultado = await guardarRascunho(intakeId, textoReescrito, "geracao", undefined, rascunho.promptCompleto, { criticaLlm: rascunho.criticaLlm, rascunhoReescrito: textoReescrito });
+      const { html } = await reconstruirHTMLRelatorio(intake, textoReescrito, rascunho.coordenadasNascimento, resultado.criadoEm);
+
+      return NextResponse.json({ ok: true, criadoEm: resultado.criadoEm, texto: textoReescrito, html, houveReescrita: true, manualPreservada: resultado.manualPreservada });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[api/relatorio-adolescente] falha na reescrita:", message);
+      return NextResponse.json({ error: `Não foi possível aplicar a correcção automática: ${message}` }, { status: 500 });
+    }
+  }
 
   try {
     const { criadoEm } = acao === "usar-llm" ? await usarVersaoLlmRascunho(intakeId) : await restaurarVersaoAnteriorRascunho(intakeId);

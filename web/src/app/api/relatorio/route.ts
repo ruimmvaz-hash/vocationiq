@@ -3,9 +3,9 @@ import Anthropic from "@anthropic-ai/sdk";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { hasSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { obterIntake } from "@/lib/store";
-import { guardarRascunho, apagarRascunho, usarVersaoLlmRascunho, restaurarVersaoAnteriorRascunho } from "@/lib/storage";
+import { guardarRascunho, obterRascunho, apagarRascunho, usarVersaoLlmRascunho, restaurarVersaoAnteriorRascunho } from "@/lib/storage";
 import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTemplate";
-import { calcularDadosAstrologicos, GeocodeError } from "@/lib/relatorioAdultoCompute";
+import { calcularDadosAstrologicos, reconstruirHTMLRelatorio, GeocodeError } from "@/lib/relatorioAdultoCompute";
 import { SITUACOES } from "@/lib/validation";
 import { construirPromptAdulto } from "@naveya/method-engine";
 import { construirPromptCritica, parseCritica, construirPromptReescrita } from "@/lib/criticaRelatorio";
@@ -14,11 +14,17 @@ import { construirPromptCritica, parseCritica, construirPromptReescrita } from "
 // mudar" (VOCATIONIQ-ADULTO-metodologia.md, secção 6: os outros ramos
 // ficam para spec separada, não implementados aqui).
 export const dynamic = "force-dynamic";
-// Redesenho do motor (Parte 3) — até 3 chamadas sequenciais à Anthropic
-// (gerar, criticar, e reescrever se alguma falha) em vez de 1. 60s
-// chegava para uma chamada; para três, subido para 280s (o tecto prático
-// do runtime Node por defeito da Vercel — confirmar no plano do projecto
-// se isto ainda não for suficiente em produção).
+// BUG REAL, corrigido (ronda "regeneração Alexandra", ramo adolescente —
+// mesma arquitectura aqui, mesmo risco). A previsão desta nota ("60s
+// chegava para uma chamada... confirmar no plano se não for suficiente")
+// confirmou-se: gerar+criticar+reescrever, 3 chamadas sequenciais à
+// Anthropic dentro do MESMO pedido HTTP, ultrapassavam os 280s em
+// produção ("Vercel Runtime Timeout Error"). Um timeout da plataforma é
+// morto antes de chegar ao try/catch da rota, por isso o frontend nunca
+// via `data.error`, só o fallback genérico "Não foi possível gerar o
+// rascunho." (ver SeccaoRascunho.tsx). A reescrita (passo 3) saiu para o
+// seu próprio pedido (PATCH acao="reescrever", abaixo) — cada pedido HTTP
+// fica com no máximo 2 chamadas à Anthropic, bem dentro dos 280s.
 export const maxDuration = 280;
 
 // Nota de modelo (mesma correcção já documentada em
@@ -169,23 +175,19 @@ export async function POST(request: Request) {
         `decisão=${resultadoCritica.falhas.length > 0 ? "REESCREVER" : "ACEITAR"}`,
     );
 
-    // Passo 3 — reescrever, só se pelo menos um critério falhou de facto
-    // (nunca quando a crítica não seguiu o formato pedido — não se força
-    // uma reescrita sobre dados não interpretáveis, ver criticaRelatorio.ts).
-    let textoFinal = textoOriginal;
-    let rascunhoReescrito: string | null = null;
-    if (resultadoCritica.falhas.length > 0) {
-      const promptReescrita = construirPromptReescrita(prompt, textoOriginal, resultadoCritica.falhas);
-      rascunhoReescrito = await gerarTexto(client, promptReescrita, MAX_TOKENS);
-      textoFinal = rascunhoReescrito;
-    }
-
+    // BUG REAL, corrigido (ronda "regeneração Alexandra") — Passo 3
+    // (reescrever) saiu deste pedido para PATCH acao="reescrever"
+    // (abaixo) — ver comentário em `maxDuration`. Este pedido guarda
+    // sempre o rascunho ORIGINAL (nunca reescrito); o chamador decide se
+    // vale a pena pedir a reescrita a seguir, olhando para
+    // `precisaReescrita` na resposta.
+    //
     // "Mapa técnico"/"Prompt completo"/"Crítica" (ficha do cliente
     // reorganizada em /admin/relatorios/[id]) — guardados tal como
     // calculados agora, para essas secções nunca terem de recalcular nem
     // chamar a Anthropic outra vez.
     const dadosTecnicosParaGuardar = { axes, pesos: pesosPlanetas, earningModes: axes.earningModeAll, earningModeDominante: axes.earningModeDominante, datas, savPorCasa, classificacaoMahadashaAtual: dadosRicos.classificacaoMahadashaAtual };
-    const rascunho = await guardarRascunho(intakeId, textoFinal, "geracao", dadosTecnicosParaGuardar, prompt, { criticaLlm: textoCritica, rascunhoReescrito }, coordenadasNascimento);
+    const rascunho = await guardarRascunho(intakeId, textoOriginal, "geracao", dadosTecnicosParaGuardar, prompt, { criticaLlm: textoCritica, rascunhoReescrito: null }, coordenadasNascimento);
 
     // Passa os dados técnicos já calculados ao template — os gráficos
     // (SVG) são sempre gerados a partir destes, nunca do texto do LLM.
@@ -206,9 +208,19 @@ export async function POST(request: Request) {
       // recalculado à parte.
       rascunhoCriadoEm: rascunho.criadoEm,
     };
-    const html = gerarHTMLRelatorio(dadosTemplate, textoFinal, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
+    const html = gerarHTMLRelatorio(dadosTemplate, textoOriginal, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
 
-    return NextResponse.json({ ok: true, rascunhoId: rascunho.id, texto: textoFinal, html, houveReescrita: rascunhoReescrito !== null, manualPreservada: rascunho.manualPreservada });
+    return NextResponse.json({
+      ok: true,
+      rascunhoId: rascunho.id,
+      texto: textoOriginal,
+      html,
+      // O chamador (SeccaoRascunho.tsx) pede a reescrita a seguir, num
+      // pedido HTTP separado (PATCH acao="reescrever"), só quando isto
+      // vier true — ver comentário em `maxDuration`.
+      precisaReescrita: resultadoCritica.falhas.length > 0,
+      manualPreservada: rascunho.manualPreservada,
+    });
   } catch (err) {
     if (err instanceof GeocodeError) return NextResponse.json({ error: err.message }, { status: 422 });
     const message = err instanceof Error ? err.message : String(err);
@@ -241,7 +253,19 @@ export async function PUT(request: Request) {
   }
 }
 
-/** CORRECÇÃO 2 — "Usar versão LLM" / "Restaurar versão anterior", as duas acções conscientes sobre uma edição manual preservada. */
+/**
+ * CORRECÇÃO 2 — "Usar versão LLM" / "Restaurar versão anterior", as duas
+ * acções conscientes sobre uma edição manual preservada.
+ *
+ * BUG REAL, corrigido (ronda "regeneração Alexandra") — acao="reescrever"
+ * é o antigo Passo 3 (reescrita) do POST acima, agora num pedido HTTP
+ * próprio (ver comentário em `maxDuration`): lê o prompt técnico e a
+ * crítica já guardados por POST (nunca recalcula a astrologia nem chama a
+ * crítica outra vez — só a 3ª chamada, a reescrita em si), grava o
+ * resultado e devolve o HTML reconstruído. Chamado automaticamente pelo
+ * frontend logo a seguir a um POST cuja resposta veio com
+ * `precisaReescrita: true` — nunca por clique directo do fundador.
+ */
 export async function PATCH(request: Request) {
   if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "não autenticado" }, { status: 401 });
   if (!hasSupabaseAdmin) return NextResponse.json({ error: "Serviço indisponível de momento." }, { status: 503 });
@@ -254,7 +278,49 @@ export async function PATCH(request: Request) {
   }
   const { intakeId, acao } = body as { intakeId?: unknown; acao?: unknown };
   if (typeof intakeId !== "string" || !intakeId) return NextResponse.json({ error: "Falta intakeId." }, { status: 400 });
-  if (acao !== "usar-llm" && acao !== "restaurar-anterior") return NextResponse.json({ error: "Acção desconhecida." }, { status: 400 });
+  if (acao !== "usar-llm" && acao !== "restaurar-anterior" && acao !== "reescrever") return NextResponse.json({ error: "Acção desconhecida." }, { status: 400 });
+
+  if (acao === "reescrever") {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) return NextResponse.json({ error: "ANTHROPIC_API_KEY não configurada." }, { status: 503 });
+
+    try {
+      const intake = await obterIntake(intakeId);
+      if (!intake) return NextResponse.json({ error: "Pedido não encontrado." }, { status: 404 });
+
+      const rascunho = await obterRascunho(intakeId);
+      if (!rascunho || !rascunho.promptCompleto || !rascunho.criticaLlm) {
+        return NextResponse.json({ error: "Não há uma crítica associada a este rascunho — gera o rascunho primeiro." }, { status: 400 });
+      }
+
+      const resultadoCritica = parseCritica(rascunho.criticaLlm);
+      if (resultadoCritica.falhas.length === 0) {
+        // Nada a corrigir (ou a crítica guardada não seguiu o formato
+        // esperado — nunca se força uma reescrita sobre dados não
+        // interpretáveis, mesma regra do POST). Devolve o estado actual
+        // sem gastar uma chamada à Anthropic.
+        const { html } = await reconstruirHTMLRelatorio(intake, rascunho.texto, rascunho.coordenadasNascimento, rascunho.criadoEm);
+        return NextResponse.json({ ok: true, criadoEm: rascunho.criadoEm, texto: rascunho.texto, html, houveReescrita: false, manualPreservada: false });
+      }
+
+      // A base da reescrita é sempre a ÚLTIMA geração real da Anthropic
+      // (`textoLlm`), nunca `texto` — que pode já ser uma edição manual
+      // por cima (ver guardarRascunho/RascunhoRelatorio).
+      const textoBase = rascunho.textoLlm ?? rascunho.texto;
+      const client = new Anthropic({ apiKey });
+      const promptReescrita = construirPromptReescrita(rascunho.promptCompleto, textoBase, resultadoCritica.falhas);
+      const textoReescrito = await gerarTexto(client, promptReescrita, MAX_TOKENS);
+
+      const resultado = await guardarRascunho(intakeId, textoReescrito, "geracao", undefined, rascunho.promptCompleto, { criticaLlm: rascunho.criticaLlm, rascunhoReescrito: textoReescrito });
+      const { html } = await reconstruirHTMLRelatorio(intake, textoReescrito, rascunho.coordenadasNascimento, resultado.criadoEm);
+
+      return NextResponse.json({ ok: true, criadoEm: resultado.criadoEm, texto: textoReescrito, html, houveReescrita: true, manualPreservada: resultado.manualPreservada });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[api/relatorio] falha na reescrita:", message);
+      return NextResponse.json({ error: `Não foi possível aplicar a correcção automática: ${message}` }, { status: 500 });
+    }
+  }
 
   try {
     const { criadoEm } = acao === "usar-llm" ? await usarVersaoLlmRascunho(intakeId) : await restaurarVersaoAnteriorRascunho(intakeId);

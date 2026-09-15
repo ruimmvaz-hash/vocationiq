@@ -231,11 +231,30 @@ export function validarIntake(body: unknown): { ok: true; dados: IntakePayload }
     dados.preferenciaFamilia = textoOpcional(b.preferenciaFamilia);
 
     // TAREFA 3 (correcção do especialista) — "2 a 4, em texto livre" (SPEC-vocacional.md); nunca obrigatório, por isso aceita 0 sem bloquear.
+    //
+    // Correcção do especialista (caso real: Alexandra, "gestão, economia
+    // e gestão" — a mesma opção repetida duas vezes na lista, uma delas
+    // sem acento) — a pessoa escreve uma por linha nesta caixa, e é fácil
+    // repetir uma por engano (copiar/colar, escrever de novo mais abaixo
+    // sem reler o que já lá estava). Deduplicado por igualdade
+    // case-insensitive (nunca por acentos — "gestão"/"gestao" só contam
+    // como a mesma opção se ficarem IGUAIS depois de baixar a
+    // capitalização; corrigir a ortografia seria adivinhar a palavra
+    // que a pessoa quis escrever, isso não se faz), mantendo sempre a
+    // primeira ocorrência tal como foi escrita — nunca inventa nem
+    // corrige o texto em si.
     const opcoesAdolescenteBrutas = Array.isArray(b.opcoesAdolescente) ? b.opcoesAdolescente : [];
+    const opcoesVistas = new Set<string>();
     const opcoesAdolescente = opcoesAdolescenteBrutas
       .filter((o): o is string => typeof o === "string" && o.trim().length > 0)
-      .slice(0, 4)
-      .map((o) => o.trim().slice(0, 200));
+      .map((o) => o.trim().slice(0, 200))
+      .filter((o) => {
+        const chave = o.toLowerCase();
+        if (opcoesVistas.has(chave)) return false;
+        opcoesVistas.add(chave);
+        return true;
+      })
+      .slice(0, 4);
     if (opcoesAdolescente.length > 0) dados.opcoesAdolescente = opcoesAdolescente;
     dados.opcaoMaisProvavel = textoOpcional(b.opcaoMaisProvavel);
 

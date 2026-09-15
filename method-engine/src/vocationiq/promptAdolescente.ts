@@ -168,7 +168,7 @@ export function construirPromptAdolescente(
         .join("\n\n")
     : usarOpcoesLegado
       ? `(PEDIDO ANTERIOR ao formulário actual de "opções em cima da mesa" — a pessoa não usou essa caixa, mas declarou por escrito livre, no campo "Se pensa mudar, para onde": "${opcoesLegadoTexto}"${intake.cursoActual ? ` (curso actual desta pessoa: ${normalizarTextoLivre(intake.cursoActual)})` : ""}. Identifica cada área/curso claramente mencionado neste texto e trata cada um como se fosse uma opção declarada normal na secção "${SECCAO_TITULOS.leituraPorOpcao}" — escreve o bloco "### <nome>" completo para cada área que conseguires identificar com clareza. Nunca inventes uma área que a pessoa não tenha mencionado aqui.)`
-      : "(nenhuma opção declarada — escreve a partir do que o perfil sustenta em geral e da candidata fora da lista.)";
+      : `(nenhuma opção declarada — escreve a partir do que o perfil sustenta em geral e da secção "${SECCAO_TITULOS.candidataForaDaLista}", que aparece ao cliente como "Opções que ainda não consideraste" — nunca uses o nome interno "candidata" a referir-te a esta secção no texto visível.)`;
 
   // Correcção do especialista (bug crítico — pergunta concreta sem
   // resposta directa / abertura não responde à situação) — o

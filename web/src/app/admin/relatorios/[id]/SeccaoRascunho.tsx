@@ -77,6 +77,29 @@ export function SeccaoRascunho({
   // manual" (dispensado até à próxima geração real).
   const mostrarComparacao = editadoManualmente && textoLlm !== null && textoLlm !== texto && !painelLlmDispensado;
 
+  // FRENTE 1 (correcção do especialista, prova de geração real) — "Gerar"
+  // passa SEMPRE pela crítica automática (nunca opcional, ver route.ts),
+  // por isso `criticaCriadaEm` fica sempre alinhado com `criadoEm` aqui.
+  // Partilhado por gerar() (passo 1) e pela reescrita automática (passo
+  // 2, abaixo) — as duas aplicam o mesmo resultado ao estado do painel.
+  function aplicarTexto(novoTexto: string, houveReescrita: boolean, manualPreservada: boolean, criadoEmNovo?: string) {
+    setCriadoEm(criadoEmNovo ?? new Date().toISOString());
+    setRascunhoVersao((v) => (houveReescrita ? v + 1 : v));
+    setTextoLlm(novoTexto);
+    setPainelLlmDispensado(false);
+    if (manualPreservada) {
+      // CORRECÇÃO 2 — havia uma edição manual activa: `texto` (o que vai
+      // para o PDF) NUNCA é tocado por uma geração — só `textoLlm` muda,
+      // e o painel de comparação aparece para uma escolha consciente.
+      setMensagem("Nova versão gerada pela Anthropic — a tua edição manual foi preservada. Compara as duas versões abaixo.");
+    } else {
+      setTexto(novoTexto);
+      setTextoEditado(novoTexto);
+      setEditadoManualmente(false);
+      setMensagem(null);
+    }
+  }
+
   async function gerar() {
     if (texto && !editadoManualmente && !confirm("Isto vai substituir o rascunho actual. O relatório já entregue ao cliente (se houver) não é alterado. Continuar?")) return;
     setLoading("gerar");
@@ -88,30 +111,38 @@ export function SeccaoRascunho({
       body: JSON.stringify({ intakeId }),
     });
     const data = await res.json().catch(() => ({}));
-    setLoading(null);
     if (!res.ok) {
+      setLoading(null);
       setErro(data.error ?? "Não foi possível gerar o rascunho.");
       return;
     }
-    // FRENTE 1 (correcção do especialista, prova de geração real) — "Gerar"
-    // passa SEMPRE pela crítica automática (nunca opcional, ver route.ts),
-    // por isso `criticaCriadaEm` fica sempre alinhado com `criadoEm` aqui.
-    const agora = new Date().toISOString();
-    setCriadoEm(agora);
-    setRascunhoVersao((v) => (data.houveReescrita ? v + 1 : v));
-    setTextoLlm(data.texto);
-    setPainelLlmDispensado(false);
+    aplicarTexto(data.texto, false, data.manualPreservada === true);
 
-    if (data.manualPreservada) {
-      // CORRECÇÃO 2 — havia uma edição manual activa: `texto` (o que vai
-      // para o PDF) NUNCA é tocado por uma geração — só `textoLlm` muda,
-      // e o painel de comparação aparece para uma escolha consciente.
-      setMensagem("Nova versão gerada pela Anthropic — a tua edição manual foi preservada. Compara as duas versões abaixo.");
-    } else {
-      setTexto(data.texto);
-      setTextoEditado(data.texto);
-      setEditadoManualmente(false);
+    // BUG REAL, corrigido (ronda "regeneração Alexandra") — a reescrita
+    // (quando a crítica encontrou falhas) passou a ser um 2º pedido HTTP
+    // separado (ver comentário em maxDuration, route.ts) para nenhum
+    // pedido ultrapassar o tecto de 280s da Vercel. Disparado aqui,
+    // automaticamente, logo a seguir ao rascunho original ficar guardado
+    // — nunca um botão à parte, para o fluxo continuar a parecer um único
+    // "Gerar rascunho" aos olhos de quem usa o backoffice.
+    if (data.precisaReescrita) {
+      setMensagem("Rascunho gerado — a aplicar as correcções da crítica automática…");
+      const resReescrita = await fetch(apiBase, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ intakeId, acao: "reescrever" }),
+      });
+      const dataReescrita = await resReescrita.json().catch(() => ({}));
+      if (!resReescrita.ok) {
+        setLoading(null);
+        setErro(dataReescrita.error ?? "O rascunho foi gerado, mas a correcção automática falhou — o texto original já está guardado; podes tentar 'Regenerar' outra vez.");
+        router.refresh();
+        return;
+      }
+      aplicarTexto(dataReescrita.texto, dataReescrita.houveReescrita === true, dataReescrita.manualPreservada === true, dataReescrita.criadoEm);
     }
+
+    setLoading(null);
     router.refresh();
   }
 

@@ -1117,7 +1117,7 @@ ${blocoAspectosPessoais(aspectosPessoais)}
 ${
   candidatas.length
     ? `A pessoa declarou estas opções (avalia TODAS, mesmo as que o perfil sustenta fracamente):\n${candidatas.map((c) => `- ${c}`).join("\n")}`
-    : `A pessoa NÃO declarou opções concretas${intake.areasDestinoIncluiAindaNaoSei ? ' (escolheu "ainda não sei")' : ""}. Deriva até 3 candidatas plausíveis a partir do texto livre abaixo — se não conseguires nenhuma candidata clara, NÃO bloqueies o relatório: escreve a Secção 2 (o que o perfil sustenta, em geral) e resolve o relatório inteiro pela Secção 4 (candidata fora da lista). Texto livre disponível:`
+    : `A pessoa NÃO declarou opções concretas${intake.areasDestinoIncluiAindaNaoSei ? ' (escolheu "ainda não sei")' : ""}. Deriva até 3 candidatas plausíveis a partir do texto livre abaixo — se não conseguires nenhuma candidata clara, NÃO bloqueies o relatório: escreve a Secção 2 (o que o perfil sustenta, em geral) e resolve o relatório inteiro pela Secção 4 ("${SECCAO_TITULOS.candidataForaDaLista}", que aparece ao cliente como "Opções que ainda não considerou" — nunca uses o nome interno "candidata" a referir-te a esta secção no texto visível). Texto livre disponível:`
 }
 ${blocoTextoLivre}
 ${intake.tipoMudanca.length ? `\nTipo de mudança que a pessoa diz querer (usa para calibrar a parte 4 de cada leitura — ex.: se inclui trabalhar por conta própria ou abrir negócio, responde explicitamente se o perfil sustenta trabalho a solo nessa opção): ${intake.tipoMudanca.join(", ")}.` : ""}
