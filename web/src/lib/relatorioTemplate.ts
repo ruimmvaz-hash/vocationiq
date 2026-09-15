@@ -1221,9 +1221,17 @@ function blocoQuemE(d: DadosParaTemplate): string {
 
 /** TAREFA 7 (correcção do especialista) — normaliza o texto livre da pessoa antes de entrar no template, mesma função usada em promptAdulto.ts (nunca duas versões). Nunca corrige ortografia, só deixa de amplificar visualmente um erro de maiúsculas com mais maiúsculas. */
 function blocoOQueTrouxe(d: DadosParaTemplate): string {
+  // Correcção do especialista (ronda "relatório Marta", ponto 3) — os 4
+  // campos aqui são todos opcionais (legítimo não ter nenhum, ex.: sem
+  // opções declaradas); sem nenhum deles, a caixa ficava só com o título
+  // e nada por baixo — mau sinal visual mesmo quando a ausência é
+  // legítima. Texto de reserva EXACTO pedido, sem pronome pessoal (serve
+  // aos dois ramos sem adaptação).
+  const semNada = !d.oQueNaoFunciona && !d.opcoesConsideradas.length && !d.ideiaConcreta && !d.perguntaEspecifica;
   return `
     <div class="bloco-dados">
       <p class="bloco-titulo">O que trouxe</p>
+      ${semNada ? `<p class="anexo-nota">Nenhuma opção específica declarada — este relatório parte do que o perfil sustenta de forma mais ampla.</p>` : ""}
       ${
         d.oQueNaoFunciona
           ? `<div class="citacao"><p>&ldquo;${escapeHtml(normalizarTextoLivre(d.oQueNaoFunciona))}&rdquo;</p></div>`
