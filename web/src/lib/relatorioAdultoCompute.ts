@@ -358,6 +358,14 @@ export function construirIntakeAdolescente(intake: IntakeRow): VocationiqIntakeA
     opcaoMaisProvavel: intake.opcao_mais_provavel ?? undefined,
     preferenciaFamilia: intake.preferencia_familia ? normalizarTextoLivre(intake.preferencia_familia) : undefined,
     anoEscolaridade,
+    // BUG REAL, corrigido (ronda "relatório Marta") — pedidos
+    // "universidade" ANTERIORES à migração 0019 (opcoes_adolescente)
+    // declararam a sua direcção nestes dois campos antigos, nunca em
+    // opcoes_adolescente (esse formulário não existia ainda para eles).
+    // Passados sempre que existirem — `construirPromptAdolescente` só os
+    // usa de facto quando `opcoesAdolescente` vem vazio (ver lá).
+    cursoActual: intake.curso_actual ?? undefined,
+    paraOndeQuerIr: intake.para_onde_quer_ir ?? undefined,
   };
 }
 
@@ -478,6 +486,11 @@ export async function reconstruirHTMLRelatorio(
     // re-renderiza com o quadro adulto (sem "ehAdolescente"/"ponte de
     // transição" em falta) — o texto guardado já está nesse tom.
     const ehPos12 = intakeAdolescente.anoEscolaridade === "pos-12";
+    // BUG REAL, corrigido (ronda "relatório Marta") — mesmo fallback do
+    // route.ts (ver ali o comentário completo): pedidos "universidade"
+    // anteriores à migração 0019 declararam a sua direcção em
+    // `para_onde_quer_ir`, nunca em opcoes_adolescente.
+    const oQueNaoFuncionaLegado = !intakeAdolescente.opcoesAdolescente.length && intakeAdolescente.paraOndeQuerIr ? intakeAdolescente.paraOndeQuerIr : undefined;
     const dadosTemplate: DadosParaTemplate = ehPos12
       ? {
           nome: intake.nome,
@@ -489,6 +502,7 @@ export async function reconstruirHTMLRelatorio(
           anosExperiencia: "",
           opcoesConsideradas: intakeAdolescente.opcoesAdolescente,
           ideiaConcreta: intakeAdolescente.opcaoMaisProvavel,
+          oQueNaoFunciona: oQueNaoFuncionaLegado,
           rascunhoCriadoEm,
         }
       : {
@@ -503,6 +517,7 @@ export async function reconstruirHTMLRelatorio(
           anosExperiencia: intakeAdolescente.situacaoDeclarada,
           opcoesConsideradas: intakeAdolescente.opcoesAdolescente,
           perguntaEspecifica: intakeAdolescente.opcaoMaisProvavel ? `Qual das opções te parece mais provável hoje: ${intakeAdolescente.opcaoMaisProvavel}?` : undefined,
+          oQueNaoFunciona: oQueNaoFuncionaLegado,
           rascunhoCriadoEm,
         };
     const html = gerarHTMLRelatorio(dadosTemplate, texto, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);

@@ -76,6 +76,7 @@ import {
   INSTRUCAO_FACILIDADES_NATURAIS,
   blocoFacilidadesNaturais,
   paragrafoAntiDaParaTudo,
+  normalizarTextoLivre,
   TERMOS_PROIBIDOS,
   SECCAO_TITULOS,
   MARCADORES,
@@ -92,6 +93,22 @@ export interface VocationiqIntakeAdolescente {
   preferenciaFamilia?: string;
   /** TAREFA 2 (correcção do especialista, aprovada) — migração 0020. `undefined`/`"pos-12"` nunca chegam a este prompt: `undefined` cai no formato "10-a-12" por omissão (formulário antigo, sem o campo preenchido); "pos-12" é decidido antes, na rota (ver DESVIO em relatorioAdultoCompute.ts). */
   anoEscolaridade?: "7-a-9" | "10-a-12" | "pos-12";
+  /**
+   * BUG REAL, corrigido (ronda "relatório Marta", caso real: paga em
+   * 07/09/2026, antes da migração 0019) — pedidos "universidade" ANTIGOS
+   * usam o formulário anterior (curso_actual/satisfacao_curso/
+   * para_onde_quer_ir), nunca opcoes_adolescente/clareza_ideia (esse
+   * formulário não existia ainda). `construirIntakeAdolescente` (web,
+   * relatorioAdultoCompute.ts) só lia opcoes_adolescente — vazio para
+   * estes pedidos — por isso "Leitura por opção" escrevia "não trouxeste
+   * opções declaradas" para clientes que, de facto, declararam uma
+   * direcção real, só que no campo antigo. `cursoActual`/`paraOndeQuerIr`
+   * ficam aqui como fallback, só preenchidos quando `opcoesAdolescente`
+   * está vazio E o pedido é deste formato antigo — ver uso em
+   * `construirPromptAdolescente` abaixo.
+   */
+  cursoActual?: string;
+  paraOndeQuerIr?: string;
 }
 
 /** TAREFA 1C — formata os cursos concretos resolvidos para uma opção declarada (ver `sugerirCursosParaOpcoesAdolescente`), para quem está no 10º-12º ano. `[]` quando a opção não teve correspondência no mapeamento — o texto explica isso em vez de inventar. */
@@ -129,6 +146,18 @@ export function construirPromptAdolescente(
   // intocado); a distinção 7-a-9 vs 10-a-12 que existia aqui foi
   // removida (ver comentário no topo do ficheiro) — percurso único para
   // qualquer `anoEscolaridade` que chegue a este prompt.
+  // BUG REAL, corrigido (ronda "relatório Marta") — pedidos "universidade"
+  // ANTERIORES à migração 0019 declararam a sua direcção no campo antigo
+  // "para onde quer ir" (texto livre), nunca em opcoesAdolescente (esse
+  // formulário não existia ainda para eles). Sem este fallback, "Leitura
+  // por opção" escrevia "não trouxeste opções declaradas" para alguém
+  // que, de facto, tinha declarado uma direcção real — só no sítio
+  // errado para este prompt olhar. `usarOpcoesLegado` só é verdadeiro
+  // quando NÃO há opções no formato actual E existe texto livre no
+  // formato antigo — nunca substitui opcoesAdolescente quando este vem
+  // preenchido.
+  const opcoesLegadoTexto = !intake.opcoesAdolescente.length && intake.paraOndeQuerIr ? normalizarTextoLivre(intake.paraOndeQuerIr) : null;
+  const usarOpcoesLegado = opcoesLegadoTexto !== null;
   const opcoesTexto = intake.opcoesAdolescente.length
     ? intake.opcoesAdolescente
         .map((o) => {
@@ -137,7 +166,9 @@ export function construirPromptAdolescente(
           return `- ${o}${maisProvavel ? " (a que a pessoa acha mais provável hoje — trata como a hipótese em teste, não como decisão)" : ""}\n${detalhe}`;
         })
         .join("\n\n")
-    : "(nenhuma opção declarada — escreve a partir do que o perfil sustenta em geral e da candidata fora da lista.)";
+    : usarOpcoesLegado
+      ? `(PEDIDO ANTERIOR ao formulário actual de "opções em cima da mesa" — a pessoa não usou essa caixa, mas declarou por escrito livre, no campo "Se pensa mudar, para onde": "${opcoesLegadoTexto}"${intake.cursoActual ? ` (curso actual desta pessoa: ${normalizarTextoLivre(intake.cursoActual)})` : ""}. Identifica cada área/curso claramente mencionado neste texto e trata cada um como se fosse uma opção declarada normal na secção "${SECCAO_TITULOS.leituraPorOpcao}" — escreve o bloco "### <nome>" completo para cada área que conseguires identificar com clareza. Nunca inventes uma área que a pessoa não tenha mencionado aqui.)`
+      : "(nenhuma opção declarada — escreve a partir do que o perfil sustenta em geral e da candidata fora da lista.)";
 
   // Correcção do especialista (bug crítico — pergunta concreta sem
   // resposta directa / abertura não responde à situação) — o
@@ -165,7 +196,11 @@ ${MARCADORES.forca} <forte, moderada ou fraca>
 ${MARCADORES.insight} <uma frase que resume a leitura desta opção em menos de 15 palavras>
 1. O que o teu perfil sustenta nesta opção — cita pelo menos duas fontes independentes, mas não te limites a citá-las: desenvolve o que cada uma significa em termos concretos, e como se traduz especificamente nos dons já nomeados na secção "${SECCAO_TITULOS.quemE}" — nomeia esses dons e explica CONCRETAMENTE como vão ser usados na prática nesta área (não "tens facilidade para comunicar", mas o que essa facilidade permite fazer especificamente neste curso/área).
 2. O que esta opção te vai pedir na formação — o esforço específico DESTE perfil, nunca o risco genérico da área. Liga sempre a uma limitação já nomeada na secção "${SECCAO_TITULOS.quemE}": se tens uma dificuldade nomeada com pressão, confronto directo, exposição pública, trabalho solitário, etc., diz explicitamente o que isso significa escolher esta área em concreto (ex.: se a limitação é dificuldade com confronto directo e a opção é Direito, diz que a vertente forense/contenciosa vai exigir mais esforço deliberado do que outras vertentes do curso — nunca deixes essa tensão por explicar).
-3. O curso concreto e a via de entrada — usa sempre os dados já listados acima em "Opções em cima da mesa" (nome do curso, nível, QNQ, duração, tipo de instituição, entrada no mercado). NUNCA nomeies uma instituição concreta. Sempre que o curso tiver variantes internas conhecidas (ex.: dentro de Direito: forense vs. empresarial vs. internacional; dentro de Psicologia: clínica vs. organizacional), aponta 1-2 que encaixam melhor neste perfil especificamente, usando os dons já nomeados — nunca inventes uma variante sem ligação aos dados desta pessoa.
+3. O curso concreto e a via de entrada — ${
+    usarOpcoesLegado
+      ? 'esta opção veio do texto livre da pessoa, não da lista estruturada "Opções em cima da mesa" — não há dados de curso concreto (QNQ, duração, tipo de instituição) disponíveis para ela no catálogo. NUNCA inventes esses dados. Em vez disso, escreve: "(esta opção não tem correspondência directa no catálogo de cursos — lê-a pelo Eixo da Missão e pelo Modo de Ganho acima, não por um curso específico.)", e a seguir'
+      : "usa sempre os dados já listados acima em \"Opções em cima da mesa\" (nome do curso, nível, QNQ, duração, tipo de instituição, entrada no mercado). NUNCA nomeies uma instituição concreta. Sempre que o curso tiver variantes internas conhecidas (ex.: dentro de Direito: forense vs. empresarial vs. internacional; dentro de Psicologia: clínica vs. organizacional),"
+  } aponta 1-2 que encaixam melhor neste perfil especificamente, usando os dons já nomeados — nunca inventes uma variante sem ligação aos dados desta pessoa.
 4. O que esta opção pede e que falta actualmente — e se é algo que se aprende ou algo que não muda.
 5. Onde entra a tua matéria nesta opção — a forma/função, nunca só o sector.
 6. Conclusão explícita — ver INSTRUCAO_VALIDACAO_OPCOES: uma das três frases-molde exactas (sustenta com clareza / sustenta parcialmente / não sustenta de forma natural), nunca omitida.`;

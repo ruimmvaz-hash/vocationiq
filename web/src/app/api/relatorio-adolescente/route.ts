@@ -190,6 +190,19 @@ export async function POST(request: Request) {
     // (área actual, anos de experiência, "ponte de transição") que não
     // fazem sentido para quem ainda não trabalha (ver relatorioTemplate.ts).
     // "pos-12" usa o quadro adulto (texto já gerado nesse tom acima).
+    // BUG REAL, corrigido (ronda "relatório Marta") — pedidos
+    // "universidade" anteriores à migração 0019 declararam a sua direcção
+    // em `para_onde_quer_ir` (texto livre antigo), nunca em
+    // opcoes_adolescente — sem isto, a caixa "O que trouxe" mostrava o
+    // texto de reserva "nenhuma opção declarada" mesmo quando a pessoa
+    // tinha mesmo declarado uma direcção, só no campo antigo (o mesmo
+    // texto que `construirPromptAdolescente` agora também lê, ver
+    // promptAdolescente.ts). `oQueNaoFunciona` (nunca usado por este
+    // ramo antes) é o campo certo para uma frase livre citada — nunca os
+    // "chips" curtos de `opcoesConsideradas`, pensados para nomes curtos
+    // de área, não para uma frase inteira.
+    const oQueNaoFuncionaLegado = !intakeAdolescente.opcoesAdolescente.length && intakeAdolescente.paraOndeQuerIr ? intakeAdolescente.paraOndeQuerIr : undefined;
+
     const dadosTemplate: DadosParaTemplate = ehPos12
       ? {
           nome: intake.nome,
@@ -201,6 +214,7 @@ export async function POST(request: Request) {
           anosExperiencia: "",
           opcoesConsideradas: intakeAdolescente.opcoesAdolescente,
           ideiaConcreta: intakeAdolescente.opcaoMaisProvavel,
+          oQueNaoFunciona: oQueNaoFuncionaLegado,
           rascunhoCriadoEm: rascunho.criadoEm,
         }
       : {
@@ -215,6 +229,7 @@ export async function POST(request: Request) {
           anosExperiencia: intakeAdolescente.situacaoDeclarada,
           opcoesConsideradas: intakeAdolescente.opcoesAdolescente,
           perguntaEspecifica: intakeAdolescente.opcaoMaisProvavel ? `Qual das opções te parece mais provável hoje: ${intakeAdolescente.opcaoMaisProvavel}?` : undefined,
+          oQueNaoFunciona: oQueNaoFuncionaLegado,
           rascunhoCriadoEm: rascunho.criadoEm,
         };
     const html = gerarHTMLRelatorio(dadosTemplate, textoFinal, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
