@@ -249,9 +249,19 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
      (c) nenhuma candidata em "Candidata fora da lista" contradiz essa
          resposta sem o reconhecer explicitamente (ou, na ausência de
          explicação defensável, sem ter sido omitida)?
-     Se falhar (a) ou (b): FALHA — reescrita obrigatória da abertura da
-     secção afectada. Se falhar (c): cita o nome exacto da candidata que
-     contradiz sem explicação — FALHA, reescrita dessa candidata.
+     (d) (correcção do especialista, ronda "relatório Alexandra 2" —
+         a mesma pergunta, em formato sim/não, produziu em geração real
+         "...tem resposta directa: não — direito tem mais sustentação
+         estrutural...", um veredicto fechado disfarçado de resposta
+         directa, exactamente o que "zero fatalismo" proíbe) a resposta
+         directa NÃO é um "sim"/"não" isolado nem uma variante que julga
+         se a pessoa acertou ou errou na própria pergunta (proibido:
+         "não é a opção mais sustentada", "não — [outra opção] tem mais
+         sustentação")? Cita a frase exacta se encontrares um "sim"/"não"
+         nessa posição.
+     Se falhar (a), (b) ou (d): FALHA — reescrita obrigatória da abertura
+     da secção afectada. Se falhar (c): cita o nome exacto da candidata
+     que contradiz sem explicação — FALHA, reescrita dessa candidata.
 
  29. ABERTURA RESPONDE À SITUAÇÃO DA PESSOA (correcção do especialista):
      o primeiro parágrafo da secção "Abertura" responde directamente à
@@ -575,9 +585,19 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
      (c) nenhuma candidata em "Candidata fora da lista" contradiz essa
          resposta sem o reconhecer explicitamente (ou, na ausência de
          explicação defensável, sem ter sido omitida)?
-     Se falhar (a) ou (b): FALHA — reescrita obrigatória da abertura da
-     secção afectada. Se falhar (c): cita o nome exacto da candidata que
-     contradiz sem explicação — FALHA, reescrita dessa candidata.
+     (d) (correcção do especialista, ronda "relatório Alexandra 2" —
+         a mesma pergunta, em formato sim/não, produziu em geração real
+         "...tem resposta directa: não — direito tem mais sustentação
+         estrutural...", um veredicto fechado disfarçado de resposta
+         directa, exactamente o que "zero fatalismo" proíbe) a resposta
+         directa NÃO é um "sim"/"não" isolado nem uma variante que julga
+         se a pessoa acertou ou errou na própria pergunta (proibido:
+         "não é a opção mais sustentada", "não — [outra opção] tem mais
+         sustentação")? Cita a frase exacta se encontrares um "sim"/"não"
+         nessa posição.
+     Se falhar (a), (b) ou (d): FALHA — reescrita obrigatória da abertura
+     da secção afectada. Se falhar (c): cita o nome exacto da candidata
+     que contradiz sem explicação — FALHA, reescrita dessa candidata.
 
  29. ABERTURA RESPONDE À SITUAÇÃO DA PESSOA (correcção do especialista):
      o primeiro parágrafo da secção "Abertura" responde directamente à

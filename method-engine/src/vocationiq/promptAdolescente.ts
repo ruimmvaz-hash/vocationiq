@@ -39,6 +39,30 @@
 // relatórios reais gerados por ela. Recomendação: gerar um lote de
 // relatórios de teste com o Anthropic real e reve-los antes de expor isto
 // a clientes pagantes.
+//
+// AUDITORIA DE PARIDADE (correcção do especialista, ronda "relatório
+// Alexandra 2" — pedido directo do fundador: "já andamos a corrigir
+// muita coisa muito antes do motor adolescente, o que é feito de tudo?")
+// — confirmado por auditoria sistemática linha-a-linha contra
+// promptAdulto.ts: este ficheiro nasceu como um fork do adulto numa
+// única ronda (ver AVISO DE MATURIDADE acima) e, desde então, nunca
+// recebeu 6 regras que o adulto já tinha (ou ganhou depois, só do lado
+// dele): FRASE_ABERTURA:/IDENTIDADE: (banner de abertura + diagrama
+// visual — nunca pedidos aqui, por isso nunca apareciam no relatório),
+// VOLUME (sem travão anti-preenchimento), anti-"coaching genérico"
+// (conselho sem ligação a um facto técnico), LEITURA CONJUNTA/KARAKAMSHA
+// NUNCA ISOLADO (ordem obrigatória de leitura dos eixos, evita
+// contradições internas), COERÊNCIA COM OS VISUAIS + "valor alto não é o
+// tema central" (o texto podia contradizer os próprios gráficos), e o
+// eixo "Montra de Mercado" (calculado sempre, mas nunca chegava a este
+// prompt). Todas as 6 acrescentadas agora, adaptadas ao registo "tu" e
+// ao contexto de quem ainda não trabalha — nunca copiadas ao pé da letra
+// do adulto. Nota separada, MAIS GRAVE: a causa directa do "não" seco
+// reportado no relatório real da Alexandra não é uma lacuna de paridade
+// — é INSTRUCAO_PERGUNTA_ESPECIFICA (importada, partilhada pelos dois
+// motores) reagindo mal a "perguntaImplicita" ser sempre uma pergunta em
+// formato sim/não (só o adolescente gera perguntas assim) — corrigida na
+// própria constante partilhada, ver o comentário lá.
 
 import type { VocationIQAxes } from "../lifeReport/vocationIQ";
 import type { PesoPlaneta, SavPorCasa } from "./pesosPlanetas";
@@ -50,6 +74,7 @@ import type { YogaHit } from "../lifeReport/yogas";
 import {
   blocoEixoMissao,
   blocoModoDeGanho,
+  blocoMontraMercado,
   blocoPesos,
   blocoDatas,
   blocoCatalogoVocacional,
@@ -235,9 +260,14 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - TOM: acessível para quem tem 15 a 18 anos e ainda não trabalhou — mais claro e menos abstracto do que um relatório para adultos, NUNCA condescendente ou infantilizado. Sem gíria de coach, sem emojis. Nunca uses "carreira estabelecida", "anos de experiência", ou qualquer referência a um percurso profissional que esta pessoa ainda não teve.
 - PROIBIDO: primeira pessoa do plural ("identificámos", "vimos", "calculámos"). Correcto: "o teu perfil mostra", "os dados indicam".
 - Zero fatalismo. Nada é inevitável nem escrito em pedra. Nunca escrevas "deves escolher X" ou qualquer veredicto fechado — apresenta o que o perfil sustenta e o que pede, a decisão é sempre da pessoa (e, nesta idade, também da família, mas o relatório fala directamente com ela).
+- NUNCA uses o padrão genérico de coaching (identificar 3 exemplos, embrulhar num método) sem ligar explicitamente a um dado técnico calculado acima. Cada frase de conselho tem de ser rastreável a um facto técnico específico desta lista — nunca a generalidades sobre a área.
 - REGRA ANTI-REPETIÇÃO: cada facto técnico serve de base a UMA frase central em UMA secção. Proibido repetir a mesma conclusão com palavras diferentes em secções diferentes.
 - PLANETAS FRACOS (peso < 0,9): sempre mencionados explicitamente, nunca uma barra vermelha sem texto correspondente.
 - TENSÃO INTERNA: sempre que dois sinais do perfil apontam em direcções diferentes, o texto é obrigado a nomeá-lo — nunca escolher só o lado bonito.
+- REGRA CRÍTICA — LEITURA CONJUNTA: nunca ler um eixo isolado. Ordem obrigatória: 1. Eixo da Missão — o que a pessoa é por dentro. 2. Modo de Ganho — por onde tende a entrar o reconhecimento, testado contra 1. 3. Montra de Mercado — como é vista de fora, testado contra 1+2. 4. Planetas fracos — explicam onde falta apoio natural. Só depois disto testado e amarrado é que se avalia qualquer opção em cima da mesa.
+- EIXO DA MISSÃO + MONTRA DE MERCADO — NUNCA ISOLADOS: os dois lidos em separado podem parecer contraditórios (ex.: um a apontar para trabalho de bastidores, o outro para exposição pública); lidos juntos, dizem a mesma coisa com instrumentos diferentes — nunca apresentar como tensão sem antes tentar esta leitura conjunta.
+- COERÊNCIA COM OS VISUAIS: o relatório tem elementos visuais gerados automaticamente (gráfico de forças, radar de competências, Roda da Vida). O texto deve referenciá-los quando relevante ("Como mostra o gráfico de forças...") e nunca contradizer o que mostram — se um visual mostra um valor fraco, o texto não pode dizer que é forte.
+- VALOR ALTO NUM ELEMENTO VISUAL NÃO É O TEMA CENTRAL: uma dimensão com valor alto na Roda da Vida pode reflectir só onde o planeta mais forte do perfil está fisicamente posicionado — não é automaticamente o tema mais importante. O tema central vem sempre do Eixo da Missão e do Modo de Ganho, nunca do valor mais alto da roda sozinho.
 - ESCALA DE CONFIANÇA (obrigatória em todo o relatório) — a linguagem tem de bater sempre com o nº de camadas que sustentam a afirmação:
   · CONVERGÊNCIA FORTE (≥4 camadas): linguagem sem reserva.
   · SINAL FORTE (2-3 camadas): confiança, citando as fontes.
@@ -265,6 +295,8 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - NUNCA nomear instituições de nenhum tipo — nem de ensino, nem ordens profissionais, nem certificações com nome próprio, nem formadores. Concreto na estrutura ("uma licenciatura de 3 anos", "a ordem profissional da área"), genérico no nome da entidade.
 ${horaNascimentoFornecida ? "" : "\nNOTA INTERNA — hora de nascimento não fornecida, elementos que dependem do Ascendente têm de ser tratados com cautela explícita."}
 
+VOLUME: cada secção deve ser tão longa quanto os dados sustentam — nunca mais, nunca menos. Se uma secção não tem nada genuinamente novo a acrescentar, é curta. Não preencher para atingir um mínimo. Proibido: repetir para parecer completo. Permitido: ser curto e preciso.
+
 === DADOS TÉCNICOS ===
 
 -- Quem é --
@@ -278,6 +310,9 @@ ${blocoEixoMissao(axes)}
 
 -- Modo de Ganho --
 ${blocoModoDeGanho(axes, pesosPlanetas)}
+
+-- Montra de Mercado (como és vista/o de fora — não depende de já teres trabalhado) --
+${blocoMontraMercado(axes)}
 
 -- Peso de cada planeta --
 ${blocoPesos(pesosPlanetas)}
@@ -314,6 +349,10 @@ ${blocoCandidatasCatalogo}
 
 -- Opções em cima da mesa (com cursos concretos por opção) --
 ${opcoesTexto}
+
+ANTES de ${MARCADORES.identidade}, escreve, numa linha própria: "${MARCADORES.fraseAbertura} " seguido de uma frase de 10 a 15 palavras que captura a essência deste perfil — poderosa, específica, nunca genérica. Não é um resumo. É a frase que a pessoa vai lembrar deste relatório. Exemplos do formato: "A tua estrutura não pede palco — pede que construas algo que dure.", "A tua voz vale mais quando defende algo do que quando agrada." Proibido: clichés de coaching, frases genéricas de auto-ajuda. Este marcador é obrigatório e machine-readable, não o omitas.
+
+DEPOIS de ${MARCADORES.fraseAbertura}, escreve, numa linha própria: "${MARCADORES.identidade} " seguido de uma frase de 8 a 12 palavras que descreve o que esta pessoa foi feita para ser — não o que perguntou, não a opção que tem em mente, mas a sua natureza estrutural. NUNCA fala de profissão ou carreira (ainda não existe) — fala de modo de funcionar. Deve ser específica deste perfil, nunca genérica. Exemplos do formato: "Alguém que aprende a fundo antes de decidir, nunca por impulso", "Uma mente que organiza o caos dos outros com naturalidade". Proibido: "pessoa comunicativa", "líder nato", qualquer cliché de coaching. Este marcador é obrigatório e machine-readable, não o omitas.
 
 === ESTRUTURA DO RELATÓRIO — exactamente estas 6 secções, por esta ordem ===
 

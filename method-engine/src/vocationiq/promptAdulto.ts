@@ -396,7 +396,11 @@ export function blocoModoDeGanho(axes: VocationIQAxes, pesosPlanetas: PesoPlanet
   return linhas.join("\n");
 }
 
-function blocoMontraMercado(axes: VocationIQAxes): string {
+// BUG REAL, corrigido (ronda "auditoria de paridade adulto/adolescente")
+// — exportada para promptAdolescente.ts também poder incluir este eixo:
+// estava calculado (faz parte de `axes`, sempre) mas nunca chegava ao
+// prompt adolescente — ver import em promptAdolescente.ts.
+export function blocoMontraMercado(axes: VocationIQAxes): string {
   const m = axes.marketShowcase;
   const casa11 = m.house11FromAL;
   return [
@@ -874,7 +878,25 @@ export const INSTRUCAO_VARGOTTAMA = `VARGOTTAMA — INSTRUÇÃO OBRIGATÓRIA: se
 // secção "Candidata fora da lista" a nunca deixar uma contradição
 // directa por explicar. Constante partilhada (promptAdulto.ts e
 // promptAdolescente.ts) — nunca diverge entre os dois motores.
-export const INSTRUCAO_PERGUNTA_ESPECIFICA = `PERGUNTA ESPECÍFICA — OBRIGATÓRIO: se existe uma pergunta específica declarada, a secção "${SECCAO_TITULOS.leituraPorOpcao}" tem de abrir, antes de qualquer outra análise, com a resposta directa a essa pergunta, neste formato: "A pergunta [citar a pergunta tal como foi escrita] tem resposta directa: [resposta clara e sem rodeios]. Aqui está porquê: [razão técnica em linguagem simples]."
+//
+// BUG REAL, corrigido (ronda "relatório Alexandra 2", regeneração
+// pós-correcção do timeout) — a correcção acima resolveu a ambiguidade,
+// mas abriu uma segunda: quando "opcaoMaisProvavel" faz uma pergunta em
+// formato sim/não ("É 'gestão' mesmo a mais provável?"), "resposta clara
+// e sem rodeios" degenerava num "não" seco, repetido ao pé da letra em
+// "Abertura" e em "Leitura por opção" (por desenho — "nunca contradita")
+// — texto real confirmado: "...tem resposta directa: não é a opção mais
+// sustentada..." e, na segunda secção, "...tem resposta directa: não —
+// direito tem mais sustentação estrutural...". Um "não" seco a responder
+// à própria escolha da pessoa É um veredicto fechado, só disfarçado de
+// resposta directa — a mesma coisa que "zero fatalismo" (ver
+// INSTRUCAO_GERAL/regras gerais, abaixo) proíbe explicitamente. A
+// correcção agora é impedir as duas falhas ao mesmo tempo: continua
+// proibido fugir à resposta (bug original), mas a resposta nunca pode
+// ser um "sim"/"não" isolado nem funcionar como veredicto sobre a opção
+// que a pessoa já tinha em mente.
+export const INSTRUCAO_PERGUNTA_ESPECIFICA = `PERGUNTA ESPECÍFICA — OBRIGATÓRIO: se existe uma pergunta específica declarada, a secção "${SECCAO_TITULOS.leituraPorOpcao}" tem de abrir, antes de qualquer outra análise, com a resposta directa a essa pergunta, neste formato: "A pergunta [citar a pergunta tal como foi escrita] tem resposta directa: [o que o perfil sustenta com mais força]. Aqui está porquê: [razão técnica em linguagem simples]."
+PROIBIDO responder com um "sim"/"não" isolado, ou qualquer variante que funcione como veredicto sobre a opção que a pessoa já tinha em mente (proibido, por exemplo: "não é a opção mais sustentada", "não — [outra opção] tem mais sustentação estrutural"). Isso é exactamente o veredicto fechado que a regra "zero fatalismo" proíbe, só disfarçado de resposta directa. A resposta directa descreve sempre o que o perfil sustenta, nunca julga se a pessoa acertou ou errou na própria pergunta. Errado: "não, direito é mais sustentado do que gestão." Correcto: "O perfil sustenta [opção com mais força] com mais força estrutural do que [opção da pergunta] neste momento — isso não torna [opção da pergunta] uma escolha errada, é informação para pesar." A directeza exigida é sobre NUNCA fugir à resposta (o bug original desta regra) — não sobre reduzir a resposta a um veredicto de uma palavra.
 NUNCA apresentar, na secção "${SECCAO_TITULOS.candidataForaDaLista}", uma candidata que contradiga directamente essa resposta sem o dizer de forma explícita — se uma candidata fora da lista vai numa direcção diferente da resposta já dada, o texto dessa candidata tem de reconhecer a tensão ("isto parece contradizer a resposta dada a [pergunta] — mas..." ou equivalente) ou, se a contradição não tiver explicação defensável, essa candidata não é apresentada. Nunca deixar as duas respostas a coexistir sem relação nenhuma entre si — é essa a contradição que esta regra existe para impedir.`;
 
 // Correcção do especialista (bug crítico — abertura não responde à
