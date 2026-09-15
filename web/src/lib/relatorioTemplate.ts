@@ -1554,7 +1554,10 @@ function blocoTabelaResumoCandidatas(resumo: ResumoOpcaoLinha[]): string {
   return `
     <div class="tabela-resumo-candidatas-wrap">
       <p class="bloco-titulo">Resumo de todas as opções</p>
-      <table class="tabela-anexo">
+      <table class="tabela-anexo tabela-resumo-opcoes">
+        <colgroup>
+          <col style="width:17%"><col style="width:13%"><col style="width:15%"><col style="width:27%"><col style="width:28%">
+        </colgroup>
         <thead><tr><th>Opção</th><th>Tipo</th><th class="col-numero">Confiança</th><th>Via de entrada</th><th>Custo principal</th></tr></thead>
         <tbody>${linhas}</tbody>
       </table>
@@ -2680,9 +2683,32 @@ export function gerarHTMLRelatorio(
   /* Correcção do especialista ("tabela resumo final das candidatas") — complemento aos cartões, fim da secção, antes de "O plano". */
   .tabela-resumo-candidatas-wrap { margin-top: 28px; }
   .tabela-anexo { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
-  .tabela-anexo th { text-align: left; font-weight: 700; color: var(--azul); padding: 8px 10px; border-bottom: 2px solid var(--ambar); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  /* BUG REAL, corrigido (ronda "regeneração Alexandra 2" — reportado em
+     vários relatórios: cabeçalhos como "TIPO"/"CONFIANÇA" a quebrar
+     letra a letra, células como "Fora da lista" a quebrar palavra a
+     palavra numa coluna por linha). Causa: overflow-wrap/word-break no
+     body (correcção anterior, "alinhamento à direita") aplica-se a
+     TODO o texto, incluindo cabeçalhos de tabela — numa tabela sem
+     larguras de coluna explícitas, o layout automático do Chromium em
+     impressão/PDF pode espremer uma coluna de conteúdo curto ("Tipo") a
+     quase zero largura para dar espaço às colunas de texto livre mais
+     longo ("Via de entrada"), e um cabeçalho curto ("TIPO") acaba
+     quebrado letra a letra para caber. white-space:nowrap nos
+     cabeçalhos é seguro em toda tabela com a classe tabela-anexo (são
+     sempre rótulos curtos, 1-3 palavras) e impede que isto volte a
+     acontecer em qualquer tabela futura que reutilize esta classe —
+     nunca só um fix local a esta tabela.
+  */
+  .tabela-anexo th { text-align: left; font-weight: 700; color: var(--azul); padding: 8px 10px; border-bottom: 2px solid var(--ambar); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
   .tabela-anexo td { padding: 8px 10px; border-bottom: 1px solid #E6E6E6; vertical-align: top; }
   .tabela-anexo .col-numero { text-align: right; font-weight: 600; }
+  /* Complemento à correcção acima, só para a tabela de 5 colunas
+     (blocoTabelaResumoCandidatas) — larguras explícitas para as
+     colunas de conteúdo curto ("Tipo", "Confiança") nunca ficarem
+     espremidas a quase zero pelas colunas de texto livre mais longo
+     ("Via de entrada", "Custo principal"). */
+  .tabela-resumo-opcoes { table-layout: fixed; }
+  .tabela-resumo-opcoes td { word-break: normal; overflow-wrap: break-word; }
   .anexo-nota { font-size: 12px; color: #666; margin: 8px 0 0; font-style: italic; }
   .anexo-intro { font-size: 13px; color: #4A4A4A; margin: 0 0 12px; }
   .badge-classificacao { display: inline-block; font-size: 11px; font-weight: 700; color: #FFFFFF; padding: 3px 10px; border-radius: 999px; }
