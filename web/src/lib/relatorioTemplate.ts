@@ -483,8 +483,10 @@ function parseCandidataForaDaLista(corpo: string): { candidatas: { nome: string;
 interface GrupoCandidatasTexto {
   /** Nomes exactos dos membros, na ordem declarada pelo LLM na linha "GRUPO: nome1; nome2; ...". */
   membros: string[];
-  /** Convergência de base partilhada — o texto entre o marcador GRUPO e o primeiro CANDIDATA a seguir. */
+  /** Convergência de base partilhada — o texto entre o marcador GRUPO (e o NOME_GRUPO:, se vier) e o primeiro CANDIDATA a seguir. */
   textoPartilhado: string;
+  /** Correcção do especialista (ronda "relatório Marta", ponto 4a) — nome curto do grupo (linha "NOME_GRUPO:"), extraído da mesma convergência, nunca uma taxonomia à parte. `null` só em rascunhos antigos (gerados antes desta correcção) que nunca tiveram este marcador — nesse caso o template cai num rótulo genérico ("Grupo N"), nunca rebenta. */
+  nomeGrupo: string | null;
 }
 
 /**
@@ -513,7 +515,12 @@ function parseGruposCandidatas(corpo: string): GrupoCandidatasTexto[] {
     // precisa de um limite "exterior" à parte, é sempre o mais apertado
     // dos dois.
     const fimTexto = proximoIndiceDeMarcador(corpo, inicio, FRONTEIRA_CANDIDATA);
-    return { membros, textoPartilhado: corpo.slice(inicio, fimTexto).trim() };
+    const blocoBruto = corpo.slice(inicio, fimTexto).trim();
+    const regexNomeGrupo = new RegExp(`^${MARCADORES.nomeGrupo}\\s*(.*)$`, "m");
+    const nomeMatch = blocoBruto.match(regexNomeGrupo);
+    const nomeGrupo = nomeMatch?.[1]?.trim() || null;
+    const textoPartilhado = blocoBruto.replace(regexNomeGrupo, "").trim();
+    return { membros, textoPartilhado, nomeGrupo };
   }).filter((g) => g.membros.length >= 2);
 }
 
@@ -1514,21 +1521,31 @@ function extrairResumoCandidata(texto: string): ResumoCandidata {
 }
 
 /**
- * Correcção do especialista ("tabela resumo final das candidatas") —
- * complemento aos cartões detalhados, nunca substituição: uma linha por
- * candidata apresentada (Opção, Nível — 100% determinístico, vem do
- * catálogo, nunca do LLM — Via de entrada resumida, Custo principal).
+ * Correcção do especialista ("tabela resumo final das candidatas");
+ * ronda "relatório Marta", ponto 3 — antes só incluía candidatas fora da
+ * lista; a pessoa que declarou opções reais (o caso mais comum) não as
+ * via aqui, quando esta tabela pretende ser mesmo um resumo completo.
+ * Agora recebe as duas listas já unificadas (`ResumoOpcaoLinha`, ver
+ * `blocoCandidataForaDaLista`) — uma linha por opção do relatório
+ * inteiro, declarada ou não, com uma coluna "Tipo" para nunca confundir
+ * as duas escalas de confiança diferentes (Força, para as declaradas —
+ * decidida pelo LLM a partir do texto; Nível, para as de fora da lista —
+ * 100% determinístico, vem do catálogo). Via/Custo só existem para as
+ * de fora da lista (as declaradas têm essa informação na leitura
+ * completa acima, não num marcador resumível à parte) — "—" nas
+ * declaradas nunca significa "não há dados", só "não aplicável aqui".
  * Reutiliza o estilo `.tabela-anexo` já usado no Anexo, em vez de
  * inventar um novo.
  */
-function blocoTabelaResumoCandidatas(resumo: { nome: string; nivel: 1 | 2 | undefined; via: string | null; custo: string | null }[]): string {
+function blocoTabelaResumoCandidatas(resumo: ResumoOpcaoLinha[]): string {
   if (!resumo.length) return "";
   const linhas = resumo
     .map(
       (r) => `
       <tr>
         <td>${escapeHtml(r.nome)}</td>
-        <td class="col-numero">${r.nivel ?? "—"}</td>
+        <td>${r.declarada ? "Declarada" : "Fora da lista"}</td>
+        <td class="col-numero">${escapeHtml(r.confianca)}</td>
         <td>${escapeHtml(r.via ?? "—")}</td>
         <td>${escapeHtml(r.custo ?? "—")}</td>
       </tr>`,
@@ -1536,9 +1553,9 @@ function blocoTabelaResumoCandidatas(resumo: { nome: string; nivel: 1 | 2 | unde
     .join("");
   return `
     <div class="tabela-resumo-candidatas-wrap">
-      <p class="bloco-titulo">Resumo das Opções</p>
+      <p class="bloco-titulo">Resumo de todas as opções</p>
       <table class="tabela-anexo">
-        <thead><tr><th>Opção</th><th class="col-numero">Nível</th><th>Via de entrada</th><th>Custo principal</th></tr></thead>
+        <thead><tr><th>Opção</th><th>Tipo</th><th class="col-numero">Confiança</th><th>Via de entrada</th><th>Custo principal</th></tr></thead>
         <tbody>${linhas}</tbody>
       </table>
     </div>`;
@@ -1643,37 +1660,80 @@ function introOpcoesForaDaLista(minConvergencia: number, usarTu: boolean): strin
     </div>`;
 }
 
-function blocoCandidataForaDaLista(corpo: string, catalogo: ResultadoCatalogoVocacional | null, usarTu: boolean): string {
+/** Ponto 3 (ronda "relatório Marta") — linha unificada da tabela-resumo, para caber tanto candidatas fora da lista (Nível 1/2) como opções declaradas (Força), numa tabela só, ver `blocoTabelaResumoUnificada`. */
+interface ResumoOpcaoLinha {
+  nome: string;
+  declarada: boolean;
+  /** Já formatado para exibição ("Nível 1"/"Nível 2"/"Forte"/"Moderada"/"Fraca"/"—") — as duas escalas nunca se confundem visualmente por a coluna "Tipo" ao lado dizer sempre de qual se trata. */
+  confianca: string;
+  via: string | null;
+  custo: string | null;
+}
+
+// Correcção do especialista (ronda "relatório Marta", ponto 4c) — a
+// partir deste nº de membros, um grupo deixa de caber como parágrafo
+// completo por membro sem se tornar ilegível (caso real: um grupo com
+// 11 opções) — passa a uma linha compacta por opção. Grupos mais
+// pequenos e "Opções individuais" mantêm sempre o parágrafo completo,
+// nunca comprimidos (pedido explícito).
+const LIMIAR_GRUPO_COMPACTO = 7;
+
+function primeiraFrase(texto: string): string {
+  const m = texto.match(/^[^.!?]*[.!?]/);
+  return (m ? m[0] : texto).trim();
+}
+
+function blocoCandidataForaDaLista(corpo: string, catalogo: ResultadoCatalogoVocacional | null, usarTu: boolean): { html: string; resumo: ResumoOpcaoLinha[] } {
   const corpoNormalizado = normalizarBlocosCandidataImplicitos(corpo);
   const { candidatas, textoSemCandidata } = parseCandidataForaDaLista(corpoNormalizado);
   if (!candidatas.length) {
-    return `<div class="caixa-neutra">${markdownParaHtml(textoSemCandidata || corpo)}</div>`;
+    return { html: `<div class="caixa-neutra">${markdownParaHtml(textoSemCandidata || corpo)}</div>`, resumo: [] };
   }
   const grupos = parseGruposCandidatas(corpoNormalizado);
   const grupoPorNome = new Map<string, GrupoCandidatasTexto>();
   for (const g of grupos) for (const nome of g.membros) grupoPorNome.set(nome, g);
-  const gruposJaRenderizados = new Set<GrupoCandidatasTexto>();
-  const resumoParaTabela: { nome: string; nivel: 1 | 2 | undefined; via: string | null; custo: string | null }[] = [];
   const dadosPorNome = new Map(candidatas.map((c) => [c.nome, catalogo?.candidatasForaDaLista.find((cat) => cat.nome === c.nome)]));
+  const resumo: ResumoOpcaoLinha[] = [];
 
   // ACRÉSCIMO do especialista (ronda "relatório Marta") — "23 opções numa
   // lista corrida, sem nenhum critério de agrupamento" agrava o efeito
   // "isto dá para tudo" que o parágrafo de abertura (`paragrafoAntiDaParaTudo`)
-  // já tenta neutralizar sozinho. Pedido explícito: reaproveitar o MESMO
-  // critério já usado — a convergência de base que forma "Grupos de
-  // candidatas" (`grupos`, acima) — nunca inventar uma taxonomia por área
-  // temática à parte. A partir de 9 opções (decisão técnica, "a definir
-  // por ti" — o ecrã de um cartão individual já ocupa espaço considerável,
-  // por isso um número de dígito único de opções nunca precisou de
-  // navegação; a partir de dois dígitos, sim), os grupos passam a ser
-  // numerados ("Grupo 1", "Grupo 2", ...) e as candidatas sem grupo ganham
-  // um subtítulo "Opções individuais" uma única vez, antes da primeira —
-  // dá à lista uma estrutura navegável sem inventar nenhuma categoria que
-  // o motor não tenha já calculado.
+  // já tenta neutralizar sozinho. Reaproveita o MESMO critério já usado —
+  // a convergência de base que forma "Grupos de candidatas" (`grupos`,
+  // acima) — nunca uma taxonomia por área temática à parte. A partir de
+  // 9 opções (decisão técnica), os grupos ganham um nome descritivo
+  // (dado pelo próprio LLM a partir da convergência que já escreveu, ver
+  // MARCADORES.nomeGrupo) e "Opções individuais" ganha subtítulo.
+  //
+  // Correcção do especialista (ponto 4b, mesma ronda) — antes, só a
+  // INTRODUÇÃO do grupo tinha caixa própria; os cards dos membros
+  // continuavam soltos a seguir, fora da caixa — o olho não via onde o
+  // grupo acabava. Agora agrupa-se num único passe (`blocos`, abaixo) e
+  // cada grupo completo (introdução + todos os membros) fica dentro de
+  // UMA caixa (`.caixa-grupo-completo`, mesmo estilo de `.card-dom`) —
+  // "Opções individuais" ganha a mesma caixa, uma vez só.
   const LIMIAR_SEGMENTACAO = 9;
   const segmentar = candidatas.length >= LIMIAR_SEGMENTACAO;
-  let numeroGrupo = 0;
-  let subtituloIndividuaisEscrito = !segmentar || grupos.length === 0;
+
+  type CandidataParseada = { nome: string; texto: string };
+  type BlocoRender = { tipo: "grupo"; grupo: GrupoCandidatasTexto; membros: CandidataParseada[] } | { tipo: "individual"; candidata: CandidataParseada };
+  const blocos: BlocoRender[] = [];
+  const grupoParaBloco = new Map<GrupoCandidatasTexto, Extract<BlocoRender, { tipo: "grupo" }>>();
+  for (const c of candidatas) {
+    const grupo = grupoPorNome.get(c.nome);
+    if (grupo) {
+      let bloco = grupoParaBloco.get(grupo);
+      if (!bloco) {
+        bloco = { tipo: "grupo", grupo, membros: [] };
+        grupoParaBloco.set(grupo, bloco);
+        blocos.push(bloco);
+      }
+      bloco.membros.push(c);
+    } else {
+      blocos.push({ tipo: "individual", candidata: c });
+    }
+  }
+
   // 4 é o limiar mínimo de convergência que `catalogarDestinos()` exige
   // para uma opção sequer entrar na pool (LIMIAR_MINIMO_CANDIDATA em
   // catalogoVocacional.ts) — só serve de fallback se, por algum motivo,
@@ -1681,51 +1741,71 @@ function blocoCandidataForaDaLista(corpo: string, catalogo: ResultadoCatalogoVoc
   // catálogo (não deveria acontecer em condições normais).
   const minConvergencia = Math.min(...[...dadosPorNome.values()].map((d) => d?.convergencia ?? 4));
 
-  // Correcção do especialista ("ORDEM — nomenclatura/cor", 6b/6d) — a
-  // caixa "Porque esta opção não é acidente" (antigo `blocoDiagramaConvergencia`)
-  // deixa de se repetir por opção (24 caixas repetidas no PDF real) — a
-  // ideia já fica dita UMA VEZ em `introOpcoesForaDaLista`. E a caixa
-  // âmbar `.card-candidata` por opção também desaparece — cada opção
-  // passa a ser só nome como subtítulo + parágrafo, com uma divisória
-  // fina entre opções (`.opcao-item`), nunca uma caixa colorida
-  // individual. Os grupos mantêm a frase de abertura partilhada, como
-  // já acontecia.
-  const cartoes = candidatas
-    .map((c) => {
+  let numeroGrupo = 0;
+  const partesHtml: string[] = [];
+  const individuaisAcumuladas: string[] = [];
+
+  function fecharIndividuaisPendentes() {
+    if (!individuaisAcumuladas.length) return;
+    partesHtml.push(
+      segmentar
+        ? `<div class="caixa-grupo-completo caixa-individuais"><p class="card-candidata-header">${usarTu ? "Opções individuais — sem convergência partilhada com outras desta lista" : "Opções individuais — sem convergência partilhada com outras desta lista"}</p>${individuaisAcumuladas.join("\n")}</div>`
+        : individuaisAcumuladas.join("\n"),
+    );
+    individuaisAcumuladas.length = 0;
+  }
+
+  for (const bloco of blocos) {
+    if (bloco.tipo === "individual") {
+      const c = bloco.candidata;
       const dadosCatalogo = dadosPorNome.get(c.nome);
       const { textoLimpo, via, custo } = extrairResumoCandidata(c.texto);
-      resumoParaTabela.push({ nome: c.nome, nivel: dadosCatalogo?.nivelConfianca, via, custo });
-      const grupo = grupoPorNome.get(c.nome);
-      let introGrupo = "";
-      let introIndividuais = "";
-      if (grupo && !gruposJaRenderizados.has(grupo)) {
-        gruposJaRenderizados.add(grupo);
-        numeroGrupo++;
-        const rotuloGrupo = segmentar ? `Grupo ${numeroGrupo} — convergência de base partilhada` : "Um conjunto de opções com a mesma convergência de base";
-        introGrupo = `
-        <div class="caixa-grupo-candidatas">
-          <p class="card-candidata-header">${rotuloGrupo}</p>
-          ${markdownParaHtml(grupo.textoPartilhado)}
-        </div>`;
-      } else if (!grupo && !subtituloIndividuaisEscrito) {
-        // Primeira candidata sem grupo, numa lista grande com pelo menos
-        // um grupo já formado — separa visualmente "convergência
-        // partilhada por várias opções" de "sinal próprio, sem outras
-        // opções a partilhá-lo", uma única vez.
-        subtituloIndividuaisEscrito = true;
-        introIndividuais = `<p class="rotulo-pequeno" style="margin-top:24px;">${usarTu ? "Opções individuais — sem convergência partilhada com outras desta lista" : "Opções individuais — sem convergência partilhada com outras desta lista"}</p>`;
-      }
-      return `
-      ${introGrupo}
-      ${introIndividuais}
-      <div class="opcao-item">
-        <p class="opcao-nome">${escapeHtml(c.nome)}</p>
-        ${markdownParaHtml(textoLimpo)}
-      </div>`;
-    })
-    .join("\n");
+      resumo.push({ nome: c.nome, declarada: false, confianca: dadosCatalogo?.nivelConfianca ? `Nível ${dadosCatalogo.nivelConfianca}` : "—", via, custo });
+      individuaisAcumuladas.push(`
+        <div class="opcao-item">
+          <p class="opcao-nome">${escapeHtml(c.nome)}</p>
+          ${markdownParaHtml(textoLimpo)}
+        </div>`);
+      continue;
+    }
 
-  return `${introOpcoesForaDaLista(minConvergencia, usarTu)}\n${cartoes}\n${blocoTabelaResumoCandidatas(resumoParaTabela)}`;
+    // Um grupo fecha o balde de individuais pendente antes de abrir a
+    // sua própria caixa — mantém a ordem de aparição original (Passo 2,
+    // soma de pesos) em vez de empurrar todos os individuais para o fim.
+    fecharIndividuaisPendentes();
+    numeroGrupo++;
+    const rotuloGrupo = bloco.grupo.nomeGrupo
+      ? bloco.grupo.nomeGrupo
+      : segmentar
+        ? `Grupo ${numeroGrupo} — convergência de base partilhada`
+        : "Um conjunto de opções com a mesma convergência de base";
+    const compacto = bloco.membros.length > LIMIAR_GRUPO_COMPACTO;
+    const membrosHtml = bloco.membros
+      .map((c) => {
+        const dadosCatalogo = dadosPorNome.get(c.nome);
+        const { textoLimpo, via, custo } = extrairResumoCandidata(c.texto);
+        resumo.push({ nome: c.nome, declarada: false, confianca: dadosCatalogo?.nivelConfianca ? `Nível ${dadosCatalogo.nivelConfianca}` : "—", via, custo });
+        if (compacto) {
+          return `<p class="opcao-linha-compacta"><strong>${escapeHtml(c.nome)}</strong> — ${escapeHtml(primeiraFrase(semPalavraCandidata(textoLimpo)))}</p>`;
+        }
+        return `
+        <div class="opcao-item">
+          <p class="opcao-nome">${escapeHtml(c.nome)}</p>
+          ${markdownParaHtml(textoLimpo)}
+        </div>`;
+      })
+      .join("\n");
+    partesHtml.push(`
+      <div class="caixa-grupo-completo">
+        <p class="card-candidata-header">${escapeHtml(rotuloGrupo)}</p>
+        ${markdownParaHtml(bloco.grupo.textoPartilhado)}
+        ${compacto ? `<div class="lista-opcoes-compacta">${membrosHtml}</div>` : membrosHtml}
+      </div>`);
+  }
+  fecharIndividuaisPendentes();
+
+  const html = `${introOpcoesForaDaLista(minConvergencia, usarTu)}\n${partesHtml.join("\n")}`;
+  return { html, resumo };
 }
 
 const MS_POR_ANO = 365.25 * 24 * 60 * 60 * 1000;
@@ -2434,6 +2514,7 @@ export function gerarHTMLRelatorio(
   const dimensoesVida = computeRodaDaVida(savPorCasa, pesos, axes.regentesCasas, usarTu);
   const explicacaoVida = explicacaoVidaDeterministica(dimensoesVida, usarTu, candidatasEscritas);
   const explicacaoGanho = explicacaoGanhoDeterministica(earningModes, axes.earningModeDominante.map((e) => e.house), pesos, axes.regentesCasas, usarTu, candidatasEscritas);
+  const blocoCandidataForaDaListaResultado = blocoCandidataForaDaLista(seccoes[SECCAO_TITULOS.candidataForaDaLista] ?? "", catalogoResultados, usarTu);
 
   return `<!doctype html>
 <html lang="pt">
@@ -2566,10 +2647,30 @@ export function gerarHTMLRelatorio(
   .opcao-item { border-top: 1px solid #E6E6E6; padding-top: 14px; margin-top: 14px; page-break-inside: avoid; break-inside: avoid; }
   .opcao-nome { font-size: 18px; font-weight: 700; color: var(--azul); margin: 0 0 8px; }
 
-  /* Correcção do especialista ("remover o tecto fixo de 3, com agrupamento por cluster") — caixa da convergência de base partilhada, uma vez por grupo. page-break-inside: avoid — bug visto no preview impresso (PDF): "Formação de Professores", o último item do cluster de 13, perdia a moldura ao atravessar uma quebra de página porque a caixa do grupo não tinha esta regra. */
-  .caixa-grupo-candidatas { background: var(--cinza-claro); border-left: 4px solid var(--ambar); border-radius: 10px; padding: 18px 20px; margin-bottom: 6px; page-break-inside: avoid; break-inside: avoid; }
-  .caixa-grupo-candidatas p { font-size: 14px; margin: 0 0 10px; }
-  .caixa-grupo-candidatas p:last-child { margin-bottom: 0; }
+  /*
+   * Correcção do especialista (ronda "relatório Marta", ponto 4b) — antes
+   * só a INTRODUÇÃO do grupo (a convergência de base) tinha caixa
+   * própria; os cards dos membros a seguir ficavam soltos, fora dela — o
+   * olho não via onde o grupo acabava. .caixa-grupo-completo embrulha
+   * agora o grupo inteiro (título + convergência + todos os membros),
+   * mesmo espírito visual de .card-dom/.card-limitacao (fundo tingido +
+   * borda colorida à esquerda), para a fronteira entre grupos ser óbvia
+   * sem ler o texto. .caixa-individuais usa a mesma caixa com uma cor
+   * neutra (navy), nunca âmbar — não é um grupo, é precisamente a
+   * ausência de um.
+   * page-break-inside: avoid — bug já visto no preview impresso (PDF):
+   * um item no fim de um cluster grande perdia a moldura ao atravessar
+   * uma quebra de página sem esta regra.
+   */
+  .caixa-grupo-completo { background: #fff8e1; border-left: 4px solid var(--ambar); border-radius: 10px; padding: 18px 20px; margin-bottom: 20px; page-break-inside: avoid; break-inside: avoid; }
+  .caixa-grupo-completo.caixa-individuais { background: var(--cinza-claro); border-left-color: var(--azul); }
+  .caixa-grupo-completo > p:not(.card-candidata-header) { font-size: 14px; margin: 0 0 10px; }
+  .caixa-grupo-completo .opcao-item:first-of-type { border-top: none; padding-top: 0; margin-top: 12px; }
+
+  /* Ponto 4c — grupos grandes (mais de 7 membros) trocam o parágrafo completo por membro por uma linha compacta, para não se tornarem ilegíveis; grupos pequenos e "Opções individuais" mantêm sempre o parágrafo completo. */
+  .lista-opcoes-compacta { margin-top: 12px; }
+  .opcao-linha-compacta { font-size: 13px; line-height: 1.6; padding: 6px 0; border-top: 1px solid rgba(0,0,0,0.08); margin: 0; }
+  .opcao-linha-compacta:first-child { border-top: none; }
 
   .timeline-wrap { overflow-x: auto; margin-bottom: 8px; }
   .destaque-passo { margin-top: 24px; }
@@ -2724,8 +2825,13 @@ export function gerarHTMLRelatorio(
 
     <section class="seccao">
       <h2 class="titulo-seccao">${usarTu ? "Opções que ainda não consideraste" : "Opções que ainda não considerou"}</h2>
-      ${blocoCandidataForaDaLista(seccoes[SECCAO_TITULOS.candidataForaDaLista] ?? "", catalogoResultados, usarTu)}
+      ${blocoCandidataForaDaListaResultado.html}
     </section>
+
+    ${blocoTabelaResumoCandidatas([
+      ...opcoes.map((op): ResumoOpcaoLinha => ({ nome: op.nome, declarada: true, confianca: op.forca ? FORCA_LABEL[op.forca] : "—", via: null, custo: null })),
+      ...blocoCandidataForaDaListaResultado.resumo,
+    ])}
 
     <section class="seccao">
       <h2 class="titulo-seccao">${usarTu ? "O teu calendário" : "O seu calendário"}</h2>

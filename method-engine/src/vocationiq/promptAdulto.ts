@@ -125,6 +125,18 @@ export const MARCADORES = {
    */
   grupo: "GRUPO:",
   /**
+   * Correcção do especialista (ronda "relatório Marta", ponto 4a —
+   * segmentação visual da lista de opções) — nome curto e descritivo do
+   * grupo (2-5 palavras), na linha logo a seguir ao marcador "GRUPO:",
+   * gerado a partir da MESMA convergência de base que o LLM já vai
+   * escrever a seguir — nunca uma taxonomia nova, nunca inventado à
+   * parte: é só dar um nome memorável ao que já foi calculado e vai ser
+   * explicado por extenso. Ex.: "Estética e Rigor Técnico",
+   * "Comunicação Visual e Criativa" — nunca genérico ("Grupo A") nem um
+   * jargão técnico do motor (nunca "convergência de 4 camadas").
+   */
+  nomeGrupo: "NOME_GRUPO:",
+  /**
    * LEGADO (correcção do especialista — "EXPLICAÇÃO_GRÁFICO, mudança de
    * abordagem") — já não é pedido ao LLM (ver a nota junto de
    * INSTRUCAO_VARGOTTAMA sobre porquê). Mantido só para
@@ -1156,7 +1168,8 @@ Traduz o Eixo da Missão e o Modo de Ganho dominante para linguagem humana, sem 
 ## ${SECCAO_TITULOS.leituraPorOpcao}
 Se existe pergunta específica declarada, esta secção abre, ANTES do primeiro bloco "### ", com a resposta directa no formato exigido por INSTRUCAO_PERGUNTA_ESPECIFICA — nunca só na "${SECCAO_TITULOS.abertura}", tem de estar retomada aqui também, com a mesma resposta, nunca uma diferente.
 
-PROFUNDIDADE OBRIGATÓRIA (correcção do especialista, ronda "relatório Marta", ponto 9a) — quando a pessoa DECLAROU opções reais (o caso mais comum desta secção), esta é a secção que responde directamente à pergunta que a trouxe até aqui: tem de ser a mais desenvolvida do relatório inteiro, nunca a mais resumida. Cada um dos 5 pontos abaixo é um parágrafo próprio de pelo menos 3-4 frases, nunca uma única frase-resumo por ponto — texto corrido e argumentado, no mesmo espírito de uma leitura real feita por um orientador vocacional a sério, nunca 5 caixas curtas telegráficas.
+PROFUNDIDADE OBRIGATÓRIA (correcção do especialista, ronda "relatório Marta", ponto 9a) — quando a pessoa DECLAROU opções reais (o caso mais comum desta secção), esta é a secção que responde directamente à pergunta que a trouxe até aqui: tem de ser a mais desenvolvida do relatório inteiro, nunca a mais resumida. Cada um dos 6 pontos abaixo (1 a 6, incluindo a conclusão do ponto 6) é um parágrafo próprio de pelo menos 3-4 frases, nunca uma única frase-resumo por ponto — texto corrido e argumentado, no mesmo espírito de uma leitura real feita por um orientador vocacional a sério, nunca 6 caixas curtas telegráficas.
+ERRO CONFIRMADO EM GERAÇÃO REAL (correcção do especialista, mesma ronda — nunca repetir isto): uma opção declarada saiu, de facto, como uma única frase com um badge de força e nada mais — nenhum dos 6 pontos numerados chegou a aparecer. Isto é uma falha grave: a pessoa perguntou especificamente sobre esta opção, e uma frase não é uma resposta. A crítica automática que se segue a esta geração vai medir isto directamente (critério 33) — conta quantas frases tem cada ponto e obriga a reescrever o bloco inteiro se algum tiver menos de 3.
 
 Para CADA opção candidata (declarada ou derivada), este formato EXACTO, por esta ordem — o cabeçalho "### " e a linha "${MARCADORES.forca}" são obrigatórios e machine-readable, não os omitas nem os traduzas:
 
@@ -1187,7 +1200,7 @@ Se essa secção lista 1 ou mais candidatas, primeiro escreve o bloco único "${
 
 FORMATO INDIVIDUAL (candidata sem grupo, ou grupo reduzido a 1 sobrevivente depois do Passo 1) — "${MARCADORES.candidata} <nome exacto>" seguido do texto explicativo dessa candidata, NESTA ORDEM (ver INSTRUCAO_ABERTURA_CANDIDATAS): (1) a frase de dom, usando o FACTOR DE DOM já dado; (2) 1 a 3 frases sobre porque é que esta área faz sentido especificamente dentro deste perfil (que outros sinais reforçam a ligação). NUNCA menciona percurso, formação ou duração no corpo do texto — essa informação vive só nas linhas "${MARCADORES.viaResumida}"/"${MARCADORES.custoPrincipal}" (ver instrução própria abaixo). Usa só as camadas exactas já listadas para ela na pool (nunca inventes camadas novas nem omitas as que vêm calculadas).
 
-FORMATO DE GRUPO (2 ou mais candidatas da secção "Grupos de candidatas" acima que passaram o Passo 1) — "${MARCADORES.grupo} <nome1>; <nome2>; <nome3 ...>" (os nomes exactos dos membros deste grupo que passaram o Passo 1, separados por ";", pela ordem em que os blocos "${MARCADORES.candidata}" a seguir vão aparecer) seguido do texto da convergência astrológica de base PARTILHADA por todo o grupo — o que estas opções têm em comum, escrito UMA SÓ VEZ. Logo a seguir, um bloco "${MARCADORES.candidata} <nome exacto>" por cada membro listado no "${MARCADORES.grupo}", nesta ordem, cada um com só a sua diferenciação específica (1-3 linhas: porquê esta e não as outras do mesmo grupo faz sentido dentro deste perfil) — nunca percurso/formação, e NUNCA repetir a convergência de base já escrita no bloco "${MARCADORES.grupo}".
+FORMATO DE GRUPO (2 ou mais candidatas da secção "Grupos de candidatas" acima que passaram o Passo 1) — "${MARCADORES.grupo} <nome1>; <nome2>; <nome3 ...>" (os nomes exactos dos membros deste grupo que passaram o Passo 1, separados por ";", pela ordem em que os blocos "${MARCADORES.candidata}" a seguir vão aparecer). Na linha seguinte, obrigatório: "${MARCADORES.nomeGrupo} <nome curto e descritivo, 2-5 palavras>" — um nome memorável para este grupo, extraído da MESMA convergência que vais explicar a seguir (nunca uma categoria nova, nunca genérico como "Grupo A"; ex.: "Estética e Rigor Técnico"). Só depois, o texto da convergência astrológica de base PARTILHADA por todo o grupo — o que estas opções têm em comum, escrito UMA SÓ VEZ. Logo a seguir, um bloco "${MARCADORES.candidata} <nome exacto>" por cada membro listado no "${MARCADORES.grupo}", nesta ordem, cada um com só a sua diferenciação específica (1-3 linhas: porquê esta e não as outras do mesmo grupo faz sentido dentro deste perfil) — nunca percurso/formação, e NUNCA repetir a convergência de base já escrita no bloco "${MARCADORES.grupo}".
 
 Repete este padrão (individual ou de grupo) para toda a pool que passou o Passo 1 — nunca pares a meio, nunca omitas uma candidata elegível para "não alongar a secção". A ordem de aparição dos grupos/individuais no texto segue o Passo 2 (soma de pesos) — a ordem NÃO é ranking (ver regra abaixo).
 

@@ -301,6 +301,24 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
      abertura desta secção, reproduzindo o parágrafo exactamente como
      dado no prompt técnico.
 
+ 33. PROFUNDIDADE DA LEITURA POR OPÇÃO (correcção do especialista, ronda
+     "relatório Marta", ponto 2 — problema mais grave encontrado nessa
+     ronda: cada opção declarada saiu como uma única frase com um
+     badge, nada mais). Para CADA bloco "### <nome>" na secção "Leitura
+     por opção": confirma que os 6 pontos numerados (1 a 6) exigidos no
+     prompt técnico (A, abaixo — "PROFUNDIDADE OBRIGATÓRIA") estão
+     TODOS presentes, cada um como o seu próprio parágrafo com pelo
+     menos 3 frases — nunca um resumo de 1-2 frases a seguir ao
+     cabeçalho, nunca um ponto ausente, nunca um ponto reduzido a uma
+     única frase-conclusão. Lista, para cada opção, quantos dos 6
+     pontos encontraste e quantas frases tinha o mais curto deles.
+     Se QUALQUER opção declarada tiver menos de 6 pontos numerados, ou
+     algum desses pontos tiver menos de 3 frases: FALHA — reescrita
+     obrigatória dessa opção (e de qualquer outra na mesma condição),
+     expandindo cada ponto em falta ou raso para o mesmo nível de
+     desenvolvimento já exigido no prompt técnico — nunca aceitar a
+     versão resumida só porque tecnicamente cobre o tema.
+
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
  Formato:
@@ -610,6 +628,24 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
      Se falhar (a), (b) ou (c): FALHA — reescrita obrigatória da
      abertura desta secção, reproduzindo o parágrafo exactamente como
      dado no prompt técnico.
+
+ 33. PROFUNDIDADE DA LEITURA POR OPÇÃO (correcção do especialista, ronda
+     "relatório Marta", ponto 2 — problema mais grave encontrado nessa
+     ronda: cada opção declarada saiu como uma única frase com um
+     badge, nada mais). Para CADA bloco "### <nome>" na secção "Leitura
+     por opção": confirma que os 6 pontos numerados (1 a 6) exigidos no
+     prompt técnico (A, abaixo — "PROFUNDIDADE OBRIGATÓRIA") estão
+     TODOS presentes, cada um como o seu próprio parágrafo com pelo
+     menos 3 frases — nunca um resumo de 1-2 frases a seguir ao
+     cabeçalho, nunca um ponto ausente, nunca um ponto reduzido a uma
+     única frase-conclusão. Lista, para cada opção, quantos dos 6
+     pontos encontraste e quantas frases tinha o mais curto deles.
+     Se QUALQUER opção declarada tiver menos de 6 pontos numerados, ou
+     algum desses pontos tiver menos de 3 frases: FALHA — reescrita
+     obrigatória dessa opção (e de qualquer outra na mesma condição),
+     expandindo cada ponto em falta ou raso para o mesmo nível de
+     desenvolvimento já exigido no prompt técnico — nunca aceitar a
+     versão resumida só porque tecnicamente cobre o tema.
 
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
