@@ -1235,6 +1235,24 @@ function blocoOQueTrouxe(d: DadosParaTemplate): string {
   // legítima. Texto de reserva EXACTO pedido, sem pronome pessoal (serve
   // aos dois ramos sem adaptação).
   const semNada = !d.oQueNaoFunciona && !d.opcoesConsideradas.length && !d.ideiaConcreta && !d.perguntaEspecifica;
+  // BUG REAL, corrigido (ronda "regeneração Alexandra 3", reportado 2ª
+  // vez pelo fundador — "gestão, economia e gestão" continuava duplicado
+  // na etiqueta do topo mesmo depois da deduplicação em validation.ts).
+  // Causa: essa deduplicação só corre no MOMENTO da submissão do
+  // formulário — nunca limpa registos já guardados antes dela, como o da
+  // Alexandra. Deduplicado aqui também (mesma regra: sem maiúsculas/
+  // minúsculas, sem espaços a mais, mantém a 1ª grafia encontrada) para
+  // qualquer registo antigo se auto-corrigir na renderização, sem
+  // precisar de migração de dados nem de identificar caso a caso quais
+  // registos antigos têm o problema.
+  const opcoesConsideradasUnicas: string[] = [];
+  const opcoesConsideradasVistas = new Set<string>();
+  for (const o of d.opcoesConsideradas) {
+    const chave = o.trim().toLowerCase();
+    if (opcoesConsideradasVistas.has(chave)) continue;
+    opcoesConsideradasVistas.add(chave);
+    opcoesConsideradasUnicas.push(o);
+  }
   return `
     <div class="bloco-dados">
       <p class="bloco-titulo">O que trouxe</p>
@@ -1245,8 +1263,8 @@ function blocoOQueTrouxe(d: DadosParaTemplate): string {
           : ""
       }
       ${
-        d.opcoesConsideradas.length
-          ? `<p class="rotulo-pequeno">Opções consideradas</p><div class="chips">${d.opcoesConsideradas.map((o) => `<span class="chip">${escapeHtml(o)}</span>`).join("")}</div>`
+        opcoesConsideradasUnicas.length
+          ? `<p class="rotulo-pequeno">Opções consideradas</p><div class="chips">${opcoesConsideradasUnicas.map((o) => `<span class="chip">${escapeHtml(o)}</span>`).join("")}</div>`
           : ""
       }
       ${d.ideiaConcreta ? `<div class="destaque-ambar"><p class="rotulo-pequeno">Ideia concreta</p><p>${escapeHtml(normalizarTextoLivre(d.ideiaConcreta))}</p></div>` : ""}
@@ -2492,7 +2510,31 @@ export function gerarHTMLRelatorio(
   const seccoes = dividirEmSeccoes(textoLimpo);
   const dataGeracao = new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "long", year: "numeric" }).format(new Date());
 
-  const { opcoes, textoSemOpcao } = parseLeituraPorOpcao(seccoes[SECCAO_TITULOS.leituraPorOpcao] ?? "");
+  // BUG REAL, corrigido (ronda "regeneração Alexandra 3" — relatório real:
+  // "Direito" apareceu com cartão completo em "Leitura por opção" e Tipo
+  // "Declarada" na tabela-resumo, AO MESMO TEMPO que aparecia de novo,
+  // correctamente, como "Fora da lista" Nível 1 — o mesmo nome com dois
+  // estatutos opostos na mesma tabela). Causa: `parseLeituraPorOpcao`
+  // confiava cegamente em qualquer cabeçalho "### <nome>" que o LLM
+  // escrevesse nesta secção como sendo uma opção DECLARADA — nunca
+  // cruzava com a lista real (`dados.opcoesConsideradas`, a única fonte
+  // de verdade do que a pessoa de facto declarou). "Direito" nunca esteve
+  // em "Opções em cima da mesa" — só no campo de contexto familiar
+  // ("a mãe vê em ti jeito para Direito", nunca decide) — mas o LLM,
+  // apesar da instrução "Para CADA opção EM CIMA DA MESA", escreveu-lhe
+  // na mesma um cartão de leitura por opção. Correcção determinística
+  // (nunca só uma instrução de prompt, que já existia e não bastou):
+  // qualquer cartão "### " cujo nome não bata, exactamente (sem
+  // maiúsculas/minúsculas, sem espaços a mais), com uma entrada de
+  // `dados.opcoesConsideradas` é descartado aqui — nunca vira cartão,
+  // nunca entra na tabela-resumo como "Declarada". Só filtra quando HÁ
+  // uma lista declarada real: quando a pessoa não declarou nada
+  // (`opcoesConsideradas` vazio), o motor deriva candidatas plausíveis do
+  // texto livre por desenho (ver INSTRUCAO/prompt) — nesse caso nenhum
+  // nome "oficial" existe para cruzar, por isso nunca filtra.
+  const { opcoes: opcoesLidas, textoSemOpcao } = parseLeituraPorOpcao(seccoes[SECCAO_TITULOS.leituraPorOpcao] ?? "");
+  const nomesDeclaradosNormalizados = new Set(dados.opcoesConsideradas.map((o) => o.trim().toLowerCase()));
+  const opcoes = nomesDeclaradosNormalizados.size ? opcoesLidas.filter((op) => nomesDeclaradosNormalizados.has(op.nome.trim().toLowerCase())) : opcoesLidas;
   const identidade = parseIdentidade(textoLimpo);
   const fraseAbertura = parseFraseAbertura(textoLimpo);
   // TAREFA 1 (correcção do especialista) — deriva o registo tu/você

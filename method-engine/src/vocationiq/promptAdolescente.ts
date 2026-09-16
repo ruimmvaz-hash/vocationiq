@@ -215,7 +215,9 @@ export function construirPromptAdolescente(
   const instrucaoLeituraPorOpcao = `${perguntaImplicita ? `Esta secção abre, ANTES do primeiro bloco "### ", com a resposta directa a "${perguntaImplicita}" no formato exigido por INSTRUCAO_PERGUNTA_ESPECIFICA — retomada aqui, nunca contradita face ao que já foi respondido em "${SECCAO_TITULOS.abertura}".\n\n` : ""}PROFUNDIDADE OBRIGATÓRIA (correcção do especialista, ronda "relatório Marta", ponto 9a) — quando a pessoa declarou opções reais (o caso mais comum desta secção), esta é a secção que responde directamente à pergunta que a trouxe até aqui: tem de ser a mais desenvolvida do relatório inteiro, nunca a mais resumida. Cada um dos 6 pontos abaixo é um parágrafo próprio de pelo menos 3-4 frases, nunca uma única frase-resumo por ponto — texto corrido e argumentado, nunca 6 caixas curtas telegráficas.
 ERRO CONFIRMADO EM GERAÇÃO REAL (correcção do especialista, ronda seguinte — nunca repetir isto): uma opção declarada saiu, de facto, como uma única frase com um badge de força e nada mais — nenhum dos 6 pontos numerados chegou a aparecer. Isto é uma falha grave: a pessoa perguntou especificamente sobre esta opção, e uma frase não é uma resposta. A crítica automática que se segue a esta geração vai medir isto directamente (critério 33) — conta quantas frases tem cada ponto e obriga a reescrever o bloco inteiro se algum tiver menos de 3.
 
-Para CADA opção em cima da mesa, este formato EXACTO — o cabeçalho "### " e a linha "${MARCADORES.forca}" são obrigatórios:
+BUG REAL, corrigido (ronda "regeneração Alexandra 3" — nunca repetir isto): num relatório real, "Direito" (mencionado só em "Preferência da família", nunca em "Opções em cima da mesa") ganhou aqui um bloco "### " completo, ao mesmo tempo que aparecia — correctamente — como candidata fora da lista na secção seguinte. O mesmo nome com dois estatutos opostos no mesmo relatório é uma contradição visível, pior do que não o mencionar. PROIBIDO ABSOLUTO: um bloco "### " nesta secção para qualquer nome que não esteja, exactamente, na lista "Opções em cima da mesa" acima — mesmo que esse nome apareça noutro sítio dos dados técnicos (preferência da família, "para onde quer ir" legado, ou como candidata forte no catálogo). Se o perfil sustenta com força uma área que a pessoa não pôs em cima da mesa, isso é precisamente o trabalho da secção "${SECCAO_TITULOS.candidataForaDaLista}" — nunca duplicado aqui.
+
+Para CADA opção em cima da mesa (nunca mais nenhuma), este formato EXACTO — o cabeçalho "### " e a linha "${MARCADORES.forca}" são obrigatórios:
 
 ### <nome exacto da opção>
 ${MARCADORES.forca} <forte, moderada ou fraca>
@@ -302,7 +304,7 @@ VOLUME: cada secção deve ser tão longa quanto os dados sustentam — nunca ma
 -- Quem é --
 Nome: ${intake.nome}
 Situação declarada: ${intake.situacaoDeclarada}
-${intake.preferenciaFamilia ? `Preferência da família (contexto, nunca decide): "${intake.preferenciaFamilia}"` : ""}
+${intake.preferenciaFamilia ? `Preferência da família (contexto para a abertura, NUNCA uma opção em cima da mesa — proibido escrever um bloco "### " na secção "${SECCAO_TITULOS.leituraPorOpcao}" com um nome que só apareça aqui e não na lista "Opções em cima da mesa" acima): "${intake.preferenciaFamilia}"` : ""}
 ${perguntaImplicita ? `Pergunta específica (implícita — ver INSTRUCAO_PERGUNTA_ESPECIFICA/INSTRUCAO_ABERTURA_RESPONDE): ${perguntaImplicita}` : ""}
 
 -- Eixo da Missão --
