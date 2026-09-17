@@ -13,11 +13,10 @@
       "label": "Sol",
       "materia_prima": "o próprio nome como valor; decidir e responder pela decisão; ser olhado; poder, ossos, coração, vitalidade",
       "destinos": {
-        "superior": ["ciencia_politica", "gestao", "administracao_publica", "medicina", "relacoes_internacionais", "ciencias_militares"],
+        "superior": ["direito", "ciencia_politica", "gestao", "administracao_publica", "medicina", "relacoes_internacionais", "ciencias_militares"],
         "superior_condicionado": [
           { "id": "arquitetura", "condicao": "requer Vénus em força" },
-          { "id": "administracao_hospitalar", "condicao": "vertente de liderança e autoridade clínico-administrativa", "vertente": "lideranca" },
-          { "id": "direito", "condicao": "requer Sol (peso >= 1.2)" }
+          { "id": "administracao_hospitalar", "condicao": "vertente de liderança e autoridade clínico-administrativa", "vertente": "lideranca" }
         ],
         "tecnico": ["t_direcao_equipa", "t_protecao_pessoas", "t_ourivesaria", "t_eletricidade", "cardiopneumologia"],
         "tecnico_condicionado": [
@@ -53,7 +52,7 @@
       "destinos": {
         "superior": ["literatura_linguistica", "linguas", "traducao", "jornalismo", "marketing", "publicidade", "contabilidade", "matematica", "estatistica", "engenharia_informatica", "sistemas_redes", "economia", "comercio", "secretariado", "ciencias_farmaceuticas", "audiovisual", "psicologia"],
         "superior_condicionado": [
-          { "id": "direito", "condicao": "requer Mercúrio (peso >= 1.2)", "vertente": "contratual" }
+          { "id": "direito", "condicao": "apenas na vertente contratual e de negociação, não na de tribunal", "vertente": "contratual" }
         ],
         "tecnico": ["t_programacao", "t_contabilidade", "t_vendas", "t_imobiliario", "t_seguros", "t_analises", "t_redes_sociais", "t_logistica", "t_lingua_gestual"],
         "tecnico_condicionado": [
@@ -72,7 +71,7 @@
         "superior": ["design_moda", "design_interiores", "design_industrial", "design_grafico", "belas_artes", "arquitetura", "urbanismo", "musica", "artes_espetaculo", "artesanato_superior", "medicina_dentaria", "marketing", "turismo", "cabeleireiro_estetica_superior", "historia_arte", "enologia"],
         "superior_condicionado": [
           { "id": "psicologia", "condicao": "vertente de aconselhamento e relação", "vertente": "aconselhamento" },
-          { "id": "direito", "condicao": "requer Vénus (peso >= 1.2)", "vertente": "familia" }
+          { "id": "direito", "condicao": "vertente de mediação e família", "vertente": "familia" }
         ],
         "tecnico": ["t_cabeleireiro", "t_estetica", "t_design_grafico", "t_joalharia", "t_costura", "t_decoracao", "t_fotografia", "t_pastelaria", "t_paisagismo", "t_som_imagem", "t_massagem"],
         "fora": ["f_atelier", "f_consultoria_imagem", "f_eventos", "f_mediacao_relacional", "f_curadoria"]
@@ -91,7 +90,7 @@
         "superior": ["engenharia_mecanica", "engenharia_civil", "metalurgia", "ciencias_desporto", "ciencias_militares", "protecao_civil", "engenharia_veiculos", "engenharia_minas", "engenharia_quimica", "fisioterapia"],
         "superior_condicionado": [
           { "id": "medicina", "condicao": "vocação cirúrgica", "vertente": "cirurgica" },
-          { "id": "direito", "condicao": "requer Marte (peso >= 1.2)", "vertente": "litigio" },
+          { "id": "direito", "condicao": "vertente de litígio e tribunal", "vertente": "litigio" },
           { "id": "medicina_veterinaria", "condicao": "vertente cirúrgica" },
           { "id": "administracao_hospitalar", "condicao": "vertente de operações e gestão de crise hospitalar", "vertente": "operacional" }
         ],
@@ -106,9 +105,8 @@
       "label": "Júpiter",
       "materia_prima": "ensinar, julgar com critério, dar sentido, expandir; a lei e a fé; o mestre, o juiz, o sacerdote, o conselheiro",
       "destinos": {
-        "superior": ["teologia", "ciencias_religiao", "filosofia", "ciencias_educacao", "formacao_professores", "financas_banca", "economia", "historia", "arqueologia", "ciencia_politica", "sociologia"],
+        "superior": ["teologia", "ciencias_religiao", "filosofia", "direito", "ciencias_educacao", "formacao_professores", "financas_banca", "economia", "historia", "arqueologia", "ciencia_politica", "sociologia"],
         "superior_condicionado": [
-          { "id": "direito", "condicao": "requer Júpiter (peso >= 1.2)" },
           { "id": "medicina", "condicao": "sobretudo Medicina Interna e Pediatria", "vertente": "interna" },
           { "id": "psicologia", "condicao": "vertente clínica de profundidade", "vertente": "clinica" },
           { "id": "gestao", "condicao": "em consultoria estratégica" },
@@ -128,7 +126,7 @@
       "destinos": {
         "superior": ["engenharia_civil", "arquitetura", "geologia", "engenharia_minas", "historia", "arqueologia", "auditoria", "contabilidade", "seguranca_higiene", "saude_publica", "gerontologia", "silvicultura", "agronomia", "biblioteconomia", "estatistica"],
         "superior_condicionado": [
-          { "id": "direito", "condicao": "requer Saturno (peso >= 1.2)", "vertente": "norma" },
+          { "id": "direito", "condicao": "vertente de norma, notariado e regulação", "vertente": "norma" },
           { "id": "gestao", "condicao": "em operações e processos" },
           { "id": "administracao_hospitalar", "condicao": "vertente de estrutura, processos e governação hospitalar", "vertente": "estrutural" },
           { "id": "administracao_publica", "condicao": "vertente de estrutura, ordem e instituições", "vertente": "estrutural" }
