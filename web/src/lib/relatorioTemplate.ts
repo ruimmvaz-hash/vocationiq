@@ -1235,21 +1235,31 @@ function blocoOQueTrouxe(d: DadosParaTemplate): string {
   // legítima. Texto de reserva EXACTO pedido, sem pronome pessoal (serve
   // aos dois ramos sem adaptação).
   const semNada = !d.oQueNaoFunciona && !d.opcoesConsideradas.length && !d.ideiaConcreta && !d.perguntaEspecifica;
-  // BUG REAL, corrigido (ronda "regeneração Alexandra 3", reportado 2ª
+  // BUG REAL, corrigido (ronda "regeneração Alexandra 3", reportado 3ª
   // vez pelo fundador — "gestão, economia e gestão" continuava duplicado
-  // na etiqueta do topo mesmo depois da deduplicação em validation.ts).
-  // Causa: essa deduplicação só corre no MOMENTO da submissão do
-  // formulário — nunca limpa registos já guardados antes dela, como o da
-  // Alexandra. Deduplicado aqui também (mesma regra: sem maiúsculas/
-  // minúsculas, sem espaços a mais, mantém a 1ª grafia encontrada) para
-  // qualquer registo antigo se auto-corrigir na renderização, sem
-  // precisar de migração de dados nem de identificar caso a caso quais
-  // registos antigos têm o problema.
+  // na etiqueta do topo mesmo depois desta deduplicação já estar em
+  // produção). Causa real, confirmada por teste directo: esta
+  // deduplicação só comparava maiúsculas/minúsculas — nunca apanhava
+  // "gestão" vs "gestao" (sem acento) nem duas formas Unicode diferentes
+  // da MESMA palavra acentuada (NFC vs NFD). A correcção definitiva
+  // ficou em `construirIntakeAdolescente` (relatorioAdultoCompute.ts) —
+  // a única função que constrói o array a partir dos dados guardados,
+  // antes de alimentar tanto o prompt como este template — com a mesma
+  // normalização robusta (sem acentos, sem maiúsculas/minúsculas) usada
+  // em catalogoVocacional.ts. Esta deduplicação aqui fica só como 2ª
+  // camada de defesa (nunca confiar só numa), reforçada com a MESMA
+  // normalização, para qualquer registo antigo se auto-corrigir na
+  // renderização mesmo que chegue aqui por um caminho que não passe por
+  // `construirIntakeAdolescente`.
   const opcoesConsideradasUnicas: string[] = [];
   const opcoesConsideradasVistas = new Set<string>();
   for (const o of d.opcoesConsideradas) {
-    const chave = o.trim().toLowerCase();
-    if (opcoesConsideradasVistas.has(chave)) continue;
+    const chave = o
+      .trim()
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toLowerCase();
+    if (!chave || opcoesConsideradasVistas.has(chave)) continue;
     opcoesConsideradasVistas.add(chave);
     opcoesConsideradasUnicas.push(o);
   }
@@ -2533,8 +2543,19 @@ export function gerarHTMLRelatorio(
   // texto livre por desenho (ver INSTRUCAO/prompt) — nesse caso nenhum
   // nome "oficial" existe para cruzar, por isso nunca filtra.
   const { opcoes: opcoesLidas, textoSemOpcao } = parseLeituraPorOpcao(seccoes[SECCAO_TITULOS.leituraPorOpcao] ?? "");
-  const nomesDeclaradosNormalizados = new Set(dados.opcoesConsideradas.map((o) => o.trim().toLowerCase()));
-  const opcoes = nomesDeclaradosNormalizados.size ? opcoesLidas.filter((op) => nomesDeclaradosNormalizados.has(op.nome.trim().toLowerCase())) : opcoesLidas;
+  // Normalização reforçada (ronda "Alexandra — regressão Economia/Gestão")
+  // — sem acentos além de sem maiúsculas/minúsculas, mesma função usada
+  // em construirIntakeAdolescente/blocoOQueTrouxe — nunca deixar um
+  // cartão legítimo ser rejeitado só por uma diferença de acentuação
+  // entre o que o LLM escreveu e o que ficou guardado.
+  const chaveOpcao = (s: string) =>
+    s
+      .trim()
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toLowerCase();
+  const nomesDeclaradosNormalizados = new Set(dados.opcoesConsideradas.map(chaveOpcao));
+  const opcoes = nomesDeclaradosNormalizados.size ? opcoesLidas.filter((op) => nomesDeclaradosNormalizados.has(chaveOpcao(op.nome))) : opcoesLidas;
   const identidade = parseIdentidade(textoLimpo);
   const fraseAbertura = parseFraseAbertura(textoLimpo);
   // TAREFA 1 (correcção do especialista) — deriva o registo tu/você

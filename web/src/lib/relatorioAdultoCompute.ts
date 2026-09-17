@@ -343,6 +343,49 @@ export async function calcularDadosAstrologicos(intake: IntakeRow, coordenadasEx
 }
 
 /**
+ * BUG REAL, corrigido (ronda "Alexandra — regressão Economia/Gestão" —
+ * reportado 3ª vez: dedup em validation.ts só protege submissões novas,
+ * nunca registos já guardados; dedup em blocoOQueTrouxe (relatorioTemplate.ts)
+ * só compara maiúsculas/minúsculas — nunca apanha "gestão" vs "gestao"
+ * (sem acento) nem duas formas Unicode diferentes da MESMA palavra
+ * acentuada (NFC vs NFD, texto colado de fontes diferentes pode trazer
+ * qualquer uma) — confirmado por teste directo: nenhuma das duas bate
+ * certo com uma comparação só de maiúsculas/minúsculas. Um "gestão"
+ * quase-duplicado (mas não byte-a-byte igual) chegava inteiro ao PROMPT
+ * como 3ª linha de "Opções em cima da mesa" — o LLM, ao ver duas linhas
+ * que pareciam a mesma opção mas não eram idênticas, fundia as 3 num
+ * único cartão em vez de as tratar como 2 opções distintas (regressão
+ * separada, mas com a MESMA causa: o array nunca chegava limpo ao
+ * prompt). Corrigido UMA VEZ AQUI — a única função que constrói
+ * `opcoesAdolescente` a partir dos dados guardados, antes de alimentar
+ * tanto o prompt como o template — nunca no mesmo sítio que decide se
+ * "Direito" pode ou não entrar como opção declarada (ver
+ * relatorioTemplate.ts), propositadamente: são dois problemas
+ * diferentes (duplicação vs injecção de fonte errada), corrigidos por
+ * lógicas independentes, para nunca mais um único sítio decidir as
+ * duas coisas ao mesmo tempo. A comparação ignora acentos e maiúsculas/
+ * minúsculas (mesma normalização já usada em catalogoVocacional.ts) —
+ * nunca corrige a ortografia do que a pessoa escreveu, só decide se
+ * duas linhas são "a mesma opção" para efeitos de remover a repetida;
+ * mantém sempre a primeira grafia encontrada.
+ */
+function deduplicarOpcoesAdolescente(opcoes: string[]): string[] {
+  const vistas = new Set<string>();
+  const unicas: string[] = [];
+  for (const o of opcoes) {
+    const chave = o
+      .trim()
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toLowerCase();
+    if (!chave || vistas.has(chave)) continue;
+    vistas.add(chave);
+    unicas.push(o);
+  }
+  return unicas;
+}
+
+/**
  * TAREFA 1B (correcção do especialista) — constrói o intake do adolescente
  * a partir dos campos da migração 0019 (opcoes_adolescente,
  * opcao_mais_provavel) mais os campos partilhados (nome, situacao,
@@ -354,7 +397,7 @@ export function construirIntakeAdolescente(intake: IntakeRow): VocationiqIntakeA
   return {
     nome: intake.nome,
     situacaoDeclarada: SITUACAO_LABEL[intake.situacao] ?? intake.situacao,
-    opcoesAdolescente: intake.opcoes_adolescente ?? [],
+    opcoesAdolescente: deduplicarOpcoesAdolescente(intake.opcoes_adolescente ?? []),
     opcaoMaisProvavel: intake.opcao_mais_provavel ?? undefined,
     preferenciaFamilia: intake.preferencia_familia ? normalizarTextoLivre(intake.preferencia_familia) : undefined,
     anoEscolaridade,

@@ -249,7 +249,15 @@ export function validarIntake(body: unknown): { ok: true; dados: IntakePayload }
       .filter((o): o is string => typeof o === "string" && o.trim().length > 0)
       .map((o) => o.trim().slice(0, 200))
       .filter((o) => {
-        const chave = o.toLowerCase();
+        // Reforçado (ronda "Alexandra — regressão Economia/Gestão") —
+        // sem acentos além de sem maiúsculas/minúsculas, mesma
+        // normalização usada em relatorioAdultoCompute.ts/
+        // relatorioTemplate.ts, para "gestão" e "gestao" (ou NFC vs NFD
+        // da mesma palavra acentuada) contarem como a mesma opção.
+        const chave = o
+          .normalize("NFD")
+          .replace(/\p{Diacritic}/gu, "")
+          .toLowerCase();
         if (opcoesVistas.has(chave)) return false;
         opcoesVistas.add(chave);
         return true;
