@@ -162,13 +162,37 @@ function casaDe(pesos: PesoPlaneta[], graha: string): number | undefined {
  * cirúrgica", "vertente de...", "sobretudo...") devolve `null` — não é
  * uma precondição, é uma especialização/vertente do destino em si (14
  * dos 16 itens), promovida sem condição por `destinosDoPlaneta`.
+ *
+ * BUG REAL, corrigido (ronda "Miguel — Direito sobre-conectado") — as 6
+ * ligações de Direito (antes: 2 arrays planas + 4 "vertente..." lidas
+ * como decorativas, ver histórico deste ficheiro) foram convertidas a
+ * "requer X [em força]" para deixarem de promover sem condição, um
+ * padrão de fan-in muito acima de qualquer outro destino (confirmado por
+ * auditoria: 6 de 7 planetas clássicos, quando a generalidade dos
+ * destinos toca 1-2). O limiar fixo "em força" (1,3) revelou-se, ao
+ * testar contra um caso real já validado nesta sessão (Alexandra), um
+ * corte demasiado brusco — Sol dela = 1,293, abaixo por 0,007, uma
+ * diferença sem significado astrológico a decidir uma mudança binária.
+ * Acrescentado suporte a um limiar numérico explícito no próprio texto
+ * de `condicao` ("requer X (peso >= N)") para Direito poder usar um
+ * limiar próprio (1,2) sem alterar o limiar "em força" (1,3) partilhado
+ * por todos os OUTROS `_condicionado` do catálogo (ex.: "Arquitetura
+ * requer Vénus em força") — aditivo, nunca muda o comportamento de
+ * nenhuma condição já existente que não use este novo formato.
  */
-function condicaoRequerPlaneta(condicao: string): { planeta: Graha; forte: boolean } | null {
-  const match = normalizar(condicao).match(/^requer\s+([a-z]+)(\s+em\s+forca)?$/);
+function condicaoRequerPlaneta(condicao: string): { planeta: Graha; limiar: number } | null {
+  const normalizado = normalizar(condicao);
+  const matchNumerico = normalizado.match(/^requer\s+([a-z]+)\s*\(peso\s*>=\s*([0-9]+(?:[.,][0-9]+)?)\)$/);
+  if (matchNumerico) {
+    const planeta = PLANETA_PT_PARA_GRAHA[matchNumerico[1]];
+    if (!planeta) return null;
+    return { planeta, limiar: parseFloat(matchNumerico[2].replace(",", ".")) };
+  }
+  const match = normalizado.match(/^requer\s+([a-z]+)(\s+em\s+forca)?$/);
   if (!match) return null;
   const planeta = PLANETA_PT_PARA_GRAHA[match[1]];
   if (!planeta) return null;
-  return { planeta, forte: !!match[2] };
+  return { planeta, limiar: match[2] ? 1.3 : 0.9 };
 }
 
 /**
@@ -203,8 +227,7 @@ function destinosDoPlaneta(graha: Graha, pesos: PesoPlaneta[]): string[] {
       continue;
     }
     const peso = pesoDe(pesos, requer.planeta) ?? 0;
-    const limiar = requer.forte ? 1.3 : 0.9;
-    if (peso >= limiar) promovidos.push(item.id);
+    if (peso >= requer.limiar) promovidos.push(item.id);
   }
   return [...base, ...promovidos];
 }

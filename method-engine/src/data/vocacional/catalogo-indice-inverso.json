@@ -58,9 +58,9 @@
       "sinais_exigidos": [
         { "tipo": "planeta_forte", "valores": ["jupiter", "sol"], "modo": "qualquer" },
         { "tipo": "casa_activa", "valores": ["9", "10"], "modo": "qualquer" },
-        { "tipo": "planeta_funcional", "valores": ["mercurio"], "modo": "obrigatorio", "para": "a argumentação" },
-        { "tipo": "planeta_funcional", "valores": ["saturno"], "modo": "obrigatorio", "para": "a norma" }
+        { "tipo": "planeta_funcional", "valores": ["mercurio", "saturno"], "modo": "obrigatorio", "para": "a argumentação e a norma, as duas" }
       ],
+      "nota_de_verificacao": "APERTADO (correcção do especialista, caso Miguel) — 'mercurio' e 'saturno' eram dois sinais 'obrigatorio' separados mas avaliados em OU um com o outro (bastava um dos dois), apesar do rótulo 'obrigatorio' sugerir que os dois contavam. Fundidos num único sinal multi-valor com modo 'obrigatorio', que o motor já avalia correctamente como E entre os valores (ver avaliarSinal, catalogoVocacional.ts) — mecanismo existente, nunca inventado de novo. Nunca removido por inteiro: este ficheiro existe precisamente para nunca omitir uma área (ver 'razao' em meta, acima) — apertado, não apagado.",
       "exigencia_se_faltarem": "encontrar dentro da área a vertente que o desenho serve (mediação, contrato, investigação), sob pena de exercício sem convicção"
     },
     {
