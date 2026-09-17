@@ -667,6 +667,24 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
      desenvolvimento já exigido no prompt técnico — nunca aceitar a
      versão resumida só porque tecnicamente cobre o tema.
 
+ 34. NENHUMA OPÇÃO FUNDIDA NEM EM FALTA (correcção do especialista,
+     ronda "Miguel — opções fundidas" — bug real: a pessoa declarou 2
+     linhas distintas em "Opções em cima da mesa" no prompt técnico e o
+     rascunho saiu com um único bloco "### " a fundir as duas num nome
+     composto). Conta as linhas de "Opções em cima da mesa" no prompt
+     técnico (A, abaixo) — cada linha começa por "- " e não é uma
+     sub-linha de curso/QNQ/via. Conta os blocos "### " na secção
+     "Leitura por opção" do rascunho (B). Os dois números têm de bater
+     certo, UM A UM — nunca um bloco "### " cujo nome combine duas
+     linhas diferentes com "e"/","/";" (verifica isto sempre, mesmo que
+     as contagens batam por coincidência: um nome de bloco "### " que
+     contenha, na íntegra, duas linhas inteiras de "Opções em cima da
+     mesa" coladas é FALHA, mesmo que o total dê certo por acidente).
+     Se as contagens não baterem, ou houver um bloco fundido: FALHA —
+     lista as linhas declaradas e os blocos encontrados lado a lado,
+     reescrita obrigatória para um bloco "### " completo e independente
+     por cada linha declarada, nunca combinadas.
+
  Para cada critério:
  PASSA ou FALHA — e se falha, exactamente o que está errado.
  Formato:

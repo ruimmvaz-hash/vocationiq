@@ -344,6 +344,28 @@ function RespostasSituacao({ intake }: { intake: IntakeRow }) {
             {intake.areas_consideradas_outra?.trim() && <p className="mt-2 text-sm text-navy">Outra: {intake.areas_consideradas_outra}</p>}
           </div>
         )}
+        {/* BUG REAL, corrigido (ronda "Miguel — opções fundidas") — "Opções
+            em cima da mesa" e "Qual parece mais provável" nunca apareciam
+            aqui, apesar de serem exactamente os dados que o motor usa para
+            gerar os cartões de "Leitura por opção" — sem os ver, não havia
+            forma de confirmar no admin se a pessoa escreveu duas opções em
+            linhas separadas (como o campo pede, "uma por linha") ou as
+            colou na mesma linha (produzindo um único cartão fundido, ex.:
+            "Engenharia Biomédica e Engenharia e Gestão Industrial"). Um
+            item por linha, tal como foi guardado — nunca reformatado nem
+            reunido numa frase, para esta caixa servir de prova directa do
+            que está no array. */}
+        {intake.opcoes_adolescente && intake.opcoes_adolescente.length > 0 && (
+          <div className="px-4 py-3">
+            <p className="text-sm font-semibold text-ink/60">Opções em cima da mesa ({intake.opcoes_adolescente.length})</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-ink">
+              {intake.opcoes_adolescente.map((o, i) => (
+                <li key={i}>{o}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {intake.opcao_mais_provavel?.trim() && <Campo label="Qual parece mais provável hoje" valor={intake.opcao_mais_provavel} />}
         {intake.preferencia_familia?.trim() && <Campo label="Preferência da família" valor={intake.preferencia_familia} multilinha />}
       </Seccao>
     );
