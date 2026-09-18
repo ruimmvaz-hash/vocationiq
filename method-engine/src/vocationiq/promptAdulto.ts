@@ -682,13 +682,72 @@ NUNCA ignorar conjunções activas.`;
 // relatório) — "candidata" remete para concurso de beleza, tom errado.
 // Corrigido para "esta opção", mantendo a palavra "candidata" só na
 // prosa instrutiva (nunca lida pelo cliente).
+// BUG REAL, corrigido (ronda "Miguel/Alexandra — discurso vago", pedido
+// do especialista) — o exemplo dado aqui ("'Raja Yoga', 'configuração
+// de autoridade real'") tinha uma segunda opção vaga a mais, e o LLM
+// (confirmado em geração real, duas pessoas diferentes) estava a usá-la
+// como licença para escrever sempre "uma configuração técnica neste
+// perfil (capacidade estrutural para posições de destaque)" — a MESMA
+// frase, quase literal, a justificar destinos completamente diferentes
+// no mesmo relatório (Psicologia, Direito, Artes do Espetáculo, no caso
+// do Miguel), nunca nomeando qual dos 3 yogas está realmente activo.
+// Efeito nomeado ("configuração técnica"/"capacidade estrutural"), nunca
+// o mecanismo (qual yoga, formado por que planetas). Corrigido: só o
+// nome real do yoga é aceite, nunca uma paráfrase genérica.
 export const INSTRUCAO_YOGAS = `YOGAS — INSTRUÇÃO OBRIGATÓRIA PARA CANDIDATAS: para CADA candidata fora da lista apresentada, verifica se algum yoga activo (Raja Yoga, Dhana Yoga, Viparita Raja Yoga) cita pelo menos um dos planetas que fazem parte das camadas de convergência dessa candidata.
-Se sim, a leitura desta candidata DEVE incluir uma frase com este padrão exacto: "Existe também, [de forma independente desta convergência / reforçando esta convergência], uma configuração técnica neste perfil ([nome do yoga em português simples, ex.: 'Raja Yoga', 'configuração de autoridade real']) que [confirma directamente esta opção / reforça o teu/seu potencial nesta área de forma mais geral]"
+Se sim, a leitura desta candidata DEVE incluir uma frase com este padrão exacto: "Existe também, [de forma independente desta convergência / reforçando esta convergência], um [Raja Yoga / Dhana Yoga / Viparita Raja Yoga — o nome REAL do yoga activo, nunca outro] neste perfil, formado por [os planetas/casas que o formam, em linguagem simples] que [confirma directamente esta opção / reforça o teu/seu potencial nesta área de forma mais geral]"
+PROIBIDO ABSOLUTO: substituir o nome do yoga por uma paráfrase vaga — "configuração técnica", "capacidade estrutural", "sinal estruturado próprio", "configuração de autoridade" e qualquer equivalente que nomeie um efeito sem nomear QUAL yoga e QUE planetas o formam. Se não souberes/não houver yoga aplicável, não escrevas esta frase — nunca a uses como fórmula genérica de reforço.
 Distingue sempre:
 · Yoga cujos planetas coincidem com os desta candidata: "confirmação directa" — usa "confirma directamente esta opção".
 · Yoga que reforça capacidade geral sem ligação aos planetas desta candidata: "reforço geral" — usa "reforça o teu/seu potencial nesta área de forma mais geral".
 Se NÃO houver nenhum yoga cujos planetas coincidam com os planetas da candidata, não menciones yogas nessa candidata — PROIBIDO inventar ligação para preencher espaço.
 Esta verificação é obrigatória para TODAS as candidatas escolhidas (até 3), não só a primeira. Se todas tiverem yogas aplicáveis, todas devem citá-los.`;
+
+// BUG REAL, corrigido (ronda "Miguel/Alexandra — discurso vago", pedido
+// do especialista) — o mesmo padrão do INSTRUCAO_YOGAS acima (nomear um
+// efeito sem nomear o mecanismo) não estava confinado aos yogas —
+// confirmado em geração real: "uma configuração técnica neste perfil
+// (capacidade estrutural para posições de destaque)" repetida quase
+// verbatim a justificar destinos diferentes no mesmo relatório. Regra
+// geral, nunca só para yogas: sempre que o texto afirma um sinal, tem de
+// citar o quê (planeta, casa, dignidade), em linguagem simples mas
+// rastreável — nunca um efeito nomeado sozinho. E, no lado oposto do
+// mesmo problema: quando o sinal é genuinamente fraco ou ausente, dizer
+// isso directamente é melhor do que uma frase que finge medir algo.
+export const INSTRUCAO_MECANISMO_NUNCA_SO_EFEITO = `MECANISMO, NUNCA SÓ EFEITO (regra geral, não só para yogas): sempre que uma frase afirmar que existe um sinal, uma configuração, uma capacidade ou um ponto forte no perfil, essa mesma frase (ou a seguinte) tem de nomear O QUÊ, em linguagem simples mas rastreável — qual planeta, qual casa, qual dignidade, qual eixo (Atmakaraka/Amatyakaraka/Modo de Ganho/etc.). PROIBIDO ABSOLUTO nomear só o efeito: "uma configuração técnica neste perfil", "capacidade estrutural para posições de destaque", "sinal estruturado próprio", "um ponto forte real" e qualquer equivalente que descreva uma força sem dizer de onde ela vem — isto é especialmente proibido como frase repetida quase igual a justificar destinos DIFERENTES no mesmo relatório (confirmado em geração real: a mesma frase a "confirmar" Psicologia, Direito e Artes do Espetáculo ao mesmo tempo — se a frase serve para tudo, não está a medir nada).
+Ao mesmo tempo, e pelo lado oposto: onde o sinal for genuinamente fraco, genérico, ou nem sequer existir para esta candidata/opção específica, DIZE ISSO DIRECTAMENTE — "não encontrei uma ligação específica para esta opção" (ou equivalente) é sempre melhor do que forçar uma frase vaga só para não deixar a secção curta. Uma leitura honesta e curta vale mais do que uma leitura confiante e vazia.`;
+
+/**
+ * BUG REAL, corrigido (ronda "Miguel/Alexandra — discurso vago", pedido
+ * do especialista, 2ª parte): mesmo depois de proibir o efeito-sem-
+ * mecanismo, falta a parte construtiva — nomear as ferramentas reais da
+ * pessoa como património PRÓPRIO dela, independente de qualquer opção,
+ * cedo no relatório, e depois REFERENCIAR essas mesmas ferramentas em
+ * cada leitura por opção (em vez de reinventar a explicação do zero em
+ * cada cartão, o que é onde a linguagem vaga mais aparece). Objectivo
+ * explícito do fundador: mesmo que a pessoa não escolha nenhuma das
+ * opções fortes, sai do relatório a saber que ferramentas tem e onde
+ * mais as pode aplicar.
+ */
+export const INSTRUCAO_FERRAMENTAS_PATRIMONIO = `FERRAMENTAS COMO PATRIMÓNIO PRÓPRIO — OBRIGATÓRIO: dentro da secção "${SECCAO_TITULOS.oQueACartaSustenta}", antes de ligar isto a qualquer opção, nomeia explicitamente 2 a 4 ferramentas ou capacidades concretas desta pessoa — vindas dos sinais mais fortes do perfil (Atmakaraka, Amatyakaraka, planetas de peso mais alto, Modo de Ganho) — apresentadas como património PRÓPRIO da pessoa, nunca como argumento a favor de nenhuma opção específica. Cada ferramenta é uma frase curta e concreta (ex.: "a tua capacidade de assumir posição pública sem hesitar", "a tua mente que liga o que sentes ao que dizes"), sempre com o mecanismo já nomeado (ver MECANISMO, NUNCA SÓ EFEITO).
+Depois, dentro de CADA bloco de "${SECCAO_TITULOS.leituraPorOpcao}" e de cada candidata em "${SECCAO_TITULOS.candidataForaDaLista}", ao explicar porque uma opção faz sentido, refere explicitamente QUAL dessas ferramentas já nomeadas está a ser usada e COMO — nunca inventes uma explicação nova e desligada das ferramentas já apresentadas. O objectivo: mesmo que a pessoa não escolha nenhuma das opções mais fortes, sai do relatório a saber que ferramentas tem e onde mais as pode aplicar — as ferramentas são o património que fica, as opções são só exemplos de onde esse património pode ser usado.`;
+
+// BUG REAL, corrigido (ronda "Miguel/Alexandra — discurso vago", pedido
+// do especialista, 3ª parte) — as duas instruções acima (MECANISMO,
+// NUNCA SÓ EFEITO / FERRAMENTAS COMO PATRIMÓNIO) dizem o que proibir,
+// mas não o que fazer bem. O especialista forneceu a sua própria leitura
+// directa do mapa do Miguel (fora do relatório automático) como padrão
+// de tom e nível de detalhe a imitar — citada aqui verbatim, nunca
+// parafraseada, para o modelo ter um exemplo real do padrão "nomear a
+// técnica exacta → traduzir em linguagem simples → distinguir sinal
+// forte de fraco sem amortecer → nomear ferramentas como património da
+// pessoa, não como argumento a favor de uma opção".
+export const EXEMPLO_TOM_ESPECIALISTA = `EXEMPLO DE TOM E NÍVEL DE DETALHE (referência directa do especialista, não copiar o conteúdo — imitar o PADRÃO): esta é uma leitura real feita à mão sobre outro mapa. Repara em como nomeia sempre a técnica exacta antes de traduzir em linguagem simples, distingue sinal forte de sinal fraco sem amortecer nenhum dos dois, e nomeia as ferramentas da pessoa como propriedade dela — nunca como argumento a favor de uma opção:
+"O centro: identidade que se prova pela profundidade, não pela exposição imediata. O Atmakaraka é o Sol, em Leo (signo próprio, dignidade forte), mas na casa 8 — a casa do oculto, da crise, da investigação. Sol quer ser visto e reconhecido; a casa 8 exige que isso se ganhe primeiro através de mergulhar em algo complexo, difícil ou escondido. O Karakamsha confirma e afina isto: signo Libra, também na casa 8 — a 'cor' dessa profundidade é equilíbrio, julgamento justo, sensibilidade estética, mediação.
+Há um stellium real na casa 8, em Leo: Sol, Lua e Mercúrio, os três juntos — não é um sinal isolado. A intensidade emocional (Lua), a clareza verbal/analítica (Mercúrio) e a identidade (Sol) canalizam-se todas pela mesma porta.
+O modo de ganho é inequívoco, e a margem é grande: casa 10 com pontuação 8, muito à frente da casa 2 (2.5) e da casa 6 (1.8). Vénus, regente da casa, em Moolatrikona, com o maior peso da carta (1.38); Marte também presente. Vénus própria + Marte na casa 10, ambos em Libra: um dos sinais mais clássicos e específicos para 'ganha reconhecimento público através de julgamento equilibrado, argumentação ou sentido estético' — não é genérico, é uma configuração de peso real.
+O ponto de atenção, seja qual for o caminho: Saturno é o planeta mais fraco de toda a carta (peso 0.744). Disciplina, rotina e consistência vão custar-lhe mais do que a maioria."
+Nunca copiar frases deste exemplo para o relatório — é um padrão de escrita a seguir, não texto reutilizável.`;
 
 // CORRECÇÃO 3 (correcção do especialista, ronda seguinte) — obriga o
 // mesmo formato de nomeação técnica nos dois motores (adulto e
@@ -1027,6 +1086,7 @@ export function construirPromptAdulto(
 
   return `
 És um especialista em análise vocacional. Vais escrever um relatório personalizado para ${intake.nome} com base nos dados técnicos fornecidos abaixo. Segue as regras rigorosamente:
+- LÍNGUA — OBRIGATÓRIO 100% PORTUGUÊS: todo o texto visível ao cliente, em TODAS as secções, tem de estar inteiramente em português — nunca uma palavra ou expressão em inglês a meio de uma frase portuguesa (ex.: "already", "however", "overview"), mesmo que pareça natural nesse ponto da frase. Isto aplica-se mesmo a nomes próprios de sinais/planetas quando têm tradução comum em português (ex.: "Sol", nunca "Sun"). Revê a frase inteira antes de a dar como terminada — um único termo em inglês invalida a frase.
 - Zero jargão astrológico visível. Nunca escrevas nenhum destes termos (nem sinónimos técnicos óbvios) no texto do relatório — traduz sempre para linguagem simples e concreta:
 ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - O sujeito de cada frase é a pessoa, nunca o planeta ou a técnica ("Você tem..." / "O seu perfil sustenta...", nunca "Marte na casa X indica...").
@@ -1060,6 +1120,9 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - ${INSTRUCAO_AVASTHAS}
 - ${INSTRUCAO_CONJUNCOES}
 - ${INSTRUCAO_YOGAS}
+- ${INSTRUCAO_MECANISMO_NUNCA_SO_EFEITO}
+- ${INSTRUCAO_FERRAMENTAS_PATRIMONIO}
+- ${EXEMPLO_TOM_ESPECIALISTA}
 - ${INSTRUCAO_VARGOTTAMA}
 - ${INSTRUCAO_CONSISTENCIA_TECNICA}
 - ${INSTRUCAO_NUNCA_CANDIDATA}

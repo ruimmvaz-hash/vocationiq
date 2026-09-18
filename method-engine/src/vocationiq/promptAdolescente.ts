@@ -88,6 +88,9 @@ import {
   INSTRUCAO_AVASTHAS,
   INSTRUCAO_CONJUNCOES,
   INSTRUCAO_YOGAS,
+  INSTRUCAO_MECANISMO_NUNCA_SO_EFEITO,
+  INSTRUCAO_FERRAMENTAS_PATRIMONIO,
+  EXEMPLO_TOM_ESPECIALISTA,
   INSTRUCAO_VARGOTTAMA,
   INSTRUCAO_CONSISTENCIA_TECNICA,
   INSTRUCAO_SELECCAO_CANDIDATAS,
@@ -136,9 +139,26 @@ export interface VocationiqIntakeAdolescente {
   paraOndeQuerIr?: string;
 }
 
-/** TAREFA 1C — formata os cursos concretos resolvidos para uma opção declarada (ver `sugerirCursosParaOpcoesAdolescente`), para quem está no 10º-12º ano. `[]` quando a opção não teve correspondência no mapeamento — o texto explica isso em vez de inventar. */
+/**
+ * TAREFA 1C — formata os cursos concretos resolvidos para uma opção declarada
+ * (ver `sugerirCursosParaOpcoesAdolescente`), para quem está no 10º-12º ano.
+ * `[]` quando a opção não teve correspondência no mapeamento curado.
+ *
+ * BUG REAL, corrigido (pedido directo do fundador — "se o cliente
+ * apresentou, obviamente que é uma opção, e tem de ser tratada como todas
+ * as outras... e tem de ser incluída") — o texto antigo, injectado aqui
+ * directamente no bloco de dados de CADA opção declarada sem curso curado
+ * correspondente, dizia "esta opção não tem correspondência directa no
+ * catálogo" — linguagem de desqualificação, junto ao próprio nome da
+ * opção, que o modelo tendia a ecoar no relatório visível apesar da
+ * instrução em contrário mais abaixo (ver ponto 3 de
+ * `instrucaoLeituraPorOpcao`). Não existir no catálogo curado de cursos é
+ * uma limitação DOS DADOS (o catálogo é uma lista curada, não cobre todos
+ * os nomes possíveis), nunca um sinal sobre a opção em si — reescrito para
+ * nunca sugerir isso.
+ */
 function formatarCursosDaOpcao(cursos: CursosSugeridos[]): string {
-  if (!cursos.length) return "(esta opção não tem correspondência directa no catálogo de cursos — lê-a pelo Eixo da Missão e pelo Modo de Ganho acima, não por um curso específico.)";
+  if (!cursos.length) return "(sem entrada curada de curso para este nome exacto — é uma opção declarada válida como qualquer outra; descreve-a com a mesma profundidade, pelo Eixo da Missão e pelo Modo de Ganho acima.)";
   return cursos
     .map((c) => {
       const curso = c.cursos[0];
@@ -228,7 +248,7 @@ ${MARCADORES.insight} <uma frase que resume a leitura desta opção em menos de 
 2. O que esta opção te vai pedir na formação — o esforço específico DESTE perfil, nunca o risco genérico da área. Liga sempre a uma limitação já nomeada na secção "${SECCAO_TITULOS.quemE}": se tens uma dificuldade nomeada com pressão, confronto directo, exposição pública, trabalho solitário, etc., diz explicitamente o que isso significa escolher esta área em concreto (ex.: se a limitação é dificuldade com confronto directo e a opção é Direito, diz que a vertente forense/contenciosa vai exigir mais esforço deliberado do que outras vertentes do curso — nunca deixes essa tensão por explicar).
 3. O curso concreto e a via de entrada — ${
     usarOpcoesLegado
-      ? 'esta opção veio do texto livre da pessoa, não da lista estruturada "Opções em cima da mesa" — não há dados de curso concreto (QNQ, duração, tipo de instituição) disponíveis para ela no catálogo. NUNCA inventes esses dados. Em vez disso, escreve: "(esta opção não tem correspondência directa no catálogo de cursos — lê-a pelo Eixo da Missão e pelo Modo de Ganho acima, não por um curso específico.)", e a seguir'
+      ? 'esta opção veio do texto livre da pessoa, não da lista estruturada "Opções em cima da mesa" — não há dados de curso concreto (QNQ, duração, tipo de instituição) disponíveis para ela no catálogo curado. NUNCA inventes esses dados, e NUNCA escrevas isso como se fosse um problema da opção ou motivo para responder com menos profundidade — a pessoa escreveu esta opção livremente, é tão válida como qualquer outra. Em vez disso,'
       : 'usa sempre os dados já listados acima em "Opções em cima da mesa" (nome do curso, nível, QNQ, duração, tipo de instituição, entrada no mercado), quando existirem para esta opção específica. Se ESTA opção em particular não tiver esses dados listados (o catálogo curado de cursos não cobre todos os nomes possíveis — acontece com cursos de nome muito específico ou composto, nunca significa que a opção seja inválida): NUNCA te limites a dizer "não há correspondência no catálogo" e passares à frente — continua a responder com a MESMA profundidade, pelo nome exacto que a pessoa escreveu, usando o Eixo da Missão e o Modo de Ganho para descrever o tipo de formação que esse nome de curso tipicamente implica (nível de ensino, se costuma ter ordem profissional, se é mais técnico ou mais de gestão/humanístico) — a pessoa perguntou especificamente sobre ESTE nome, a resposta tem de ser sobre ele, nunca um adiar genérico nem um curso diferente. NUNCA nomeies uma instituição concreta. Sempre que o curso tiver variantes internas conhecidas (ex.: dentro de Direito: forense vs. empresarial vs. internacional; dentro de Psicologia: clínica vs. organizacional),'
   } aponta 1-2 que encaixam melhor neste perfil especificamente, usando os dons já nomeados — nunca inventes uma variante sem ligação aos dados desta pessoa.
 4. O que esta opção pede e que falta actualmente — e se é algo que se aprende ou algo que não muda.
@@ -255,6 +275,7 @@ Apresenta TODAS as candidatas que passaram o Passo 1, sem limite de 3 — nunca 
 
   return `
 És um especialista em orientação vocacional para adolescentes de 15 a 18 anos, ainda sem experiência profissional. Vais escrever um relatório para ${intake.nome} com base nos dados técnicos fornecidos abaixo. Segue as regras rigorosamente:
+- LÍNGUA — OBRIGATÓRIO 100% PORTUGUÊS: todo o texto visível ao cliente, em TODAS as secções, tem de estar inteiramente em português — nunca uma palavra ou expressão em inglês a meio de uma frase portuguesa (ex.: "already", "however", "overview"), mesmo que pareça natural nesse ponto da frase. Isto aplica-se mesmo a nomes próprios de sinais/planetas quando têm tradução comum em português (ex.: "Sol", nunca "Sun"). Revê a frase inteira antes de a dar como terminada — um único termo em inglês invalida a frase.
 - Zero jargão astrológico visível. Nunca escrevas nenhum destes termos (nem sinónimos técnicos óbvios) no texto do relatório — traduz sempre para linguagem simples e concreta:
 ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - O sujeito de cada frase é a pessoa, nunca o planeta ou a técnica ("Tens..." / "O teu perfil sustenta...", nunca "Marte na casa X indica...").
@@ -281,6 +302,9 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - ${INSTRUCAO_AVASTHAS}
 - ${INSTRUCAO_CONJUNCOES}
 - ${INSTRUCAO_YOGAS}
+- ${INSTRUCAO_MECANISMO_NUNCA_SO_EFEITO}
+- ${INSTRUCAO_FERRAMENTAS_PATRIMONIO}
+- ${EXEMPLO_TOM_ESPECIALISTA}
 - ${INSTRUCAO_VARGOTTAMA}
 - ${INSTRUCAO_CONSISTENCIA_TECNICA}
 - ${INSTRUCAO_NUNCA_CANDIDATA}

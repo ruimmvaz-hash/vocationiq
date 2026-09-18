@@ -155,40 +155,77 @@ function casaDe(pesos: PesoPlaneta[], graha: string): number | undefined {
 
 /**
  * TAREFA (correcção do especialista) — reconhece o padrão "requer
- * <planeta>[ em força]" no texto de `condicao` como uma PRECONDIÇÃO real
- * e avaliável (ex.: "requer Vénus em força", "requer Vénus" — os 2 únicos
- * casos deste tipo, confirmado por leitura de todos os 16 itens
- * `_condicionado` do catálogo). Qualquer outro texto ("vocação
- * cirúrgica", "vertente de...", "sobretudo...") devolve `null` — não é
- * uma precondição, é uma especialização/vertente do destino em si (14
- * dos 16 itens), promovida sem condição por `destinosDoPlaneta`.
+ * <planeta>[ em força]" no texto de `condicao` como uma PRECONDIÇÃO
+ * explícita e cruzada (ex.: "requer Vénus em força") — o outro planeta
+ * nomeado, nunca o planeta cujo bloco contém este item.
+ *
+ * BUG REAL, corrigido (revisão do especialista, ronda "Direito
+ * sobre-conectado", correcção da causa lógica — não um limiar de peso,
+ * a 4ª tentativa desse tipo já tinha sido rejeitada): a versão anterior
+ * desta função devolvia `null` para qualquer texto que não começasse
+ * literalmente por "requer" — e `destinosDoPlaneta` tratava `null` como
+ * "promove sem condição nenhuma". Isso identificava o PREFIXO da frase
+ * com "não há condição", quando na realidade quase todo o texto
+ * "vertente de X"/"vocação Y"/"sobretudo Z" (22 itens `_condicionado`
+ * confirmados por auditoria, não 16) descreve semanticamente uma
+ * especialização DO PRÓPRIO planeta cujo bloco o contém — ou seja, uma
+ * precondição implícita: "requer [este mesmo planeta]", só que nunca
+ * escrita nesse formato porque já está implícita em estar listada ali.
+ * Esta função passa a devolver SEMPRE uma condição avaliável, nunca
+ * `null`.
+ *
+ * TAREFA (correcção do especialista, ronda "Direito — largura reduzida",
+ * pedido D) — passa também a reconhecer, no mesmo texto de `condicao`,
+ * duas extensões mínimas, ambas reutilizáveis por qualquer entrada
+ * futura do catálogo (não específicas de Direito):
+ *   - "requer X e Y [em força]" — os DOIS planetas nomeados têm de
+ *     cumprir o limiar (E, nunca OU) — ex.: Marte só qualifica Direito
+ *     com Marte E Saturno funcionais.
+ *   - "requer casa N/M/P" — o PRÓPRIO planeta do bloco (nunca outro)
+ *     tem de estar posicionado numa dessas casas — ex.: Marte também
+ *     qualifica Direito por casa 6, 8 ou 12, sem precisar de Saturno.
+ *   - as duas formas acima podem combinar-se com " ou " para exprimir
+ *     alternativas — ex.: "requer marte e saturno em forca ou requer
+ *     casa 6/8/12" — QUALQUER cláusula a passar basta.
+ * Continua a nunca devolver `null`: qualquer texto que não bata com
+ * nenhum destes padrões cai no comportamento por omissão — o PRÓPRIO
+ * planeta do bloco (`planetaProprio`) ao limiar "sem qualificador"
+ * (peso ≥0,9) — nunca um número novo, nunca inventado.
  */
-function condicaoRequerPlaneta(condicao: string): { planeta: Graha; forte: boolean } | null {
-  const match = normalizar(condicao).match(/^requer\s+([a-z]+)(\s+em\s+forca)?$/);
-  if (!match) return null;
-  const planeta = PLANETA_PT_PARA_GRAHA[match[1]];
-  if (!planeta) return null;
-  return { planeta, forte: !!match[2] };
+function condicaoRequerPlaneta(condicao: string, planetaProprio: Graha): (pesos: PesoPlaneta[]) => boolean {
+  const clausulas = normalizar(condicao)
+    .split(/\s+ou\s+/)
+    .map((c) => avaliarClausulaCondicao(c.trim(), planetaProprio));
+  return (pesos: PesoPlaneta[]) => clausulas.some((avaliar) => avaliar(pesos));
+}
+
+function avaliarClausulaCondicao(clausula: string, planetaProprio: Graha): (pesos: PesoPlaneta[]) => boolean {
+  const matchCasa = clausula.match(/^requer\s+casa\s+([\d/]+)$/);
+  if (matchCasa) {
+    const casas = matchCasa[1].split("/").map(Number);
+    return (pesos) => {
+      const casa = casaDe(pesos, planetaProprio);
+      return casa !== undefined && casas.includes(casa);
+    };
+  }
+  const matchPlanetas = clausula.match(/^requer\s+([a-z]+)(\s+e\s+([a-z]+))?(\s+em\s+forca)?$/);
+  if (matchPlanetas) {
+    const nomes = [matchPlanetas[1], matchPlanetas[3]].filter((n): n is string => Boolean(n));
+    const planetas = nomes.map((n) => PLANETA_PT_PARA_GRAHA[n]).filter((g): g is Graha => Boolean(g));
+    if (planetas.length === nomes.length && planetas.length > 0) {
+      const limiar = matchPlanetas[4] ? 1.3 : 0.9;
+      return (pesos) => planetas.every((g) => (pesoDe(pesos, g) ?? 0) >= limiar);
+    }
+  }
+  return (pesos) => (pesoDe(pesos, planetaProprio) ?? 0) >= 0.9;
 }
 
 /**
  * TAREFA (correcção do especialista) — passa a incluir também os
- * destinos em `superior_condicionado`/`tecnico_condicionado` (16 itens
- * em 7 planetas, escritos no catálogo desde sempre mas nunca lidos por
- * nenhum código — confirmado por grep). Cada item entra de uma de 2
- * formas, nunca "promoção cega":
- *   - se `condicao` for "requer <planeta>[ em força]" (ver
- *     `condicaoRequerPlaneta`) — só promove o destino se esse OUTRO
- *     planeta tiver peso ≥1,3 ("em força") ou ≥0,9 (sem qualificador),
- *     os mesmos limiares já usados em `avaliarSinal`
- *     (planeta_forte/planeta_funcional) — nunca um limiar novo.
- *   - qualquer outro texto — é uma vertente/especialização do destino
- *     (ex.: Marte→medicina "vocação cirúrgica"), não uma precondição;
- *     promovido sem condição, como os arrays planos. A vertente em si
- *     ainda não é citável na camada gerada (exigiria mudar a assinatura
- *     partilhada por Atmakaraka/Amatyakaraka/Planeta de maior peso/
- *     Regente do Modo de Ganho) — DESVIO disclosed, fora do âmbito desta
- *     correcção.
+ * destinos em `superior_condicionado`/`tecnico_condicionado` (22 itens
+ * em 8 planetas, escritos no catálogo desde sempre mas nunca lidos por
+ * nenhum código — confirmado por grep). Nenhum item promove sem
+ * condição — ver `condicaoRequerPlaneta`.
  */
 function destinosDoPlaneta(graha: Graha, pesos: PesoPlaneta[]): string[] {
   const entrada = catalogoIndicePlanetas[GRAHA_PARA_PLANETA_PT[graha] ?? graha.toLowerCase()];
@@ -197,14 +234,8 @@ function destinosDoPlaneta(graha: Graha, pesos: PesoPlaneta[]): string[] {
   const condicionados = [...(entrada.destinos.superior_condicionado ?? []), ...(entrada.destinos.tecnico_condicionado ?? [])];
   const promovidos: string[] = [];
   for (const item of condicionados) {
-    const requer = condicaoRequerPlaneta(item.condicao);
-    if (!requer) {
-      promovidos.push(item.id);
-      continue;
-    }
-    const peso = pesoDe(pesos, requer.planeta) ?? 0;
-    const limiar = requer.forte ? 1.3 : 0.9;
-    if (peso >= limiar) promovidos.push(item.id);
+    const requerCumprida = condicaoRequerPlaneta(item.condicao, graha);
+    if (requerCumprida(pesos)) promovidos.push(item.id);
   }
   return [...base, ...promovidos];
 }
@@ -239,8 +270,34 @@ function avaliarSinal(sinal: SinalExigido, pesos: PesoPlaneta[], savPorCasa: Sav
   return false;
 }
 
-/** Uma área do índice inverso "confirma" se pelo menos um dos seus sinais exigidos disparar — conta como UMA camada ("area_tabelada"), não uma por sinal (mesmo tipo de sinal em posições diferentes não infla a contagem). */
+/**
+ * BUG REAL, corrigido (revisão do especialista, ronda "Direito
+ * sobre-conectado"): esta função avaliava TODOS os `sinais_exigidos` em
+ * OU — qualquer um a disparar confirmava a área — mesmo quando o próprio
+ * ficheiro de dados rotula alguns desses sinais `modo: "obrigatorio"`
+ * (ou "indispensavel"). Um sinal rotulado obrigatório que só precisa de
+ * UM entre vários OUTROS sinais opcionais para a área inteira confirmar
+ * não é obrigatório nenhum — é decorativo. Corrigido para honrar o
+ * rótulo pela palavra que já diz: se a área tem pelo menos um sinal
+ * obrigatório/indispensável, TODOS esses têm de disparar (E entre eles,
+ * nunca OU) — os sinais "qualquer"/"condicional" da mesma área deixam
+ * de poder confirmar sozinhos quando há pelo menos um obrigatório por
+ * cumprir. Só quando NENHUM sinal da área é obrigatório é que se mantém
+ * o comportamento antigo (qualquer um dos sinais, em OU) — nunca muda o
+ * significado de "qualquer" em si, só deixa de o deixar substituir um
+ * "obrigatorio" que a área também exige. Auditoria confirmou que as 8
+ * áreas do índice inverso têm todas pelo menos um sinal obrigatório —
+ * esta correcção altera as 8, não só Direito (nunca uma correcção
+ * isolada quando a mesma lógica partilhada está errada para todos).
+ * Continua a contar como UMA camada ("area_tabelada"), nunca uma por
+ * sinal.
+ */
 function areaTabeladaConfirma(area: EntradaAreaInversa, pesos: PesoPlaneta[], savPorCasa: SavPorCasa[]): boolean {
+  const MODOS_OBRIGATORIOS = new Set(["obrigatorio", "indispensavel"]);
+  const obrigatorios = area.sinais_exigidos.filter((s) => MODOS_OBRIGATORIOS.has(s.modo));
+  if (obrigatorios.length > 0) {
+    return obrigatorios.every((s) => avaliarSinal(s, pesos, savPorCasa));
+  }
   return area.sinais_exigidos.some((s) => avaliarSinal(s, pesos, savPorCasa));
 }
 
