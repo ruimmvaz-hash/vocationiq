@@ -67,8 +67,22 @@ interface FormState {
   areasConsideradas: AreaConsiderada[];
   areasConsideradasOutra: string;
   preferenciaFamilia: string;
-  /** TAREFA 3 (correcção do especialista) — 2 a 4 opções em texto livre, uma por linha (SPEC-vocacional.md). */
-  opcoesAdolescente: string;
+  /**
+   * TAREFA 3 (correcção do especialista) — 2 a 4 opções em texto livre
+   * (SPEC-vocacional.md).
+   *
+   * BUG REAL, corrigido (ronda "Alexandra/Miguel — opções fundidas numa
+   * linha só", pedido do fundador — "se isto é um problema temos de
+   * corrigir o formulário") — antes, uma única caixa de texto com "uma
+   * por linha" só como instrução; duas pessoas diferentes escreveram
+   * duas opções na mesma linha (sem premir Enter), produzindo um único
+   * elemento fundido no array guardado, que confundia o motor a jusante.
+   * Um aviso não-bloqueante (ronda anterior) reduzia mas não eliminava —
+   * podia ser ignorado. Agora é um array de campos INDIVIDUAIS, um input
+   * por opção — fisicamente impossível escrever duas opções no mesmo
+   * campo, porque cada campo só tem espaço para uma.
+   */
+  opcoesAdolescente: string[];
   opcaoMaisProvavel: string;
   /** TAREFA 2 (correcção do especialista, ronda seguinte) — granularidade de escolaridade (migração 0020). */
   anoEscolaridade: string;
@@ -102,7 +116,7 @@ const ESTADO_INICIAL: FormState = {
   areasConsideradas: [],
   areasConsideradasOutra: "",
   preferenciaFamilia: "",
-  opcoesAdolescente: "",
+  opcoesAdolescente: [""],
   opcaoMaisProvavel: "",
   anoEscolaridade: "",
   cursoActual: "",
@@ -167,6 +181,23 @@ export function IntakeForm() {
     }));
   }
 
+  const MAX_OPCOES_ADOLESCENTE = 4;
+
+  function definirOpcaoAdolescente(indice: number, valor: string) {
+    setF((prev) => ({ ...prev, opcoesAdolescente: prev.opcoesAdolescente.map((o, i) => (i === indice ? valor : o)) }));
+  }
+
+  function adicionarOpcaoAdolescente() {
+    setF((prev) => (prev.opcoesAdolescente.length >= MAX_OPCOES_ADOLESCENTE ? prev : { ...prev, opcoesAdolescente: [...prev.opcoesAdolescente, ""] }));
+  }
+
+  function removerOpcaoAdolescente(indice: number) {
+    setF((prev) => {
+      const restantes = prev.opcoesAdolescente.filter((_, i) => i !== indice);
+      return { ...prev, opcoesAdolescente: restantes.length ? restantes : [""] };
+    });
+  }
+
   function toggleAreaDestino(area: AreaDestino) {
     setF((prev) => ({
       ...prev,
@@ -215,9 +246,9 @@ export function IntakeForm() {
       areasConsideradasOutra: f.areasConsideradasOutra,
       preferenciaFamilia: f.preferenciaFamilia,
       opcoesAdolescente: f.opcoesAdolescente
-        .split("\n")
         .map((o) => o.trim())
-        .filter(Boolean),
+        .filter(Boolean)
+        .slice(0, 4),
       opcaoMaisProvavel: f.opcaoMaisProvavel,
       // Correcção do especialista — quem escolhe "Estou na universidade
       // ou já terminei o secundário" nunca responde a esta pergunta (o
@@ -390,36 +421,62 @@ export function IntakeForm() {
                 />
               </Campo>
 
-              <Campo label="Opções em cima da mesa" hint="Opcional. Uma por linha — 2 a 4 chegam.">
-                <textarea
-                  placeholder={"Ex: medicina\nengenharia\ndesign"}
-                  rows={4}
-                  value={f.opcoesAdolescente}
-                  onChange={(e) => set("opcoesAdolescente", e.target.value)}
-                  className={inputClass}
-                />
-                {/* BUG REAL, corrigido (ronda "Alexandra/Miguel — opções
-                    fundidas numa linha só") — duas linhas guardadas com
-                    2+ pessoas: "gestão, economia e gestão" e "gestão,
-                    economia ou direito", ambas UMA ÚNICA linha em vez de
-                    duas/três. Nunca corrigido a dividir automaticamente
-                    (um nome real de destino pode legitimamente conter
-                    " e " — ex.: "Engenharia e Gestão Industrial" — dividir
-                    às cegas corta-o ao meio) — só um aviso não-bloqueante,
-                    para a própria pessoa decidir se quis mesmo escrever
-                    isto numa linha só ou separar. Apanha vírgula, " e " e
-                    " ou " como palavra isolada, nunca dentro doutra
-                    palavra (ex.: nunca dispara em "Direito", só em " e "/
-                    " ou " com espaços à volta). */}
-                {f.opcoesAdolescente
-                  .split("\n")
-                  .map((linha) => linha.trim())
-                  .filter(Boolean)
-                  .some(pareceConterMaisDeUmaOpcao) && (
-                  <p className="mt-1 text-xs text-amber-700">
-                    Uma das linhas parece ter mais do que uma opção (tem vírgula, &quot; e &quot; ou &quot; ou &quot;). Se forem opções diferentes, separa-as em linhas
-                    próprias — cada linha vira uma leitura no relatório.
-                  </p>
+              {/*
+                BUG REAL, corrigido (ronda "Alexandra/Miguel — opções
+                fundidas numa linha só", pedido do fundador — "se isto é
+                um problema temos de corrigir o formulário"). Antes: uma
+                única caixa de texto livre, "uma por linha" só como
+                instrução — duas pessoas diferentes escreveram duas
+                opções na mesma linha ("gestão, economia e gestão";
+                "Engenharia biomédica e engenharia e gestão industrial"),
+                sem premir Enter, produzindo um único elemento fundido no
+                array guardado. Um aviso não-bloqueante (ronda anterior)
+                reduzia mas podia ser ignorado. Agora cada opção tem o
+                seu próprio campo — fisicamente impossível escrever duas
+                opções no mesmo campo, porque cada um só tem espaço para
+                uma. O aviso por vírgula/" e "/" ou " fica como 2ª camada
+                de defesa (a pessoa ainda pode escrever "gestão e
+                economia" dentro de UM campo, só menos provável) — nunca
+                divide automaticamente, pela mesma razão de sempre: um
+                nome real de destino pode legitimamente conter " e "
+                (ex.: "Engenharia e Gestão Industrial").
+              */}
+              <Campo label="Opções em cima da mesa" hint="Opcional. Uma opção por campo — 2 a 4 chegam.">
+                <div className="space-y-2">
+                  {f.opcoesAdolescente.map((opcao, i) => (
+                    <div key={i}>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder={["Ex: medicina", "Ex: engenharia", "Ex: design", "Ex: outra opção"][i] ?? "Outra opção"}
+                          value={opcao}
+                          onChange={(e) => definirOpcaoAdolescente(i, e.target.value)}
+                          className={inputClass}
+                        />
+                        {f.opcoesAdolescente.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removerOpcaoAdolescente(i)}
+                            aria-label="Remover esta opção"
+                            className="shrink-0 rounded-md border border-border px-2.5 py-2 text-sm text-ink/50 transition hover:border-red-300 hover:text-red-700"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                      {pareceConterMaisDeUmaOpcao(opcao) && (
+                        <p className="mt-1 text-xs text-amber-700">
+                          Este campo parece ter mais do que uma opção (tem vírgula, &quot; e &quot; ou &quot; ou &quot;). Se forem opções diferentes, usa &quot;+ Adicionar
+                          opção&quot; para as separar.
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {f.opcoesAdolescente.length < MAX_OPCOES_ADOLESCENTE && (
+                  <button type="button" onClick={adicionarOpcaoAdolescente} className="mt-2 text-sm font-semibold text-navy hover:underline">
+                    + Adicionar opção
+                  </button>
                 )}
               </Campo>
 
