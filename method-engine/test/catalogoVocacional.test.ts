@@ -94,22 +94,20 @@ describe("catalogarDestinos — carta real da Melina (São Paulo, 11/12/1984 08:
     }
   });
 
-  it("'Direito' para a Melina aparece na pool (TAREFA — leitura dos campos _condicionado): Saturno (Atmakaraka + planeta de maior peso) liga-se agora a Direito via saturno.superior_condicionado ('vertente de norma, notariado e regulação', promovida sem condição por não ser um 'requer X') — Nível 1, não 2. Comportamento alterado deliberadamente nesta correcção, não uma regressão: antes desta leitura, Saturno não tinha nenhuma ligação viva a Direito.", () => {
+  it("'Direito' para a Melina JÁ NÃO aparece na pool (correcção do especialista, ronda 'Vénus a assinar pelo próprio punho' — fecha a reabertura da TAREFA #38): Saturno é Atmakaraka + planeta de maior peso + regente do Modo de Ganho + a nakshatra dele — 4 ETIQUETAS, mas é o MESMO planeta a assinar 3 vezes, mais 'eixo do rendimento' à parte. `convergencia` deixou de contar camadas.length (etiquetas) e passou a contar fontes deduplicadas por planeta — para Saturno sozinho + 1 eixo, são 2 fontes reais, não 4. O fecho anterior (Nível 1 via Saturno) assentava na contagem antiga, hoje sabida como inflacionada — Saturno ser classicamente apropriado para Direito não substitui a prova de convergência real nesta carta específica. Contraste com a Alice (mesma bateria de testes, mais abaixo): ela mantém Direito porque tem um Parivartana Vénus+Saturno — uma técnica genuinamente distinta, não mais um adjectivo sobre o mesmo planeta.", () => {
     const { axes, pesos, savPorCasa, atmakarakaInfo } = carregarMelina();
     const resultado = catalogarDestinos(axes, pesos, savPorCasa, { areaActual: "", anosExperiencia: "" }, atmakarakaInfo);
     const direito = resultado.candidatasForaDaLista.find((c) => c.nome === "Direito");
-    expect(direito).toBeDefined();
-    expect(direito?.nivelConfianca).toBe(1);
-    expect(direito?.camadas.some((c: string) => c.startsWith("Planeta de maior peso"))).toBe(true);
+    expect(direito).toBeUndefined();
   });
 
-  it("correcção do especialista (bug crítico — cursos repetidos nas candidatas): uma opção já declarada em 'opcoesDeclaradas' nunca aparece como candidata fora da lista, mesmo tendo camadas suficientes para tal — 'Direito' desaparece da pool quando declarado, mas continua a aparecer quando não é", () => {
+  it("correcção do especialista (bug crítico — cursos repetidos nas candidatas): uma opção já declarada em 'opcoesDeclaradas' nunca aparece como candidata fora da lista, mesmo tendo camadas suficientes para tal — 'Gestão' desaparece da pool quando declarado, mas continua a aparecer quando não é (usa 'Gestão', não 'Direito' — este último deixou de atingir o limiar para a Melina, ver teste acima)", () => {
     const { axes, pesos, savPorCasa, atmakarakaInfo } = carregarMelina();
     const semDeclaracao = catalogarDestinos(axes, pesos, savPorCasa, { areaActual: "", anosExperiencia: "" }, atmakarakaInfo);
-    expect(semDeclaracao.candidatasForaDaLista.some((c) => c.nome === "Direito")).toBe(true);
+    expect(semDeclaracao.candidatasForaDaLista.some((c) => c.nome === "Gestão")).toBe(true);
 
-    const comDeclaracao = catalogarDestinos(axes, pesos, savPorCasa, { areaActual: "", anosExperiencia: "", opcoesDeclaradas: ["Direito"] }, atmakarakaInfo);
-    expect(comDeclaracao.candidatasForaDaLista.some((c) => c.nome === "Direito")).toBe(false);
+    const comDeclaracao = catalogarDestinos(axes, pesos, savPorCasa, { areaActual: "", anosExperiencia: "", opcoesDeclaradas: ["Gestão"] }, atmakarakaInfo);
+    expect(comDeclaracao.candidatasForaDaLista.some((c) => c.nome === "Gestão")).toBe(false);
   });
 
   it("área actual 'Estética' encontra destinos de estética/cosmética no catálogo (bug real da Melina)", () => {

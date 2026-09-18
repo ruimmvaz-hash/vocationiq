@@ -153,6 +153,11 @@ function casaDe(pesos: PesoPlaneta[], graha: string): number | undefined {
   return pesos.find((p) => p.planeta === graha)?.casa;
 }
 
+/** TAREFA (correcção do especialista, ronda "Vénus em Libra") — o signo em que um planeta está posicionado, para condições que dependem do signo exacto (não da casa nem do peso). */
+function signoDe(pesos: PesoPlaneta[], graha: string): string | undefined {
+  return pesos.find((p) => p.planeta === graha)?.signo;
+}
+
 /**
  * TAREFA (correcção do especialista) — reconhece o padrão "requer
  * <planeta>[ em força]" no texto de `condicao` como uma PRECONDIÇÃO
@@ -176,21 +181,34 @@ function casaDe(pesos: PesoPlaneta[], graha: string): number | undefined {
  *
  * TAREFA (correcção do especialista, ronda "Direito — largura reduzida",
  * pedido D) — passa também a reconhecer, no mesmo texto de `condicao`,
- * duas extensões mínimas, ambas reutilizáveis por qualquer entrada
- * futura do catálogo (não específicas de Direito):
+ * extensões mínimas, todas reutilizáveis por qualquer entrada futura do
+ * catálogo (não específicas de Direito):
  *   - "requer X e Y [em força]" — os DOIS planetas nomeados têm de
  *     cumprir o limiar (E, nunca OU) — ex.: Marte só qualifica Direito
  *     com Marte E Saturno funcionais.
  *   - "requer casa N/M/P" — o PRÓPRIO planeta do bloco (nunca outro)
  *     tem de estar posicionado numa dessas casas — ex.: Marte também
  *     qualifica Direito por casa 6, 8 ou 12, sem precisar de Saturno.
- *   - as duas formas acima podem combinar-se com " ou " para exprimir
+ *   - "requer signo X" — o PRÓPRIO planeta do bloco tem de estar nesse
+ *     signo exacto (correcção seguinte, ronda "Vénus em Libra" — ver
+ *     abaixo).
+ *   - as formas acima podem combinar-se com " ou " para exprimir
  *     alternativas — ex.: "requer marte e saturno em forca ou requer
  *     casa 6/8/12" — QUALQUER cláusula a passar basta.
  * Continua a nunca devolver `null`: qualquer texto que não bata com
  * nenhum destes padrões cai no comportamento por omissão — o PRÓPRIO
  * planeta do bloco (`planetaProprio`) ao limiar "sem qualificador"
  * (peso ≥0,9) — nunca um número novo, nunca inventado.
+ *
+ * BUG REAL, corrigido (correcção do especialista, ronda "Vénus em
+ * Libra" — o próprio pedido anterior, "Vénus deixa de qualificar
+ * Direito", estava demasiado cego): confirmado no mapa real do Miguel —
+ * Vénus própria em Libra, com Marte, ambos na casa 10 — um dos sinais
+ * mais clássicos e específicos para Direito que existem, e a correcção
+ * anterior removeu-o por completo em vez de o distinguir do caso
+ * genérico. Não é Vénus em si que justifica Direito (por isso "sabor"
+ * em qualquer outro signo) — é Libra, o signo de justiça e equilíbrio,
+ * que a torna específica. Ver "requer signo X" acima.
  */
 function condicaoRequerPlaneta(condicao: string, planetaProprio: Graha): (pesos: PesoPlaneta[]) => boolean {
   const clausulas = normalizar(condicao)
@@ -207,6 +225,18 @@ function avaliarClausulaCondicao(clausula: string, planetaProprio: Graha): (peso
       const casa = casaDe(pesos, planetaProprio);
       return casa !== undefined && casas.includes(casa);
     };
+  }
+  // TAREFA (correcção do especialista, ronda "Vénus em Libra" — Direito):
+  // "requer signo X" — o PRÓPRIO planeta do bloco tem de estar posicionado
+  // nesse signo exacto. Diferente de "requer X [em força]" (que testa
+  // OUTRO planeta pelo peso) — este testa o SIGNO do próprio planeta,
+  // nunca o peso. Caso concreto: Vénus só qualifica Direito quando está
+  // em Libra (signo de justiça/equilíbrio) — em qualquer outro signo é
+  // "sabor" apenas, nunca uma camada válida.
+  const matchSigno = clausula.match(/^requer\s+signo\s+([a-z]+)$/);
+  if (matchSigno) {
+    const signoAlvo = matchSigno[1];
+    return (pesos) => normalizar(signoDe(pesos, planetaProprio) ?? "") === signoAlvo;
   }
   const matchPlanetas = clausula.match(/^requer\s+([a-z]+)(\s+e\s+([a-z]+))?(\s+em\s+forca)?$/);
   if (matchPlanetas) {
@@ -883,11 +913,54 @@ function construirDestinoConvergente(id: string, ctx: ContextoAvaliacao): Destin
   }
   const somaPesoCamadas = Math.round(([...pesoPorPlaneta.values()].reduce((s, p) => s + p, 0) + somaSemPlanetaUnico) * 1000) / 1000;
   const subsistemasDistintos = new Set(analisadas.map((a) => a.subsistema)).size;
+  // BUG REAL, corrigido (correcção do especialista, ronda "Vénus a
+  // assinar 4 vezes pelo próprio punho" — caso real: 15 dos destinos
+  // "fora da lista" do Miguel vinham todos do array plano de Vénus no
+  // índice de planetas, e 13 cruzavam sozinhos o limiar de 4 usando
+  // sempre o MESMO punhado de factos sobre Vénus — Planeta de maior
+  // peso + Regente do Modo de Ganho + Regente de casa dignificado —
+  // nunca 4 sistemas realmente distintos a confirmar aquele destino em
+  // concreto). `convergencia` (usada em TODOS os limiares — candidata
+  // fora da lista, alternativa mínima) media `camadas.length`, uma
+  // contagem de ETIQUETAS, não de FONTES — exactamente o mesmo
+  // artefacto já corrigido acima para `somaPesoCamadas` (um planeta em 2
+  // papéis não é 2 planetas fortes), agora aplicado também à contagem
+  // que decide se o destino sequer aparece. Reutiliza a MESMA
+  // classificação por planeta já calculada acima (`analisadas`/
+  // `pesoPorPlaneta`) — nunca uma segunda extracção paralela: camadas
+  // que `analisarCamada` atribui ao mesmo planeta único (Atmakaraka,
+  // Amatyakaraka, Planeta de maior peso, Regente do Modo de Ganho,
+  // Nakshatra do Atmakaraka, Regente de casa dignificado) contam como 1
+  // sinal combinado; camadas sem planeta único (Combinação, Stellium,
+  // Parivartana, Eixo do rendimento, Casa temática forte, Sinais
+  // estruturados, Área actual, Ideia concreta) continuam sempre
+  // distintas — já representam, por construção, uma fonte diferente da
+  // de qualquer planeta único (nunca fatiam o mesmo facto em duas
+  // etiquetas). O texto narrativo (`camadas`, abaixo) não muda em nada —
+  // só a contagem que decide o limiar.
+  //
+  // Validado por regressão contra Rui, Melina e Alice (fixtures reais em
+  // test/catalogoVocacional.test.ts) mais o Miguel (dados reais, script
+  // descartável) — critérios de aceitação do especialista: Psicologia e
+  // Artes do Espetáculo do Miguel sobrevivem (fontes genuinamente
+  // múltiplas); o dump de ~15 destinos só-Vénus do Miguel encolhe para os
+  // que têm confirmação extra; Direito de Rui/Alice não regride. FECHA a
+  // reabertura da TAREFA #38 para a Melina: o Direito dela deixa de
+  // atingir o limiar (Saturno sozinho, em 3 papéis, + 1 eixo = 2 fontes
+  // reais, não 4) — decisão explícita do especialista, nunca uma
+  // excepção ad-hoc: "Saturno ser classicamente apropriado para Direito
+  // não substitui a prova de convergência real nesta carta específica."
+  // O fecho anterior (Nível 1 via Saturno) assentava na contagem antiga,
+  // hoje sabida como inflacionada.
+  // PENDENTE — João (4ª carta do conjunto de regressão original) NUNCA
+  // foi validado nesta ronda: sem dados de nascimento disponíveis neste
+  // ambiente. Não tratar como aprovado por omissão.
+  const fontesDistintas = new Set<string>(analisadas.map((a, i) => a.planeta ?? `sem-planeta:${camadas[i]}`));
   return {
     id,
     nome: destino?.labels.PT ?? id,
     descricao: destino ? `Via ${destino.camada === "superior" ? "ensino superior" : destino.camada === "tecnico" ? "técnica/profissional" : "fora do sistema formal"}.` : "",
-    convergencia: camadas.length,
+    convergencia: fontesDistintas.size,
     somaPesoCamadas,
     subsistemasDistintos,
     camadas,
