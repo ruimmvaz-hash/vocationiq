@@ -37,6 +37,24 @@ import { logFunnelEvent } from "@/lib/eventLog";
 // metodologia escrita de raiz.
 const SITUACOES_DISPONIVEIS = SITUACOES.filter((s) => s.valor !== "outra");
 
+/**
+ * BUG REAL, corrigido (ronda "Alexandra/Miguel — opções fundidas numa
+ * linha só") — detecta, só para avisar (nunca bloqueia nem divide),
+ * quando uma linha de "Opções em cima da mesa" parece conter mais do
+ * que uma opção. Vírgula é sempre suspeita; " e "/" ou " só contam como
+ * palavra isolada (nunca dentro doutra palavra) — nunca dispara em
+ * "Direito" ou em qualquer nome composto que só contenha as letras "e"/
+ * "ou" coladas a outras palavras.
+ */
+function pareceConterMaisDeUmaOpcao(linha: string): boolean {
+  if (linha.includes(",")) return true;
+  const palavras = linha
+    .toLowerCase()
+    .split(/\s+/)
+    .map((p) => p.replace(/[.,;:!?]+$/, ""));
+  return palavras.includes("e") || palavras.includes("ou");
+}
+
 interface FormState {
   nome: string;
   dataNascimento: string;
@@ -380,6 +398,29 @@ export function IntakeForm() {
                   onChange={(e) => set("opcoesAdolescente", e.target.value)}
                   className={inputClass}
                 />
+                {/* BUG REAL, corrigido (ronda "Alexandra/Miguel — opções
+                    fundidas numa linha só") — duas linhas guardadas com
+                    2+ pessoas: "gestão, economia e gestão" e "gestão,
+                    economia ou direito", ambas UMA ÚNICA linha em vez de
+                    duas/três. Nunca corrigido a dividir automaticamente
+                    (um nome real de destino pode legitimamente conter
+                    " e " — ex.: "Engenharia e Gestão Industrial" — dividir
+                    às cegas corta-o ao meio) — só um aviso não-bloqueante,
+                    para a própria pessoa decidir se quis mesmo escrever
+                    isto numa linha só ou separar. Apanha vírgula, " e " e
+                    " ou " como palavra isolada, nunca dentro doutra
+                    palavra (ex.: nunca dispara em "Direito", só em " e "/
+                    " ou " com espaços à volta). */}
+                {f.opcoesAdolescente
+                  .split("\n")
+                  .map((linha) => linha.trim())
+                  .filter(Boolean)
+                  .some(pareceConterMaisDeUmaOpcao) && (
+                  <p className="mt-1 text-xs text-amber-700">
+                    Uma das linhas parece ter mais do que uma opção (tem vírgula, &quot; e &quot; ou &quot; ou &quot;). Se forem opções diferentes, separa-as em linhas
+                    próprias — cada linha vira uma leitura no relatório.
+                  </p>
+                )}
               </Campo>
 
               <Campo label="Qual delas te parece a mais provável hoje?" hint="Opcional. Não decide nada — só ajuda o relatório a testar essa hipótese.">
