@@ -378,10 +378,21 @@ interface LeituraOpcao {
  * caso, tal como `parseCandidataForaDaLista` já faz para "nenhuma".
  */
 function parseLeituraPorOpcao(corpo: string): { opcoes: LeituraOpcao[]; textoSemOpcao: string } {
-  if (!/^###\s+/m.test(corpo)) {
+  const primeiroMatch = corpo.match(/^###\s+/m);
+  if (!primeiroMatch || primeiroMatch.index === undefined) {
     return { opcoes: [], textoSemOpcao: corpo };
   }
-  const blocos = corpo.split(/^###\s+/m).filter((b) => b.trim());
+  // BUG REAL, corrigido (ronda "Miguel — cartão fantasma") — corpo.split()
+  // devolve, como primeiro elemento, TODO o texto antes do primeiro
+  // "### " — mesmo quando esse texto é só a frase de abertura da secção
+  // ("Esta lista existe para reconheceres o que ressoa..."), nunca um
+  // bloco real. `.filter((b) => b.trim())` só descarta strings vazias,
+  // nunca este preâmbulo genuíno — por isso virava um LeituraOpcao
+  // fabricado cujo "nome" era a frase de abertura inteira. Corta o
+  // preâmbulo fora antes de dividir — nunca aparece como cartão nem como
+  // "Declarada" na tabela-resumo.
+  const corpoSemPreambulo = corpo.slice(primeiroMatch.index);
+  const blocos = corpoSemPreambulo.split(/^###\s+/m).filter((b) => b.trim());
   const opcoes = blocos.map((bloco) => {
     const linhas = bloco.split("\n");
     const nome = linhas[0].trim();
@@ -2555,7 +2566,31 @@ export function gerarHTMLRelatorio(
       .replace(/\p{Diacritic}/gu, "")
       .toLowerCase();
   const nomesDeclaradosNormalizados = new Set(dados.opcoesConsideradas.map(chaveOpcao));
-  const opcoes = nomesDeclaradosNormalizados.size ? opcoesLidas.filter((op) => nomesDeclaradosNormalizados.has(chaveOpcao(op.nome))) : opcoesLidas;
+  const opcoesFiltradas = nomesDeclaradosNormalizados.size ? opcoesLidas.filter((op) => nomesDeclaradosNormalizados.has(chaveOpcao(op.nome))) : opcoesLidas;
+  // BUG REAL, corrigido (ronda "Miguel — secção Leitura por opção vazia
+  // no PDF real") — este filtro, pensado para impedir UM nome estranho
+  // de se infiltrar (ver comentário acima, caso Direito/Alexandra), tem
+  // um modo de falha muito pior do que deixar passar um cartão a mais:
+  // se NENHUM cartão escrito pelo LLM bater certo com `opcoesConsideradas`
+  // (ex.: o LLM parafraseou o nome, ou o array guardado difere do que foi
+  // escrito por uma razão ainda não identificada), o filtro remove TODOS
+  // os cartões — a secção "Leitura por opção" fica vazia e a tabela-
+  // resumo sem nenhuma linha "Declarada", mesmo a pessoa tendo declarado
+  // opções reais. Confirmado num PDF real (Miguel): "Leitura por opção"
+  // saltava directamente para "Opções que ainda não consideraste", sem
+  // nenhum cartão declarado. Um filtro que apaga secções inteiras é pior
+  // do que um que deixa passar um nome a mais — nunca aceitável. Rede de
+  // segurança: se o filtro reduziria a lista a zero mas o LLM escreveu
+  // pelo menos um cartão, usa os cartões tal como o LLM os escreveu
+  // (comportamento anterior a esta correcção) e regista um aviso — nunca
+  // entrega um relatório sem a secção que a pessoa pediu.
+  const opcoes =
+    opcoesFiltradas.length === 0 && opcoesLidas.length > 0
+      ? (console.error(
+          `[gerarHTMLRelatorio] filtro de opções declaradas removeria TODOS os ${opcoesLidas.length} cartões escritos pelo LLM — nenhum bateu certo com opcoesConsideradas=${JSON.stringify(dados.opcoesConsideradas)}, nomes escritos=${JSON.stringify(opcoesLidas.map((o) => o.nome))}. A usar os cartões sem filtrar em vez de entregar a secção vazia — investigar a causa do desencontro.`,
+        ),
+        opcoesLidas)
+      : opcoesFiltradas;
   const identidade = parseIdentidade(textoLimpo);
   const fraseAbertura = parseFraseAbertura(textoLimpo);
   // TAREFA 1 (correcção do especialista) — deriva o registo tu/você

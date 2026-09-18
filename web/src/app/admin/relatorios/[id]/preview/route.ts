@@ -1,8 +1,7 @@
 import { isAdminAuthenticated } from "@/lib/adminAuth";
 import { obterIntake } from "@/lib/store";
 import { obterTextoRelatorioActual, atualizarCoordenadasNascimento } from "@/lib/storage";
-import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTemplate";
-import { calcularDadosAstrologicos, GeocodeError } from "@/lib/relatorioAdultoCompute";
+import { reconstruirHTMLRelatorio, GeocodeError } from "@/lib/relatorioAdultoCompute";
 
 export const dynamic = "force-dynamic";
 
@@ -28,26 +27,24 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (!actual) return paginaSimples("Ainda sem rascunho", "Gera o rascunho no backoffice antes de pré-visualizar o relatório.");
 
   try {
-    const { axes, pesosPlanetas, savPorCasa, datas, intakeAdulto, horaAproximada, catalogoResultados, coordenadasNascimento } = await calcularDadosAstrologicos(intake, actual.coordenadasNascimento);
+    // BUG REAL, corrigido (ronda "Miguel — secção perdida no preview") —
+    // esta rota reconstruía o HTML à mão, chamando SEMPRE
+    // calcularDadosAstrologicos (a versão adulto), nunca verificando
+    // intake.situacao — ao contrário de "Ver PDF"/"Ver Word", que já
+    // usavam reconstruirHTMLRelatorio (a única função central que decide
+    // adulto/adolescente, ver relatorioAdultoCompute.ts). Para um pedido
+    // do ramo adolescente, isto produzia um HTML em registo errado
+    // ("você" em vez de "tu"), com um bloco extra só do ramo adulto
+    // ("ponte de transição"), e sem opcoesConsideradas real nenhuma —
+    // nunca a causa de uma secção desaparecer (confirmado por teste
+    // directo), mas um bug real por si só, na única das 3 rotas de
+    // exportação que ainda não passava pelo ponto único de decisão.
+    // Corrigido reutilizando reconstruirHTMLRelatorio, nunca duplicando
+    // a lógica de novo aqui.
+    const { html, coordenadasNascimento } = await reconstruirHTMLRelatorio(intake, actual.texto, actual.coordenadasNascimento, actual.criadoEm);
     if (!actual.coordenadasNascimento) {
       await atualizarCoordenadasNascimento(actual.id, coordenadasNascimento).catch((err) => console.error("[preview] falha ao gravar coordenadas de nascimento (não bloqueante):", err));
     }
-
-    const dadosTemplate: DadosParaTemplate = {
-      nome: intake.nome,
-      dataNascimento: intake.data_nascimento,
-      horaNascimento: horaAproximada ? null : intake.hora_nascimento,
-      localNascimento: intake.local_nascimento,
-      situacaoDeclarada: intakeAdulto.situacaoDeclarada,
-      areaActual: intakeAdulto.areaActual,
-      anosExperiencia: intakeAdulto.anosExperiencia,
-      oQueNaoFunciona: intakeAdulto.oQueNaoFunciona,
-      opcoesConsideradas: intakeAdulto.areasDestino.concat(intakeAdulto.areasDestinoOutra ? [intakeAdulto.areasDestinoOutra] : []),
-      ideiaConcreta: intakeAdulto.ideiaConcreta,
-      perguntaEspecifica: intakeAdulto.perguntaEspecifica,
-    };
-
-    const html = gerarHTMLRelatorio(dadosTemplate, actual.texto, axes, pesosPlanetas, axes.earningModeAll, datas, savPorCasa, catalogoResultados);
 
     const avisoRascunho = actual.origem === "rascunho" ? " (rascunho ainda não aprovado — o relatório entregue continua diferente deste)" : "";
     const banner = `
