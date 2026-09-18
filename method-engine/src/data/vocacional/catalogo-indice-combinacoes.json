@@ -18,7 +18,7 @@
 
   "combinacoes": [
     { "par": ["jupiter", "ketu"], "destinos": ["teologia", "ciencias_religiao", "filosofia", "f_astrologia", "f_hermeneutica", "linguas_classicas", "f_pratica_contemplativa", "f_escrita_ensaio"], "nota": "combinação de sabedoria simbólica — a mais forte para teologia e sistemas simbólicos" },
-    { "par": ["jupiter", "mercurio"], "destinos": ["direito", "f_publicacao", "f_edicao", "literatura_linguistica", "traducao", "formacao_professores", "jornalismo", "f_escrita_ensaio"], "nota": "escrita académica, tradução erudita, jornalismo de análise" },
+    { "par": ["jupiter", "mercurio"], "destinos": ["f_publicacao", "f_edicao", "literatura_linguistica", "traducao", "formacao_professores", "jornalismo", "f_escrita_ensaio"], "nota": "escrita académica, tradução erudita, jornalismo de análise" },
     { "par": ["jupiter", "saturno"], "destinos": ["direito", "teologia", "historia", "arquitetura", "gestao", "formacao_professores"], "nota": "doutrina, norma, magistratura, ensino superior, gestão institucional" },
     { "par": ["jupiter", "venus"], "destinos": ["historia_arte", "musica", "f_mediacao_relacional", "hotelaria_restauracao", "f_curadoria", "belas_artes"], "nota": "arte sacra, direito de família e mediação, música litúrgica, hotelaria de sentido", "vertentes": { "direito": "familia" } },
     { "par": ["jupiter", "sol"], "destinos": ["direito", "ciencia_politica", "administracao_publica", "f_lideranca_projeto", "formacao_professores", "medicina"], "nota": "magistratura, direcção de instituição, ensino com autoridade, medicina interna", "vertentes": { "medicina": "interna" } },
@@ -32,7 +32,7 @@
     { "par": ["mercurio", "lua"], "destinos": ["psicologia", "jornalismo", "f_escrita_memoria", "ciencias_educacao", "enfermagem", "audiovisual"], "nota": "comunicação com grande público, escrita memorialística, ensino básico" },
     { "par": ["mercurio", "ketu"], "destinos": ["matematica_pura", "linguas_classicas", "f_astrologia", "analises_clinicas", "tecnologias_diagnostico", "f_investigacao_livre", "sistemas_redes"], "nota": "línguas antigas (grego, latim, hebraico), criptografia, simbólica, astrologia técnica, diagnóstico" },
     { "par": ["mercurio", "rahu"], "destinos": ["engenharia_informatica", "sistemas_redes", "marketing", "t_comercio_internacional", "t_conteudo_digital", "biotecnologia"], "nota": "dados e IA, marketing digital, comércio internacional" },
-    { "par": ["mercurio", "sol"], "destinos": ["jornalismo", "direito", "ciencia_politica", "gestao", "administracao_publica"], "nota": "comunicação institucional, jornalismo político, porta-vozia" },
+    { "par": ["mercurio", "sol"], "destinos": ["jornalismo", "ciencia_politica", "gestao", "administracao_publica"], "nota": "comunicação institucional, jornalismo político, porta-vozia" },
 
     { "par": ["venus", "marte"], "destinos": ["medicina_dentaria", "belas_artes", "t_joalharia", "design_industrial", "artes_espetaculo", "ciencias_desporto", "t_cabeleireiro"], "nota": "cirurgia estética e dentária, escultura, dança, desporto artístico", "vertentes": { "medicina": "estetica" } },
     { "par": ["venus", "saturno"], "destinos": ["arquitetura", "t_restauro", "f_restauro_proprio", "t_ourivesaria", "musica", "historia_arte"], "nota": "restauro e conservação, ourivesaria, música clássica, arte de longa maturação, património" },
