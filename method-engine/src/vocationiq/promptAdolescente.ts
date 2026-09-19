@@ -92,6 +92,7 @@ import {
   INSTRUCAO_FERRAMENTAS_PATRIMONIO,
   EXEMPLO_TOM_ESPECIALISTA,
   INSTRUCAO_VARGOTTAMA,
+  INSTRUCAO_KARAKAMSHA,
   INSTRUCAO_CONSISTENCIA_TECNICA,
   INSTRUCAO_SELECCAO_CANDIDATAS,
   INSTRUCAO_ABERTURA_CANDIDATAS,
@@ -312,6 +313,7 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - PLANETAS FRACOS (peso < 0,9): sempre mencionados explicitamente, nunca uma barra vermelha sem texto correspondente.
 - TENSÃO INTERNA: sempre que dois sinais do perfil apontam em direcções diferentes, o texto é obrigado a nomeá-lo — nunca escolher só o lado bonito.
 - REGRA CRÍTICA — LEITURA CONJUNTA: nunca ler um eixo isolado. Ordem obrigatória: 1. Eixo da Missão — o que a pessoa é por dentro. 2. Modo de Ganho — por onde tende a entrar o reconhecimento, testado contra 1. 3. Montra de Mercado — como é vista de fora, testado contra 1+2. 4. Planetas fracos — explicam onde falta apoio natural. Só depois disto testado e amarrado é que se avalia qualquer opção em cima da mesa.
+- ${INSTRUCAO_KARAKAMSHA}
 - EIXO DA MISSÃO + MONTRA DE MERCADO — NUNCA ISOLADOS: os dois lidos em separado podem parecer contraditórios (ex.: um a apontar para trabalho de bastidores, o outro para exposição pública); lidos juntos, dizem a mesma coisa com instrumentos diferentes — nunca apresentar como tensão sem antes tentar esta leitura conjunta.
 - COERÊNCIA COM OS VISUAIS: o relatório tem elementos visuais gerados automaticamente (gráfico de forças, radar de competências, Roda da Vida). O texto deve referenciá-los quando relevante ("Como mostra o gráfico de forças...") e nunca contradizer o que mostram — se um visual mostra um valor fraco, o texto não pode dizer que é forte.
 - VALOR ALTO NUM ELEMENTO VISUAL NÃO É O TEMA CENTRAL: uma dimensão com valor alto na Roda da Vida pode reflectir só onde o planeta mais forte do perfil está fisicamente posicionado — não é automaticamente o tema mais importante. O tema central vem sempre do Eixo da Missão e do Modo de Ganho, nunca do valor mais alto da roda sozinho.

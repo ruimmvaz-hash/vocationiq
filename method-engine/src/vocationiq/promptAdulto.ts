@@ -695,13 +695,26 @@ NUNCA ignorar conjunções activas.`;
 // o mecanismo (qual yoga, formado por que planetas). Corrigido: só o
 // nome real do yoga é aceite, nunca uma paráfrase genérica.
 export const INSTRUCAO_YOGAS = `YOGAS — INSTRUÇÃO OBRIGATÓRIA PARA CANDIDATAS: para CADA candidata fora da lista apresentada, verifica se algum yoga activo (Raja Yoga, Dhana Yoga, Viparita Raja Yoga) cita pelo menos um dos planetas que fazem parte das camadas de convergência dessa candidata.
+
+VERIFICAÇÃO OBRIGATÓRIA, PLANETA A PLANETA (correcção do especialista —
+bug real: uma geração concluiu "não encontrei nenhum yoga aplicável"
+para uma candidata cujo próprio Sol era o mesmo planeta central de um
+Raja Yoga activo listado nos dados técnicos — a verificação tinha sido
+feita "de memória"/por impressão geral, não planeta a planeta). Antes de
+escreveres "não encontrei yoga aplicável" para qualquer candidata, faz
+esta comparação explícita: lista os planetas de CADA yoga activo (dados
+técnicos, secção de yogas) lado a lado com os planetas nas camadas de
+convergência desta candidata (dados técnicos, secção desta candidata) —
+se houver pelo menos um planeta em comum entre as duas listas, o yoga
+APLICA-SE, mesmo que a ligação não seja óbvia à primeira leitura.
+
 Se sim, a leitura desta candidata DEVE incluir uma frase com este padrão exacto: "Existe também, [de forma independente desta convergência / reforçando esta convergência], um [Raja Yoga / Dhana Yoga / Viparita Raja Yoga — o nome REAL do yoga activo, nunca outro] neste perfil, formado por [os planetas/casas que o formam, em linguagem simples] que [confirma directamente esta opção / reforça o teu/seu potencial nesta área de forma mais geral]"
 PROIBIDO ABSOLUTO: substituir o nome do yoga por uma paráfrase vaga — "configuração técnica", "capacidade estrutural", "sinal estruturado próprio", "configuração de autoridade" e qualquer equivalente que nomeie um efeito sem nomear QUAL yoga e QUE planetas o formam. Se não souberes/não houver yoga aplicável, não escrevas esta frase — nunca a uses como fórmula genérica de reforço.
 Distingue sempre:
 · Yoga cujos planetas coincidem com os desta candidata: "confirmação directa" — usa "confirma directamente esta opção".
 · Yoga que reforça capacidade geral sem ligação aos planetas desta candidata: "reforço geral" — usa "reforça o teu/seu potencial nesta área de forma mais geral".
-Se NÃO houver nenhum yoga cujos planetas coincidam com os planetas da candidata, não menciones yogas nessa candidata — PROIBIDO inventar ligação para preencher espaço.
-Esta verificação é obrigatória para TODAS as candidatas escolhidas (até 3), não só a primeira. Se todas tiverem yogas aplicáveis, todas devem citá-los.`;
+Se, depois da verificação planeta a planeta acima, NÃO houver mesmo nenhum yoga cujos planetas coincidam com os planetas da candidata, não menciones yogas nessa candidata — PROIBIDO inventar ligação para preencher espaço.
+Esta verificação é obrigatória para TODAS as candidatas apresentadas (a pool completa, sem tecto de 3 — ver INSTRUCAO_SELECCAO_CANDIDATAS), não só a primeira. Se todas tiverem yogas aplicáveis, todas devem citá-los.`;
 
 // BUG REAL, corrigido (ronda "Miguel/Alexandra — discurso vago", pedido
 // do especialista) — o mesmo padrão do INSTRUCAO_YOGAS acima (nomear um
@@ -823,6 +836,7 @@ Processo em TRÊS PASSOS, nesta ordem exacta:
 PASSO 1 — FILTRO DE ELEGIBILIDADE (ligação narrativa, único filtro que existe): de toda a pool, elimina qualquer candidata cujas camadas NÃO consigas ligar com clareza a um dom ou traço JÁ NOMEADO na secção "${SECCAO_TITULOS.quemE}" — essa ligação é a mesma que vais citar na frase de abertura obrigatória (ver INSTRUCAO_ABERTURA_CANDIDATAS). Filtro binário (liga-se genuinamente, ou não) — nunca uma escala de "liga-se melhor/pior" entre candidatas que já se ligam, e nunca um segundo filtro de "quantas quero mostrar". TODAS as que passam ficam, sem limite.
 PASSO 2 — ORDEM DE APRESENTAÇÃO (soma de pesos, nunca ranking): entre as candidatas que passaram o Passo 1, ordena a apresentação (grupos e candidatas individuais) pela soma de pesos mais alta primeiro — serve só para dar uma ordem estável ao texto, nunca como hierarquia de importância (ver a regra "SEM RANKING" na secção "${SECCAO_TITULOS.candidataForaDaLista}"). O Nível (1 ou 2) nunca decide inclusão nem ordem — só a linguagem de confiança de cada candidata (INSTRUCAO_NIVEL_CANDIDATAS).
 PASSO 3 — AGRUPAMENTO POR ASSINATURA (apresentação, nunca qualificação): os dados técnicos trazem "Grupos de candidatas" — listas de nomes já calculadas deterministicamente cuja convergência de base (o CONJUNTO de tipos de camada, não o texto exacto) é idêntica ou quase idêntica. Para cada grupo em que 2 ou mais membros passaram o Passo 1: escreve a convergência astrológica de base UMA SÓ VEZ para o grupo inteiro num bloco "${MARCADORES.grupo}" (que camadas partilham, o que isso significa em conjunto) — depois, para CADA membro desse grupo que passou o Passo 1, um bloco "${MARCADORES.candidata}" curto (2-4 linhas): porquê esta e não as outras do mesmo grupo, a via concreta dela, prós e contras específicos. NUNCA repetir a convergência de base dentro do bloco de cada candidata — já foi escrita uma vez, no bloco "${MARCADORES.grupo}". Se um grupo, depois do Passo 1, fica com só 1 membro sobrevivente, essa candidata deixa de ser "grupo" — escreve-a no formato individual completo (ver formato exacto na secção "${SECCAO_TITULOS.candidataForaDaLista}"), sem bloco "${MARCADORES.grupo}". Candidatas sem grupo (assinatura própria, nenhuma outra a ≤1 tipo de distância) mantêm sempre o formato individual completo.
+REPETIÇÃO ENTRE CANDIDATAS SEM GRUPO FORMAL (correcção do especialista — bug real: duas candidatas sem grupo calculado, mas com o MESMO conjunto de planetas na base da convergência, saíram com a explicação astrológica de base escrita quase palavra por palavra duas vezes seguidas — exactamente a repetição que o agrupamento existe para evitar, só que sem grupo formal para a apanhar): mesmo sem bloco "${MARCADORES.grupo}", se a candidata que vais escrever agora partilha o MESMO conjunto de planetas-base já explicado numa candidata anterior desta secção, NÃO reescrevas essa explicação — refere-a directamente ("a mesma [força/ligação] que já sustenta [nome da candidata anterior]...") e usa o espaço da frase para o que É diferente nesta candidata (a via concreta, o ângulo específico, o que a distingue na prática). Só reescreve a explicação de base por inteiro quando ela usa planetas ou camadas genuinamente diferentes da candidata anterior.
 Nunca escolhas só pela contagem de camadas (convergência) — usa sempre a soma de pesos para ordenar.
 Antes de qualquer bloco "${MARCADORES.grupo}" ou "${MARCADORES.candidata}", escreve OBRIGATORIAMENTE um bloco único "${MARCADORES.seleccaoCandidatas}" (machine-readable, nunca omitido), explicando em prosa curta: (a) a que dom já nomeado em "${SECCAO_TITULOS.quemE}" cada candidata que passou o Passo 1 se liga, (b) quais candidatas da pool completa (nomeia-as pelo nome, com a sua soma de pesos) reprovaram o Passo 1 e porquê, (c) como as que passaram ficaram agrupadas — que grupos, com que nomes, e quais ficaram individuais. Este bloco nunca aparece no relatório entregue ao cliente — é só para auditoria interna do raciocínio.
 ERRO CONFIRMADO EM GERAÇÕES REAIS (correcção do especialista — nunca repetir isto): candidatas fora de um grupo explícito saíram, por 4 vezes seguidas, formatadas como título markdown em vez do marcador — e mesmo o cabeçalho de um grupo saiu em bold em vez de "${MARCADORES.grupo}". Isto faz a candidata (ou o grupo inteiro) desaparecer do relatório final — o parser só reconhece o marcador literal, nunca markdown como substituto, por mais parecido que pareça a um humano.
@@ -908,6 +922,23 @@ GRUPOS COM NÍVEIS MISTOS (correcção do especialista — agrupamento por clust
 // "perfil" no texto pedido — a palavra "carta" está proibida em todo o
 // relatório desde uma correcção anterior (TAREFA 3D).
 export const INSTRUCAO_VARGOTTAMA = `VARGOTTAMA — INSTRUÇÃO OBRIGATÓRIA: se existe planeta Vargottama, a secção "${SECCAO_TITULOS.quemE}" DEVE conter uma frase com este padrão exacto: "[Nome do planeta em português] é o traço mais estável deste perfil — aparece com a mesma força em duas dimensões independentes do perfil, o que significa que não muda com as circunstâncias nem depende de esforço para existir." Esta frase é obrigatória. Se não existe planeta Vargottama, não mencionar.`;
+
+// AUDITORIA (correcção do especialista — bug real, confirmado em DUAS
+// gerações reais seguidas do relatório da Alexandra: o Karakamsha nunca
+// foi mencionado nem traduzido em nenhuma delas, apesar dos dados
+// (karakamshaSign/karakamshaHouse) estarem sempre presentes em
+// `blocoEixoMissao`). Causa: a instrução de leitura conjunta obrigatória
+// existia só como uma frase genérica dentro de "REGRA CRÍTICA — LEITURA
+// CONJUNTA" (construirPromptAdulto) e nem existia no ramo adolescente
+// (promptAdolescente.ts tinha "Eixo da Missão" como bloco único, sem
+// separar o Karakamsha como o seu próprio passo obrigatório). Mesmo
+// padrão já provado a funcionar com Vargottama (INSTRUCAO_VARGOTTAMA
+// acima): uma instrução obrigatória e autónoma, não só uma frase a mais
+// dentro de uma regra maior — mas aqui sem template literal fixo (ao
+// contrário de Vargottama), porque a tradução de signo+casa em
+// linguagem simples depende de dados reais que não podem ser
+// pré-escritos sem risco de inventar conteúdo astrológico errado.
+export const INSTRUCAO_KARAKAMSHA = `KARAKAMSHA — INSTRUÇÃO OBRIGATÓRIA, AUTÓNOMA (nunca só uma frase dentro de outra regra): a secção "${SECCAO_TITULOS.quemE}" TEM de conter, logo a seguir à leitura do Atmakaraka, uma frase ou parágrafo próprio e distinto que traduza o Karakamsha (signo + casa a partir do Ascendente, dados em "Eixo da Missão" abaixo) em linguagem simples e concreta — nunca a palavra "Karakamsha" em si (está na lista de termos proibidos, tal como "Atmakaraka"), mas o que ela significa na prática: onde e como essa força/missão mais profunda encontra expressão concreta no dia-a-dia desta pessoa. Nunca tratar como repetição da leitura do Atmakaraka — é a confirmação e afinação prática dele, um passo à frente, não a mesma frase com outras palavras. Esta frase é obrigatória sempre — os dados de Karakamsha estão sempre presentes.`;
 
 // DESVIO (correcção do especialista — "EXPLICAÇÃO_GRÁFICO, mudança de
 // abordagem") — chegou a existir aqui uma INSTRUCAO_EXPLICACAO_GRAFICOS,
@@ -1104,6 +1135,7 @@ ${TERMOS_PROIBIDOS.map((t) => `  · ${t}`).join("\n")}
 - O RELATÓRIO NÃO É PARA CONFIRMAR O QUE A PESSOA JÁ PENSA: é para mostrar o que o perfil vê — mesmo que contradiga as opções declaradas. Se o perfil aponta claramente para uma direcção que a pessoa não declarou, o motor tem de a nomear — não esperar que ela apareça nas opções. A "Candidata fora da lista" não é uma secção opcional — é o momento onde o relatório tem mais valor único. Se os dados convergem em 4 camadas para algo que a pessoa não viu, dizer isso com clareza é o trabalho.
 - REGRA CRÍTICA — LEITURA CONJUNTA: Nunca ler um eixo isolado. Ordem obrigatória: 1. Atmakaraka — o que a pessoa é por dentro. 2. Karakamsha (signo + casa JUNTOS, sempre) — onde isso aterra. 3. Modo de Ganho — por onde entra o dinheiro, testado contra 1+2. 4. Planetas fracos — explicam o passado, apontam onde falta apoio. Só depois disto testado e amarrado é que se avalia a opção declarada.
 - KARAKAMSHA — NUNCA ISOLADO: Atmakaraka casa 10 + Karakamsha casa 4 NÃO é contradição. É "autoridade que se constrói a partir de base própria, nunca dentro de estrutura alheia." Lidos juntos, os dois eixos dizem a mesma coisa com instrumentos diferentes.
+- ${INSTRUCAO_KARAKAMSHA}
 - PLANETA FRACO + ÁREA ACTUAL: Se a área actual é governada por um planeta fraco (peso < 0,9), isso explica o porquê da insatisfação com precisão. É obrigatório nomear. EXEMPLO: Vénus fraca + estética = "passou anos no campo do planeta mais fraco do seu perfil — explica o desgaste, não invalida o talento."
 - OPÇÃO DECLARADA — TRADUZIR SEMPRE: A opção que a pessoa declarou é o vocabulário que tinha à mão. SEMPRE traduzir: o que quis dizer, nos termos do perfil? "Quero ser consultora SAP" pode significar "quero ser autoridade que ensina e aconselha com nome próprio" — testar essa tradução, nunca aceitar a opção ao pé da letra.
 - MAHADASHA — CLASSIFICAÇÃO E REGRA: O tom da Mahadasha actual ABRE a secção do plano, antes de qualquer data ou passo. Classificação: Ketu = dissolução/fecho ("prepare e feche, não colha"); Vénus = expansão/prazer/colheita ("avance, o ciclo favorece"); Sol = afirmação/autoridade ("afirme e visibilize"); Lua = emoção/fluxo/intuição ("siga o que sente, não o plano"); Marte = acção/lançamento/conflito ("avance com força e decisão"); Rahu = ambição/disrupção/ilusão ("risco real, oportunidade real"); Júpiter = crescimento/sabedoria/expansão ("expanda com intenção"); Saturno = estrutura/colheita lenta/responsabilidade ("construa devagar, vai durar"); Mercúrio = comunicação/adaptação/aprendizagem ("aprenda e comunique"). A colheita a sério só abre depois do fim da Mahadasha actual — sempre nomear essa data.
