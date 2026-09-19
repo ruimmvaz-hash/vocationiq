@@ -797,8 +797,24 @@ export function construirAvisoRascunho(data: { geracaoTruncada?: boolean; critic
 // técnico completo (o mesmo padrão já usado em `construirPromptCritica`)
 // para qualquer falha que precise de voltar aos dados de origem, não só
 // a de selecção de candidatas.
-const INSTRUCAO_REESCRITA = `Reescreve este relatório corrigindo APENAS as falhas identificadas abaixo.
-Não alteres o que está correcto.
+const INSTRUCAO_REESCRITA = `Reescreve este relatório corrigindo TODAS as falhas identificadas abaixo, sem nenhuma excepção.
+
+REGRA MAIS IMPORTANTE DESTA TAREFA (correcção do especialista — bug real
+encontrado: uma reescrita anterior devolveu texto marcado como "corrigido"
+mas manteve, palavra por palavra, 5 das 6 falhas apontadas pela crítica,
+incluindo frases proibidas repetidas exactamente como estavam e blocos
+inteiros que deviam ter sido escritos de raiz e continuaram ausentes):
+corrigir uma falha NUNCA significa deixá-la como estava. Antes de dares a
+resposta por terminada, relê cada falha da lista abaixo, uma a uma, contra
+o texto que vais entregar, e confirma que já não é verdade — se a frase,
+o parágrafo ou o bloco que a crítica citou ainda existe no teu texto final,
+igual ou quase igual, NÃO corrigiste essa falha, tens de voltar a escrevê-la.
+Quando a falha pede algo que ainda não existe no texto (um marcador em
+falta como "EXPLICAÇÃO_GRÁFICO:", uma referência ausente como
+"Karakamsha", um parágrafo que devia estar noutra secção) — ESCREVE esse
+conteúdo novo por inteiro, não reformules o que já lá está à volta dele.
+
+Não alteres o que está correcto — só o que a lista de falhas abaixo aponta.
 Mantém todos os marcadores machine-readable (FRASE_ABERTURA:, IDENTIDADE:, DOM:, LIMITAÇÃO:, SÍNTESE:, INSIGHT:, FORÇA:, SELECÇÃO_CANDIDATAS:, GRUPO:, CANDIDATA:, PRIMEIRO PASSO:) e todos os cabeçalhos "## " das 6 secções, incluindo "## Quem é".
 Se alguma falha for de APRESENTAÇÃO DAS CANDIDATAS (força REAPRESENTAÇÃO DA POOL COMPLETA): volta à secção "Candidatas do catálogo" (e "Grupos de candidatas") no prompt técnico (A, abaixo) e apresenta TODAS as candidatas da pool completa que ligam com clareza a um dom já nomeado em "Quem é" — sem tecto de 3, agrupando as de convergência de base quase idêntica sob um único bloco "GRUPO:" em vez de repetir a mesma explicação por candidata; nunca inventes uma ligação para uma candidata que não a tenha, nem omitas uma que a tenha só porque já há outras.`;
 
