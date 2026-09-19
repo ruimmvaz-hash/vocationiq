@@ -7,7 +7,7 @@ import { guardarRascunho, obterRascunho, apagarRascunho, usarVersaoLlmRascunho, 
 import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTemplate";
 import { calcularDadosAstrologicosAdolescente, reconstruirHTMLRelatorio, GeocodeError, ANO_ESCOLARIDADE_LABEL } from "@/lib/relatorioAdultoCompute";
 import { construirPromptAdolescente, construirPromptAdulto, type VocationiqIntakeAdulto } from "@naveya/method-engine";
-import { construirPromptCritica, construirPromptCriticaAdolescente, parseCritica, construirPromptReescrita, TOTAL_CRITERIOS_ADULTO, TOTAL_CRITERIOS_ADOLESCENTE } from "@/lib/criticaRelatorio";
+import { construirPromptCritica, construirPromptCriticaAdolescente, parseCritica, construirPromptReescrita, removerBlocosOpcaoNaoAutorizados, TOTAL_CRITERIOS_ADULTO, TOTAL_CRITERIOS_ADOLESCENTE } from "@/lib/criticaRelatorio";
 
 // TAREFA 1A (correcção do especialista, ronda de produção do motor
 // adolescente) — equivalente de api/relatorio/route.ts para o ramo
@@ -164,7 +164,24 @@ export async function POST(request: Request) {
 
     const client = new Anthropic({ apiKey });
 
-    const { texto: textoOriginal, truncado: geracaoTruncada } = await gerarTexto(client, prompt, MAX_TOKENS);
+    const { texto: textoGerado, truncado: geracaoTruncada } = await gerarTexto(client, prompt, MAX_TOKENS);
+
+    // GUARDA DETERMINÍSTICA (ver removerBlocosOpcaoNaoAutorizados em
+    // criticaRelatorio.ts) — "Leitura por opção" só pode ter um bloco
+    // "### " por nome literalmente presente em "Opções em cima da mesa";
+    // aplicada aqui, antes da crítica, para o bug nunca mais chegar a
+    // texto entregue, independentemente de o LLM seguir ou não a
+    // instrução em prosa (já reincidiu 3x apesar dela). Só faz sentido
+    // no ramo adolescente estruturado — "pos-12" usa o motor adulto, que
+    // não tem esta secção/armadilha, e o caso "legado" (texto livre) não
+    // tem lista fixa para comparar.
+    const guardaOpcoes = !ehPos12 && intakeAdolescente.opcoesAdolescente.length > 0 ? removerBlocosOpcaoNaoAutorizados(textoGerado, intakeAdolescente.opcoesAdolescente) : { texto: textoGerado, blocosRemovidos: [] as string[] };
+    if (guardaOpcoes.blocosRemovidos.length > 0) {
+      console.error(
+        "[api/relatorio-adolescente] guarda determinística removeu bloco(s) '### ' não autorizado(s) em 'Leitura por opção' (intake=" + intakeId + "): " + guardaOpcoes.blocosRemovidos.join(", "),
+      );
+    }
+    const textoOriginal = guardaOpcoes.texto;
 
     // Crítica: "pos-12" gerou texto no tom adulto ("você"), por isso usa
     // a crítica adulta original — a versão adaptada ao adolescente
@@ -371,8 +388,14 @@ export async function PATCH(request: Request) {
       while (resultadoCritica.falhas.length > 0 && tentativas < MAX_TENTATIVAS_REESCRITA) {
         tentativas += 1;
         const promptReescrita = construirPromptReescrita(rascunho.promptCompleto, textoBase, resultadoCritica.falhas);
-        const { texto: novoTexto } = await gerarTexto(client, promptReescrita, MAX_TOKENS);
-        textoReescrito = novoTexto;
+        const { texto: novoTextoGerado } = await gerarTexto(client, promptReescrita, MAX_TOKENS);
+        const guardaOpcoesReescrita = !ehPos12 && intakeAdolescente.opcoesAdolescente.length > 0 ? removerBlocosOpcaoNaoAutorizados(novoTextoGerado, intakeAdolescente.opcoesAdolescente) : { texto: novoTextoGerado, blocosRemovidos: [] as string[] };
+        if (guardaOpcoesReescrita.blocosRemovidos.length > 0) {
+          console.error(
+            "[api/relatorio-adolescente] guarda determinística removeu bloco(s) '### ' não autorizado(s) em 'Leitura por opção' pós-reescrita (intake=" + intakeId + ", tentativa=" + tentativas + "): " + guardaOpcoesReescrita.blocosRemovidos.join(", "),
+          );
+        }
+        textoReescrito = guardaOpcoesReescrita.texto;
 
         const promptCriticaPosReescrita = construirCritica(rascunho.promptCompleto, textoReescrito);
         const { texto: textoCriticaPos, truncado } = await gerarTexto(client, promptCriticaPosReescrita, MAX_TOKENS_CRITICA);

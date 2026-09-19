@@ -1,3 +1,5 @@
+import { SECCAO_TITULOS } from "@naveya/method-engine";
+
 // Redesenho do motor VocationIQ, Parte 3 — arquitectura de 3 passos.
 // Gerar (já existente) → Criticar (2ª chamada, 20 critérios — 12
 // originais + 13-16 das 4 camadas técnicas + 17-19 de precisão de
@@ -801,6 +803,60 @@ conteúdo novo por inteiro, não reformules o que já lá está à volta dele.
 Não alteres o que está correcto — só o que a lista de falhas abaixo aponta.
 Mantém todos os marcadores machine-readable (FRASE_ABERTURA:, IDENTIDADE:, DOM:, LIMITAÇÃO:, SÍNTESE:, INSIGHT:, FORÇA:, SELECÇÃO_CANDIDATAS:, GRUPO:, CANDIDATA:, PRIMEIRO PASSO:) e todos os cabeçalhos "## " das 6 secções, incluindo "## Quem é".
 Se alguma falha for de APRESENTAÇÃO DAS CANDIDATAS (força REAPRESENTAÇÃO DA POOL COMPLETA): volta à secção "Candidatas do catálogo" (e "Grupos de candidatas") no prompt técnico (A, abaixo) e apresenta TODAS as candidatas da pool completa que ligam com clareza a um dom já nomeado em "Quem é" — sem tecto de 3, agrupando as de convergência de base quase idêntica sob um único bloco "GRUPO:" em vez de repetir a mesma explicação por candidata; nunca inventes uma ligação para uma candidata que não a tenha, nem omitas uma que a tenha só porque já há outras.`;
+
+/**
+ * GUARDA DETERMINÍSTICA (correcção do especialista — "Direito" a ganhar
+ * um bloco "### " nesta secção sem estar em "Opções em cima da mesa"
+ * recorreu TRÊS vezes em produção real — commit 65209c4, depois de novo
+ * na ronda "regeneração Alexandra 4" apesar de um "PROIBIDO ABSOLUTO"
+ * explícito, depois de novo na ronda seguinte apesar de uma verificação
+ * mecânica ainda mais explícita no prompt). Mesmo padrão já usado nesta
+ * base de código quando um comportamento do LLM falha repetidamente apesar
+ * de instrução reforçada (ver EXPLICAÇÃO_GRÁFICO em relatorioTemplate.ts):
+ * sai da responsabilidade do LLM e passa a ser aplicado em código,
+ * sempre, sem depender de o LLM "lembrar-se" da regra. Só actua quando
+ * `opcoesPermitidas` vem da lista estruturada real (nunca no caso
+ * "legado" de texto livre, onde não há lista fixa para comparar).
+ * Remove qualquer bloco "### <nome>" dentro da secção "Leitura por
+ * opção" cujo nome não corresponda (sem acentos, sem maiúsculas/minúsculas,
+ * espaço aparado) a nenhuma linha de `opcoesPermitidas`.
+ */
+export function removerBlocosOpcaoNaoAutorizados(texto: string, opcoesPermitidas: string[]): { texto: string; blocosRemovidos: string[] } {
+  if (!opcoesPermitidas.length) return { texto, blocosRemovidos: [] };
+
+  const normalizar = (s: string) =>
+    s
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase();
+  const permitidasNormalizadas = new Set(opcoesPermitidas.map(normalizar));
+
+  const inicioSeccao = texto.indexOf(`## ${SECCAO_TITULOS.leituraPorOpcao}`);
+  if (inicioSeccao === -1) return { texto, blocosRemovidos: [] };
+  const buscaFim = texto.indexOf("\n## ", inicioSeccao + 1);
+  const fimSeccao = buscaFim === -1 ? texto.length : buscaFim;
+
+  const antes = texto.slice(0, inicioSeccao);
+  const seccao = texto.slice(inicioSeccao, fimSeccao);
+  const depois = texto.slice(fimSeccao);
+
+  const partes = seccao.split(/\n(?=### )/);
+  const intro = partes[0];
+  const blocosRemovidos: string[] = [];
+  const blocosMantidos = partes.slice(1).filter((bloco) => {
+    const nomeLinha = bloco.split("\n", 1)[0];
+    const nome = nomeLinha.replace(/^###\s*/, "").trim();
+    const autorizado = permitidasNormalizadas.has(normalizar(nome));
+    if (!autorizado) blocosRemovidos.push(nome);
+    return autorizado;
+  });
+
+  if (!blocosRemovidos.length) return { texto, blocosRemovidos: [] };
+
+  const seccaoNova = [intro, ...blocosMantidos].join("\n");
+  return { texto: antes + seccaoNova + depois, blocosRemovidos };
+}
 
 export function construirPromptReescrita(promptTecnico: string, rascunhoOriginal: string, falhas: string[]): string {
   return `${INSTRUCAO_REESCRITA}\nFalhas a corrigir:\n${falhas.map((f) => `- ${f}`).join("\n")}\n\n=== A) PROMPT TÉCNICO ORIGINAL ===\n${promptTecnico}\n\n=== B) RELATÓRIO ORIGINAL ===\n${rascunhoOriginal}`;
