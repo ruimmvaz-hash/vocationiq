@@ -160,31 +160,23 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
      cada ocorrência exacta. Se aparecer mesmo uma vez: FALHA — reescrita
      obrigatória.
 
- 24. EXPLICAÇÃO COMPLETA DOS GRÁFICOS (correcção do especialista,
-     pós-PDF real): confirma que existem os 4 blocos
-     "EXPLICAÇÃO_GRÁFICO:" — peso, competencias, vida, ganho — em
-     qualquer ponto do rascunho. Para cada um:
-     (a) tem um parágrafo de abertura antes da primeira linha
-         "LINHA_GRÁFICO:" (o que o gráfico é, de onde vêm os números,
-         como ler a escala)?
-     (b) tem o número exacto de linhas "LINHA_GRÁFICO:" — 7 para peso
-         (Sol/Lua/Marte/Mercúrio/Júpiter/Vénus/Saturno), 6 para
-         competencias, 8 para vida, 3 para ganho — nenhuma categoria
-         pode faltar?
-     (c) cada linha tem as DUAS camadas (o que a categoria significa em
-         geral + o que o valor específico desta pessoa significa,
-         citando o número real), nunca só uma frase genérica que serviria
-         para qualquer pessoa?
-     (d) para "ganho": a linha da casa dominante nomeia explicitamente o
-         rótulo do gráfico (ex.: "Liderando publicamente") e, se os
-         dados técnicos de "Modo de Ganho" trouxerem a nuance de "casa de
-         bastidores", a linha resolve de frente a aparente contradição
-         entre o rótulo do gráfico e essa nuance — nunca a deixa por
-         esclarecer?
-     Se falhar (a), (b) ou (c) para qualquer um dos 4: FALHA — bloco em
-     falta ou incompleto, reescrita obrigatória. Se falhar (d): FALHA —
-     a barra dominante fica a contradizer o texto, exactamente o problema
-     que esta correcção existe para resolver.
+ 24. EXPLICAÇÃO DOS GRÁFICOS — NUNCA ESCRITA PELO LLM (correcção do
+     especialista, bug real encontrado ao verificar o relatório da
+     Alexandra: este critério pedia 4 blocos "EXPLICAÇÃO_GRÁFICO:" que
+     uma correcção ANTERIOR já tinha decidido deixarem de ser
+     responsabilidade do LLM — ver DESVIO junto de INSTRUCAO_VARGOTTAMA
+     em promptAdulto.ts: depois de 5 gerações reais seguidas sem NENHUMA
+     ocorrência desses blocos, a explicação dos 4 gráficos passou a ser
+     gerada 100% por código em relatorioTemplate.ts, a partir dos MESMOS
+     dados técnicos — nunca mais pedida ao LLM. Este critério continuava
+     a marcar FALHA sempre, forçando reescritas inúteis a tentar
+     adicionar um conteúdo que o próprio sistema já não quer que o LLM
+     escreva.
+     O rascunho NÃO deve conter nenhum bloco "EXPLICAÇÃO_GRÁFICO:" nem
+     "LINHA_GRÁFICO:" — se não existir nenhum: PASSA (comportamento
+     correcto, o código trata disto à parte). Se existir algum: FALHA —
+     o LLM está a inventar uma secção que já não lhe compete, reescrita
+     obrigatória para a remover por completo.
 
  25. NÚMEROS DE CÁLCULO INTERNO EM TEXTO VISÍVEL (correcção do
      especialista, pós-PDF real): fora do bloco "SELECÇÃO_CANDIDATAS:"
@@ -495,31 +487,23 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
      cada ocorrência exacta. Se aparecer mesmo uma vez: FALHA — reescrita
      obrigatória.
 
- 24. EXPLICAÇÃO COMPLETA DOS GRÁFICOS (correcção do especialista,
-     pós-PDF real): confirma que existem os 4 blocos
-     "EXPLICAÇÃO_GRÁFICO:" — peso, competencias, vida, ganho — em
-     qualquer ponto do rascunho. Para cada um:
-     (a) tem um parágrafo de abertura antes da primeira linha
-         "LINHA_GRÁFICO:" (o que o gráfico é, de onde vêm os números,
-         como ler a escala)?
-     (b) tem o número exacto de linhas "LINHA_GRÁFICO:" — 7 para peso
-         (Sol/Lua/Marte/Mercúrio/Júpiter/Vénus/Saturno), 6 para
-         competencias, 8 para vida, 3 para ganho — nenhuma categoria
-         pode faltar?
-     (c) cada linha tem as DUAS camadas (o que a categoria significa em
-         geral + o que o valor específico desta pessoa significa,
-         citando o número real), nunca só uma frase genérica que serviria
-         para qualquer pessoa?
-     (d) para "ganho": a linha da casa dominante nomeia explicitamente o
-         rótulo do gráfico (ex.: "Liderando publicamente") e, se os
-         dados técnicos de "Modo de Ganho" trouxerem a nuance de "casa de
-         bastidores", a linha resolve de frente a aparente contradição
-         entre o rótulo do gráfico e essa nuance — nunca a deixa por
-         esclarecer?
-     Se falhar (a), (b) ou (c) para qualquer um dos 4: FALHA — bloco em
-     falta ou incompleto, reescrita obrigatória. Se falhar (d): FALHA —
-     a barra dominante fica a contradizer o texto, exactamente o problema
-     que esta correcção existe para resolver.
+ 24. EXPLICAÇÃO DOS GRÁFICOS — NUNCA ESCRITA PELO LLM (correcção do
+     especialista, bug real encontrado ao verificar o relatório da
+     Alexandra: este critério pedia 4 blocos "EXPLICAÇÃO_GRÁFICO:" que
+     uma correcção ANTERIOR já tinha decidido deixarem de ser
+     responsabilidade do LLM — ver DESVIO junto de INSTRUCAO_VARGOTTAMA
+     em promptAdulto.ts: depois de 5 gerações reais seguidas sem NENHUMA
+     ocorrência desses blocos, a explicação dos 4 gráficos passou a ser
+     gerada 100% por código em relatorioTemplate.ts, a partir dos MESMOS
+     dados técnicos — nunca mais pedida ao LLM. Este critério continuava
+     a marcar FALHA sempre, forçando reescritas inúteis a tentar
+     adicionar um conteúdo que o próprio sistema já não quer que o LLM
+     escreva.
+     O rascunho NÃO deve conter nenhum bloco "EXPLICAÇÃO_GRÁFICO:" nem
+     "LINHA_GRÁFICO:" — se não existir nenhum: PASSA (comportamento
+     correcto, o código trata disto à parte). Se existir algum: FALHA —
+     o LLM está a inventar uma secção que já não lhe compete, reescrita
+     obrigatória para a remover por completo.
 
  25. NÚMEROS DE CÁLCULO INTERNO EM TEXTO VISÍVEL (correcção do
      especialista, pós-PDF real): fora do bloco "SELECÇÃO_CANDIDATAS:"
