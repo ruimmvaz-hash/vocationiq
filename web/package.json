@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "regressao": "tsx --require ./scripts/_no-server-only.cjs scripts/regressao/verificar.ts",
+    "regressao:baseline": "tsx --require ./scripts/_no-server-only.cjs scripts/regressao/capturar-baseline.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.123.0",

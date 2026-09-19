@@ -1,0 +1,2247 @@
+{
+  "capturadoEm": "2026-09-19T18:21:56.332Z",
+  "clientes": {
+    "rui": [
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "administracao_publica",
+        "nome": "Administração Pública",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "ciencia_politica",
+        "nome": "Ciência Política",
+        "convergencia": 5,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "contabilidade",
+        "nome": "Contabilidade e Fiscalidade",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "economia",
+        "nome": "Economia",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "gestao",
+        "nome": "Gestão",
+        "convergencia": 5,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "marketing",
+        "nome": "Marketing",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "medicina",
+        "nome": "Medicina",
+        "convergencia": 4,
+        "nivelConfianca": 1
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "psicologia",
+        "nome": "Psicologia",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "administracao_hospitalar",
+        "nome": "Administração Hospitalar",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "administracao_publica",
+        "nome": "Administração Pública",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "arquitetura",
+        "nome": "Arquitetura",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "artes_espetaculo",
+        "nome": "Artes do Espetáculo — Teatro e Dança",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "artesanato_superior",
+        "nome": "Artes e Ofícios Tradicionais",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "audiovisual",
+        "nome": "Som e Imagem — Produção de Media",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "belas_artes",
+        "nome": "Belas-Artes",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "cabeleireiro_estetica_superior",
+        "nome": "Ciências Cosméticas",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "cardiopneumologia",
+        "nome": "Cardiopneumologia",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "ciencia_politica",
+        "nome": "Ciência Política",
+        "convergencia": 5
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "ciencias_farmaceuticas",
+        "nome": "Ciências Farmacêuticas",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "ciencias_militares",
+        "nome": "Ciências Militares",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "comercio",
+        "nome": "Gestão Comercial",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "contabilidade",
+        "nome": "Contabilidade e Fiscalidade",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "design_grafico",
+        "nome": "Design de Comunicação",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "design_industrial",
+        "nome": "Design Industrial e de Produto",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "design_interiores",
+        "nome": "Design de Interiores",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "design_moda",
+        "nome": "Design de Moda",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "economia",
+        "nome": "Economia",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "educacao_infancia",
+        "nome": "Educação Básica — Educadores de Infância",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "engenharia_informatica",
+        "nome": "Engenharia Informática",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "enologia",
+        "nome": "Enologia",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "estatistica",
+        "nome": "Estatística e Investigação Operacional",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_astrologia",
+        "nome": "Astrologia e sistemas simbólicos — prática e ensino",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_atelier",
+        "nome": "Ateliê próprio de ofício de mãos",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_consultoria_imagem",
+        "nome": "Consultoria de imagem e estilo",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_curadoria",
+        "nome": "Curadoria e comércio de arte",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_edicao",
+        "nome": "Edição e revisão independente",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_ensino_proprio",
+        "nome": "Ensino próprio — escola, curso, mentoria",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_escrita_propria",
+        "nome": "Escrita e autoria em qualquer formato",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_eventos",
+        "nome": "Organização de eventos e casamentos",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_formacao_online",
+        "nome": "Formação online e criação de escola própria",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_lideranca_projeto",
+        "nome": "Direção de projeto ou instituição própria",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_marca_pessoal",
+        "nome": "Negócio próprio com marca pessoal",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_mediacao_relacional",
+        "nome": "Mediação e aconselhamento relacional",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_negociacao",
+        "nome": "Negociação e intermediação por conta própria",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_politica_local",
+        "nome": "Política local e representação",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_traducao_independente",
+        "nome": "Tradução independente",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "gestao",
+        "nome": "Gestão",
+        "convergencia": 5
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "historia_arte",
+        "nome": "História da Arte",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "hotelaria_restauracao",
+        "nome": "Gestão Hoteleira e Restauração",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "jornalismo",
+        "nome": "Ciências da Comunicação — Jornalismo",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "linguas",
+        "nome": "Línguas, Literaturas e Culturas",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "literatura_linguistica",
+        "nome": "Estudos Portugueses e Linguística",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "marketing",
+        "nome": "Marketing",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "matematica",
+        "nome": "Matemática",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "medicina",
+        "nome": "Medicina",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "medicina_dentaria",
+        "nome": "Medicina Dentária",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "medicina_veterinaria",
+        "nome": "Medicina Veterinária",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "musica",
+        "nome": "Música",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "psicologia",
+        "nome": "Psicologia",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "publicidade",
+        "nome": "Publicidade e Marketing",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "relacoes_internacionais",
+        "nome": "Relações Internacionais",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "secretariado",
+        "nome": "Secretariado e Assessoria de Direção",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "sistemas_redes",
+        "nome": "Sistemas e Redes de Informação",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_analises",
+        "nome": "Técnico de Análises Clínicas",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_cabeleireiro",
+        "nome": "Técnico de Cabeleireiro",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_contabilidade",
+        "nome": "Técnico de Contabilidade",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_costura",
+        "nome": "Técnico de Modelação e Confeção",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_decoracao",
+        "nome": "Técnico de Design de Interiores e Exteriores",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_design_grafico",
+        "nome": "Técnico de Design Gráfico",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_direcao_equipa",
+        "nome": "Direção e chefia de equipa",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_eletricidade",
+        "nome": "Técnico de Eletrónica, Automação e Comando",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_estetica",
+        "nome": "Técnico de Estética e Cosmética",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_fotografia",
+        "nome": "Técnico de Fotografia",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_imobiliario",
+        "nome": "Técnico de Mediação Imobiliária",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_joalharia",
+        "nome": "Técnico de Joalharia",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_lingua_gestual",
+        "nome": "Intérprete de Língua Gestual Portuguesa",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_logistica",
+        "nome": "Técnico de Logística e Distribuição",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_massagem",
+        "nome": "Técnico de Termalismo e Bem-Estar",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_ourivesaria",
+        "nome": "Técnico de Ourivesaria",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_paisagismo",
+        "nome": "Técnico de Jardinagem e Espaços Verdes",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_pastelaria",
+        "nome": "Técnico de Pastelaria e Panificação",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_programacao",
+        "nome": "Técnico de Programação e Sistemas de Informação",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_protecao_pessoas",
+        "nome": "Técnico de Proteção Civil e Socorro",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_redes_sociais",
+        "nome": "Técnico de Comunicação e Marketing Digital",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_restauracao",
+        "nome": "Técnico de Restauração e Bar",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_seguros",
+        "nome": "Técnico de Mediação de Seguros",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_som_imagem",
+        "nome": "Técnico de Áudio e Vídeo",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_vendas",
+        "nome": "Técnico de Comercial e Vendas",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "traducao",
+        "nome": "Tradução",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "turismo",
+        "nome": "Turismo e Lazer",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "urbanismo",
+        "nome": "Urbanismo",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosDeAreaActual",
+        "id": "f_empreendedorismo_digital",
+        "nome": "Empreendedorismo digital e escala",
+        "convergencia": 1
+      }
+    ],
+    "melina": [
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "administracao_hospitalar",
+        "nome": "Administração Hospitalar",
+        "convergencia": 4,
+        "nivelConfianca": 1
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "administracao_publica",
+        "nome": "Administração Pública",
+        "convergencia": 4,
+        "nivelConfianca": 1
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "auditoria",
+        "nome": "Auditoria e Controlo de Gestão",
+        "convergencia": 4,
+        "nivelConfianca": 1
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "ciencia_politica",
+        "nome": "Ciência Política",
+        "convergencia": 5,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "ciencias_desporto",
+        "nome": "Ciências do Desporto",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "contabilidade",
+        "nome": "Contabilidade e Fiscalidade",
+        "convergencia": 4,
+        "nivelConfianca": 1
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "f_consultoria_imagem",
+        "nome": "Consultoria de imagem e estilo",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "gestao",
+        "nome": "Gestão",
+        "convergencia": 6,
+        "nivelConfianca": 1
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "marketing",
+        "nome": "Marketing",
+        "convergencia": 5,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "administracao_hospitalar",
+        "nome": "Administração Hospitalar",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "administracao_publica",
+        "nome": "Administração Pública",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "agronomia",
+        "nome": "Engenharia Agronómica",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "arqueologia",
+        "nome": "Arqueologia",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "arquitetura",
+        "nome": "Arquitetura",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "artes_espetaculo",
+        "nome": "Artes do Espetáculo — Teatro e Dança",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "artesanato_superior",
+        "nome": "Artes e Ofícios Tradicionais",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "auditoria",
+        "nome": "Auditoria e Controlo de Gestão",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "belas_artes",
+        "nome": "Belas-Artes",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "biblioteconomia",
+        "nome": "Ciências da Informação e Documentação",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "cardiopneumologia",
+        "nome": "Cardiopneumologia",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "ciencia_politica",
+        "nome": "Ciência Política",
+        "convergencia": 5
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "ciencias_desporto",
+        "nome": "Ciências do Desporto",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "ciencias_militares",
+        "nome": "Ciências Militares",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "contabilidade",
+        "nome": "Contabilidade e Fiscalidade",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "design_grafico",
+        "nome": "Design de Comunicação",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "design_industrial",
+        "nome": "Design Industrial e de Produto",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "design_interiores",
+        "nome": "Design de Interiores",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "design_moda",
+        "nome": "Design de Moda",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "direito",
+        "nome": "Direito",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "engenharia_civil",
+        "nome": "Engenharia Civil",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "engenharia_minas",
+        "nome": "Engenharia de Minas e Geoambiente",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "enologia",
+        "nome": "Enologia",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "estatistica",
+        "nome": "Estatística e Investigação Operacional",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_agricultura_propria",
+        "nome": "Agricultura e terra própria",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_atelier",
+        "nome": "Ateliê próprio de ofício de mãos",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_consultoria_imagem",
+        "nome": "Consultoria de imagem e estilo",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_curadoria",
+        "nome": "Curadoria e comércio de arte",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_edicao",
+        "nome": "Edição e revisão independente",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_escrita_ensaio",
+        "nome": "Escrita de fundo — ensaio e pensamento",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_eventos",
+        "nome": "Organização de eventos e casamentos",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_imobiliario_proprio",
+        "nome": "Imobiliário e património próprio",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_lideranca_projeto",
+        "nome": "Direção de projeto ou instituição própria",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_marca_pessoal",
+        "nome": "Negócio próprio com marca pessoal",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_mediacao_relacional",
+        "nome": "Mediação e aconselhamento relacional",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_politica_local",
+        "nome": "Política local e representação",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_pratica_contemplativa",
+        "nome": "Disciplina espiritual e prática contemplativa",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_publicacao",
+        "nome": "Edição e publicação própria",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_restauro_proprio",
+        "nome": "Restauro e conservação por conta própria",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "formacao_professores",
+        "nome": "Formação de Professores",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "geologia",
+        "nome": "Geologia",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "gerontologia",
+        "nome": "Gerontologia",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "gestao",
+        "nome": "Gestão",
+        "convergencia": 6
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "historia",
+        "nome": "História",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "historia_arte",
+        "nome": "História da Arte",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "jornalismo",
+        "nome": "Ciências da Comunicação — Jornalismo",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "literatura_linguistica",
+        "nome": "Estudos Portugueses e Linguística",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "marketing",
+        "nome": "Marketing",
+        "convergencia": 5
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "medicina",
+        "nome": "Medicina",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "medicina_dentaria",
+        "nome": "Medicina Dentária",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "musica",
+        "nome": "Música",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "relacoes_internacionais",
+        "nome": "Relações Internacionais",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "saude_publica",
+        "nome": "Saúde Pública",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "seguranca_higiene",
+        "nome": "Segurança e Higiene no Trabalho",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "silvicultura",
+        "nome": "Engenharia Florestal",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_agricultura",
+        "nome": "Técnico de Produção Agropecuária",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_armazem",
+        "nome": "Técnico de Gestão de Armazém",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_arquivo",
+        "nome": "Técnico de Arquivo e Documentação",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_cabeleireiro",
+        "nome": "Técnico de Cabeleireiro",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_canalizacao",
+        "nome": "Técnico de Instalações Hidráulicas",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_carpintaria",
+        "nome": "Técnico de Carpintaria e Marcenaria",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_construcao",
+        "nome": "Técnico de Construção Civil",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_costura",
+        "nome": "Técnico de Modelação e Confeção",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_decoracao",
+        "nome": "Técnico de Design de Interiores e Exteriores",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_design_grafico",
+        "nome": "Técnico de Design Gráfico",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_direcao_equipa",
+        "nome": "Direção e chefia de equipa",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_eletricidade",
+        "nome": "Técnico de Eletrónica, Automação e Comando",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_fotografia",
+        "nome": "Técnico de Fotografia",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_funeraria",
+        "nome": "Técnico de Serviços Funerários",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_joalharia",
+        "nome": "Técnico de Joalharia",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_manutencao",
+        "nome": "Técnico de Manutenção Industrial",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_massagem",
+        "nome": "Técnico de Termalismo e Bem-Estar",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_ourivesaria",
+        "nome": "Técnico de Ourivesaria",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_paisagismo",
+        "nome": "Técnico de Jardinagem e Espaços Verdes",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_pastelaria",
+        "nome": "Técnico de Pastelaria e Panificação",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_protecao_pessoas",
+        "nome": "Técnico de Proteção Civil e Socorro",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_qualidade",
+        "nome": "Técnico de Controlo de Qualidade",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_restauracao",
+        "nome": "Técnico de Restauração e Bar",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_som_imagem",
+        "nome": "Técnico de Áudio e Vídeo",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "traducao",
+        "nome": "Tradução",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "turismo",
+        "nome": "Turismo e Lazer",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "urbanismo",
+        "nome": "Urbanismo",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosDeAreaActual",
+        "id": "cabeleireiro_estetica_superior",
+        "nome": "Ciências Cosméticas",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosDeAreaActual",
+        "id": "t_estetica",
+        "nome": "Técnico de Estética e Cosmética",
+        "convergencia": 3
+      }
+    ],
+    "nadia": [
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "administracao_publica",
+        "nome": "Administração Pública",
+        "convergencia": 4,
+        "nivelConfianca": 1
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "biblioteconomia",
+        "nome": "Ciências da Informação e Documentação",
+        "convergencia": 4,
+        "nivelConfianca": 1
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "ciencia_politica",
+        "nome": "Ciência Política",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "ciencias_educacao",
+        "nome": "Ciências da Educação",
+        "convergencia": 6,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "ciencias_religiao",
+        "nome": "Ciências da Religião",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "direito",
+        "nome": "Direito",
+        "convergencia": 4,
+        "nivelConfianca": 1
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "f_astrologia",
+        "nome": "Astrologia e sistemas simbólicos — prática e ensino",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "f_direcao_espiritual",
+        "nome": "Direção espiritual e formação de adultos",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "f_ensino_proprio",
+        "nome": "Ensino próprio — escola, curso, mentoria",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "f_escrita_ensaio",
+        "nome": "Escrita de fundo — ensaio e pensamento",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "f_publicacao",
+        "nome": "Edição e publicação própria",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "f_vida_religiosa",
+        "nome": "Vida religiosa e ministério",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "filosofia",
+        "nome": "Filosofia",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "formacao_professores",
+        "nome": "Formação de Professores",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "gestao",
+        "nome": "Gestão",
+        "convergencia": 5,
+        "nivelConfianca": 1
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "historia",
+        "nome": "História",
+        "convergencia": 4,
+        "nivelConfianca": 1
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "medicina",
+        "nome": "Medicina",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "relacoes_internacionais",
+        "nome": "Relações Internacionais",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "sociologia",
+        "nome": "Sociologia",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "t_guia",
+        "nome": "Guia-Intérprete Nacional",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "teologia",
+        "nome": "Teologia",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "traducao",
+        "nome": "Tradução",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "administracao_hospitalar",
+        "nome": "Administração Hospitalar",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "administracao_publica",
+        "nome": "Administração Pública",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "antropologia",
+        "nome": "Antropologia",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "apoio_criancas_jovens",
+        "nome": "Educação Social",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "arqueologia",
+        "nome": "Arqueologia",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "arquitetura",
+        "nome": "Arquitetura",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "artes_espetaculo",
+        "nome": "Artes do Espetáculo — Teatro e Dança",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "artesanato_superior",
+        "nome": "Artes e Ofícios Tradicionais",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "auditoria",
+        "nome": "Auditoria e Controlo de Gestão",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "biblioteconomia",
+        "nome": "Ciências da Informação e Documentação",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "cardiopneumologia",
+        "nome": "Cardiopneumologia",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "ciencia_politica",
+        "nome": "Ciência Política",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "ciencias_educacao",
+        "nome": "Ciências da Educação",
+        "convergencia": 6
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "ciencias_mar",
+        "nome": "Ciências do Mar",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "ciencias_militares",
+        "nome": "Ciências Militares",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "ciencias_religiao",
+        "nome": "Ciências da Religião",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "contabilidade",
+        "nome": "Contabilidade e Fiscalidade",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "design_grafico",
+        "nome": "Design de Comunicação",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "design_interiores",
+        "nome": "Design de Interiores",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "design_moda",
+        "nome": "Design de Moda",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "direito",
+        "nome": "Direito",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "educacao_infancia",
+        "nome": "Educação Básica — Educadores de Infância",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "enfermagem",
+        "nome": "Enfermagem",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "engenharia_alimentar",
+        "nome": "Engenharia Alimentar",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "estatistica",
+        "nome": "Estatística e Investigação Operacional",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_astrologia",
+        "nome": "Astrologia e sistemas simbólicos — prática e ensino",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_comunidade",
+        "nome": "Criação de comunidade e espaços de pertença",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_cozinha_propria",
+        "nome": "Cozinha própria e alimentação como projeto",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_cuidado_oficio",
+        "nome": "Cuidado como ofício próprio",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_direcao_espiritual",
+        "nome": "Direção espiritual e formação de adultos",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_doula",
+        "nome": "Doula e acompanhamento de nascimento",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_ensino_proprio",
+        "nome": "Ensino próprio — escola, curso, mentoria",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_escrita_ensaio",
+        "nome": "Escrita de fundo — ensaio e pensamento",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_escrita_memoria",
+        "nome": "Escrita de memória, história de família e biografia",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_escrita_propria",
+        "nome": "Escrita e autoria em qualquer formato",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_estrangeiro",
+        "nome": "Trabalho no estrangeiro ou com o estrangeiro",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_investigacao_livre",
+        "nome": "Investigação livre e escrita de profundidade",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_lideranca_projeto",
+        "nome": "Direção de projeto ou instituição própria",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_marca_pessoal",
+        "nome": "Negócio próprio com marca pessoal",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_politica_local",
+        "nome": "Política local e representação",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_publicacao",
+        "nome": "Edição e publicação própria",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_vida_religiosa",
+        "nome": "Vida religiosa e ministério",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "filosofia",
+        "nome": "Filosofia",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "formacao_professores",
+        "nome": "Formação de Professores",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "gerontologia",
+        "nome": "Gerontologia",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "gestao",
+        "nome": "Gestão",
+        "convergencia": 5
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "historia",
+        "nome": "História",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "hotelaria_restauracao",
+        "nome": "Gestão Hoteleira e Restauração",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "jornalismo",
+        "nome": "Ciências da Comunicação — Jornalismo",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "linguas_classicas",
+        "nome": "Línguas e Literaturas Clássicas — Grego, Latim, Hebraico",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "medicina",
+        "nome": "Medicina",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "nutricao",
+        "nome": "Ciências da Nutrição",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "psicologia",
+        "nome": "Psicologia",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "publicidade",
+        "nome": "Publicidade e Marketing",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "relacoes_internacionais",
+        "nome": "Relações Internacionais",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "servico_social",
+        "nome": "Serviço Social",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "sociologia",
+        "nome": "Sociologia",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_apoio_infancia",
+        "nome": "Técnico de Apoio à Infância",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_auxiliar_saude",
+        "nome": "Técnico Auxiliar de Saúde",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_cozinha",
+        "nome": "Técnico de Cozinha e Pastelaria",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_direcao_equipa",
+        "nome": "Direção e chefia de equipa",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_eletricidade",
+        "nome": "Técnico de Eletrónica, Automação e Comando",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_fotografia",
+        "nome": "Técnico de Fotografia",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_geriatria",
+        "nome": "Técnico de Apoio Psicossocial e Geriatria",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_guia",
+        "nome": "Guia-Intérprete Nacional",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_imobiliario",
+        "nome": "Técnico de Mediação Imobiliária",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_joalharia",
+        "nome": "Técnico de Joalharia",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_massagem",
+        "nome": "Técnico de Termalismo e Bem-Estar",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_nautica",
+        "nome": "Técnico de Máquinas e Navegação Marítima",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_ourivesaria",
+        "nome": "Técnico de Ourivesaria",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_protecao_pessoas",
+        "nome": "Técnico de Proteção Civil e Socorro",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_restauracao",
+        "nome": "Técnico de Restauração e Bar",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_turismo",
+        "nome": "Técnico de Turismo",
+        "convergencia": 1
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "teologia",
+        "nome": "Teologia",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "terapia_reabilitacao",
+        "nome": "Terapia e Reabilitação",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "traducao",
+        "nome": "Tradução",
+        "convergencia": 4
+      }
+    ],
+    "alexandra": [
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "apoio_criancas_jovens",
+        "nome": "Educação Social",
+        "convergencia": 4,
+        "nivelConfianca": 1
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "ciencia_politica",
+        "nome": "Ciência Política",
+        "convergencia": 6,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "medicina",
+        "nome": "Medicina",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "servico_social",
+        "nome": "Serviço Social",
+        "convergencia": 5,
+        "nivelConfianca": 1
+      },
+      {
+        "origem": "candidatasForaDaLista",
+        "id": "sociologia",
+        "nome": "Sociologia",
+        "convergencia": 4,
+        "nivelConfianca": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "administracao_hospitalar",
+        "nome": "Administração Hospitalar",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "administracao_publica",
+        "nome": "Administração Pública",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "apoio_criancas_jovens",
+        "nome": "Educação Social",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "arqueologia",
+        "nome": "Arqueologia",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "arquitetura",
+        "nome": "Arquitetura",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "artes_espetaculo",
+        "nome": "Artes do Espetáculo — Teatro e Dança",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "audiovisual",
+        "nome": "Som e Imagem — Produção de Media",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "belas_artes",
+        "nome": "Belas-Artes",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "biblioteconomia",
+        "nome": "Ciências da Informação e Documentação",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "cardiopneumologia",
+        "nome": "Cardiopneumologia",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "ciencia_politica",
+        "nome": "Ciência Política",
+        "convergencia": 6
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "ciencias_educacao",
+        "nome": "Ciências da Educação",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "ciencias_farmaceuticas",
+        "nome": "Ciências Farmacêuticas",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "ciencias_mar",
+        "nome": "Ciências do Mar",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "ciencias_militares",
+        "nome": "Ciências Militares",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "ciencias_religiao",
+        "nome": "Ciências da Religião",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "design_industrial",
+        "nome": "Design Industrial e de Produto",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "economia",
+        "nome": "Economia",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "educacao_infancia",
+        "nome": "Educação Básica — Educadores de Infância",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "enfermagem",
+        "nome": "Enfermagem",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "engenharia_alimentar",
+        "nome": "Engenharia Alimentar",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "engenharia_civil",
+        "nome": "Engenharia Civil",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "engenharia_minas",
+        "nome": "Engenharia de Minas e Geoambiente",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_astrologia",
+        "nome": "Astrologia e sistemas simbólicos — prática e ensino",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_comunidade",
+        "nome": "Criação de comunidade e espaços de pertença",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_cozinha_propria",
+        "nome": "Cozinha própria e alimentação como projeto",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_cuidado_oficio",
+        "nome": "Cuidado como ofício próprio",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_direcao_espiritual",
+        "nome": "Direção espiritual e formação de adultos",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_doula",
+        "nome": "Doula e acompanhamento de nascimento",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_ensino_proprio",
+        "nome": "Ensino próprio — escola, curso, mentoria",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_escrita_ensaio",
+        "nome": "Escrita de fundo — ensaio e pensamento",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_escrita_memoria",
+        "nome": "Escrita de memória, história de família e biografia",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_lideranca_projeto",
+        "nome": "Direção de projeto ou instituição própria",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_marca_pessoal",
+        "nome": "Negócio próprio com marca pessoal",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_politica_local",
+        "nome": "Política local e representação",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_publicacao",
+        "nome": "Edição e publicação própria",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_supervisao",
+        "nome": "Aconselhamento sénior e supervisão",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "f_vida_religiosa",
+        "nome": "Vida religiosa e ministério",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "filosofia",
+        "nome": "Filosofia",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "financas_banca",
+        "nome": "Finanças, Banca e Seguros",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "formacao_professores",
+        "nome": "Formação de Professores",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "gerontologia",
+        "nome": "Gerontologia",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "gestao",
+        "nome": "Gestão",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "historia",
+        "nome": "História",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "historia_arte",
+        "nome": "História da Arte",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "hotelaria_restauracao",
+        "nome": "Gestão Hoteleira e Restauração",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "medicina",
+        "nome": "Medicina",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "medicina_dentaria",
+        "nome": "Medicina Dentária",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "metalurgia",
+        "nome": "Engenharia Metalúrgica e de Materiais",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "musica",
+        "nome": "Música",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "nutricao",
+        "nome": "Ciências da Nutrição",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "psicologia",
+        "nome": "Psicologia",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "relacoes_internacionais",
+        "nome": "Relações Internacionais",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "saude_publica",
+        "nome": "Saúde Pública",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "servico_social",
+        "nome": "Serviço Social",
+        "convergencia": 5
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "sociologia",
+        "nome": "Sociologia",
+        "convergencia": 4
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_apoio_infancia",
+        "nome": "Técnico de Apoio à Infância",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_auxiliar_saude",
+        "nome": "Técnico Auxiliar de Saúde",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_cabeleireiro",
+        "nome": "Técnico de Cabeleireiro",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_contabilidade",
+        "nome": "Técnico de Contabilidade",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_cozinha",
+        "nome": "Técnico de Cozinha e Pastelaria",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_direcao_equipa",
+        "nome": "Direção e chefia de equipa",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_editorial",
+        "nome": "Técnico de Produção Editorial",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_eletricidade",
+        "nome": "Técnico de Eletrónica, Automação e Comando",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_formacao_tecnica",
+        "nome": "Formador — Certificado de Competências Pedagógicas",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_geriatria",
+        "nome": "Técnico de Apoio Psicossocial e Geriatria",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_guia",
+        "nome": "Guia-Intérprete Nacional",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_imobiliario",
+        "nome": "Técnico de Mediação Imobiliária",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_joalharia",
+        "nome": "Técnico de Joalharia",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_massagem",
+        "nome": "Técnico de Termalismo e Bem-Estar",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_nautica",
+        "nome": "Técnico de Máquinas e Navegação Marítima",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_ourivesaria",
+        "nome": "Técnico de Ourivesaria",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_protecao_pessoas",
+        "nome": "Técnico de Proteção Civil e Socorro",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_restauracao",
+        "nome": "Técnico de Restauração e Bar",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "t_turismo",
+        "nome": "Técnico de Turismo",
+        "convergencia": 2
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "teologia",
+        "nome": "Teologia",
+        "convergencia": 3
+      },
+      {
+        "origem": "destinosAlternativos",
+        "id": "terapia_reabilitacao",
+        "nome": "Terapia e Reabilitação",
+        "convergencia": 3
+      }
+    ]
+  }
+}
