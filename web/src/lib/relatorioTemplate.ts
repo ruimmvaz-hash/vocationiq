@@ -1332,7 +1332,7 @@ function cardOpcao(op: LeituraOpcao, dados: DadosParaTemplate, pesos: PesoPlanet
     { icone: "&#10003;", titulo: "O que o perfil sustenta" },
     { icone: "&#9888;", titulo: "O que vai custar" },
     { icone: "&#9733;", titulo: dados.ehAdolescente ? "O curso concreto e a via de entrada" : "Sub-áreas mais alinhadas consigo" },
-    { icone: "?", titulo: "O que pede que falta" },
+    { icone: "?", titulo: "O que ainda falta" },
     { icone: "&#8594;", titulo: dados.ehAdolescente ? "Onde entra a tua matéria" : "Onde entra a sua matéria" },
   ];
   const partes = op.partes
