@@ -119,6 +119,21 @@ export interface VocationiqIntakeAdolescente {
   /** SPEC-vocacional.md — "qual delas te parece a mais provável hoje?". Não decide nada, é a hipótese em teste. */
   opcaoMaisProvavel?: string;
   preferenciaFamilia?: string;
+  /**
+   * BUG REAL, corrigido (auditoria de hoje — caso real: Alexandra, campo
+   * preenchido no intake, "devo seguir economia, gestão ou direito?",
+   * NUNCA chegava aqui nem ao prompt) — o comentário mais abaixo, junto a
+   * `perguntaImplicita`, afirmava que "o adolescente não tem um campo de
+   * texto livre 'pergunta específica' como o adulto": FALSO — o
+   * formulário tem esse campo (`pergunta_especifica` na base de dados,
+   * o mesmo nome de coluna do ramo adulto), só `construirIntakeAdolescente`
+   * (web, relatorioAdultoCompute.ts) nunca o lia. Sem este campo, uma
+   * pergunta explícita com 3 opções nomeadas (ex.: "economia, gestão ou
+   * direito?") era substituída, em silêncio, por uma pergunta genérica
+   * derivada só de `opcaoMaisProvavel` ("é X a mais provável?") — que
+   * nem menciona as outras opções que a pessoa nomeou de propósito.
+   */
+  perguntaEspecifica?: string;
   /** TAREFA 2 (correcção do especialista, aprovada) — migração 0020. `undefined`/`"pos-12"` nunca chegam a este prompt: `undefined` cai no formato "10-a-12" por omissão (formulário antigo, sem o campo preenchido); "pos-12" é decidido antes, na rota (ver DESVIO em relatorioAdultoCompute.ts). */
   anoEscolaridade?: "7-a-9" | "10-a-12" | "pos-12";
   /**
@@ -216,14 +231,21 @@ export function construirPromptAdolescente(
       : `(nenhuma opção declarada — escreve a partir do que o perfil sustenta em geral e da secção "${SECCAO_TITULOS.candidataForaDaLista}", que aparece ao cliente como "Opções que ainda não consideraste" — nunca uses o nome interno "candidata" a referir-te a esta secção no texto visível.)`;
 
   // Correcção do especialista (bug crítico — pergunta concreta sem
-  // resposta directa / abertura não responde à situação) — o
-  // adolescente não tem um campo de texto livre "pergunta específica"
-  // como o adulto; o equivalente mais próximo é "opcaoMaisProvavel"
-  // ("qual delas te parece a mais provável hoje?", SPEC-vocacional.md) —
-  // é essa a pergunta implícita que INSTRUCAO_PERGUNTA_ESPECIFICA/
-  // INSTRUCAO_ABERTURA_RESPONDE têm de responder de frente, nos dois
-  // motores pela mesma regra.
-  const perguntaImplicita = intake.opcaoMaisProvavel ? `É "${intake.opcaoMaisProvavel}" mesmo a mais provável, à luz do perfil?` : null;
+  // resposta directa / abertura não responde à situação) — a pergunta
+  // que INSTRUCAO_PERGUNTA_ESPECIFICA/INSTRUCAO_ABERTURA_RESPONDE têm de
+  // responder de frente, nos dois motores pela mesma regra. PRIORIDADE
+  // (correcção do especialista, auditoria de hoje — caso real: Alexandra):
+  // a pergunta REAL que a pessoa escreveu (`perguntaEspecifica`, campo
+  // que existe no formulário adolescente tal como no adulto) tem sempre
+  // prioridade — nomeia as opções que a pessoa quis nomear, nunca só uma.
+  // "opcaoMaisProvavel" ("qual delas te parece a mais provável hoje?",
+  // SPEC-vocacional.md) é só o FALLBACK, para pedidos que não preencheram
+  // pergunta específica.
+  const perguntaImplicita = intake.perguntaEspecifica
+    ? normalizarTextoLivre(intake.perguntaEspecifica)
+    : intake.opcaoMaisProvavel
+      ? `É "${intake.opcaoMaisProvavel}" mesmo a mais provável, à luz do perfil?`
+      : null;
 
   // ORDEM do especialista ("novo parágrafo de abertura em 'Opções que
   // ainda não considerou', anti 'isto dá para tudo'") — mesma função

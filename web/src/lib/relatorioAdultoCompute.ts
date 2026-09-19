@@ -400,6 +400,11 @@ export function construirIntakeAdolescente(intake: IntakeRow): VocationiqIntakeA
     opcoesAdolescente: deduplicarOpcoesAdolescente(intake.opcoes_adolescente ?? []),
     opcaoMaisProvavel: intake.opcao_mais_provavel ?? undefined,
     preferenciaFamilia: intake.preferencia_familia ? normalizarTextoLivre(intake.preferencia_familia) : undefined,
+    // BUG REAL, corrigido (auditoria de hoje — caso real: Alexandra) —
+    // este campo existe na base de dados desde sempre (mesma coluna do
+    // ramo adulto) e nunca foi lido aqui; ver o comentário completo junto
+    // a `perguntaEspecifica` em VocationiqIntakeAdolescente (promptAdolescente.ts).
+    perguntaEspecifica: intake.pergunta_especifica ?? undefined,
     anoEscolaridade,
     // BUG REAL, corrigido (ronda "relatório Marta") — pedidos
     // "universidade" ANTERIORES à migração 0019 (opcoes_adolescente)
