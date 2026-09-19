@@ -758,6 +758,34 @@ export function parseCritica(textoCritica: string, totalEsperado?: number): Resu
   return { criterios, falhas, todosPassaram: criterios.length ? falhas.length === 0 : null, criteriosEmFalta };
 }
 
+/**
+ * AUDITORIA (bug real encontrado, ronda "regeneração Alexandra" —
+ * caso real: crítica com 6 falhas reais, reescrita automática que NÃO
+ * as corrigiu de facto, e o admin sem qualquer aviso ao reabrir a
+ * página) — o aviso "⚠ Atenção antes de aprovar" só existia como
+ * estado local do browser (SeccaoRascunho.tsx), criado só na resposta
+ * de um `fetch` ao vivo (gerar/regenerar/reescrever). Ao recarregar a
+ * página, ou voltar a ela mais tarde (o momento em que a aprovação de
+ * facto acontece), o aviso desaparecia mesmo que a crítica guardada
+ * continuasse a reprovar o texto guardado. Esta função, partilhada
+ * entre o servidor (page.tsx, calculada a partir do `criticaLlm`
+ * persistido, sempre que a página carrega) e o cliente (SeccaoRascunho.tsx,
+ * na resposta ao vivo de gerar/regenerar), garante que as duas fontes
+ * mostram exactamente o mesmo aviso com a mesma lógica.
+ */
+export function construirAvisoRascunho(data: { geracaoTruncada?: boolean; criticaTruncada?: boolean; criteriosEmFalta?: number[]; precisaRevisaoManual?: boolean; falhasRestantes?: string[] }): string | null {
+  const partes: string[] = [];
+  if (data.geracaoTruncada) partes.push("a geração do texto foi cortada a meio (resposta demasiado longa para o limite de tokens) — o relatório pode estar incompleto.");
+  if (data.criticaTruncada) partes.push("a crítica automática foi cortada a meio — pode não ter avaliado todos os critérios.");
+  if (data.criteriosEmFalta && data.criteriosEmFalta.length > 0) partes.push(`critérios nunca avaliados pela crítica (tratados como falha por segurança): ${data.criteriosEmFalta.join(", ")}.`);
+  // Nota de fraseado — nunca afirma "esgotou as tentativas de reescrita": esta função corre
+  // tanto a seguir a uma reescrita ao vivo como, no servidor, sobre o estado já persistido (onde
+  // não se sabe se a reescrita chegou a correr) — a única afirmação sempre verdadeira nos dois
+  // casos é "o texto guardado agora ainda reprova a crítica guardada agora".
+  if (data.precisaRevisaoManual) partes.push(`o texto actualmente guardado ainda reprova a crítica automática — revê à mão antes de aprovar${data.falhasRestantes?.length ? `: ${data.falhasRestantes.join(" | ")}` : "."}`);
+  return partes.length ? `⚠ Atenção antes de aprovar — ${partes.join(" ")}` : null;
+}
+
 // TAREFA #40 (mudança de arquitectura) — o critério 22 (SELECÇÃO DAS
 // CANDIDATAS) pode exigir escolher uma candidata DIFERENTE da pool
 // completa, não só reescrever uma frase — mas a pool só existe no

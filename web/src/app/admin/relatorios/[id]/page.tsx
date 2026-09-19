@@ -20,6 +20,7 @@ import { SeccaoRascunho } from "./SeccaoRascunho";
 import { SeccaoAuditoria } from "./SeccaoAuditoria";
 import { SeccaoPrompt } from "./SeccaoPrompt";
 import { SeccaoEntrega } from "./SeccaoEntrega";
+import { parseCritica, construirAvisoRascunho, TOTAL_CRITERIOS_ADULTO, TOTAL_CRITERIOS_ADOLESCENTE } from "@/lib/criticaRelatorio";
 
 export const dynamic = "force-dynamic";
 
@@ -168,6 +169,26 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
         }
       : null;
 
+  // AUDITORIA (bug real, ronda "regeneração Alexandra" — caso real: crítica
+  // com falhas reais, reescrita automática que não as corrigiu de facto, e
+  // o admin sem qualquer aviso ao reabrir a página) — recalcula, a partir
+  // da crítica JÁ PERSISTIDA (nunca chama a Anthropic aqui), se o texto
+  // actualmente guardado ainda reprova a própria crítica guardada. Sem
+  // isto, o aviso "⚠ Atenção antes de aprovar" só existia como estado do
+  // browser, criado na resposta de um fetch ao vivo — desaparecia sempre
+  // que a página era recarregada, exactamente o momento em que a
+  // aprovação de facto acontece.
+  const totalCriteriosRamo = ehAdolescente ? TOTAL_CRITERIOS_ADOLESCENTE : TOTAL_CRITERIOS_ADULTO;
+  const resultadoCriticaActual = actual?.criticaLlm ? parseCritica(actual.criticaLlm, totalCriteriosRamo) : null;
+  const avisoInicial = resultadoCriticaActual
+    ? construirAvisoRascunho({
+        criteriosEmFalta: resultadoCriticaActual.criteriosEmFalta,
+        precisaRevisaoManual: resultadoCriticaActual.falhas.length > 0,
+        falhasRestantes: resultadoCriticaActual.falhas,
+      })
+    : null;
+
+
   const podeVerRelatorio = podeGerarAutomatico && actual !== null;
 
   return (
@@ -270,6 +291,7 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
           editadoManualmenteInicial={actual?.editadoManualmente ?? false}
           editadoEmInicial={actual?.editadoEm ?? null}
           versaoAnteriorInicial={actual?.versaoAnterior ?? null}
+          avisoInicial={avisoInicial}
         />
       </AccordionSection>
 

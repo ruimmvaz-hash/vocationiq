@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { construirAvisoRascunho } from "@/lib/criticaRelatorio";
 
 function formatarDataHora(iso: string): string {
   return new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
@@ -36,6 +37,7 @@ export function SeccaoRascunho({
   editadoManualmenteInicial = false,
   editadoEmInicial = null,
   versaoAnteriorInicial = null,
+  avisoInicial = null,
 }: {
   intakeId: string;
   podeGerar: boolean;
@@ -52,6 +54,8 @@ export function SeccaoRascunho({
   editadoEmInicial?: string | null;
   /** CORRECÇÃO 2 — um único nível de undo; presente quando há uma versão anterior por restaurar. */
   versaoAnteriorInicial?: string | null;
+  /** AUDITORIA (bug real, ronda "regeneração Alexandra") — calculado no servidor (page.tsx) a partir da crítica JÁ PERSISTIDA, para o aviso sobreviver a um reload da página (antes só existia como estado local, criado só na resposta de um fetch ao vivo — desaparecia ao voltar à página, mesmo com o texto guardado ainda a reprovar a crítica guardada). Ver construirAvisoRascunho em criticaRelatorio.ts. */
+  avisoInicial?: string | null;
 }) {
   const [texto, setTexto] = useState(textoInicial);
   const [textoEditado, setTextoEditado] = useState(textoInicial ?? "");
@@ -71,17 +75,8 @@ export function SeccaoRascunho({
   // reprova a própria crítica só ficavam registadas num log de servidor
   // que ninguém via aqui — o rascunho parecia "pronto" mesmo quando não
   // estava. `aviso` mostra isso explicitamente antes de aprovar/entregar.
-  const [aviso, setAviso] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(avisoInicial);
   const router = useRouter();
-
-  function construirAviso(data: { geracaoTruncada?: boolean; criticaTruncada?: boolean; criteriosEmFalta?: number[]; precisaRevisaoManual?: boolean; falhasRestantes?: string[] }): string | null {
-    const partes: string[] = [];
-    if (data.geracaoTruncada) partes.push("a geração do texto foi cortada a meio (resposta demasiado longa para o limite de tokens) — o relatório pode estar incompleto.");
-    if (data.criticaTruncada) partes.push("a crítica automática foi cortada a meio — pode não ter avaliado todos os critérios.");
-    if (data.criteriosEmFalta && data.criteriosEmFalta.length > 0) partes.push(`critérios nunca avaliados pela crítica (tratados como falha por segurança): ${data.criteriosEmFalta.join(", ")}.`);
-    if (data.precisaRevisaoManual) partes.push(`a reescrita automática esgotou as tentativas e o texto AINDA reprova a crítica — revê à mão antes de aprovar${data.falhasRestantes?.length ? `: ${data.falhasRestantes.join(" | ")}` : "."}`);
-    return partes.length ? `⚠ Atenção antes de aprovar — ${partes.join(" ")}` : null;
-  }
 
   if (!podeGerar) {
     return <p className="text-sm text-ink/60">Este pedido não usa o motor de geração automática — a entrega é feita por upload manual do PDF (secção &quot;Entrega&quot;).</p>;
@@ -134,7 +129,7 @@ export function SeccaoRascunho({
       return;
     }
     aplicarTexto(data.texto, false, data.manualPreservada === true);
-    setAviso(construirAviso(data));
+    setAviso(construirAvisoRascunho(data));
 
     // BUG REAL, corrigido (ronda "regeneração Alexandra") — a reescrita
     // (quando a crítica encontrou falhas) passou a ser um 2º pedido HTTP
@@ -161,7 +156,7 @@ export function SeccaoRascunho({
       // AUDITORIA — o aviso da reescrita (ex.: `precisaRevisaoManual`
       // depois de esgotar as tentativas de auto-correcção) substitui o
       // da geração original, porque é o estado mais recente do texto.
-      setAviso(construirAviso(dataReescrita));
+      setAviso(construirAvisoRascunho(dataReescrita));
     }
 
     setLoading(null);
