@@ -43,8 +43,6 @@ const MAX_TOKENS = 16000;
 // tem TOTAL_CRITERIOS_ADOLESCENTE (34) critérios, não os 23 para que
 // 8192 tinha ficado dimensionado — subido para 14000 pelo mesmo motivo.
 const MAX_TOKENS_CRITICA = 14000;
-const TEMPERATURE_GERACAO = 0.4;
-const TEMPERATURE_CRITICA = 0.2;
 const MAX_TENTATIVAS_REESCRITA = 2;
 
 // "universidade" entrou (correcção do especialista) — ver o mesmo
@@ -54,11 +52,10 @@ const MAX_TENTATIVAS_REESCRITA = 2;
 const SITUACOES_ADOLESCENTE = new Set(["9-ou-menos", "10-11-12", "universidade"]);
 
 /** Idêntica à de api/relatorio/route.ts — thinking sempre desligado, mesmo diagnóstico de "sem bloco de texto", agora também devolve `truncado` (ver auditoria em api/relatorio/route.ts). */
-async function gerarTexto(client: Anthropic, prompt: string, maxTokens: number, temperature: number): Promise<{ texto: string; truncado: boolean }> {
+async function gerarTexto(client: Anthropic, prompt: string, maxTokens: number): Promise<{ texto: string; truncado: boolean }> {
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: maxTokens,
-    temperature,
     thinking: { type: "disabled" },
     messages: [{ role: "user", content: prompt }],
   });
@@ -167,7 +164,7 @@ export async function POST(request: Request) {
 
     const client = new Anthropic({ apiKey });
 
-    const { texto: textoOriginal, truncado: geracaoTruncada } = await gerarTexto(client, prompt, MAX_TOKENS, TEMPERATURE_GERACAO);
+    const { texto: textoOriginal, truncado: geracaoTruncada } = await gerarTexto(client, prompt, MAX_TOKENS);
 
     // Crítica: "pos-12" gerou texto no tom adulto ("você"), por isso usa
     // a crítica adulta original — a versão adaptada ao adolescente
@@ -180,7 +177,7 @@ export async function POST(request: Request) {
     // usar depois de reescrever, sem depender de guardar mais um campo.
     const totalCriteriosEsperado = ehPos12 ? TOTAL_CRITERIOS_ADULTO : TOTAL_CRITERIOS_ADOLESCENTE;
     const promptCritica = ehPos12 ? construirPromptCritica(prompt, textoOriginal) : construirPromptCriticaAdolescente(prompt, textoOriginal);
-    const { texto: textoCritica, truncado: criticaTruncada } = await gerarTexto(client, promptCritica, MAX_TOKENS_CRITICA, TEMPERATURE_CRITICA);
+    const { texto: textoCritica, truncado: criticaTruncada } = await gerarTexto(client, promptCritica, MAX_TOKENS_CRITICA);
     const resultadoCritica = parseCritica(textoCritica, totalCriteriosEsperado);
 
     // Correcção do especialista ("provar que o critério corre de facto")
@@ -374,11 +371,11 @@ export async function PATCH(request: Request) {
       while (resultadoCritica.falhas.length > 0 && tentativas < MAX_TENTATIVAS_REESCRITA) {
         tentativas += 1;
         const promptReescrita = construirPromptReescrita(rascunho.promptCompleto, textoBase, resultadoCritica.falhas);
-        const { texto: novoTexto } = await gerarTexto(client, promptReescrita, MAX_TOKENS, TEMPERATURE_GERACAO);
+        const { texto: novoTexto } = await gerarTexto(client, promptReescrita, MAX_TOKENS);
         textoReescrito = novoTexto;
 
         const promptCriticaPosReescrita = construirCritica(rascunho.promptCompleto, textoReescrito);
-        const { texto: textoCriticaPos, truncado } = await gerarTexto(client, promptCriticaPosReescrita, MAX_TOKENS_CRITICA, TEMPERATURE_CRITICA);
+        const { texto: textoCriticaPos, truncado } = await gerarTexto(client, promptCriticaPosReescrita, MAX_TOKENS_CRITICA);
         algumaCriticaTruncada = algumaCriticaTruncada || truncado;
         ultimaCriticaLlm = textoCriticaPos;
         resultadoCritica = parseCritica(textoCriticaPos, totalCriteriosEsperado);

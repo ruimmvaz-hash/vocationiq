@@ -53,15 +53,15 @@ const MAX_TOKENS = 16000;
 // força como FALHA qualquer critério que continue ausente mesmo com
 // este valor mais alto — ver `TOTAL_CRITERIOS_ADULTO` abaixo.
 const MAX_TOKENS_CRITICA = 14000;
-// AUDITORIA — nenhuma das 3 chamadas definia `temperature` (ficava no
-// valor por omissão da API, próximo de 1.0): cada geração era uma
-// amostra independente e pouco reprodutível, o que por si só já
-// contribuía para relatórios diferentes a cada regeneração do mesmo
-// cliente. 0.4 para gerar/reescrever mantém a escrita natural mas reduz
-// a variância; 0.2 para a crítica — queremos que ela seja o mais
-// consistente possível a avaliar o mesmo texto.
-const TEMPERATURE_GERACAO = 0.4;
-const TEMPERATURE_CRITICA = 0.2;
+// AUDITORIA (tentativa revertida no mesmo dia) — chegou-se a definir
+// `temperature` explícito (0.4 gerar/reescrever, 0.2 crítica) para reduzir
+// a variância entre regenerações do mesmo cliente. Partiu a produção:
+// "Regenerar" (caso real: Alexandra) devolveu 400 "`temperature` is
+// deprecated for this model." — o MODEL actual (claude-sonnet-5) já não
+// aceita este parâmetro. Removido. A não-determinismo entre gerações
+// continua por resolver (ver "Português, leitura e inconsistência" na
+// auditoria) — só não pode ser este o caminho enquanto o modelo recusar
+// o parâmetro.
 
 const SITUACAO_LABEL = Object.fromEntries(SITUACOES.map((s) => [s.valor, s.label]));
 
@@ -76,11 +76,10 @@ const SITUACAO_LABEL = Object.fromEntries(SITUACOES.map((s) => [s.valor, s.label
  * devolver `truncado` explicitamente, para cada rota decidir o que fazer
  * (tipicamente: avisar no admin — ver `SeccaoRascunho.tsx`).
  */
-async function gerarTexto(client: Anthropic, prompt: string, maxTokens: number, temperature: number): Promise<{ texto: string; truncado: boolean }> {
+async function gerarTexto(client: Anthropic, prompt: string, maxTokens: number): Promise<{ texto: string; truncado: boolean }> {
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: maxTokens,
-    temperature,
     thinking: { type: "disabled" },
     messages: [{ role: "user", content: prompt }],
   });
@@ -167,12 +166,12 @@ export async function POST(request: Request) {
     // omissão e pode gastar TODO o max_tokens em blocos de "thinking" sem
     // nunca chegar a escrever texto (stop_reason "max_tokens", blocos=
     // [thinking]). "disabled" força a resposta directa, sem essa camada.
-    const { texto: textoOriginal, truncado: geracaoTruncada } = await gerarTexto(client, prompt, MAX_TOKENS, TEMPERATURE_GERACAO);
+    const { texto: textoOriginal, truncado: geracaoTruncada } = await gerarTexto(client, prompt, MAX_TOKENS);
 
     // Passo 3 — criticar. Segunda chamada, sempre (nunca opcional) — o
     // resultado fica guardado mesmo quando tudo passa, para auditoria.
     const promptCritica = construirPromptCritica(prompt, textoOriginal);
-    const { texto: textoCritica, truncado: criticaTruncada } = await gerarTexto(client, promptCritica, MAX_TOKENS_CRITICA, TEMPERATURE_CRITICA);
+    const { texto: textoCritica, truncado: criticaTruncada } = await gerarTexto(client, promptCritica, MAX_TOKENS_CRITICA);
     const resultadoCritica = parseCritica(textoCritica, TOTAL_CRITERIOS_ADULTO);
 
     // Correcção do especialista ("provar que o critério corre de
@@ -360,13 +359,13 @@ export async function PATCH(request: Request) {
       while (resultadoCritica.falhas.length > 0 && tentativas < MAX_TENTATIVAS_REESCRITA) {
         tentativas += 1;
         const promptReescrita = construirPromptReescrita(rascunho.promptCompleto, textoBase, resultadoCritica.falhas);
-        const { texto: novoTexto } = await gerarTexto(client, promptReescrita, MAX_TOKENS, TEMPERATURE_GERACAO);
+        const { texto: novoTexto } = await gerarTexto(client, promptReescrita, MAX_TOKENS);
         textoReescrito = novoTexto;
 
         // Fecha o ciclo: volta a criticar o que acabou de ser reescrito,
         // nunca aceita a reescrita às cegas.
         const promptCriticaPosReescrita = construirPromptCritica(rascunho.promptCompleto, textoReescrito);
-        const { texto: textoCriticaPos, truncado } = await gerarTexto(client, promptCriticaPosReescrita, MAX_TOKENS_CRITICA, TEMPERATURE_CRITICA);
+        const { texto: textoCriticaPos, truncado } = await gerarTexto(client, promptCriticaPosReescrita, MAX_TOKENS_CRITICA);
         algumaCriticaTruncada = algumaCriticaTruncada || truncado;
         ultimaCriticaLlm = textoCriticaPos;
         resultadoCritica = parseCritica(textoCriticaPos, TOTAL_CRITERIOS_ADULTO);
