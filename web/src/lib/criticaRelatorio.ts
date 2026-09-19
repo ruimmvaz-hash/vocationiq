@@ -700,6 +700,8 @@ export interface CriterioCritica {
   nome: string;
   passa: boolean;
   detalhe: string;
+  /** AUDITORIA (correcção do especialista, ronda "auditoria de erros") — true quando esta entrada não veio da resposta da Anthropic mas foi criada porque o número nunca apareceu (resposta truncada ou critério ignorado pelo modelo). Nunca é `passa: true`. */
+  ausenteDaResposta?: boolean;
 }
 
 export interface ResultadoCritica {
@@ -707,12 +709,22 @@ export interface ResultadoCritica {
   falhas: string[];
   /** `null` quando a resposta não seguiu o formato pedido em nenhuma linha — nunca se assume "passou tudo" nesse caso, mas também não se força uma reescrita sobre dados não interpretáveis (ver storage.ts/route.ts: crítica não parseável fica registada, sem reescrita automática). */
   todosPassaram: boolean | null;
+  /** AUDITORIA — true quando algum número entre 1 e `totalEsperado` nunca apareceu na resposta (ver `parseCritica`). Nunca invisível: o chamador deve mostrar isto no admin, não só registar em log. */
+  criteriosEmFalta: number[];
 }
 
 const REGEX_LINHA_CRITERIO = /^\s*(\d{1,2})\.\s*([^:]+):\s*(PASSA|FALHA)\b\s*(?:[-–—]\s*(.*))?$/gim;
 
-/** Extrai os até 12 critérios "N. NOME: PASSA|FALHA — detalhe" da resposta da crítica. Nunca lança erro em formato inesperado — devolve o que conseguir parsear. */
-export function parseCritica(textoCritica: string): ResultadoCritica {
+/** Total de critérios definidos em cada instrução de crítica (ver INSTRUCAO_CRITICA / INSTRUCAO_CRITICA_ADOLESCENTE) — usados por `parseCritica` para detectar cortes silenciosos. Actualizar sempre que um critério novo for acrescentado (auditoria de erros, Set 2026: 8192 tokens tinham ficado dimensionados para 23, quando já existiam 33/34 — exactamente o tipo de desfasamento que este total serve para apanhar). */
+export const TOTAL_CRITERIOS_ADULTO = 33;
+export const TOTAL_CRITERIOS_ADOLESCENTE = 34;
+
+/**
+ * Extrai os critérios "N. NOME: PASSA|FALHA — detalhe" da resposta da crítica. Nunca lança erro em formato inesperado — devolve o que conseguir parsear.
+ *
+ * AUDITORIA (correcção do especialista, ronda "auditoria de erros") — bug real encontrado: um critério que nunca aparece na resposta (porque a chamada foi cortada por `max_tokens`, ou o modelo simplesmente o saltou) ficava fora de `falhas` como se tivesse passado — nunca disparava reescrita. `totalEsperado` faz o oposto: qualquer número de 1 a `totalEsperado` que não tenha uma linha correspondente na resposta entra em `criteriosEmFalta` e é tratado como FALHA forçada (nunca como "não avaliado"). Passar `undefined` mantém o comportamento antigo (sem verificação de completude) — usado só onde o total de critérios não é conhecido à partida.
+ */
+export function parseCritica(textoCritica: string, totalEsperado?: number): ResultadoCritica {
   const criterios: CriterioCritica[] = [];
   let match: RegExpExecArray | null;
   REGEX_LINHA_CRITERIO.lastIndex = 0;
@@ -724,8 +736,26 @@ export function parseCritica(textoCritica: string): ResultadoCritica {
       detalhe: (match[4] ?? "").trim(),
     });
   }
+
+  const criteriosEmFalta: number[] = [];
+  if (totalEsperado && criterios.length > 0) {
+    const numerosPresentes = new Set(criterios.map((c) => c.numero));
+    for (let n = 1; n <= totalEsperado; n++) {
+      if (!numerosPresentes.has(n)) {
+        criteriosEmFalta.push(n);
+        criterios.push({
+          numero: n,
+          nome: `CRITÉRIO ${n} AUSENTE DA RESPOSTA`,
+          passa: false,
+          detalhe: "Não avaliado nesta chamada — resposta da crítica possivelmente truncada ou incompleta. Tratado como falha por segurança (nunca se assume que um critério ausente passou).",
+          ausenteDaResposta: true,
+        });
+      }
+    }
+  }
+
   const falhas = criterios.filter((c) => !c.passa).map((c) => `${c.numero}. ${c.nome}${c.detalhe ? `: ${c.detalhe}` : ""}`);
-  return { criterios, falhas, todosPassaram: criterios.length ? falhas.length === 0 : null };
+  return { criterios, falhas, todosPassaram: criterios.length ? falhas.length === 0 : null, criteriosEmFalta };
 }
 
 // TAREFA #40 (mudança de arquitectura) — o critério 22 (SELECÇÃO DAS

@@ -65,7 +65,23 @@ export function SeccaoRascunho({
   const [loading, setLoading] = useState<"gerar" | "guardar" | "apagar" | "usar-llm" | "restaurar" | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [mensagem, setMensagem] = useState<string | null>(null);
+  // AUDITORIA (correcção do especialista, ronda "auditoria de erros") —
+  // antes, uma resposta truncada (crítica ou geração cortadas a meio
+  // por `max_tokens`) ou uma reescrita que esgotou as tentativas e ainda
+  // reprova a própria crítica só ficavam registadas num log de servidor
+  // que ninguém via aqui — o rascunho parecia "pronto" mesmo quando não
+  // estava. `aviso` mostra isso explicitamente antes de aprovar/entregar.
+  const [aviso, setAviso] = useState<string | null>(null);
   const router = useRouter();
+
+  function construirAviso(data: { geracaoTruncada?: boolean; criticaTruncada?: boolean; criteriosEmFalta?: number[]; precisaRevisaoManual?: boolean; falhasRestantes?: string[] }): string | null {
+    const partes: string[] = [];
+    if (data.geracaoTruncada) partes.push("a geração do texto foi cortada a meio (resposta demasiado longa para o limite de tokens) — o relatório pode estar incompleto.");
+    if (data.criticaTruncada) partes.push("a crítica automática foi cortada a meio — pode não ter avaliado todos os critérios.");
+    if (data.criteriosEmFalta && data.criteriosEmFalta.length > 0) partes.push(`critérios nunca avaliados pela crítica (tratados como falha por segurança): ${data.criteriosEmFalta.join(", ")}.`);
+    if (data.precisaRevisaoManual) partes.push(`a reescrita automática esgotou as tentativas e o texto AINDA reprova a crítica — revê à mão antes de aprovar${data.falhasRestantes?.length ? `: ${data.falhasRestantes.join(" | ")}` : "."}`);
+    return partes.length ? `⚠ Atenção antes de aprovar — ${partes.join(" ")}` : null;
+  }
 
   if (!podeGerar) {
     return <p className="text-sm text-ink/60">Este pedido não usa o motor de geração automática — a entrega é feita por upload manual do PDF (secção &quot;Entrega&quot;).</p>;
@@ -105,6 +121,7 @@ export function SeccaoRascunho({
     setLoading("gerar");
     setErro(null);
     setMensagem(null);
+    setAviso(null);
     const res = await fetch(apiBase, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -117,6 +134,7 @@ export function SeccaoRascunho({
       return;
     }
     aplicarTexto(data.texto, false, data.manualPreservada === true);
+    setAviso(construirAviso(data));
 
     // BUG REAL, corrigido (ronda "regeneração Alexandra") — a reescrita
     // (quando a crítica encontrou falhas) passou a ser um 2º pedido HTTP
@@ -140,6 +158,10 @@ export function SeccaoRascunho({
         return;
       }
       aplicarTexto(dataReescrita.texto, dataReescrita.houveReescrita === true, dataReescrita.manualPreservada === true, dataReescrita.criadoEm);
+      // AUDITORIA — o aviso da reescrita (ex.: `precisaRevisaoManual`
+      // depois de esgotar as tentativas de auto-correcção) substitui o
+      // da geração original, porque é o estado mais recente do texto.
+      setAviso(construirAviso(dataReescrita));
     }
 
     setLoading(null);
@@ -279,6 +301,7 @@ export function SeccaoRascunho({
       </div>
 
       {erro && <p className="mt-3 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{erro}</p>}
+      {aviso && <p className="mt-3 rounded-md bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">{aviso}</p>}
       {mensagem && <p className="mt-3 rounded-md bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{mensagem}</p>}
 
       {texto && (

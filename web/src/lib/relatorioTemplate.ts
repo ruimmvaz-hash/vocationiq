@@ -2647,7 +2647,27 @@ export function gerarHTMLRelatorio(
   .capa-data { color: #FFFFFF; opacity: 0.7; font-size: 14px; margin-top: 10px; }
 
   .container { max-width: 760px; margin: 0 auto; padding: 50px 40px 20px; }
-  section.seccao { margin-top: 52px; page-break-inside: avoid; }
+  /* AUDITORIA (correcção do especialista, ronda "auditoria de erros",
+     Set 2026) — causa-raiz do bug de alinhamento do PDF, persistente
+     apesar de 7 tentativas anteriores (ver docs/, todas focadas em
+     cartões/tabelas específicos, nunca nesta regra ao nível da secção
+     inteira). "page-break-inside: avoid" numa secção INTEIRA (texto do
+     LLM, comprimento sempre variável, 8-10 páginas) significa: sempre
+     que a secção não cabe no espaço livre da página actual, o Chromium
+     tenta empurrar TODA a secção para a página seguinte — resultado:
+     espaço em branco grande no fundo da página anterior e conteúdo a
+     começar a meio da seguinte. Quando a secção é maior do que uma
+     página inteira, o "avoid" é impossível de cumprir e o motor tem de
+     partir de qualquer forma, já depois de ter miscalculado o
+     orçamento de página — daí o desalinhamento parecer imprevisível e
+     variar por cliente (varia com o comprimento do texto gerado, que
+     nunca é o mesmo). "break-inside: auto" devolve a secção ao
+     comportamento normal de paginação; os elementos pequenos
+     (parágrafos, títulos, cartões, tabelas) continuam protegidos
+     individualmente pela regra @media print mais abaixo — é aí que a
+     protecção contra quebras feias deve viver, nunca ao nível da
+     secção inteira. */
+  section.seccao { margin-top: 52px; break-inside: auto; }
   h2.titulo-seccao { color: var(--azul); font-size: 13px; text-transform: uppercase; letter-spacing: 1.6px; font-weight: 700; border-bottom: 2px solid var(--ambar); padding-bottom: 10px; margin: 0 0 22px; }
 
   .quadro-dados { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 8px; }
@@ -2862,6 +2882,16 @@ export function gerarHTMLRelatorio(
     h1, h2, h3, p, li, td, th { page-break-inside: avoid; }
     .parte-opcao { page-break-inside: avoid; }
     .caixa-custo, .caixa-periodo-actual, .caixa-primeiro-passo, .caixa-insight, .ponte-wrap, .frase-abertura { page-break-inside: avoid; }
+    /* AUDITORIA (ronda "auditoria de erros") — complemento ao fix de
+       section.seccao acima: sem orphans/widows, o Chromium pode deixar
+       1 linha sozinha no fundo ou no topo de uma página dentro de um
+       parágrafo longo do LLM — mínimo de 3 linhas de cada lado de uma
+       quebra. E as linhas de tabela nunca tinham protecção própria
+       (só th/td tinham estilo, não protecção contra quebra) — uma
+       linha da tabela-resumo podia partir-se visualmente a meio entre
+       duas páginas. */
+    p, li { orphans: 3; widows: 3; }
+    .tabela-anexo tr, .tabela-resumo-opcoes tr { page-break-inside: avoid; }
   }
 </style>
 </head>

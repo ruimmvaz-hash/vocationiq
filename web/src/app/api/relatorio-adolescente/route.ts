@@ -7,7 +7,7 @@ import { guardarRascunho, obterRascunho, apagarRascunho, usarVersaoLlmRascunho, 
 import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTemplate";
 import { calcularDadosAstrologicosAdolescente, reconstruirHTMLRelatorio, GeocodeError, ANO_ESCOLARIDADE_LABEL } from "@/lib/relatorioAdultoCompute";
 import { construirPromptAdolescente, construirPromptAdulto, type VocationiqIntakeAdulto } from "@naveya/method-engine";
-import { construirPromptCritica, construirPromptCriticaAdolescente, parseCritica, construirPromptReescrita } from "@/lib/criticaRelatorio";
+import { construirPromptCritica, construirPromptCriticaAdolescente, parseCritica, construirPromptReescrita, TOTAL_CRITERIOS_ADULTO, TOTAL_CRITERIOS_ADOLESCENTE } from "@/lib/criticaRelatorio";
 
 // TAREFA 1A (correcção do especialista, ronda de produção do motor
 // adolescente) — equivalente de api/relatorio/route.ts para o ramo
@@ -38,10 +38,14 @@ export const maxDuration = 280;
 
 const MODEL = process.env.REPORT_MODEL || "claude-sonnet-5";
 const MAX_TOKENS = 16000;
-// TAREFA (correcção do especialista) — mesma correcção de api/relatorio/route.ts:
-// subido de 4096 porque a crítica cresceu para 23 critérios, risco real
-// de truncar a resposta a meio e perder critérios do fim sem aviso.
-const MAX_TOKENS_CRITICA = 8192;
+// AUDITORIA (correcção do especialista, ronda "auditoria de erros") —
+// mesma correcção de api/relatorio/route.ts: a crítica adolescente já
+// tem TOTAL_CRITERIOS_ADOLESCENTE (34) critérios, não os 23 para que
+// 8192 tinha ficado dimensionado — subido para 14000 pelo mesmo motivo.
+const MAX_TOKENS_CRITICA = 14000;
+const TEMPERATURE_GERACAO = 0.4;
+const TEMPERATURE_CRITICA = 0.2;
+const MAX_TENTATIVAS_REESCRITA = 2;
 
 // "universidade" entrou (correcção do especialista) — ver o mesmo
 // comentário em relatorioAdultoCompute.ts: mesmo questionário e motor do
@@ -49,11 +53,12 @@ const MAX_TOKENS_CRITICA = 8192;
 // gravado sempre como "pos-12" para este ramo).
 const SITUACOES_ADOLESCENTE = new Set(["9-ou-menos", "10-11-12", "universidade"]);
 
-/** Idêntica à de api/relatorio/route.ts — thinking sempre desligado, mesmo diagnóstico de "sem bloco de texto". */
-async function gerarTexto(client: Anthropic, prompt: string, maxTokens: number): Promise<string> {
+/** Idêntica à de api/relatorio/route.ts — thinking sempre desligado, mesmo diagnóstico de "sem bloco de texto", agora também devolve `truncado` (ver auditoria em api/relatorio/route.ts). */
+async function gerarTexto(client: Anthropic, prompt: string, maxTokens: number, temperature: number): Promise<{ texto: string; truncado: boolean }> {
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: maxTokens,
+    temperature,
     thinking: { type: "disabled" },
     messages: [{ role: "user", content: prompt }],
   });
@@ -64,14 +69,11 @@ async function gerarTexto(client: Anthropic, prompt: string, maxTokens: number):
     console.error(`[api/relatorio-adolescente] resposta sem bloco de texto — ${detalhe}`);
     throw new Error(`Resposta da Anthropic sem bloco de texto (${detalhe}).`);
   }
-  // TAREFA (correcção do especialista) — ver a mesma correcção em
-  // api/relatorio/route.ts: texto truncado (stop_reason "max_tokens")
-  // passava sem aviso, arriscando perder critérios do fim da crítica
-  // (18-23) silenciosamente. Nunca lança erro, só regista.
-  if (response.stop_reason === "max_tokens") {
+  const truncado = response.stop_reason === "max_tokens";
+  if (truncado) {
     console.error(`[api/relatorio-adolescente] resposta TRUNCADA (stop_reason=max_tokens, maxTokens=${maxTokens}) — se isto for a crítica, critérios do fim da lista podem ter sido perdidos silenciosamente.`);
   }
-  return textBlock.text;
+  return { texto: textBlock.text, truncado };
 }
 
 export async function POST(request: Request) {
@@ -165,15 +167,21 @@ export async function POST(request: Request) {
 
     const client = new Anthropic({ apiKey });
 
-    const textoOriginal = await gerarTexto(client, prompt, MAX_TOKENS);
+    const { texto: textoOriginal, truncado: geracaoTruncada } = await gerarTexto(client, prompt, MAX_TOKENS, TEMPERATURE_GERACAO);
 
     // Crítica: "pos-12" gerou texto no tom adulto ("você"), por isso usa
     // a crítica adulta original — a versão adaptada ao adolescente
     // (construirPromptCriticaAdolescente) inverte o teste de TOM e
     // rejeitaria precisamente o "você" correcto deste ramo.
+    //
+    // AUDITORIA — `totalCriteriosEsperado` acompanha a mesma escolha
+    // (adulto vs adolescente): o PATCH acao="reescrever" recalcula
+    // `ehPos12` a partir do intake (ver abaixo) para saber qual crítica
+    // usar depois de reescrever, sem depender de guardar mais um campo.
+    const totalCriteriosEsperado = ehPos12 ? TOTAL_CRITERIOS_ADULTO : TOTAL_CRITERIOS_ADOLESCENTE;
     const promptCritica = ehPos12 ? construirPromptCritica(prompt, textoOriginal) : construirPromptCriticaAdolescente(prompt, textoOriginal);
-    const textoCritica = await gerarTexto(client, promptCritica, MAX_TOKENS_CRITICA);
-    const resultadoCritica = parseCritica(textoCritica);
+    const { texto: textoCritica, truncado: criticaTruncada } = await gerarTexto(client, promptCritica, MAX_TOKENS_CRITICA, TEMPERATURE_CRITICA);
+    const resultadoCritica = parseCritica(textoCritica, totalCriteriosEsperado);
 
     // Correcção do especialista ("provar que o critério corre de facto")
     // — mesmo log estruturado do ramo adulto, ver route.ts.
@@ -181,8 +189,10 @@ export async function POST(request: Request) {
     console.log(
       `[crítica-adolescente][intake=${intakeId}] critérios extraídos=${resultadoCritica.criterios.length} falhas=${resultadoCritica.falhas.length} ` +
         `critério26=${criterio26Adolescente ? (criterio26Adolescente.passa ? "PASSA" : `FALHA — ${criterio26Adolescente.detalhe ?? "(sem detalhe)"}`) : "AUSENTE da resposta da crítica (não avaliado ou não formatado)"} ` +
-        `decisão=${resultadoCritica.falhas.length > 0 ? "REESCREVER" : "ACEITAR"}`,
+        `decisão=${resultadoCritica.falhas.length > 0 ? "REESCREVER" : "ACEITAR"}` +
+        (resultadoCritica.criteriosEmFalta.length > 0 ? ` criteriosEmFaltaForcadosParaFalha=[${resultadoCritica.criteriosEmFalta.join(",")}]` : ""),
     );
+    if (geracaoTruncada) console.error(`[api/relatorio-adolescente] a GERAÇÃO original veio truncada — intake=${intakeId}.`);
 
     // BUG REAL, corrigido (ronda "regeneração Alexandra") — a reescrita
     // (3ª chamada à Anthropic) saiu deste pedido para PATCH
@@ -252,6 +262,9 @@ export async function POST(request: Request) {
       // vier true — ver comentário em `maxDuration`.
       precisaReescrita: resultadoCritica.falhas.length > 0,
       manualPreservada: rascunho.manualPreservada,
+      geracaoTruncada,
+      criticaTruncada,
+      criteriosEmFalta: resultadoCritica.criteriosEmFalta,
     });
   } catch (err) {
     if (err instanceof GeocodeError) return NextResponse.json({ error: err.message }, { status: 422 });
@@ -325,28 +338,80 @@ export async function PATCH(request: Request) {
         return NextResponse.json({ error: "Não há uma crítica associada a este rascunho — gera o rascunho primeiro." }, { status: 400 });
       }
 
-      const resultadoCritica = parseCritica(rascunho.criticaLlm);
+      // AUDITORIA — precisamos de saber se este intake é "pos-12" (usa a
+      // crítica adulta) ou adolescente normal (crítica adolescente) para
+      // voltar a criticar depois da reescrita com o critério certo. Isto
+      // é só cálculo astrológico determinístico (sem chamada à
+      // Anthropic) — não reintroduz o risco de timeout que motivou tirar
+      // a reescrita deste pedido (ver comentário em `maxDuration`).
+      const { intakeAdolescente } = await calcularDadosAstrologicosAdolescente(intake);
+      const ehPos12 = intakeAdolescente.anoEscolaridade === "pos-12";
+      const totalCriteriosEsperado = ehPos12 ? TOTAL_CRITERIOS_ADULTO : TOTAL_CRITERIOS_ADOLESCENTE;
+      const construirCritica = ehPos12 ? construirPromptCritica : construirPromptCriticaAdolescente;
+
+      let resultadoCritica = parseCritica(rascunho.criticaLlm, totalCriteriosEsperado);
       if (resultadoCritica.falhas.length === 0) {
         // Nada a corrigir (ou a crítica guardada não seguiu o formato
         // esperado — nunca se força uma reescrita sobre dados não
         // interpretáveis, mesma regra do POST). Devolve o estado actual
         // sem gastar uma chamada à Anthropic.
         const { html } = await reconstruirHTMLRelatorio(intake, rascunho.texto, rascunho.coordenadasNascimento, rascunho.criadoEm);
-        return NextResponse.json({ ok: true, criadoEm: rascunho.criadoEm, texto: rascunho.texto, html, houveReescrita: false, manualPreservada: false });
+        return NextResponse.json({ ok: true, criadoEm: rascunho.criadoEm, texto: rascunho.texto, html, houveReescrita: false, manualPreservada: false, precisaRevisaoManual: false });
       }
 
       // A base da reescrita é sempre a ÚLTIMA geração real da Anthropic
       // (`textoLlm`), nunca `texto` — que pode já ser uma edição manual
       // por cima (ver guardarRascunho/RascunhoRelatorio).
-      const textoBase = rascunho.textoLlm ?? rascunho.texto;
+      let textoBase = rascunho.textoLlm ?? rascunho.texto;
       const client = new Anthropic({ apiKey });
-      const promptReescrita = construirPromptReescrita(rascunho.promptCompleto, textoBase, resultadoCritica.falhas);
-      const textoReescrito = await gerarTexto(client, promptReescrita, MAX_TOKENS);
 
-      const resultado = await guardarRascunho(intakeId, textoReescrito, "geracao", undefined, rascunho.promptCompleto, { criticaLlm: rascunho.criticaLlm, rascunhoReescrito: textoReescrito });
+      // AUDITORIA — mesmo ciclo fechado do ramo adulto: reescreve,
+      // critica outra vez, repete até passar ou esgotar tentativas.
+      let textoReescrito = textoBase;
+      let ultimaCriticaLlm = rascunho.criticaLlm;
+      let tentativas = 0;
+      let algumaCriticaTruncada = false;
+      while (resultadoCritica.falhas.length > 0 && tentativas < MAX_TENTATIVAS_REESCRITA) {
+        tentativas += 1;
+        const promptReescrita = construirPromptReescrita(rascunho.promptCompleto, textoBase, resultadoCritica.falhas);
+        const { texto: novoTexto } = await gerarTexto(client, promptReescrita, MAX_TOKENS, TEMPERATURE_GERACAO);
+        textoReescrito = novoTexto;
+
+        const promptCriticaPosReescrita = construirCritica(rascunho.promptCompleto, textoReescrito);
+        const { texto: textoCriticaPos, truncado } = await gerarTexto(client, promptCriticaPosReescrita, MAX_TOKENS_CRITICA, TEMPERATURE_CRITICA);
+        algumaCriticaTruncada = algumaCriticaTruncada || truncado;
+        ultimaCriticaLlm = textoCriticaPos;
+        resultadoCritica = parseCritica(textoCriticaPos, totalCriteriosEsperado);
+        textoBase = textoReescrito;
+
+        console.log(
+          `[crítica-adolescente-pós-reescrita][intake=${intakeId}] tentativa=${tentativas}/${MAX_TENTATIVAS_REESCRITA} falhas=${resultadoCritica.falhas.length} ` +
+            `decisão=${resultadoCritica.falhas.length > 0 ? "REESCREVER OUTRA VEZ" : "ACEITAR"}`,
+        );
+      }
+
+      const precisaRevisaoManual = resultadoCritica.falhas.length > 0;
+      if (precisaRevisaoManual) {
+        console.error(
+          `[api/relatorio-adolescente] reescrita esgotou ${MAX_TENTATIVAS_REESCRITA} tentativas e AINDA tem falhas (intake=${intakeId}): ${resultadoCritica.falhas.join(" | ")}`,
+        );
+      }
+
+      const resultado = await guardarRascunho(intakeId, textoReescrito, "geracao", undefined, rascunho.promptCompleto, { criticaLlm: ultimaCriticaLlm, rascunhoReescrito: textoReescrito });
       const { html } = await reconstruirHTMLRelatorio(intake, textoReescrito, rascunho.coordenadasNascimento, resultado.criadoEm);
 
-      return NextResponse.json({ ok: true, criadoEm: resultado.criadoEm, texto: textoReescrito, html, houveReescrita: true, manualPreservada: resultado.manualPreservada });
+      return NextResponse.json({
+        ok: true,
+        criadoEm: resultado.criadoEm,
+        texto: textoReescrito,
+        html,
+        houveReescrita: true,
+        manualPreservada: resultado.manualPreservada,
+        precisaRevisaoManual,
+        falhasRestantes: precisaRevisaoManual ? resultadoCritica.falhas : [],
+        criticaTruncada: algumaCriticaTruncada,
+        tentativasReescrita: tentativas,
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error("[api/relatorio-adolescente] falha na reescrita:", message);

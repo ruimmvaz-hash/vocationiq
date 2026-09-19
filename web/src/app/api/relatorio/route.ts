@@ -8,7 +8,7 @@ import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTempl
 import { calcularDadosAstrologicos, reconstruirHTMLRelatorio, GeocodeError } from "@/lib/relatorioAdultoCompute";
 import { SITUACOES } from "@/lib/validation";
 import { construirPromptAdulto } from "@naveya/method-engine";
-import { construirPromptCritica, parseCritica, construirPromptReescrita } from "@/lib/criticaRelatorio";
+import { construirPromptCritica, parseCritica, construirPromptReescrita, TOTAL_CRITERIOS_ADULTO } from "@/lib/criticaRelatorio";
 
 // Motor de geração do relatório VocationIQ Adulto — ramo "trabalho-quero-
 // mudar" (VOCATIONIQ-ADULTO-metodologia.md, secção 6: os outros ramos
@@ -40,21 +40,47 @@ const MODEL = process.env.REPORT_MODEL || "claude-sonnet-5";
 // outro relatório inteiro — mesmo tecto. A crítica é só texto de análise,
 // tecto mais baixo.
 const MAX_TOKENS = 16000;
-// TAREFA (correcção do especialista) — subido de 4096: a crítica cresceu
-// de 12 para 23 critérios ao longo desta ronda (yogas/Vargottama/
-// abertura/nível/selecção/anglicismos), cada um podendo justificar a
-// FALHA com uma citação — 4096 arriscava truncar a resposta a meio,
-// perdendo critérios do fim da lista (18-23) sem nenhum aviso (ver
-// `gerarTexto` abaixo, que agora regista quando isso acontece).
-const MAX_TOKENS_CRITICA = 8192;
+// AUDITORIA (correcção do especialista, ronda "auditoria de erros", Set
+// 2026) — subido de 8192 para 14000. O valor anterior (8192) tinha
+// ficado dimensionado para quando a crítica tinha 23 critérios ("subido
+// de 4096" — comentário antigo, abaixo); a crítica cresceu desde então
+// para TOTAL_CRITERIOS_ADULTO (33) critérios, cada um podendo justificar
+// a FALHA com uma citação do texto — 8192 arriscava (e, por auditoria ao
+// código, provavelmente já estava a) truncar a resposta a meio,
+// perdendo critérios do fim da lista (28-33: resposta directa à
+// pergunta, validação das opções, profundidade da leitura) sem nenhum
+// aviso visível fora dos logs do servidor. `parseCritica` agora também
+// força como FALHA qualquer critério que continue ausente mesmo com
+// este valor mais alto — ver `TOTAL_CRITERIOS_ADULTO` abaixo.
+const MAX_TOKENS_CRITICA = 14000;
+// AUDITORIA — nenhuma das 3 chamadas definia `temperature` (ficava no
+// valor por omissão da API, próximo de 1.0): cada geração era uma
+// amostra independente e pouco reprodutível, o que por si só já
+// contribuía para relatórios diferentes a cada regeneração do mesmo
+// cliente. 0.4 para gerar/reescrever mantém a escrita natural mas reduz
+// a variância; 0.2 para a crítica — queremos que ela seja o mais
+// consistente possível a avaliar o mesmo texto.
+const TEMPERATURE_GERACAO = 0.4;
+const TEMPERATURE_CRITICA = 0.2;
 
 const SITUACAO_LABEL = Object.fromEntries(SITUACOES.map((s) => [s.valor, s.label]));
 
-/** Uma chamada de texto à Anthropic (gerar/criticar/reescrever partilham a mesma forma) — thinking sempre desligado, mesmo diagnóstico de "sem bloco de texto" para as 3 chamadas. */
-async function gerarTexto(client: Anthropic, prompt: string, maxTokens: number): Promise<string> {
+/**
+ * Uma chamada de texto à Anthropic (gerar/criticar/reescrever partilham a mesma forma) — thinking sempre desligado, mesmo diagnóstico de "sem bloco de texto" para as 3 chamadas.
+ *
+ * AUDITORIA (correcção do especialista, ronda "auditoria de erros") —
+ * antes, um texto TRUNCADO (`stop_reason: "max_tokens"` mas com bloco de
+ * texto presente) só era registado num `console.error` que ninguém via
+ * fora dos logs do servidor — o chamador não tinha forma de saber que
+ * isto tinha acontecido a não ser abrindo o Vercel/Render. Passa a
+ * devolver `truncado` explicitamente, para cada rota decidir o que fazer
+ * (tipicamente: avisar no admin — ver `SeccaoRascunho.tsx`).
+ */
+async function gerarTexto(client: Anthropic, prompt: string, maxTokens: number, temperature: number): Promise<{ texto: string; truncado: boolean }> {
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: maxTokens,
+    temperature,
     thinking: { type: "disabled" },
     messages: [{ role: "user", content: prompt }],
   });
@@ -65,19 +91,11 @@ async function gerarTexto(client: Anthropic, prompt: string, maxTokens: number):
     console.error(`[api/relatorio] resposta sem bloco de texto — ${detalhe}`);
     throw new Error(`Resposta da Anthropic sem bloco de texto (${detalhe}).`);
   }
-  // TAREFA (correcção do especialista) — antes, um texto TRUNCADO
-  // (stop_reason "max_tokens" mas com bloco de texto presente) passava
-  // sem nenhum aviso. Para a crítica automática, isto é grave e
-  // silencioso: critérios do fim da lista (ex.: 18/19 avastha/conjunção,
-  // ou 22/23) podem nunca chegar a ser escritos — `parseCritica()` não
-  // sabe quantos eram esperados, por isso os que faltam nunca entram em
-  // `falhas` e a reescrita nunca é accionada por eles. Nunca lança erro
-  // (o texto truncado pode ainda ser parcialmente útil) — só regista,
-  // para isto deixar de ser invisível.
-  if (response.stop_reason === "max_tokens") {
+  const truncado = response.stop_reason === "max_tokens";
+  if (truncado) {
     console.error(`[api/relatorio] resposta TRUNCADA (stop_reason=max_tokens, maxTokens=${maxTokens}) — se isto for a crítica, critérios do fim da lista podem ter sido perdidos silenciosamente.`);
   }
-  return textBlock.text;
+  return { texto: textBlock.text, truncado };
 }
 
 export async function POST(request: Request) {
@@ -149,13 +167,13 @@ export async function POST(request: Request) {
     // omissão e pode gastar TODO o max_tokens em blocos de "thinking" sem
     // nunca chegar a escrever texto (stop_reason "max_tokens", blocos=
     // [thinking]). "disabled" força a resposta directa, sem essa camada.
-    const textoOriginal = await gerarTexto(client, prompt, MAX_TOKENS);
+    const { texto: textoOriginal, truncado: geracaoTruncada } = await gerarTexto(client, prompt, MAX_TOKENS, TEMPERATURE_GERACAO);
 
     // Passo 3 — criticar. Segunda chamada, sempre (nunca opcional) — o
     // resultado fica guardado mesmo quando tudo passa, para auditoria.
     const promptCritica = construirPromptCritica(prompt, textoOriginal);
-    const textoCritica = await gerarTexto(client, promptCritica, MAX_TOKENS_CRITICA);
-    const resultadoCritica = parseCritica(textoCritica);
+    const { texto: textoCritica, truncado: criticaTruncada } = await gerarTexto(client, promptCritica, MAX_TOKENS_CRITICA, TEMPERATURE_CRITICA);
+    const resultadoCritica = parseCritica(textoCritica, TOTAL_CRITERIOS_ADULTO);
 
     // Correcção do especialista ("provar que o critério corre de
     // facto") — log estruturado, por geração, do que a crítica avaliou
@@ -172,8 +190,10 @@ export async function POST(request: Request) {
     console.log(
       `[crítica][intake=${intakeId}] critérios extraídos=${resultadoCritica.criterios.length} falhas=${resultadoCritica.falhas.length} ` +
         `critério26=${criterio26 ? (criterio26.passa ? "PASSA" : `FALHA — ${criterio26.detalhe ?? "(sem detalhe)"}`) : "AUSENTE da resposta da crítica (não avaliado ou não formatado)"} ` +
-        `decisão=${resultadoCritica.falhas.length > 0 ? "REESCREVER" : "ACEITAR"}`,
+        `decisão=${resultadoCritica.falhas.length > 0 ? "REESCREVER" : "ACEITAR"}` +
+        (resultadoCritica.criteriosEmFalta.length > 0 ? ` criteriosEmFaltaForcadosParaFalha=[${resultadoCritica.criteriosEmFalta.join(",")}]` : ""),
     );
+    if (geracaoTruncada) console.error(`[api/relatorio] a GERAÇÃO original (não só a crítica) veio truncada — intake=${intakeId}. O texto pode estar incompleto mesmo antes da crítica correr.`);
 
     // BUG REAL, corrigido (ronda "regeneração Alexandra") — Passo 3
     // (reescrever) saiu deste pedido para PATCH acao="reescrever"
@@ -220,6 +240,11 @@ export async function POST(request: Request) {
       // vier true — ver comentário em `maxDuration`.
       precisaReescrita: resultadoCritica.falhas.length > 0,
       manualPreservada: rascunho.manualPreservada,
+      // AUDITORIA — antes só existiam nos logs do servidor; o admin
+      // (SeccaoRascunho.tsx) mostra isto como aviso visível.
+      geracaoTruncada,
+      criticaTruncada,
+      criteriosEmFalta: resultadoCritica.criteriosEmFalta,
     });
   } catch (err) {
     if (err instanceof GeocodeError) return NextResponse.json({ error: err.message }, { status: 422 });
@@ -260,12 +285,27 @@ export async function PUT(request: Request) {
  * BUG REAL, corrigido (ronda "regeneração Alexandra") — acao="reescrever"
  * é o antigo Passo 3 (reescrita) do POST acima, agora num pedido HTTP
  * próprio (ver comentário em `maxDuration`): lê o prompt técnico e a
- * crítica já guardados por POST (nunca recalcula a astrologia nem chama a
- * crítica outra vez — só a 3ª chamada, a reescrita em si), grava o
+ * crítica já guardados por POST (nunca recalcula a astrologia), grava o
  * resultado e devolve o HTML reconstruído. Chamado automaticamente pelo
  * frontend logo a seguir a um POST cuja resposta veio com
  * `precisaReescrita: true` — nunca por clique directo do fundador.
+ *
+ * AUDITORIA (correcção do especialista, ronda "auditoria de erros") —
+ * BUG REAL encontrado por auditoria ao código (não reportado por um
+ * cliente, mas é o mecanismo mais provável por trás de "cada vez que
+ * regenero aparecem erros novos"): esta rota reescrevia o relatório
+ * inteiro para corrigir as falhas apontadas pela crítica, mas NUNCA
+ * verificava se a reescrita corrigiu mesmo o que devia, nem se
+ * introduziu problemas novos nas partes que antes estavam correctas — a
+ * reescrita era aceite às cegas. Passa agora a fechar o ciclo: depois de
+ * reescrever, corre a crítica outra vez sobre o texto reescrito. Se
+ * ainda houver falhas, tenta reescrever mais uma vez (máximo
+ * MAX_TENTATIVAS_REESCRITA no total) — nunca em loop indefinido. Se
+ * mesmo assim continuar a falhar, devolve `precisaRevisaoManual: true`
+ * em vez de fingir que está pronto — o fundador vê isso no admin em vez
+ * de descobrir mais tarde que o relatório "reescrito" tem erros novos.
  */
+const MAX_TENTATIVAS_REESCRITA = 2;
 export async function PATCH(request: Request) {
   if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "não autenticado" }, { status: 401 });
   if (!hasSupabaseAdmin) return NextResponse.json({ error: "Serviço indisponível de momento." }, { status: 503 });
@@ -293,28 +333,75 @@ export async function PATCH(request: Request) {
         return NextResponse.json({ error: "Não há uma crítica associada a este rascunho — gera o rascunho primeiro." }, { status: 400 });
       }
 
-      const resultadoCritica = parseCritica(rascunho.criticaLlm);
+      let resultadoCritica = parseCritica(rascunho.criticaLlm, TOTAL_CRITERIOS_ADULTO);
       if (resultadoCritica.falhas.length === 0) {
         // Nada a corrigir (ou a crítica guardada não seguiu o formato
         // esperado — nunca se força uma reescrita sobre dados não
         // interpretáveis, mesma regra do POST). Devolve o estado actual
         // sem gastar uma chamada à Anthropic.
         const { html } = await reconstruirHTMLRelatorio(intake, rascunho.texto, rascunho.coordenadasNascimento, rascunho.criadoEm);
-        return NextResponse.json({ ok: true, criadoEm: rascunho.criadoEm, texto: rascunho.texto, html, houveReescrita: false, manualPreservada: false });
+        return NextResponse.json({ ok: true, criadoEm: rascunho.criadoEm, texto: rascunho.texto, html, houveReescrita: false, manualPreservada: false, precisaRevisaoManual: false });
       }
 
       // A base da reescrita é sempre a ÚLTIMA geração real da Anthropic
       // (`textoLlm`), nunca `texto` — que pode já ser uma edição manual
       // por cima (ver guardarRascunho/RascunhoRelatorio).
-      const textoBase = rascunho.textoLlm ?? rascunho.texto;
+      let textoBase = rascunho.textoLlm ?? rascunho.texto;
       const client = new Anthropic({ apiKey });
-      const promptReescrita = construirPromptReescrita(rascunho.promptCompleto, textoBase, resultadoCritica.falhas);
-      const textoReescrito = await gerarTexto(client, promptReescrita, MAX_TOKENS);
 
-      const resultado = await guardarRascunho(intakeId, textoReescrito, "geracao", undefined, rascunho.promptCompleto, { criticaLlm: rascunho.criticaLlm, rascunhoReescrito: textoReescrito });
+      // AUDITORIA — ciclo fechado: reescreve, critica outra vez, e só
+      // pára quando passar ou quando esgotar as tentativas. Cada
+      // iteração reescreve a partir da versão mais recente (nunca da
+      // original), para as falhas da ronda anterior não reaparecerem.
+      let textoReescrito = textoBase;
+      let ultimaCriticaLlm = rascunho.criticaLlm;
+      let tentativas = 0;
+      let algumaCriticaTruncada = false;
+      while (resultadoCritica.falhas.length > 0 && tentativas < MAX_TENTATIVAS_REESCRITA) {
+        tentativas += 1;
+        const promptReescrita = construirPromptReescrita(rascunho.promptCompleto, textoBase, resultadoCritica.falhas);
+        const { texto: novoTexto } = await gerarTexto(client, promptReescrita, MAX_TOKENS, TEMPERATURE_GERACAO);
+        textoReescrito = novoTexto;
+
+        // Fecha o ciclo: volta a criticar o que acabou de ser reescrito,
+        // nunca aceita a reescrita às cegas.
+        const promptCriticaPosReescrita = construirPromptCritica(rascunho.promptCompleto, textoReescrito);
+        const { texto: textoCriticaPos, truncado } = await gerarTexto(client, promptCriticaPosReescrita, MAX_TOKENS_CRITICA, TEMPERATURE_CRITICA);
+        algumaCriticaTruncada = algumaCriticaTruncada || truncado;
+        ultimaCriticaLlm = textoCriticaPos;
+        resultadoCritica = parseCritica(textoCriticaPos, TOTAL_CRITERIOS_ADULTO);
+        textoBase = textoReescrito;
+
+        console.log(
+          `[crítica-pós-reescrita][intake=${intakeId}] tentativa=${tentativas}/${MAX_TENTATIVAS_REESCRITA} falhas=${resultadoCritica.falhas.length} ` +
+            `decisão=${resultadoCritica.falhas.length > 0 ? "REESCREVER OUTRA VEZ" : "ACEITAR"}`,
+        );
+      }
+
+      const precisaRevisaoManual = resultadoCritica.falhas.length > 0;
+      if (precisaRevisaoManual) {
+        console.error(
+          `[api/relatorio] reescrita esgotou ${MAX_TENTATIVAS_REESCRITA} tentativas e AINDA tem falhas (intake=${intakeId}) — guardado tal como está, mas marcado para revisão manual em vez de aceite às cegas: ${resultadoCritica.falhas.join(" | ")}`,
+        );
+      }
+
+      const resultado = await guardarRascunho(intakeId, textoReescrito, "geracao", undefined, rascunho.promptCompleto, { criticaLlm: ultimaCriticaLlm, rascunhoReescrito: textoReescrito });
       const { html } = await reconstruirHTMLRelatorio(intake, textoReescrito, rascunho.coordenadasNascimento, resultado.criadoEm);
 
-      return NextResponse.json({ ok: true, criadoEm: resultado.criadoEm, texto: textoReescrito, html, houveReescrita: true, manualPreservada: resultado.manualPreservada });
+      return NextResponse.json({
+        ok: true,
+        criadoEm: resultado.criadoEm,
+        texto: textoReescrito,
+        html,
+        houveReescrita: true,
+        manualPreservada: resultado.manualPreservada,
+        // AUDITORIA — nunca mais um "pronto" silencioso sobre um
+        // relatório que a própria crítica ainda reprova.
+        precisaRevisaoManual,
+        falhasRestantes: precisaRevisaoManual ? resultadoCritica.falhas : [],
+        criticaTruncada: algumaCriticaTruncada,
+        tentativasReescrita: tentativas,
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error("[api/relatorio] falha na reescrita:", message);

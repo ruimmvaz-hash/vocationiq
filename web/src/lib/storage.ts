@@ -305,7 +305,44 @@ export async function guardarRascunho(
     .insert({ intake_id: intakeId, rascunho_criado_em: agora, ...camposTexto, ...camposExtra, ...(houveReescrita ? { rascunho_versao: versaoFinal } : {}) })
     .select("id")
     .single();
-  if (error) throw new Error(`Falha ao guardar rascunho: ${error.message}`);
+  if (error) {
+    // AUDITORIA (correcção do especialista, ronda "auditoria de erros")
+    // — BUG REAL DE CONCORRÊNCIA encontrado por auditoria ao código: o
+    // SELECT acima e este INSERT não corriam dentro de uma transacção
+    // nem lock nenhum, por isso dois pedidos quase simultâneos ao mesmo
+    // intake (dois separadores admin abertos, ou um retry depois de um
+    // timeout percebido) podiam ambos "não encontrar" um rascunho
+    // existente e ambos tentar inserir — resultado: duas linhas de
+    // rascunho aberto para o mesmo cliente, com texto potencialmente
+    // diferente. A migração 0029 acrescenta um índice único parcial
+    // (intake_id) WHERE pdf_path IS NULL que torna isso impossível ao
+    // nível da base de dados — este INSERT passa a poder falhar com
+    // violação de unicidade (Postgres 23505) sempre que perdeu a
+    // corrida. Em vez de propagar o erro (que o utilizador veria como
+    // "falha ao gerar o rascunho" apesar de já existir um, gerado pelo
+    // outro pedido), volta a procurar a linha que ganhou a corrida e
+    // aplica-lhe o mesmo UPDATE que aplicaria se a tivesse encontrado à
+    // primeira — nenhum dos dois pedidos perde o trabalho, e nunca ficam
+    // duas versões a coexistir.
+    if (error.code === "23505") {
+      const { data: ganhou, error: buscaGanhouError } = await sb
+        .from("viq_relatorios")
+        .select("id, rascunho_versao")
+        .eq("intake_id", intakeId)
+        .is("pdf_path", null)
+        .single();
+      if (buscaGanhouError || !ganhou) throw new Error(`Falha ao guardar rascunho (corrida de concorrência não resolvida): ${buscaGanhouError?.message ?? "linha não encontrada após violação de unicidade"}`);
+      const versaoActual = (ganhou.rascunho_versao as number | null) ?? 1;
+      const versaoFinalCorrida = houveReescrita ? versaoActual + 1 : versaoActual;
+      const { error: updateError } = await sb
+        .from("viq_relatorios")
+        .update({ rascunho_criado_em: agora, ...camposTexto, ...camposExtra, ...(houveReescrita ? { rascunho_versao: versaoFinalCorrida } : {}) })
+        .eq("id", ganhou.id);
+      if (updateError) throw new Error(`Falha ao actualizar rascunho após corrida de concorrência: ${updateError.message}`);
+      return { id: ganhou.id as string, criadoEm: agora, rascunhoVersao: versaoFinalCorrida, manualPreservada };
+    }
+    throw new Error(`Falha ao guardar rascunho: ${error.message}`);
+  }
   return { id: data.id as string, criadoEm: agora, rascunhoVersao: versaoFinal, manualPreservada };
 }
 
