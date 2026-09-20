@@ -1041,3 +1041,91 @@ export function combinarFalhasComGuardas(resultadoCritica: ResultadoCritica, fal
     todosPassaram: false,
   };
 }
+
+/**
+ * GUARDAS DETERMINÍSTICAS — PALAVRA "CARTA" (critério 20) E PRIMEIRA
+ * PESSOA DO PLURAL (critério 9) — mesma classe de bug que já motivou
+ * reforço de prompt antes, para as duas regras (ver "PROIBIDO USAR A
+ * PALAVRA 'CARTA'" e "PROIBIDO: primeira pessoa do plural" em
+ * promptAdulto.ts/promptAdolescente.ts — as duas já documentadas no
+ * próprio texto do prompt como tendo reincidido uma vez antes de esta
+ * guarda existir: "carta" já tinha sido apanhado dentro de um bloco de
+ * candidata fora da lista, e "nomeámos" já tinha sido apanhado antes de
+ * "vimos"). Confirmado outra vez em produção real (ronda "Alexandra 8"):
+ * "carta" reapareceu numa secção nova ("Quem é": "está na tua carta
+ * ligado a Cancer", "numa mesma zona da tua carta") e "vimos" — já um
+ * exemplo EXPLICITAMENTE banido no próprio texto da regra — escapou em
+ * "como já vimos". Cada reforço textual só resolveu a localização onde
+ * tinha sido apanhado da vez anterior, nunca o padrão geral — por isso
+ * sai da responsabilidade do LLM, tal como as guardas acima.
+ *
+ * As duas são bans de palavra/frase exacta, sem nenhuma ambiguidade de
+ * julgamento de conteúdo (ao contrário de "profundidade", que precisa de
+ * uma heurística) — o tipo mais seguro de verificar em código: zero risco
+ * de falso positivo por reformulação legítima, porque a própria regra do
+ * prompt já as proíbe sem excepção, em qualquer contexto.
+ */
+const PADRAO_PALAVRA_CARTA = /\b(carta|mapa astral|mapa natal)\b/gi;
+
+const VERBOS_PRIMEIRA_PESSOA_PLURAL_PROIBIDOS = [
+  "vimos",
+  "identificámos",
+  "calculámos",
+  "sabemos",
+  "analisámos",
+  "concluímos",
+  "nomeámos",
+  "referimos",
+  "notámos",
+  "observámos",
+  "confirmámos",
+  "verificámos",
+  "apontámos",
+  "mostrámos",
+  "explicámos",
+  "encontrámos",
+  "detectámos",
+  "reconhecemos",
+  "percebemos",
+  "entendemos",
+  "afirmámos",
+  "sugerimos",
+  "indicámos",
+  "registámos",
+  "constatámos",
+  "apurámos",
+  "avaliámos",
+  "comparámos",
+  "testámos",
+  "revelámos",
+  "seguimos",
+  "consideramos",
+];
+const PADRAO_PRIMEIRA_PESSOA_PLURAL = new RegExp(`\\b(${VERBOS_PRIMEIRA_PESSOA_PLURAL_PROIBIDOS.join("|")})\\b`, "gi");
+
+function encontrarOcorrenciasUnicas(texto: string, padrao: RegExp): string[] {
+  const encontradas = new Set<string>();
+  const regexGlobal = new RegExp(padrao.source, padrao.flags.includes("g") ? padrao.flags : `${padrao.flags}g`);
+  let m: RegExpExecArray | null;
+  while ((m = regexGlobal.exec(texto))) {
+    encontradas.add(m[0].toLowerCase());
+    if (regexGlobal.lastIndex === m.index) regexGlobal.lastIndex++; // guarda contra match vazio (nunca deve acontecer aqui, mas evita loop infinito)
+  }
+  return Array.from(encontradas);
+}
+
+export function verificarPalavraCarta(texto: string): string[] {
+  const encontradas = encontrarOcorrenciasUnicas(texto, PADRAO_PALAVRA_CARTA);
+  if (!encontradas.length) return [];
+  return [
+    `20. PALAVRA "CARTA" (guarda determinística, contagem automática): o texto usa ${encontradas.map((e) => `"${e}"`).join(", ")} — proibido em todo o relatório sem excepção, usa sempre "perfil".`,
+  ];
+}
+
+export function verificarPrimeiraPessoaPlural(texto: string): string[] {
+  const encontradas = encontrarOcorrenciasUnicas(texto, PADRAO_PRIMEIRA_PESSOA_PLURAL);
+  if (!encontradas.length) return [];
+  return [
+    `9. PRIMEIRA PESSOA PLURAL (guarda determinística, contagem automática): o texto usa ${encontradas.map((e) => `"${e}"`).join(", ")} — verbo(s) na 1ª pessoa do plural ("nós"), proibido; reescreve com "o perfil"/"os dados" como sujeito da frase.`,
+  ];
+}

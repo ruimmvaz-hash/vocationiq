@@ -8,7 +8,7 @@ import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTempl
 import { calcularDadosAstrologicos, reconstruirHTMLRelatorio, GeocodeError } from "@/lib/relatorioAdultoCompute";
 import { SITUACOES } from "@/lib/validation";
 import { construirPromptAdulto } from "@naveya/method-engine";
-import { construirPromptCritica, parseCritica, construirPromptReescrita, TOTAL_CRITERIOS_ADULTO, verificarProfundidadeLeituraPorOpcao, combinarFalhasComGuardas } from "@/lib/criticaRelatorio";
+import { construirPromptCritica, parseCritica, construirPromptReescrita, TOTAL_CRITERIOS_ADULTO, verificarProfundidadeLeituraPorOpcao, combinarFalhasComGuardas, verificarPalavraCarta, verificarPrimeiraPessoaPlural } from "@/lib/criticaRelatorio";
 
 // Motor de geração do relatório VocationIQ Adulto — ramo "trabalho-quero-
 // mudar" (VOCATIONIQ-ADULTO-metodologia.md, secção 6: os outros ramos
@@ -177,7 +177,7 @@ export async function POST(request: Request) {
     // só do juízo da crítica LLM sobre si mesma nesta chamada em
     // particular (ver doc comment de `verificarProfundidadeLeituraPorOpcao`
     // em criticaRelatorio.ts).
-    const resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCritica, TOTAL_CRITERIOS_ADULTO), verificarProfundidadeLeituraPorOpcao(textoOriginal));
+    const resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCritica, TOTAL_CRITERIOS_ADULTO), [...verificarProfundidadeLeituraPorOpcao(textoOriginal), ...verificarPalavraCarta(textoOriginal), ...verificarPrimeiraPessoaPlural(textoOriginal)]);
 
     // Correcção do especialista ("provar que o critério corre de
     // facto") — log estruturado, por geração, do que a crítica avaliou
@@ -338,7 +338,7 @@ export async function PATCH(request: Request) {
       }
 
       const textoAvaliarInicialmente = rascunho.textoLlm ?? rascunho.texto;
-      let resultadoCritica = combinarFalhasComGuardas(parseCritica(rascunho.criticaLlm, TOTAL_CRITERIOS_ADULTO), verificarProfundidadeLeituraPorOpcao(textoAvaliarInicialmente));
+      let resultadoCritica = combinarFalhasComGuardas(parseCritica(rascunho.criticaLlm, TOTAL_CRITERIOS_ADULTO), [...verificarProfundidadeLeituraPorOpcao(textoAvaliarInicialmente), ...verificarPalavraCarta(textoAvaliarInicialmente), ...verificarPrimeiraPessoaPlural(textoAvaliarInicialmente)]);
       if (resultadoCritica.falhas.length === 0) {
         // Nada a corrigir (ou a crítica guardada não seguiu o formato
         // esperado — nunca se força uma reescrita sobre dados não
@@ -393,7 +393,7 @@ export async function PATCH(request: Request) {
         const { texto: textoCriticaPos, truncado } = await gerarTexto(client, promptCriticaPosReescrita, MAX_TOKENS_CRITICA);
         algumaCriticaTruncada = algumaCriticaTruncada || truncado;
         ultimaCriticaLlm = textoCriticaPos;
-        resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCriticaPos, TOTAL_CRITERIOS_ADULTO), verificarProfundidadeLeituraPorOpcao(textoReescrito));
+        resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCriticaPos, TOTAL_CRITERIOS_ADULTO), [...verificarProfundidadeLeituraPorOpcao(textoReescrito), ...verificarPalavraCarta(textoReescrito), ...verificarPrimeiraPessoaPlural(textoReescrito)]);
         textoBase = textoReescrito;
 
         console.log(

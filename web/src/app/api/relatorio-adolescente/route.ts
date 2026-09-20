@@ -7,7 +7,7 @@ import { guardarRascunho, obterRascunho, apagarRascunho, usarVersaoLlmRascunho, 
 import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTemplate";
 import { calcularDadosAstrologicosAdolescente, reconstruirHTMLRelatorio, GeocodeError, ANO_ESCOLARIDADE_LABEL } from "@/lib/relatorioAdultoCompute";
 import { construirPromptAdolescente, construirPromptAdulto, type VocationiqIntakeAdulto } from "@naveya/method-engine";
-import { construirPromptCritica, construirPromptCriticaAdolescente, parseCritica, construirPromptReescrita, removerBlocosOpcaoNaoAutorizados, TOTAL_CRITERIOS_ADULTO, TOTAL_CRITERIOS_ADOLESCENTE, verificarProfundidadeLeituraPorOpcao, combinarFalhasComGuardas } from "@/lib/criticaRelatorio";
+import { construirPromptCritica, construirPromptCriticaAdolescente, parseCritica, construirPromptReescrita, removerBlocosOpcaoNaoAutorizados, TOTAL_CRITERIOS_ADULTO, TOTAL_CRITERIOS_ADOLESCENTE, verificarProfundidadeLeituraPorOpcao, combinarFalhasComGuardas, verificarPalavraCarta, verificarPrimeiraPessoaPlural } from "@/lib/criticaRelatorio";
 
 // TAREFA 1A (correcção do especialista, ronda de produção do motor
 // adolescente) — equivalente de api/relatorio/route.ts para o ramo
@@ -198,7 +198,7 @@ export async function POST(request: Request) {
     // GUARDA DETERMINÍSTICA (critério 33 — profundidade da leitura por
     // opção): mesma guarda do ramo adulto, ver route.ts e o doc comment
     // de `verificarProfundidadeLeituraPorOpcao` em criticaRelatorio.ts.
-    const resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCritica, totalCriteriosEsperado), verificarProfundidadeLeituraPorOpcao(textoOriginal));
+    const resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCritica, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoOriginal), ...verificarPalavraCarta(textoOriginal), ...verificarPrimeiraPessoaPlural(textoOriginal)]);
 
     // Correcção do especialista ("provar que o critério corre de facto")
     // — mesmo log estruturado do ramo adulto, ver route.ts.
@@ -367,7 +367,7 @@ export async function PATCH(request: Request) {
       const construirCritica = ehPos12 ? construirPromptCritica : construirPromptCriticaAdolescente;
 
       const textoAvaliarInicialmente = rascunho.textoLlm ?? rascunho.texto;
-      let resultadoCritica = combinarFalhasComGuardas(parseCritica(rascunho.criticaLlm, totalCriteriosEsperado), verificarProfundidadeLeituraPorOpcao(textoAvaliarInicialmente));
+      let resultadoCritica = combinarFalhasComGuardas(parseCritica(rascunho.criticaLlm, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoAvaliarInicialmente), ...verificarPalavraCarta(textoAvaliarInicialmente), ...verificarPrimeiraPessoaPlural(textoAvaliarInicialmente)]);
       if (resultadoCritica.falhas.length === 0) {
         // Nada a corrigir (ou a crítica guardada não seguiu o formato
         // esperado — nunca se força uma reescrita sobre dados não
@@ -424,7 +424,7 @@ export async function PATCH(request: Request) {
         const { texto: textoCriticaPos, truncado } = await gerarTexto(client, promptCriticaPosReescrita, MAX_TOKENS_CRITICA);
         algumaCriticaTruncada = algumaCriticaTruncada || truncado;
         ultimaCriticaLlm = textoCriticaPos;
-        resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCriticaPos, totalCriteriosEsperado), verificarProfundidadeLeituraPorOpcao(textoReescrito));
+        resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCriticaPos, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoReescrito), ...verificarPalavraCarta(textoReescrito), ...verificarPrimeiraPessoaPlural(textoReescrito)]);
         textoBase = textoReescrito;
 
         console.log(
