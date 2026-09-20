@@ -997,6 +997,73 @@ export function removerBlocosOpcaoNaoAutorizados(texto: string, opcoesPermitidas
   return { texto: antes + seccaoNova + depois, blocosRemovidos };
 }
 
+/**
+ * GUARDA DETERMINÍSTICA — CONTAGEM DE BLOCOS "### " EM "LEITURA POR
+ * OPÇÃO" (critério 34, "NENHUMA OPÇÃO FUNDIDA NEM EM FALTA") — correcção
+ * do especialista, ronda "Miguel — engenharia". O histórico desta
+ * secção já documentou, uma vez, exactamente este defeito em produção
+ * real com este mesmo par de opções ("Engenharia Biomédica" e
+ * "Engenharia e Gestão Industrial", ver comentário "Miguel — opções
+ * fundidas" em promptAdolescente.ts): o nome da segunda opção contém a
+ * palavra "e" dentro do próprio nome do curso, e o LLM fundiu as duas
+ * num único bloco "### Engenharia biomédica e engenharia e gestão
+ * industrial". `removerBlocosOpcaoNaoAutorizados` (acima) já remove
+ * esse bloco fundido — o nome composto não bate com nenhuma opção
+ * autorizada — mas só regista a remoção num `console.error`, nunca como
+ * falha que force uma reescrita: sem esta guarda, o resultado era um
+ * relatório entregue com a secção "Leitura por opção" silenciosamente
+ * SEM NENHUM bloco para essas duas opções — pior do que o bloco fundido
+ * visível, que pelo menos mostrava o problema.
+ *
+ * O critério 34 já pede à crítica LLM para verificar isto ("Contagens
+ * batem, sem fusão") — mas é só julgamento do LLM sobre o mesmo texto,
+ * com a mesma inconsistência já confirmada nos critérios 9/20/33 (ver
+ * `verificarProfundidadeLeituraPorOpcao`, ronda "Miguel — engenharia":
+ * a mesma crítica que inventou uma falha inexistente no ponto 6 não viu
+ * um ponto 3 genuinamente curto). Por isso sai da responsabilidade
+ * exclusiva da crítica e é verificado directamente em código, sempre,
+ * sobre o texto realmente entregue — já depois de
+ * `removerBlocosOpcaoNaoAutorizados` ter corrido — mesmo padrão das
+ * outras guardas desta secção do ficheiro.
+ */
+export function verificarContagemBlocosOpcao(texto: string, opcoesPermitidas: string[]): string[] {
+  if (!opcoesPermitidas.length) return [];
+
+  const normalizar = (s: string) =>
+    s
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase();
+
+  const inicioSeccao = texto.indexOf(`## ${SECCAO_TITULOS.leituraPorOpcao}`);
+  if (inicioSeccao === -1) {
+    return [
+      `34. NENHUMA OPÇÃO FUNDIDA NEM EM FALTA (guarda determinística, contagem automática): a secção "${SECCAO_TITULOS.leituraPorOpcao}" não foi encontrada no texto — esperava ${opcoesPermitidas.length} bloco(s) "### ", um por cada opção declarada (${opcoesPermitidas.join("; ")}).`,
+    ];
+  }
+  const buscaFim = texto.indexOf("\n## ", inicioSeccao + 1);
+  const fimSeccao = buscaFim === -1 ? texto.length : buscaFim;
+  const seccao = texto.slice(inicioSeccao, fimSeccao);
+  const blocos = seccao.split(/\n(?=### )/).slice(1);
+  const nomesBlocos = blocos.map((b) => b.split("\n", 1)[0].replace(/^###\s*/, "").trim());
+
+  if (blocos.length !== opcoesPermitidas.length) {
+    return [
+      `34. NENHUMA OPÇÃO FUNDIDA NEM EM FALTA (guarda determinística, contagem automática): esperava exactamente ${opcoesPermitidas.length} bloco(s) "### " em "${SECCAO_TITULOS.leituraPorOpcao}" — um por cada linha de "Opções em cima da mesa" (${opcoesPermitidas.join("; ")}) — mas encontrou ${blocos.length}${nomesBlocos.length ? ` (${nomesBlocos.join("; ")})` : ""}. Nunca fundir duas opções num único bloco, nunca omitir uma — escreve um bloco "### " completo e distinto por cada opção declarada, com o nome exacto dessa linha.`,
+    ];
+  }
+
+  const nomesBlocosNormalizados = new Set(nomesBlocos.map(normalizar));
+  const emFalta = opcoesPermitidas.filter((o) => !nomesBlocosNormalizados.has(normalizar(o)));
+  if (emFalta.length) {
+    return [
+      `34. NENHUMA OPÇÃO FUNDIDA NEM EM FALTA (guarda determinística): o número de blocos bate (${blocos.length}), mas o(s) nome(s) não correspondem exactamente às opções declaradas — falta(m): ${emFalta.join("; ")}. Encontrado(s): ${nomesBlocos.join("; ")}. Cada bloco "### " tem de usar o nome exacto de uma opção declarada, nunca um nome fundido, parafraseado ou reordenado.`,
+    ];
+  }
+  return [];
+}
+
 export function construirPromptReescrita(promptTecnico: string, rascunhoOriginal: string, falhas: string[]): string {
   return `${INSTRUCAO_REESCRITA}\nFalhas a corrigir:\n${falhas.map((f) => `- ${f}`).join("\n")}\n\n=== A) PROMPT TÉCNICO ORIGINAL ===\n${promptTecnico}\n\n=== B) RELATÓRIO ORIGINAL ===\n${rascunhoOriginal}`;
 }
