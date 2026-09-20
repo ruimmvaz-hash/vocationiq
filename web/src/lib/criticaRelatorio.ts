@@ -311,13 +311,26 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
      badge, nada mais). Para CADA bloco "### <nome>" na secção "Leitura
      por opção": confirma que os 6 pontos numerados (1 a 6) exigidos no
      prompt técnico (A, abaixo — "PROFUNDIDADE OBRIGATÓRIA") estão
-     TODOS presentes, cada um como o seu próprio parágrafo com pelo
-     menos 3 frases — nunca um resumo de 1-2 frases a seguir ao
-     cabeçalho, nunca um ponto ausente, nunca um ponto reduzido a uma
-     única frase-conclusão. Lista, para cada opção, quantos dos 6
-     pontos encontraste e quantas frases tinha o mais curto deles.
+     TODOS presentes. Dos pontos 1 a 5, cada um tem de ser o seu próprio
+     parágrafo com pelo menos 3 frases — nunca um resumo de 1-2 frases a
+     seguir ao cabeçalho, nunca um ponto ausente, nunca um ponto
+     reduzido a uma única frase-conclusão.
+     EXCEPÇÃO EXPLÍCITA — PONTO 6 (correcção do especialista, ronda
+     "Miguel — engenharia", nunca repetir isto: a crítica aplicou este
+     mínimo de 3 frases também ao ponto 6 e marcou FALHA sobre um ponto
+     que estava correcto por desenho, enquanto um ponto genuinamente
+     curto — o ponto 3, na mesma ronda — passou sem ser apanhado): o
+     ponto 6 é sempre a frase-molde fixa e curta descrita em
+     INSTRUCAO_VALIDACAO_OPCOES (critério 30) — "sustenta com clareza" /
+     "sustenta parcialmente" / "não sustenta de forma natural", seguida
+     de "Aqui está porquê" — NUNCA um parágrafo de 3+ frases. O mínimo de
+     3 frases desta secção aplica-se só aos pontos 1 a 5; o ponto 6
+     nunca é avaliado por tamanho aqui, só pela validação do critério 30.
+     Lista, para cada opção, quantos dos 6 pontos encontraste (todos têm
+     de estar presentes) e, só dos pontos 1 a 5, quantas frases tinha o
+     mais curto.
      Se QUALQUER opção declarada tiver menos de 6 pontos numerados, ou
-     algum desses pontos tiver menos de 3 frases: FALHA — reescrita
+     algum dos pontos 1 a 5 tiver menos de 3 frases: FALHA — reescrita
      obrigatória dessa opção (e de qualquer outra na mesma condição),
      expandindo cada ponto em falta ou raso para o mesmo nível de
      desenvolvimento já exigido no prompt técnico — nunca aceitar a
@@ -684,13 +697,26 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
      badge, nada mais). Para CADA bloco "### <nome>" na secção "Leitura
      por opção": confirma que os 6 pontos numerados (1 a 6) exigidos no
      prompt técnico (A, abaixo — "PROFUNDIDADE OBRIGATÓRIA") estão
-     TODOS presentes, cada um como o seu próprio parágrafo com pelo
-     menos 3 frases — nunca um resumo de 1-2 frases a seguir ao
-     cabeçalho, nunca um ponto ausente, nunca um ponto reduzido a uma
-     única frase-conclusão. Lista, para cada opção, quantos dos 6
-     pontos encontraste e quantas frases tinha o mais curto deles.
+     TODOS presentes. Dos pontos 1 a 5, cada um tem de ser o seu próprio
+     parágrafo com pelo menos 3 frases — nunca um resumo de 1-2 frases a
+     seguir ao cabeçalho, nunca um ponto ausente, nunca um ponto
+     reduzido a uma única frase-conclusão.
+     EXCEPÇÃO EXPLÍCITA — PONTO 6 (correcção do especialista, ronda
+     "Miguel — engenharia", nunca repetir isto: a crítica aplicou este
+     mínimo de 3 frases também ao ponto 6 e marcou FALHA sobre um ponto
+     que estava correcto por desenho, enquanto um ponto genuinamente
+     curto — o ponto 3, na mesma ronda — passou sem ser apanhado): o
+     ponto 6 é sempre a frase-molde fixa e curta descrita em
+     INSTRUCAO_VALIDACAO_OPCOES (critério 30) — "sustenta com clareza" /
+     "sustenta parcialmente" / "não sustenta de forma natural", seguida
+     de "Aqui está porquê" — NUNCA um parágrafo de 3+ frases. O mínimo de
+     3 frases desta secção aplica-se só aos pontos 1 a 5; o ponto 6
+     nunca é avaliado por tamanho aqui, só pela validação do critério 30.
+     Lista, para cada opção, quantos dos 6 pontos encontraste (todos têm
+     de estar presentes) e, só dos pontos 1 a 5, quantas frases tinha o
+     mais curto.
      Se QUALQUER opção declarada tiver menos de 6 pontos numerados, ou
-     algum desses pontos tiver menos de 3 frases: FALHA — reescrita
+     algum dos pontos 1 a 5 tiver menos de 3 frases: FALHA — reescrita
      obrigatória dessa opção (e de qualquer outra na mesma condição),
      expandindo cada ponto em falta ou raso para o mesmo nível de
      desenvolvimento já exigido no prompt técnico — nunca aceitar a
