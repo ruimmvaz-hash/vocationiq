@@ -52,7 +52,7 @@ const MAX_TOKENS = 16000;
 // aviso visível fora dos logs do servidor. `parseCritica` agora também
 // força como FALHA qualquer critério que continue ausente mesmo com
 // este valor mais alto — ver `TOTAL_CRITERIOS_ADULTO` abaixo.
-const MAX_TOKENS_CRITICA = 14000;
+const MAX_TOKENS_CRITICA = 16000; // subido de 14000 (ronda 7, bloco RESULTADO_MAQUINA): margem extra para o bloco final maquina nunca ser cortado por falta de tokens, mesmo com analise detalhada longa antes dele.
 // AUDITORIA (tentativa revertida no mesmo dia) — chegou-se a definir
 // `temperature` explícito (0.4 gerar/reescrever, 0.2 crítica) para reduzir
 // a variância entre regenerações do mesmo cliente. Partiu a produção:

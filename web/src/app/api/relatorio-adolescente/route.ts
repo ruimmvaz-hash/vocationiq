@@ -42,7 +42,7 @@ const MAX_TOKENS = 16000;
 // mesma correcção de api/relatorio/route.ts: a crítica adolescente já
 // tem TOTAL_CRITERIOS_ADOLESCENTE (34) critérios, não os 23 para que
 // 8192 tinha ficado dimensionado — subido para 14000 pelo mesmo motivo.
-const MAX_TOKENS_CRITICA = 14000;
+const MAX_TOKENS_CRITICA = 16000; // subido de 14000 (ronda 7, bloco RESULTADO_MAQUINA): margem extra para o bloco final maquina nunca ser cortado por falta de tokens, mesmo com analise detalhada longa antes dele.
 const MAX_TENTATIVAS_REESCRITA = 2;
 
 // "universidade" entrou (correcção do especialista) — ver o mesmo

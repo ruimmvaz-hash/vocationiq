@@ -323,11 +323,21 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
      desenvolvimento já exigido no prompt técnico — nunca aceitar a
      versão resumida só porque tecnicamente cobre o tema.
 
- Para cada critério:
- PASSA ou FALHA — e se falha, exactamente o que está errado.
- Formato:
- 1. TOM: PASSA
- 2. REPETIÇÃO: FALHA — [detalhe]`;
+ O teu raciocínio acima pode ser livre (texto corrido, bullets, o que te ajudar a verificar bem cada critério) — mas a resposta TEM de terminar com um bloco final, delimitado exactamente por estas duas linhas literais, sem nenhuma variação (correcção do especialista, bug real: um resumo em prosa livre — negrito inconsistente entre PASSA e FALHA, números sub-divididos como "28(d)", verdictos escritos numa linha diferente do número — impedia o sistema de saber com fiabilidade quais critérios tinham mesmo falhado, escondendo o motivo real da reescrita seguinte. Este bloco é a ÚNICA parte que o sistema lê automaticamente — todo o resto serve só para apoiar o teu raciocínio):
+
+ ===RESULTADO_MAQUINA_INICIO===
+ 1) PASSA
+ 2) FALHA: <resumo do problema, uma frase única, sem quebras de linha>
+ 3) PASSA
+ ... (uma linha por CADA número de 1 até 33, por esta ordem exacta, sem excepção, sem saltar nenhum)
+ 33) PASSA
+ ===RESULTADO_MAQUINA_FIM===
+
+ Regras deste bloco, sem excepção:
+ - Um número por linha, de 1 até 33 — nunca omitir um número, nunca juntar dois números na mesma linha, nunca sub-dividir um número em letras (nunca "28a)"/"28(d)" — se um critério tem sub-condições, o veredicto aqui é FALHA se qualquer sub-condição falhar, só PASSA se todas passarem).
+ - Sem markdown dentro do bloco — sem **negrito**, sem itálico, texto simples, um ")" a separar o número do veredicto (nunca ".").
+ - O veredicto aqui é sempre a tua conclusão FINAL e definitiva — se mudaste de opinião durante a análise acima, é a versão corrigida que entra aqui, nunca a primeira impressão.
+ - Este bloco é a ÚNICA fonte que o sistema usa para decidir se o rascunho precisa de reescrita — um critério que discutiste acima mas sem linha correspondente dentro deste bloco é tratado como não avaliado, e reescrito por segurança mesmo que a tua análise o tenha dado como PASSA.`;
 
 export function construirPromptCritica(promptTecnico: string, rascunho: string): string {
   return `${INSTRUCAO_CRITICA}\n\n=== A) PROMPT TÉCNICO ENVIADO ===\n${promptTecnico}\n\n=== B) RASCUNHO GERADO ===\n${rascunho}`;
@@ -671,11 +681,21 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
      reescrita obrigatória para um bloco "### " completo e independente
      por cada linha declarada, nunca combinadas.
 
- Para cada critério:
- PASSA ou FALHA — e se falha, exactamente o que está errado.
- Formato:
- 1. TOM: PASSA
- 2. REPETIÇÃO: FALHA — [detalhe]`;
+ O teu raciocínio acima pode ser livre (texto corrido, bullets, o que te ajudar a verificar bem cada critério) — mas a resposta TEM de terminar com um bloco final, delimitado exactamente por estas duas linhas literais, sem nenhuma variação (correcção do especialista, bug real: um resumo em prosa livre — negrito inconsistente entre PASSA e FALHA, números sub-divididos como "28(d)", verdictos escritos numa linha diferente do número — impedia o sistema de saber com fiabilidade quais critérios tinham mesmo falhado, escondendo o motivo real da reescrita seguinte. Este bloco é a ÚNICA parte que o sistema lê automaticamente — todo o resto serve só para apoiar o teu raciocínio):
+
+ ===RESULTADO_MAQUINA_INICIO===
+ 1) PASSA
+ 2) FALHA: <resumo do problema, uma frase única, sem quebras de linha>
+ 3) PASSA
+ ... (uma linha por CADA número de 1 até 34, por esta ordem exacta, sem excepção, sem saltar nenhum)
+ 34) PASSA
+ ===RESULTADO_MAQUINA_FIM===
+
+ Regras deste bloco, sem excepção:
+ - Um número por linha, de 1 até 34 — nunca omitir um número, nunca juntar dois números na mesma linha, nunca sub-dividir um número em letras (nunca "28a)"/"28(d)" — se um critério tem sub-condições, o veredicto aqui é FALHA se qualquer sub-condição falhar, só PASSA se todas passarem).
+ - Sem markdown dentro do bloco — sem **negrito**, sem itálico, texto simples, um ")" a separar o número do veredicto (nunca ".").
+ - O veredicto aqui é sempre a tua conclusão FINAL e definitiva — se mudaste de opinião durante a análise acima, é a versão corrigida que entra aqui, nunca a primeira impressão.
+ - Este bloco é a ÚNICA fonte que o sistema usa para decidir se o rascunho precisa de reescrita — um critério que discutiste acima mas sem linha correspondente dentro deste bloco é tratado como não avaliado, e reescrito por segurança mesmo que a tua análise o tenha dado como PASSA.`;
 
 export function construirPromptCriticaAdolescente(promptTecnico: string, rascunho: string): string {
   return `${INSTRUCAO_CRITICA_ADOLESCENTE}\n\n=== A) PROMPT TÉCNICO ENVIADO ===\n${promptTecnico}\n\n=== B) RASCUNHO GERADO ===\n${rascunho}`;
@@ -699,7 +719,23 @@ export interface ResultadoCritica {
   criteriosEmFalta: number[];
 }
 
-const REGEX_LINHA_CRITERIO = /^\s*(\d{1,2})\.\s*([^:]+):\s*(PASSA|FALHA)\b\s*(?:[-–—]\s*(.*))?$/gim;
+const REGEX_LINHA_CRITERIO = /^\s*(\d{1,2})\.\s*(?:([^:\n]+):\s*)?(PASSA|FALHA)\b\s*(?:[-\u2013\u2014]\s*(.*))?$/gim;
+
+/** CORRECAO (ronda "regeneracao Alexandra 7", bug real, segunda camada -- ver
+ * INSTRUCAO_CRITICA / INSTRUCAO_CRITICA_ADOLESCENTE, bloco
+ * "===RESULTADO_MAQUINA_INICIO===...===RESULTADO_MAQUINA_FIM==="): a critica
+ * costumava terminar com um resumo em PROSA LIVRE, e essa liberdade produziu,
+ * em generacoes reais sucessivas, tres formatos incompativeis entre si --
+ * "N. NOME: PASSA" limpo, "N. NOME: **FALHA**" com negrito so no veredicto
+ * que falha (nunca em PASSA), e "1. **Criterio N (NOME):**" com a numeracao
+ * exterior da lista de falhas a tapar o numero real do criterio dentro do
+ * texto, ou ainda "28(d)" a sub-dividir um numero em letras. Nenhuma regex
+ * de uma linha aguenta esta variedade com fiabilidade. Fonte de verdade
+ * agora: um bloco final delimitado por marcadores literais, formato fixo e
+ * mais simples ("N) PASSA"/"N) FALHA: detalhe", sem negrito, sem sub-numeros)
+ * que a instrucao exige ser sempre a conclusao FINAL e definitiva. */
+const REGEX_BLOCO_MAQUINA = /===RESULTADO_MAQUINA_INICIO===([\s\S]*?)===RESULTADO_MAQUINA_FIM===/;
+const REGEX_LINHA_MAQUINA = /^\s*(\d{1,2})\)\s*(PASSA|FALHA)\b\s*(?:[:\-\u2013\u2014]\s*(.*))?$/gim;
 
 /** Total de critérios definidos em cada instrução de crítica (ver INSTRUCAO_CRITICA / INSTRUCAO_CRITICA_ADOLESCENTE) — usados por `parseCritica` para detectar cortes silenciosos. Actualizar sempre que um critério novo for acrescentado (auditoria de erros, Set 2026: 8192 tokens tinham ficado dimensionados para 23, quando já existiam 33/34 — exactamente o tipo de desfasamento que este total serve para apanhar). */
 export const TOTAL_CRITERIOS_ADULTO = 33;
@@ -709,43 +745,60 @@ export const TOTAL_CRITERIOS_ADOLESCENTE = 34;
  * Extrai os critérios "N. NOME: PASSA|FALHA — detalhe" da resposta da crítica. Nunca lança erro em formato inesperado — devolve o que conseguir parsear.
  *
  * AUDITORIA (correcção do especialista, ronda "auditoria de erros") — bug real encontrado: um critério que nunca aparece na resposta (porque a chamada foi cortada por `max_tokens`, ou o modelo simplesmente o saltou) ficava fora de `falhas` como se tivesse passado — nunca disparava reescrita. `totalEsperado` faz o oposto: qualquer número de 1 a `totalEsperado` que não tenha uma linha correspondente na resposta entra em `criteriosEmFalta` e é tratado como FALHA forçada (nunca como "não avaliado"). Passar `undefined` mantém o comportamento antigo (sem verificação de completude) — usado só onde o total de critérios não é conhecido à partida.
+ *
+ * DUAS FONTES, UMA PRIORITÁRIA (ver comentário em REGEX_BLOCO_MAQUINA acima):
+ * 1) o bloco máquina, quando presente — sempre a fonte que prevalece para
+ *    qualquer número que ele cubra, porque é a única parte da resposta que a
+ *    própria instrução pede como veredicto final.
+ * 2) formato legado "N. NOME: PASSA|FALHA — detalhe", como rede de segurança
+ *    para respostas antigas (geradas antes deste bloco existir) ou para um
+ *    número que o bloco máquina tenha, por acidente, deixado de fora —
+ *    procurado em TODO o texto (análise detalhada + qualquer resumo em
+ *    prosa), com a ÚLTIMA ocorrência de cada número a prevalecer sobre as
+ *    anteriores (a crítica costuma escrever um veredicto inicial na análise
+ *    detalhada e só corrigi-lo mais tarde, no resumo — a versão de fecho é
+ *    sempre a que conta, nunca a primeira impressão), e sem marcação de
+ *    negrito markdown a atrapalhar o reconhecimento.
  */
 export function parseCritica(textoCritica: string, totalEsperado?: number): ResultadoCritica {
-  const criterios: CriterioCritica[] = [];
-  let match: RegExpExecArray | null;
-  // CORRECAO (ronda "regeneracao Alexandra 7", bug real confirmado por teste
-  // isolado): a critica costuma escrever a linha de resumo como
-  // "N. NOME: **FALHA** -- detalhe" (negrito so no veredicto quando e FALHA,
-  // nunca em PASSA -- enfase natural do LLM no que precisa de accao). A regex
-  // abaixo exige "PASSA"/"FALHA" logo a seguir aos dois pontos, sem nada pelo
-  // meio -- "**" antes do veredicto quebra o match. Resultado real observado:
-  // TODAS as linhas FALHA da seccao de resumo falhavam o parse (por causa do
-  // negrito), entravam em `criteriosEmFalta` com o detalhe generico "Nao
-  // avaliado nesta chamada... possivelmente truncada" em vez do motivo real
-  // e especifico escrito pela propria critica -- e essa versao generica, sem
-  // nenhuma accao concreta, e o que ia parar a `falhas` e alimentar o prompt
-  // de reescrita. O resultado PASSA/FALHA final calhava a estar certo (uma
-  // falha "perdida" ainda conta como falha forcada), mas a reescrita nunca
-  // recebia o motivo verdadeiro -- so um aviso generico de "pode estar
-  // truncado". Corrigido removendo toda a marcacao de negrito markdown ("**"
-  // e "__") do texto ANTES de aplicar a regex -- nao muda nada semanticamente,
-  // so a formatacao visual que a propria critica acrescenta.
+  const doBlocoMaquina = new Map<number, CriterioCritica>();
+  const blocoMatch = textoCritica.match(REGEX_BLOCO_MAQUINA);
+  if (blocoMatch) {
+    let m: RegExpExecArray | null;
+    REGEX_LINHA_MAQUINA.lastIndex = 0;
+    while ((m = REGEX_LINHA_MAQUINA.exec(blocoMatch[1]))) {
+      const numero = Number(m[1]);
+      doBlocoMaquina.set(numero, {
+        numero,
+        nome: `Critério ${numero}`,
+        passa: m[2].toUpperCase() === "PASSA",
+        detalhe: (m[3] ?? "").trim(),
+      });
+    }
+  }
+
+  const doFormatoLegado = new Map<number, CriterioCritica>();
   const textoLimpo = textoCritica.replace(/(\*\*|__)/g, "");
+  let match: RegExpExecArray | null;
   REGEX_LINHA_CRITERIO.lastIndex = 0;
   while ((match = REGEX_LINHA_CRITERIO.exec(textoLimpo))) {
-    criterios.push({
-      numero: Number(match[1]),
-      nome: match[2].trim(),
+    const numero = Number(match[1]);
+    doFormatoLegado.set(numero, {
+      numero,
+      nome: (match[2] ?? `Critério ${numero}`).trim(),
       passa: match[3].toUpperCase() === "PASSA",
       detalhe: (match[4] ?? "").trim(),
     });
   }
 
+  // O bloco máquina, quando cobre um número, tem sempre prioridade sobre o formato legado para esse mesmo número.
+  const combinado = new Map<number, CriterioCritica>([...doFormatoLegado, ...doBlocoMaquina]);
+  const criterios = Array.from(combinado.values()).sort((a, b) => a.numero - b.numero);
+
   const criteriosEmFalta: number[] = [];
   if (totalEsperado && criterios.length > 0) {
-    const numerosPresentes = new Set(criterios.map((c) => c.numero));
     for (let n = 1; n <= totalEsperado; n++) {
-      if (!numerosPresentes.has(n)) {
+      if (!combinado.has(n)) {
         criteriosEmFalta.push(n);
         criterios.push({
           numero: n,
@@ -756,6 +809,7 @@ export function parseCritica(textoCritica: string, totalEsperado?: number): Resu
         });
       }
     }
+    criterios.sort((a, b) => a.numero - b.numero);
   }
 
   const falhas = criterios.filter((c) => !c.passa).map((c) => `${c.numero}. ${c.nome}${c.detalhe ? `: ${c.detalhe}` : ""}`);
