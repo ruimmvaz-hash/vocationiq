@@ -6,8 +6,8 @@ import { obterIntake } from "@/lib/store";
 import { guardarRascunho, obterRascunho, apagarRascunho, usarVersaoLlmRascunho, restaurarVersaoAnteriorRascunho } from "@/lib/storage";
 import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTemplate";
 import { calcularDadosAstrologicosAdolescente, reconstruirHTMLRelatorio, GeocodeError, ANO_ESCOLARIDADE_LABEL } from "@/lib/relatorioAdultoCompute";
-import { construirPromptAdolescente, construirPromptAdulto, blocoVargottama, paragrafoAntiDaParaTudo, type VocationiqIntakeAdulto } from "@naveya/method-engine";
-import { construirPromptCritica, construirPromptCriticaAdolescente, construirBlocosPromptCritica, construirBlocosPromptCriticaAdolescente, parseCritica, construirPromptReescrita, removerBlocosOpcaoNaoAutorizados, verificarContagemBlocosOpcao, TOTAL_CRITERIOS_ADULTO, TOTAL_CRITERIOS_ADOLESCENTE, verificarProfundidadeLeituraPorOpcao, combinarFalhasComGuardas, verificarPalavraCarta, verificarPrimeiraPessoaPlural, verificarYogaDeGrupo, verificarCandidatasElegiveisPresentes, verificarJustificacaoRejeicaoCandidatas, verificarYogasReforcoGeralNomeados, verificarLinguagemReservaNivel2, verificarFraseVargottama, verificarOrdemParagrafoAntiDaParaTudo } from "@/lib/criticaRelatorio";
+import { construirPromptAdolescente, construirPromptAdulto, blocoVargottama, paragrafoAntiDaParaTudo, planetaPt, type VocationiqIntakeAdulto } from "@naveya/method-engine";
+import { construirPromptCritica, construirPromptCriticaAdolescente, construirBlocosPromptCritica, construirBlocosPromptCriticaAdolescente, parseCritica, construirPromptReescrita, removerBlocosOpcaoNaoAutorizados, verificarContagemBlocosOpcao, TOTAL_CRITERIOS_ADULTO, TOTAL_CRITERIOS_ADOLESCENTE, verificarProfundidadeLeituraPorOpcao, combinarFalhasComGuardas, verificarPalavraCarta, verificarPrimeiraPessoaPlural, verificarYogaDeGrupo, verificarCandidatasElegiveisPresentes, verificarJustificacaoRejeicaoCandidatas, verificarNomeacaoConjuncoes, verificarYogasReforcoGeralNomeados, verificarLinguagemReservaNivel2, verificarFraseVargottama, verificarOrdemParagrafoAntiDaParaTudo } from "@/lib/criticaRelatorio";
 
 // TAREFA 1A (correcção do especialista, ronda de produção do motor
 // adolescente) — equivalente de api/relatorio/route.ts para o ramo
@@ -147,6 +147,10 @@ export async function POST(request: Request) {
       .split("\n")
       .filter((linha) => linha.includes(": Vargottama"))
       .map((linha) => linha.split(":")[0].trim());
+
+    // Critério 19 (verificarNomeacaoConjuncoes) — mesma fonte usada no
+    // prompt (blocoConjuncoes), nunca uma segunda derivação a divergir.
+    const conjuncoesPt: [string, string][] = d1.conjunctions.map((c) => [planetaPt(c.a), planetaPt(c.b)]);
     // Critério 32 (verificarOrdemParagrafoAntiDaParaTudo) — usarTu espelha
     // exactamente a escolha de motor logo abaixo (ehPos12 -> adulto,
     // usarTu=false; caso contrário -> adolescente, usarTu=true).
@@ -228,7 +232,7 @@ export async function POST(request: Request) {
     // GUARDA DETERMINÍSTICA (critério 33 — profundidade da leitura por
     // opção): mesma guarda do ramo adulto, ver route.ts e o doc comment
     // de `verificarProfundidadeLeituraPorOpcao` em criticaRelatorio.ts.
-    const resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCritica, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoOriginal), ...verificarPalavraCarta(textoOriginal), ...verificarPrimeiraPessoaPlural(textoOriginal), ...verificarYogaDeGrupo(textoOriginal), ...(!ehPos12 ? verificarContagemBlocosOpcao(textoOriginal, intakeAdolescente.opcoesAdolescente) : []), ...verificarCandidatasElegiveisPresentes(textoOriginal, catalogoResultados.candidatasForaDaLista), ...verificarJustificacaoRejeicaoCandidatas(textoOriginal, catalogoResultados.candidatasForaDaLista), ...verificarYogasReforcoGeralNomeados(textoOriginal, catalogoResultados.candidatasForaDaLista), ...verificarLinguagemReservaNivel2(textoOriginal, catalogoResultados.candidatasForaDaLista), ...verificarFraseVargottama(textoOriginal, nomesVargottama), ...verificarOrdemParagrafoAntiDaParaTudo(textoOriginal, paragrafoAntiDaParaTudoTexto)]);
+    const resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCritica, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoOriginal), ...verificarPalavraCarta(textoOriginal), ...verificarPrimeiraPessoaPlural(textoOriginal), ...verificarYogaDeGrupo(textoOriginal), ...(!ehPos12 ? verificarContagemBlocosOpcao(textoOriginal, intakeAdolescente.opcoesAdolescente) : []), ...verificarCandidatasElegiveisPresentes(textoOriginal, catalogoResultados.candidatasForaDaLista), ...verificarJustificacaoRejeicaoCandidatas(textoOriginal, catalogoResultados.candidatasForaDaLista), ...verificarYogasReforcoGeralNomeados(textoOriginal, catalogoResultados.candidatasForaDaLista), ...verificarLinguagemReservaNivel2(textoOriginal, catalogoResultados.candidatasForaDaLista), ...verificarFraseVargottama(textoOriginal, nomesVargottama), ...verificarNomeacaoConjuncoes(textoOriginal, conjuncoesPt), ...verificarOrdemParagrafoAntiDaParaTudo(textoOriginal, paragrafoAntiDaParaTudoTexto)]);
 
     // Correcção do especialista ("provar que o critério corre de facto")
     // — mesmo log estruturado do ramo adulto, ver route.ts.
@@ -398,6 +402,10 @@ export async function PATCH(request: Request) {
         .split("\n")
         .filter((linha) => linha.includes(": Vargottama"))
         .map((linha) => linha.split(":")[0].trim());
+
+        // Critério 19 (verificarNomeacaoConjuncoes) — mesma fonte usada no
+        // prompt (blocoConjuncoes), nunca uma segunda derivação a divergir.
+        const conjuncoesPt: [string, string][] = d1.conjunctions.map((c) => [planetaPt(c.a), planetaPt(c.b)]);
       // Critério 22 (verificarCandidatasElegiveisPresentes) precisa da
       // pool completa `catalogoResultados.candidatasForaDaLista`, que
       // não fica guardada no rascunho — mesmo padrão já usado aqui para
@@ -409,7 +417,7 @@ export async function PATCH(request: Request) {
       const paragrafoAntiDaParaTudoTexto = paragrafoAntiDaParaTudo(catalogoResultados.parOpcoesContraste, !ehPos12);
 
       const textoAvaliarInicialmente = rascunho.textoLlm ?? rascunho.texto;
-      let resultadoCritica = combinarFalhasComGuardas(parseCritica(rascunho.criticaLlm, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoAvaliarInicialmente), ...verificarPalavraCarta(textoAvaliarInicialmente), ...verificarPrimeiraPessoaPlural(textoAvaliarInicialmente), ...verificarYogaDeGrupo(textoAvaliarInicialmente), ...(!ehPos12 ? verificarContagemBlocosOpcao(textoAvaliarInicialmente, intakeAdolescente.opcoesAdolescente) : []), ...verificarCandidatasElegiveisPresentes(textoAvaliarInicialmente, catalogoResultados.candidatasForaDaLista), ...verificarJustificacaoRejeicaoCandidatas(textoAvaliarInicialmente, catalogoResultados.candidatasForaDaLista), ...verificarYogasReforcoGeralNomeados(textoAvaliarInicialmente, catalogoResultados.candidatasForaDaLista), ...verificarLinguagemReservaNivel2(textoAvaliarInicialmente, catalogoResultados.candidatasForaDaLista), ...verificarFraseVargottama(textoAvaliarInicialmente, nomesVargottama), ...verificarOrdemParagrafoAntiDaParaTudo(textoAvaliarInicialmente, paragrafoAntiDaParaTudoTexto)]);
+      let resultadoCritica = combinarFalhasComGuardas(parseCritica(rascunho.criticaLlm, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoAvaliarInicialmente), ...verificarPalavraCarta(textoAvaliarInicialmente), ...verificarPrimeiraPessoaPlural(textoAvaliarInicialmente), ...verificarYogaDeGrupo(textoAvaliarInicialmente), ...(!ehPos12 ? verificarContagemBlocosOpcao(textoAvaliarInicialmente, intakeAdolescente.opcoesAdolescente) : []), ...verificarCandidatasElegiveisPresentes(textoAvaliarInicialmente, catalogoResultados.candidatasForaDaLista), ...verificarJustificacaoRejeicaoCandidatas(textoAvaliarInicialmente, catalogoResultados.candidatasForaDaLista), ...verificarYogasReforcoGeralNomeados(textoAvaliarInicialmente, catalogoResultados.candidatasForaDaLista), ...verificarLinguagemReservaNivel2(textoAvaliarInicialmente, catalogoResultados.candidatasForaDaLista), ...verificarFraseVargottama(textoAvaliarInicialmente, nomesVargottama), ...verificarNomeacaoConjuncoes(textoAvaliarInicialmente, conjuncoesPt), ...verificarOrdemParagrafoAntiDaParaTudo(textoAvaliarInicialmente, paragrafoAntiDaParaTudoTexto)]);
       if (resultadoCritica.falhas.length === 0) {
         // Nada a corrigir (ou a crítica guardada não seguiu o formato
         // esperado — nunca se força uma reescrita sobre dados não
@@ -466,7 +474,7 @@ export async function PATCH(request: Request) {
         const { texto: textoCriticaPos, truncado } = await gerarTexto(client, blocosCriticaPosReescrita, MAX_TOKENS_CRITICA, `criticar-pos-reescrita-${tentativas}`, intakeId);
         algumaCriticaTruncada = algumaCriticaTruncada || truncado;
         ultimaCriticaLlm = textoCriticaPos;
-        resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCriticaPos, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoReescrito), ...verificarPalavraCarta(textoReescrito), ...verificarPrimeiraPessoaPlural(textoReescrito), ...verificarYogaDeGrupo(textoReescrito), ...(!ehPos12 ? verificarContagemBlocosOpcao(textoReescrito, intakeAdolescente.opcoesAdolescente) : []), ...verificarCandidatasElegiveisPresentes(textoReescrito, catalogoResultados.candidatasForaDaLista), ...verificarJustificacaoRejeicaoCandidatas(textoReescrito, catalogoResultados.candidatasForaDaLista), ...verificarYogasReforcoGeralNomeados(textoReescrito, catalogoResultados.candidatasForaDaLista), ...verificarLinguagemReservaNivel2(textoReescrito, catalogoResultados.candidatasForaDaLista), ...verificarFraseVargottama(textoReescrito, nomesVargottama), ...verificarOrdemParagrafoAntiDaParaTudo(textoReescrito, paragrafoAntiDaParaTudoTexto)]);
+        resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCriticaPos, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoReescrito), ...verificarPalavraCarta(textoReescrito), ...verificarPrimeiraPessoaPlural(textoReescrito), ...verificarYogaDeGrupo(textoReescrito), ...(!ehPos12 ? verificarContagemBlocosOpcao(textoReescrito, intakeAdolescente.opcoesAdolescente) : []), ...verificarCandidatasElegiveisPresentes(textoReescrito, catalogoResultados.candidatasForaDaLista), ...verificarJustificacaoRejeicaoCandidatas(textoReescrito, catalogoResultados.candidatasForaDaLista), ...verificarYogasReforcoGeralNomeados(textoReescrito, catalogoResultados.candidatasForaDaLista), ...verificarLinguagemReservaNivel2(textoReescrito, catalogoResultados.candidatasForaDaLista), ...verificarFraseVargottama(textoReescrito, nomesVargottama), ...verificarNomeacaoConjuncoes(textoReescrito, conjuncoesPt), ...verificarOrdemParagrafoAntiDaParaTudo(textoReescrito, paragrafoAntiDaParaTudoTexto)]);
         textoBase = textoReescrito;
 
         console.log(

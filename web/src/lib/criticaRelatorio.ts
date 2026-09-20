@@ -1855,6 +1855,60 @@ function encontrarOcorrenciasUnicas(texto: string, padrao: RegExp): string[] {
   return Array.from(encontradas);
 }
 
+/**
+ * GUARDA DETERMINÍSTICA — CONJUNÇÃO SEM FORMATO "(PlanetaA+PlanetaB)"
+ * (critério 19) — caso real confirmado (relatório do próprio Rui, aviso
+ * "revê à mão antes de aprovar" no painel de admin): INSTRUCAO_CONJUNCOES
+ * exige que, sempre que o texto descreve uma conjunção activa como fusão/
+ * tensão de traços, a frase inclua os dois planetas entre parênteses
+ * ("...(Sol+Vénus fundidos)..."), para o cliente conseguir localizar o
+ * dado técnico por trás da frase. Este critério só era verificado pelo
+ * julgamento da própria crítica (2ª chamada), nunca por código — a mesma
+ * lacuna já corrigida nos critérios 35/36 para outras regras da mesma
+ * família (instrução obrigatória no prompt, sem guarda determinística a
+ * confirmar que sobreviveu à geração/reescrita).
+ *
+ * `conjuncoesPt` vem SEMPRE da mesma fonte usada para construir o próprio
+ * prompt (`d1.conjunctions`, traduzido com `planetaPt` — nunca uma
+ * segunda derivação a divergir dela) — o chamador (route.ts) computa-o a
+ * partir do MESMO `d1`/`d1Recalculado` já usado para `blocoConjuncoes` e
+ * para a guarda do critério 16 (Vargottama).
+ *
+ * Verifica só a PRESENÇA do par de planetas entre parênteses (qualquer
+ * ordem, com ou sem espaços à volta do "+") dentro da secção "Quem é" —
+ * nunca o conteúdo da frase em si, nem decide que conjunções existem:
+ * isso continua a vir inteiramente do cálculo determinístico do D1.
+ */
+export function verificarNomeacaoConjuncoes(texto: string, conjuncoesPt: [string, string][]): string[] {
+  if (!conjuncoesPt.length) return [];
+
+  const normalizar = (s: string) =>
+    s
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .toLowerCase()
+      .replace(/\s*\+\s*/g, "+");
+
+  const inicioSeccao = texto.indexOf(`## ${SECCAO_TITULOS.quemE}`);
+  if (inicioSeccao === -1) return []; // ausência da secção é falha de outro critério
+  const buscaFimSeccao = texto.indexOf("\n## ", inicioSeccao + 1);
+  const fimSeccao = buscaFimSeccao === -1 ? texto.length : buscaFimSeccao;
+  const seccao = texto.slice(inicioSeccao, fimSeccao);
+  const seccaoNorm = normalizar(seccao);
+
+  const semFormato = conjuncoesPt.filter(([a, b]) => {
+    const parA = normalizar(`(${a}+${b}`);
+    const parB = normalizar(`(${b}+${a}`);
+    return !seccaoNorm.includes(parA) && !seccaoNorm.includes(parB);
+  });
+
+  if (!semFormato.length) return [];
+
+  return [
+    `19. NOMEAÇÃO TÉCNICA — CONJUNÇÕES SEM FORMATO "(PlanetaA+PlanetaB)" (guarda determinística): ${semFormato.map(([a, b]) => `${a}+${b}`).join(", ")} — conjunção activa neste perfil (INSTRUCAO_CONJUNCOES) sem os dois planetas entre parênteses na secção "${SECCAO_TITULOS.quemE}", ex. "(${semFormato[0][0]}+${semFormato[0][1]} fundidos)". Reescreve a frase que descreve esta fusão/tensão para incluir esse formato exacto.`,
+  ];
+}
+
 export function verificarPalavraCarta(texto: string): string[] {
   const encontradas = encontrarOcorrenciasUnicas(texto, PADRAO_PALAVRA_CARTA);
   if (!encontradas.length) return [];
