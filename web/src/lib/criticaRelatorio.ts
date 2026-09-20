@@ -1465,6 +1465,116 @@ export function verificarCandidatasElegiveisPresentes(texto: string, candidatasP
 }
 
 /**
+ * GUARDA DETERMINÍSTICA — JUSTIFICAÇÃO DE REJEIÇÃO REPETIDA/GENÉRICA NO
+ * BLOCO "SELECÇÃO_CANDIDATAS:" (critério 35) — caso real confirmado
+ * (relatório da Nádia, pedido de revisão do Rui): a instrução (Passo 1
+ * de INSTRUCAO_SELECCAO_CANDIDATAS, critério 22(e) da crítica) exige que
+ * cada candidata da pool completa REJEITADA no Passo 1 tenha, no bloco
+ * "SELECÇÃO_CANDIDATAS:", uma razão PRÓPRIA (que camadas dela, em
+ * concreto, não se ligam a nenhum dom já nomeado) — nunca uma frase
+ * genérica copiada para várias candidatas diferentes, só trocando o
+ * nome. A guarda 22 (verificarCandidatasElegiveisPresentes) só confirma
+ * que cada nome APARECE mencionado algures no bloco — nunca se a razão
+ * dada é genuína ou um "carimbo" reutilizado, por isso deixava passar
+ * exactamente o padrão observado num relatório real: a esmagadora
+ * maioria da pool (20 de 22) rejeitada com a MESMA frase-modelo, palavra
+ * por palavra — nunca apanhado por nenhuma guarda existente, porque
+ * tecnicamente cada nome "aparecia" no bloco. Isto (não a contagem de
+ * convergência em si) é a causa directa de relatórios reais mostrarem
+ * poucas alternativas mesmo com uma pool grande: o Passo 1 é um filtro
+ * inteiramente julgado pelo LLM, sem piso nenhum, e sem esta guarda uma
+ * rejeição em massa com um único motivo copiado nunca era apanhada.
+ *
+ * Esta guarda NUNCA decide quem é aceite ou rejeitado, e nunca força
+ * nenhuma candidata a entrar — só compara o texto da razão dada a
+ * candidatas DIFERENTES rejeitadas (normalizado, com o próprio nome
+ * removido) e falha quando ≥3 candidatas distintas partilham a mesma
+ * razão, palavra por palavra. A correcção nunca é "aceitar candidatas à
+ * força" — é escrever uma razão específica a cada uma (o mais provável,
+ * dado que a maioria dos casos reais tem razões genuinamente distintas
+ * disponíveis), ou, no caso raro de a razão ser mesmo idêntica porque
+ * partilham a mesma ligação a um dom nomeado, isso já não é "sem ligação
+ * nomeável" — e a candidata devia ter passado o Passo 1 e ser
+ * apresentada (agrupada, se a convergência de base for também idêntica).
+ */
+export function verificarJustificacaoRejeicaoCandidatas(texto: string, candidatasPool: CandidataForaDaLista[]): string[] {
+  if (candidatasPool.length < 4) return [];
+
+  const normalizar = (s: string) =>
+    s
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .toLowerCase();
+
+  const inicioSeccao = texto.indexOf(`## ${SECCAO_TITULOS.candidataForaDaLista}`);
+  if (inicioSeccao === -1) return [];
+  const buscaFimSeccao = texto.indexOf("\n## ", inicioSeccao + 1);
+  const fimSeccao = buscaFimSeccao === -1 ? texto.length : buscaFimSeccao;
+  const seccao = texto.slice(inicioSeccao, fimSeccao);
+
+  const MARCADOR_SELECCAO = "SELECÇÃO_CANDIDATAS:";
+  const MARCADOR_CANDIDATA = "CANDIDATA:";
+  const MARCADOR_GRUPO = "GRUPO:";
+
+  const posSeleccao = seccao.indexOf(MARCADOR_SELECCAO);
+  if (posSeleccao === -1) return []; // ausência do bloco já é apanhada pelo critério 22
+
+  const regexProximoMarcador = new RegExp(`^(${MARCADOR_CANDIDATA}|${MARCADOR_GRUPO})`, "gm");
+  regexProximoMarcador.lastIndex = posSeleccao + MARCADOR_SELECCAO.length;
+  const mProximo = regexProximoMarcador.exec(seccao);
+  const fimBlocoSeleccao = mProximo ? mProximo.index : seccao.length;
+  const blocoSeleccao = seccao.slice(posSeleccao + MARCADOR_SELECCAO.length, fimBlocoSeleccao);
+
+  const nomesEscritos = new Set<string>();
+  for (const m of seccao.matchAll(new RegExp(`^${MARCADOR_CANDIDATA}\\s*(.*)$`, "gm"))) {
+    const nome = m[1]?.trim();
+    if (nome) nomesEscritos.add(normalizar(nome));
+  }
+  for (const m of seccao.matchAll(new RegExp(`^${MARCADOR_GRUPO}\\s*(.*)$`, "gm"))) {
+    for (const nome of (m[1] ?? "").split(";")) {
+      const n = nome.trim();
+      if (n) nomesEscritos.add(normalizar(n));
+    }
+  }
+
+  const rejeitadas = candidatasPool.filter((c) => !nomesEscritos.has(normalizar(c.nome)));
+  if (rejeitadas.length < 3) return [];
+
+  const clausulas = blocoSeleccao
+    .split(/(?<=[.;])\s+|\n+/)
+    .map((c) => c.trim())
+    .filter(Boolean);
+
+  const razaoPorCandidata = new Map<string, string>();
+  for (const c of rejeitadas) {
+    const nomeNorm = normalizar(c.nome);
+    const clausula = clausulas.find((cl) => normalizar(cl).includes(nomeNorm));
+    if (!clausula) continue; // sem razão nenhuma dada — já apanhado pela guarda 22
+    const semNome = normalizar(clausula).split(nomeNorm).join(" ");
+    const semPontuacao = semNome
+      .replace(/[^\p{L}\p{N}\s]/gu, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (semPontuacao.length < 15) continue; // curto demais para comparar com confiança
+    razaoPorCandidata.set(c.nome, semPontuacao);
+  }
+
+  const grupos = new Map<string, string[]>();
+  for (const [nome, razao] of razaoPorCandidata) {
+    if (!grupos.has(razao)) grupos.set(razao, []);
+    grupos.get(razao)!.push(nome);
+  }
+
+  const grupoRepetido = [...grupos.entries()].find(([, nomes]) => nomes.length >= 3);
+  if (!grupoRepetido) return [];
+
+  const [razaoPartilhada, nomesAfectados] = grupoRepetido;
+  return [
+    `35. JUSTIFICAÇÃO DE REJEIÇÃO REPETIDA/GENÉRICA (guarda determinística — caso real confirmado, relatório da Nádia): ${nomesAfectados.length} candidatas rejeitadas no Passo 1 — ${nomesAfectados.join(", ")} — partilham, no bloco "SELECÇÃO_CANDIDATAS:", exactamente a mesma razão de rejeição (só o nome muda): "${razaoPartilhada.slice(0, 200)}". Cada candidata rejeitada precisa de uma razão PRÓPRIA e específica (que camadas dela, em concreto, não se ligam a nenhum dom nomeado em "Quem é"). Se a razão é genuinamente a mesma para várias candidatas, isso significa que partilham a MESMA ligação a um dom nomeado — e nesse caso não deviam ter sido rejeitadas, deviam ter passado o Passo 1 e ser apresentadas (agrupadas, se a convergência de base for também idêntica).`,
+  ];
+}
+
+/**
  * GUARDA DETERMINÍSTICA — ORDEM DO PARÁGRAFO ANTI-"ISTO DÁ PARA TUDO"
  * (critério 32) — caso real confirmado (relatório do próprio Rui):
  * INSTRUCAO da secção "Candidata fora da lista" (promptAdulto.ts) exige,
@@ -1563,6 +1673,39 @@ function contarFrases(pontoComMarcador: string): number {
   if (!semMarcador) return 0;
   const terminadores = semMarcador.match(/[.!?](?=\s+[A-ZÀ-ÖØ-Ý0-9"«]|\s*$)/g);
   return terminadores ? terminadores.length : 0;
+}
+
+/**
+ * GUARDA DETERMINÍSTICA — PERGUNTA ESPECÍFICA SEM RESPOSTA DIRECTA
+ * (critério 36) — o mesmo tipo de lacuna do critério 35: o critério 28
+ * da crítica (RESPOSTA DIRECTA À PERGUNTA ESPECÍFICA) só era verificado
+ * pelo julgamento do próprio LLM na 2ª chamada, nunca por código — apesar
+ * de INSTRUCAO_PERGUNTA_ESPECIFICA (promptAdulto.ts) exigir, sempre que
+ * existe pergunta específica declarada, que a secção "Leitura por opção"
+ * abra com a frase-molde exacta "A pergunta [...] tem resposta directa:
+ * [...]". Sem guarda determinística, nada garantia que essa frase
+ * sobrevivesse a uma reescrita, e o cliente podia (como reportado
+ * directamente pelo Rui, sobre o seu próprio relatório) ver a pergunta
+ * que escreveu simplesmente ignorada, sem nenhum critério automático a
+ * apanhar isso. Verifica só a PRESENÇA da frase-molde ("tem resposta
+ * directa:") dentro da secção — nunca o conteúdo da resposta em si, para
+ * nunca arriscar alterar qual opção o perfil sustenta.
+ */
+export function verificarRespostaPerguntaEspecifica(texto: string, perguntaEspecifica: string | null | undefined): string[] {
+  if (!perguntaEspecifica || !perguntaEspecifica.trim()) return [];
+
+  const inicioSeccao = texto.indexOf(`## ${SECCAO_TITULOS.leituraPorOpcao}`);
+  if (inicioSeccao === -1) return []; // ausência da secção é falha de outro critério
+
+  const buscaFimSeccao = texto.indexOf("\n## ", inicioSeccao + 1);
+  const fimSeccao = buscaFimSeccao === -1 ? texto.length : buscaFimSeccao;
+  const seccao = texto.slice(inicioSeccao, fimSeccao);
+
+  if (seccao.includes("tem resposta directa:")) return [];
+
+  return [
+    `36. PERGUNTA ESPECÍFICA SEM RESPOSTA DIRECTA (guarda determinística): existe uma pergunta específica declarada ("${perguntaEspecifica.slice(0, 80)}"), mas a secção "${SECCAO_TITULOS.leituraPorOpcao}" não contém a frase-molde obrigatória "tem resposta directa:" (ver INSTRUCAO_PERGUNTA_ESPECIFICA). A pergunta da pessoa não pode ficar sem essa resposta directa, no formato exacto exigido, logo no início da secção.`,
+  ];
 }
 
 export function verificarProfundidadeLeituraPorOpcao(texto: string): string[] {
