@@ -111,56 +111,81 @@ export function SeccaoRascunho({
     }
   }
 
+  // AUDITORIA (bug real, "Miguel ficou 'A gerar…' 60+ min") — antes,
+  // nenhum destes dois fetch() tinha try/catch nem timeout. Se a ligação
+  // caísse a meio (laptop em suspensão, wifi, VPN) o fetch rejeitava (ou
+  // nem isso — ficava pendurado sem resposta) e a função `gerar()`
+  // terminava em excepção não apanhada: `setLoading(null)` nunca corria,
+  // o botão ficava preso em "A gerar…" para sempre e não aparecia
+  // nenhum erro — mesmo que o servidor (tecto de 280s por pedido, ver
+  // `maxDuration` em route.ts) já tivesse acabado (com sucesso ou não)
+  // há muito tempo. `AbortSignal.timeout` força um limite por pedido
+  // acima do tecto do servidor, e o try/catch/finally garante que
+  // `loading` volta sempre a null e o erro fica visível.
+  const TIMEOUT_PEDIDO_MS = 300_000; // 5 min — acima do maxDuration=280s do servidor
+
+  function mensagemErroPedido(erro: unknown, contexto: string): string {
+    if (erro instanceof DOMException && erro.name === "AbortError") {
+      return `${contexto} — o pedido ultrapassou ${TIMEOUT_PEDIDO_MS / 1000}s sem resposta (provavelmente perda de ligação). Actualiza a página para veres o estado real antes de tentar outra vez — pode já ter terminado do lado do servidor.`;
+    }
+    return `${contexto} — falha de rede (${erro instanceof Error ? erro.message : String(erro)}). Actualiza a página para confirmares o estado antes de tentar outra vez.`;
+  }
+
   async function gerar() {
     if (texto && !editadoManualmente && !confirm("Isto vai substituir o rascunho actual. O relatório já entregue ao cliente (se houver) não é alterado. Continuar?")) return;
     setLoading("gerar");
     setErro(null);
     setMensagem(null);
     setAviso(null);
-    const res = await fetch(apiBase, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ intakeId }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      setLoading(null);
-      setErro(data.error ?? "Não foi possível gerar o rascunho.");
-      return;
-    }
-    aplicarTexto(data.texto, false, data.manualPreservada === true);
-    setAviso(construirAvisoRascunho(data));
-
-    // BUG REAL, corrigido (ronda "regeneração Alexandra") — a reescrita
-    // (quando a crítica encontrou falhas) passou a ser um 2º pedido HTTP
-    // separado (ver comentário em maxDuration, route.ts) para nenhum
-    // pedido ultrapassar o tecto de 280s da Vercel. Disparado aqui,
-    // automaticamente, logo a seguir ao rascunho original ficar guardado
-    // — nunca um botão à parte, para o fluxo continuar a parecer um único
-    // "Gerar rascunho" aos olhos de quem usa o backoffice.
-    if (data.precisaReescrita) {
-      setMensagem("Rascunho gerado — a aplicar as correcções da crítica automática…");
-      const resReescrita = await fetch(apiBase, {
-        method: "PATCH",
+    try {
+      const res = await fetch(apiBase, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ intakeId, acao: "reescrever" }),
+        body: JSON.stringify({ intakeId }),
+        signal: AbortSignal.timeout(TIMEOUT_PEDIDO_MS),
       });
-      const dataReescrita = await resReescrita.json().catch(() => ({}));
-      if (!resReescrita.ok) {
-        setLoading(null);
-        setErro(dataReescrita.error ?? "O rascunho foi gerado, mas a correcção automática falhou — o texto original já está guardado; podes tentar 'Regenerar' outra vez.");
-        router.refresh();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErro(data.error ?? "Não foi possível gerar o rascunho.");
         return;
       }
-      aplicarTexto(dataReescrita.texto, dataReescrita.houveReescrita === true, dataReescrita.manualPreservada === true, dataReescrita.criadoEm);
-      // AUDITORIA — o aviso da reescrita (ex.: `precisaRevisaoManual`
-      // depois de esgotar as tentativas de auto-correcção) substitui o
-      // da geração original, porque é o estado mais recente do texto.
-      setAviso(construirAvisoRascunho(dataReescrita));
-    }
+      aplicarTexto(data.texto, false, data.manualPreservada === true);
+      setAviso(construirAvisoRascunho(data));
 
-    setLoading(null);
-    router.refresh();
+      // BUG REAL, corrigido (ronda "regeneração Alexandra") — a reescrita
+      // (quando a crítica encontrou falhas) passou a ser um 2º pedido HTTP
+      // separado (ver comentário em maxDuration, route.ts) para nenhum
+      // pedido ultrapassar o tecto de 280s da Vercel. Disparado aqui,
+      // automaticamente, logo a seguir ao rascunho original ficar guardado
+      // — nunca um botão à parte, para o fluxo continuar a parecer um único
+      // "Gerar rascunho" aos olhos de quem usa o backoffice.
+      if (data.precisaReescrita) {
+        setMensagem("Rascunho gerado — a aplicar as correcções da crítica automática…");
+        const resReescrita = await fetch(apiBase, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ intakeId, acao: "reescrever" }),
+          signal: AbortSignal.timeout(TIMEOUT_PEDIDO_MS),
+        });
+        const dataReescrita = await resReescrita.json().catch(() => ({}));
+        if (!resReescrita.ok) {
+          setErro(dataReescrita.error ?? "O rascunho foi gerado, mas a correcção automática falhou — o texto original já está guardado; podes tentar 'Regenerar' outra vez.");
+          router.refresh();
+          return;
+        }
+        aplicarTexto(dataReescrita.texto, dataReescrita.houveReescrita === true, dataReescrita.manualPreservada === true, dataReescrita.criadoEm);
+        // AUDITORIA — o aviso da reescrita (ex.: `precisaRevisaoManual`
+        // depois de esgotar as tentativas de auto-correcção) substitui o
+        // da geração original, porque é o estado mais recente do texto.
+        setAviso(construirAvisoRascunho(dataReescrita));
+      }
+
+      router.refresh();
+    } catch (erro) {
+      setErro(mensagemErroPedido(erro, "Não foi possível confirmar se o rascunho foi gerado"));
+    } finally {
+      setLoading(null);
+    }
   }
 
   async function guardar() {
