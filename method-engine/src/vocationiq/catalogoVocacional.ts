@@ -857,6 +857,44 @@ function analisarCamada(camada: string, ctx: ContextoAvaliacao): { pesoAssociado
 }
 
 /**
+ * Casas-fonte de uma camada (correcção do especialista, pedido do Rui,
+ * ronda "partilha de combinações entre destinos" — caso real confirmado
+ * na carta da Nádia: 13 destinos completamente distintos — Teologia,
+ * Guia-Intérprete Nacional, Sociologia, Tradução, etc. — todos com as
+ * MESMAS camadas "Casa temática forte (casa 9)" + "Regente da casa 9
+ * dignificado" + "Parivartana ... casa 9", byte a byte iguais). As 3
+ * testam, por baixo, a MESMA pergunta — `catalogoIndiceCasas[casa]`
+ * inclui este destino? — nunca 3 confirmações independentes quando
+ * partilham a mesma casa; é 1 facto sobre a força dessa casa, relatado 3
+ * vezes com etiquetas diferentes. Usado só para a UNIÃO que decide
+ * `convergencia` em `construirDestinoConvergente` (ver abaixo) — nunca
+ * altera o texto de `camadas` (narrativa) nem `somaPesoCamadas`
+ * (desempate entre candidatas já qualificadas).
+ *
+ * Parivartana devolve AS DUAS casas do par porque `camadasParaDestino`
+ * credita o destino se QUALQUER uma das duas estiver na lista da casa
+ * (`entradaA?.destinos.includes(destinoId) || entradaB?.destinos...`) —
+ * sem registar qual delas confirmou. Tratar as duas como "em jogo" para
+ * efeitos de sobreposição é a leitura conservadora: nunca infla a
+ * contagem (só pode fundir a mais, nunca separar de menos).
+ */
+function casasFonteDeCamada(camada: string): number[] | null {
+  if (camada.startsWith("Casa temática forte")) {
+    const m = camada.match(/^Casa temática forte \(casa (\d+)\)/);
+    return m ? [Number(m[1])] : null;
+  }
+  if (camada.startsWith("Regente da casa") && camada.includes("dignificado")) {
+    const m = camada.match(/^Regente da casa (\d+) dignificado/);
+    return m ? [Number(m[1])] : null;
+  }
+  if (camada.startsWith("Parivartana entre regente da casa")) {
+    const m = camada.match(/^Parivartana entre regente da casa (\d+) e regente da casa (\d+)/);
+    return m ? [Number(m[1]), Number(m[2])] : null;
+  }
+  return null;
+}
+
+/**
  * Compara duas candidatas EMPATADAS em convergência pelos 3 critérios da
  * regra permanente — devolve negativo se `a` vence, positivo se `b`
  * vence, 0 só no empate total residual (decidido depois por ordem de
@@ -955,7 +993,49 @@ function construirDestinoConvergente(id: string, ctx: ContextoAvaliacao): Destin
   // PENDENTE — João (4ª carta do conjunto de regressão original) NUNCA
   // foi validado nesta ronda: sem dados de nascimento disponíveis neste
   // ambiente. Não tratar como aprovado por omissão.
-  const fontesDistintas = new Set<string>(analisadas.map((a, i) => a.planeta ?? `sem-planeta:${camadas[i]}`));
+  // Correcção do especialista, pedido do Rui (ronda "partilha de
+  // combinações entre destinos") — a `fontesDistintas` por planeta
+  // (acima) já existia; acrescenta agora a MESMA lógica ao nível da
+  // CASA (ver `casasFonteDeCamada`): "Casa temática forte", "Regente da
+  // casa dignificado" e "Parivartana entre regentes de casa" colapsam
+  // para 1 fonte sempre que partilhem pelo menos um número de casa,
+  // para o MESMO destino — nunca uma por etiqueta. União só (nunca
+  // separa o que já estava fundido por planeta) — usa union-find sobre
+  // o ÍNDICE das camadas, fundindo por planeta igual (regra já
+  // existente) OU por casa em comum (regra nova), o que produz o mesmo
+  // resultado de hoje quando não há sobreposição de casas. Nunca mexe
+  // em `camadas` (narrativa) nem `somaPesoCamadas` (desempate) — só na
+  // CONTAGEM que decide se o destino atinge o limiar de 4.
+  const paiUniaoFontes = camadas.map((_, i) => i);
+  function raizUniaoFontes(i: number): number {
+    while (paiUniaoFontes[i] !== i) {
+      paiUniaoFontes[i] = paiUniaoFontes[paiUniaoFontes[i]];
+      i = paiUniaoFontes[i];
+    }
+    return i;
+  }
+  function unirFontes(a: number, b: number): void {
+    const ra = raizUniaoFontes(a);
+    const rb = raizUniaoFontes(b);
+    if (ra !== rb) paiUniaoFontes[ra] = rb;
+  }
+  const casasPorIndiceCamada = camadas.map(casasFonteDeCamada);
+  for (let i = 0; i < camadas.length; i++) {
+    for (let j = i + 1; j < camadas.length; j++) {
+      const planetaI = analisadas[i].planeta;
+      const planetaJ = analisadas[j].planeta;
+      if (planetaI && planetaJ && planetaI === planetaJ) {
+        unirFontes(i, j);
+        continue;
+      }
+      const casasI = casasPorIndiceCamada[i];
+      const casasJ = casasPorIndiceCamada[j];
+      if (casasI && casasJ && casasI.some((c) => casasJ.includes(c))) {
+        unirFontes(i, j);
+      }
+    }
+  }
+  const fontesDistintas = new Set<number>(camadas.map((_, i) => raizUniaoFontes(i)));
   return {
     id,
     nome: destino?.labels.PT ?? id,
