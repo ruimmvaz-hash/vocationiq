@@ -20,7 +20,16 @@ import { SeccaoRascunho } from "./SeccaoRascunho";
 import { SeccaoAuditoria } from "./SeccaoAuditoria";
 import { SeccaoPrompt } from "./SeccaoPrompt";
 import { SeccaoEntrega } from "./SeccaoEntrega";
-import { parseCritica, construirAvisoRascunho, TOTAL_CRITERIOS_ADULTO, TOTAL_CRITERIOS_ADOLESCENTE } from "@/lib/criticaRelatorio";
+import {
+  parseCritica,
+  construirAvisoRascunho,
+  combinarFalhasComGuardas,
+  verificarProfundidadeLeituraPorOpcao,
+  verificarPalavraCarta,
+  verificarPrimeiraPessoaPlural,
+  TOTAL_CRITERIOS_ADULTO,
+  TOTAL_CRITERIOS_ADOLESCENTE,
+} from "@/lib/criticaRelatorio";
 
 export const dynamic = "force-dynamic";
 
@@ -179,7 +188,29 @@ export default async function AdminIntakeDetailPage({ params }: { params: Promis
   // que a página era recarregada, exactamente o momento em que a
   // aprovação de facto acontece.
   const totalCriteriosRamo = ehAdolescente ? TOTAL_CRITERIOS_ADOLESCENTE : TOTAL_CRITERIOS_ADULTO;
-  const resultadoCriticaActual = actual?.criticaLlm ? parseCritica(actual.criticaLlm, totalCriteriosRamo) : null;
+  // CORRECÇÃO (ronda "regeneração Alexandra 9", bug real: o aviso "⚠
+  // Atenção antes de aprovar" recalculado aqui, ao carregar a página, só
+  // reprocessava o texto BRUTO da crítica LLM persistida (`parseCritica`)
+  // — nunca corria as guardas determinísticas (profundidade/critério 33,
+  // "carta"/critério 20, 1ª pessoa plural/critério 9) contra o texto
+  // actualmente guardado, ao contrário de todas as chamadas em
+  // route.ts, que já combinam as duas fontes com `combinarFalhasComGuardas`.
+  // Resultado: uma crítica que a própria LLM marcou "34/34 PASSA" fazia o
+  // aviso desaparecer ao recarregar a página mesmo quando uma guarda
+  // determinística confirmava, contra o texto real, uma falha genuína
+  // (ex.: um ponto da "Leitura por opção" com só 2 frases, abaixo do
+  // mínimo de 3 exigido) — exactamente o cenário que esta função foi
+  // escrita para impedir (ver comentário acima), só que a fonte de
+  // verdade usada aqui estava incompleta. Corrigido para usar a mesma
+  // combinação que route.ts usa em cada chamada, contra o mesmo texto
+  // ("texto actualmente guardado", ver comentário no tipo `actual` acima).
+  const resultadoCriticaActual = actual?.criticaLlm
+    ? combinarFalhasComGuardas(parseCritica(actual.criticaLlm, totalCriteriosRamo), [
+        ...verificarProfundidadeLeituraPorOpcao(actual.texto),
+        ...verificarPalavraCarta(actual.texto),
+        ...verificarPrimeiraPessoaPlural(actual.texto),
+      ])
+    : null;
   const avisoInicial = resultadoCriticaActual
     ? construirAvisoRascunho({
         criteriosEmFalta: resultadoCriticaActual.criteriosEmFalta,
