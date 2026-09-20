@@ -152,6 +152,7 @@ export {
 } from "./vocationiq/catalogoCursos";
 export {
   construirPromptAdulto,
+  paragrafoAntiDaParaTudo,
   normalizarTextoLivre,
   SECCAO_TITULOS,
   MARCADORES,

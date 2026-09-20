@@ -1464,6 +1464,55 @@ export function verificarCandidatasElegiveisPresentes(texto: string, candidatasP
   return [];
 }
 
+/**
+ * GUARDA DETERMINÍSTICA — ORDEM DO PARÁGRAFO ANTI-"ISTO DÁ PARA TUDO"
+ * (critério 32) — caso real confirmado (relatório do próprio Rui):
+ * INSTRUCAO da secção "Candidata fora da lista" (promptAdulto.ts) exige,
+ * por esta ordem exacta: (1) frase de abertura própria da secção (1-2
+ * frases), (2) logo a seguir, ANTES de qualquer candidata ou bloco de
+ * raciocínio, o parágrafo `paragrafoAntiDaParaTudo` na íntegra, (3) só
+ * depois o bloco "SELECÇÃO_CANDIDATAS:". No caso real, o parágrafo saiu
+ * DEPOIS de SELECÇÃO_CANDIDATAS — ordem invertida.
+ *
+ * Esta guarda verifica APENAS a ordem/presença do parágrafo — nunca o
+ * conteúdo da selecção de candidatas em si — por isso uma correcção
+ * nunca pode alterar qual candidata é aceite/rejeitada nem a sua ordem,
+ * só a posição deste parágrafo fixo dentro da secção.
+ */
+export function verificarOrdemParagrafoAntiDaParaTudo(texto: string, paragrafoAntiDaParaTudoTexto: string | null): string[] {
+  if (!paragrafoAntiDaParaTudoTexto) return [];
+
+  const inicioSeccao = texto.indexOf(`## ${SECCAO_TITULOS.candidataForaDaLista}`);
+  if (inicioSeccao === -1) return []; // secção ausente é outra falha, não desta guarda
+
+  const buscaFimSeccao = texto.indexOf("\n## ", inicioSeccao + 1);
+  const fimSeccao = buscaFimSeccao === -1 ? texto.length : buscaFimSeccao;
+  const seccao = texto.slice(inicioSeccao, fimSeccao);
+
+  const posSeleccao = seccao.indexOf("SELECÇÃO_CANDIDATAS:");
+  if (posSeleccao === -1) return []; // ausência do bloco é outra falha, não desta guarda
+
+  // Fragmento estável e curto do início do parágrafo obrigatório —
+  // suficiente para localizá-lo sem exigir reprodução carácter a
+  // carácter do parágrafo inteiro nesta guarda.
+  const fragmentoParagrafo = paragrafoAntiDaParaTudoTexto.slice(0, 60);
+  const posParagrafo = seccao.indexOf(fragmentoParagrafo);
+
+  if (posParagrafo === -1) {
+    return [
+      `32. PARÁGRAFO ANTI-"ISTO DÁ PARA TUDO" AUSENTE (guarda determinística): a secção "${SECCAO_TITULOS.candidataForaDaLista}" tem 2+ candidatas na pool (pelo que o parágrafo é obrigatório), mas o texto não contém o parágrafo exacto exigido logo a seguir à frase de abertura da secção.`,
+    ];
+  }
+
+  if (posParagrafo > posSeleccao) {
+    return [
+      `32. ORDEM DO PARÁGRAFO ANTI-"ISTO DÁ PARA TUDO" (guarda determinística): este parágrafo obrigatório tem de aparecer ANTES do bloco "SELECÇÃO_CANDIDATAS:", logo a seguir à frase de abertura da secção — mas no texto aparece DEPOIS de "SELECÇÃO_CANDIDATAS:". Move o parágrafo (sem alterar uma palavra do seu conteúdo) para a posição correcta, sem tocar na selecção de candidatas em si.`,
+    ];
+  }
+
+  return [];
+}
+
 export function construirPromptReescrita(promptTecnico: string, rascunhoOriginal: string, falhas: string[]): string {
   return `${INSTRUCAO_REESCRITA}\nFalhas a corrigir:\n${falhas.map((f) => `- ${f}`).join("\n")}\n\n=== A) PROMPT TÉCNICO ORIGINAL ===\n${promptTecnico}\n\n=== B) RELATÓRIO ORIGINAL ===\n${rascunhoOriginal}`;
 }
