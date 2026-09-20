@@ -339,8 +339,41 @@ const INSTRUCAO_CRITICA = `Tens à tua frente:
  - O veredicto aqui é sempre a tua conclusão FINAL e definitiva — se mudaste de opinião durante a análise acima, é a versão corrigida que entra aqui, nunca a primeira impressão.
  - Este bloco é a ÚNICA fonte que o sistema usa para decidir se o rascunho precisa de reescrita — um critério que discutiste acima mas sem linha correspondente dentro deste bloco é tratado como não avaliado, e reescrito por segurança mesmo que a tua análise o tenha dado como PASSA.`;
 
+/**
+ * PROMPT CACHING (correcção do especialista, pedido do Rui — visibilidade
+ * e custo real por geração, ronda "regeneração Alexandra 10") — o bloco
+ * de instruções da crítica + o prompt técnico completo (`promptTecnico`,
+ * ~30 mil tokens neste relatório) é IDÊNTICO entre a crítica original e
+ * todas as críticas pós-reescrita do MESMO ciclo de "Regenerar" (mesma
+ * pessoa, mesmo prompt técnico — só o rascunho avaliado muda a cada
+ * chamada) — candidato directo a `cache_control` da Anthropic (ver
+ * gerarTexto em route.ts). Por isso a função devolve os dois blocos
+ * separados: `cacheavel` (estático dentro do ciclo) e `resto` (o
+ * rascunho, sempre variável, nunca cacheável).
+ *
+ * `construirPromptCritica`/`construirPromptCriticaAdolescente` continuam
+ * a devolver a MESMA string única de sempre (usada para guardar e
+ * mostrar o prompt completo no admin, e em qualquer sítio que só precise
+ * do texto) — compostas a partir destes blocos, nunca duplicando o
+ * texto do template, para as duas formas nunca poderem divergir.
+ */
+export interface BlocosPromptCritica {
+  /** Instruções da crítica + prompt técnico completo — estático dentro do mesmo ciclo de regeneração, candidato a cache_control. */
+  cacheavel: string;
+  /** O rascunho concreto a avaliar — muda a cada chamada, nunca cacheável. */
+  resto: string;
+}
+
+export function construirBlocosPromptCritica(promptTecnico: string, rascunho: string): BlocosPromptCritica {
+  return {
+    cacheavel: `${INSTRUCAO_CRITICA}\n\n=== A) PROMPT TÉCNICO ENVIADO ===\n${promptTecnico}`,
+    resto: `\n\n=== B) RASCUNHO GERADO ===\n${rascunho}`,
+  };
+}
+
 export function construirPromptCritica(promptTecnico: string, rascunho: string): string {
-  return `${INSTRUCAO_CRITICA}\n\n=== A) PROMPT TÉCNICO ENVIADO ===\n${promptTecnico}\n\n=== B) RASCUNHO GERADO ===\n${rascunho}`;
+  const { cacheavel, resto } = construirBlocosPromptCritica(promptTecnico, rascunho);
+  return `${cacheavel}${resto}`;
 }
 
 // TAREFA 1 / FALTA 1 (correcção do especialista, ronda de produção do
@@ -697,8 +730,16 @@ const INSTRUCAO_CRITICA_ADOLESCENTE = `Tens à tua frente:
  - O veredicto aqui é sempre a tua conclusão FINAL e definitiva — se mudaste de opinião durante a análise acima, é a versão corrigida que entra aqui, nunca a primeira impressão.
  - Este bloco é a ÚNICA fonte que o sistema usa para decidir se o rascunho precisa de reescrita — um critério que discutiste acima mas sem linha correspondente dentro deste bloco é tratado como não avaliado, e reescrito por segurança mesmo que a tua análise o tenha dado como PASSA.`;
 
+export function construirBlocosPromptCriticaAdolescente(promptTecnico: string, rascunho: string): BlocosPromptCritica {
+  return {
+    cacheavel: `${INSTRUCAO_CRITICA_ADOLESCENTE}\n\n=== A) PROMPT TÉCNICO ENVIADO ===\n${promptTecnico}`,
+    resto: `\n\n=== B) RASCUNHO GERADO ===\n${rascunho}`,
+  };
+}
+
 export function construirPromptCriticaAdolescente(promptTecnico: string, rascunho: string): string {
-  return `${INSTRUCAO_CRITICA_ADOLESCENTE}\n\n=== A) PROMPT TÉCNICO ENVIADO ===\n${promptTecnico}\n\n=== B) RASCUNHO GERADO ===\n${rascunho}`;
+  const { cacheavel, resto } = construirBlocosPromptCriticaAdolescente(promptTecnico, rascunho);
+  return `${cacheavel}${resto}`;
 }
 
 export interface CriterioCritica {

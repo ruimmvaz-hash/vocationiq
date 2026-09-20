@@ -7,7 +7,7 @@ import { guardarRascunho, obterRascunho, apagarRascunho, usarVersaoLlmRascunho, 
 import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTemplate";
 import { calcularDadosAstrologicosAdolescente, reconstruirHTMLRelatorio, GeocodeError, ANO_ESCOLARIDADE_LABEL } from "@/lib/relatorioAdultoCompute";
 import { construirPromptAdolescente, construirPromptAdulto, type VocationiqIntakeAdulto } from "@naveya/method-engine";
-import { construirPromptCritica, construirPromptCriticaAdolescente, parseCritica, construirPromptReescrita, removerBlocosOpcaoNaoAutorizados, TOTAL_CRITERIOS_ADULTO, TOTAL_CRITERIOS_ADOLESCENTE, verificarProfundidadeLeituraPorOpcao, combinarFalhasComGuardas, verificarPalavraCarta, verificarPrimeiraPessoaPlural } from "@/lib/criticaRelatorio";
+import { construirPromptCritica, construirPromptCriticaAdolescente, construirBlocosPromptCritica, construirBlocosPromptCriticaAdolescente, parseCritica, construirPromptReescrita, removerBlocosOpcaoNaoAutorizados, TOTAL_CRITERIOS_ADULTO, TOTAL_CRITERIOS_ADOLESCENTE, verificarProfundidadeLeituraPorOpcao, combinarFalhasComGuardas, verificarPalavraCarta, verificarPrimeiraPessoaPlural } from "@/lib/criticaRelatorio";
 
 // TAREFA 1A (correcção do especialista, ronda de produção do motor
 // adolescente) — equivalente de api/relatorio/route.ts para o ramo
@@ -51,14 +51,34 @@ const MAX_TENTATIVAS_REESCRITA = 2;
 // gravado sempre como "pos-12" para este ramo).
 const SITUACOES_ADOLESCENTE = new Set(["9-ou-menos", "10-11-12", "universidade"]);
 
-/** Idêntica à de api/relatorio/route.ts — thinking sempre desligado, mesmo diagnóstico de "sem bloco de texto", agora também devolve `truncado` (ver auditoria em api/relatorio/route.ts). */
-async function gerarTexto(client: Anthropic, prompt: string, maxTokens: number): Promise<{ texto: string; truncado: boolean }> {
+type ConteudoPrompt = string | { cacheavel: string; resto: string };
+
+/**
+ * Idêntica à de api/relatorio/route.ts — mesmo `thinking` desligado,
+ * mesmo diagnóstico de "sem bloco de texto", devolve `truncado`. PROMPT
+ * CACHING + LOG DE CUSTO REAL (correcção do especialista, pedido do Rui
+ * — ronda "regeneração Alexandra 10"): ver doc comment completo na
+ * versão gémea em api/relatorio/route.ts — mesma lógica, mesma decisão
+ * de deixar a chamada de reescrita fora do cache por agora (a lista de
+ * falhas muda a cada tentativa e vem antes do prompt técnico no texto).
+ */
+async function gerarTexto(client: Anthropic, prompt: ConteudoPrompt, maxTokens: number, rotulo: string, intakeId: string): Promise<{ texto: string; truncado: boolean }> {
+  const content = typeof prompt === "string" ? prompt : [
+    { type: "text" as const, text: prompt.cacheavel, cache_control: { type: "ephemeral" as const } },
+    { type: "text" as const, text: prompt.resto },
+  ];
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: maxTokens,
     thinking: { type: "disabled" },
-    messages: [{ role: "user", content: prompt }],
+    messages: [{ role: "user", content }],
   });
+  const uso = response.usage;
+  console.log(
+    `[custo-tokens][intake=${intakeId}][chamada=${rotulo}] input=${uso.input_tokens} output=${uso.output_tokens}` +
+      (uso.cache_creation_input_tokens ? ` cache_escrita=${uso.cache_creation_input_tokens}` : "") +
+      (uso.cache_read_input_tokens ? ` cache_leitura=${uso.cache_read_input_tokens}` : ""),
+  );
   const textBlock = response.content.find((b) => b.type === "text");
   if (!textBlock || textBlock.type !== "text") {
     const tiposDeBloco = response.content.map((b) => b.type).join(", ") || "(nenhum bloco)";
@@ -164,7 +184,7 @@ export async function POST(request: Request) {
 
     const client = new Anthropic({ apiKey });
 
-    const { texto: textoGerado, truncado: geracaoTruncada } = await gerarTexto(client, prompt, MAX_TOKENS);
+    const { texto: textoGerado, truncado: geracaoTruncada } = await gerarTexto(client, prompt, MAX_TOKENS, "gerar", intakeId);
 
     // GUARDA DETERMINÍSTICA (ver removerBlocosOpcaoNaoAutorizados em
     // criticaRelatorio.ts) — "Leitura por opção" só pode ter um bloco
@@ -193,8 +213,8 @@ export async function POST(request: Request) {
     // `ehPos12` a partir do intake (ver abaixo) para saber qual crítica
     // usar depois de reescrever, sem depender de guardar mais um campo.
     const totalCriteriosEsperado = ehPos12 ? TOTAL_CRITERIOS_ADULTO : TOTAL_CRITERIOS_ADOLESCENTE;
-    const promptCritica = ehPos12 ? construirPromptCritica(prompt, textoOriginal) : construirPromptCriticaAdolescente(prompt, textoOriginal);
-    const { texto: textoCritica, truncado: criticaTruncada } = await gerarTexto(client, promptCritica, MAX_TOKENS_CRITICA);
+    const blocosCritica = ehPos12 ? construirBlocosPromptCritica(prompt, textoOriginal) : construirBlocosPromptCriticaAdolescente(prompt, textoOriginal);
+    const { texto: textoCritica, truncado: criticaTruncada } = await gerarTexto(client, blocosCritica, MAX_TOKENS_CRITICA, "criticar-inicial", intakeId);
     // GUARDA DETERMINÍSTICA (critério 33 — profundidade da leitura por
     // opção): mesma guarda do ramo adulto, ver route.ts e o doc comment
     // de `verificarProfundidadeLeituraPorOpcao` em criticaRelatorio.ts.
@@ -364,7 +384,7 @@ export async function PATCH(request: Request) {
       const { intakeAdolescente } = await calcularDadosAstrologicosAdolescente(intake);
       const ehPos12 = intakeAdolescente.anoEscolaridade === "pos-12";
       const totalCriteriosEsperado = ehPos12 ? TOTAL_CRITERIOS_ADULTO : TOTAL_CRITERIOS_ADOLESCENTE;
-      const construirCritica = ehPos12 ? construirPromptCritica : construirPromptCriticaAdolescente;
+      const construirBlocosCritica = ehPos12 ? construirBlocosPromptCritica : construirBlocosPromptCriticaAdolescente;
 
       const textoAvaliarInicialmente = rascunho.textoLlm ?? rascunho.texto;
       let resultadoCritica = combinarFalhasComGuardas(parseCritica(rascunho.criticaLlm, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoAvaliarInicialmente), ...verificarPalavraCarta(textoAvaliarInicialmente), ...verificarPrimeiraPessoaPlural(textoAvaliarInicialmente)]);
@@ -411,7 +431,7 @@ export async function PATCH(request: Request) {
       while (resultadoCritica.falhas.length > 0 && tentativas < MAX_TENTATIVAS_REESCRITA && Date.now() - inicioReescrita < LIMITE_TEMPO_REESCRITA_MS) {
         tentativas += 1;
         const promptReescrita = construirPromptReescrita(rascunho.promptCompleto, textoBase, resultadoCritica.falhas);
-        const { texto: novoTextoGerado } = await gerarTexto(client, promptReescrita, MAX_TOKENS);
+        const { texto: novoTextoGerado } = await gerarTexto(client, promptReescrita, MAX_TOKENS, `reescrever-${tentativas}`, intakeId);
         const guardaOpcoesReescrita = !ehPos12 && intakeAdolescente.opcoesAdolescente.length > 0 ? removerBlocosOpcaoNaoAutorizados(novoTextoGerado, intakeAdolescente.opcoesAdolescente) : { texto: novoTextoGerado, blocosRemovidos: [] as string[] };
         if (guardaOpcoesReescrita.blocosRemovidos.length > 0) {
           console.error(
@@ -420,8 +440,8 @@ export async function PATCH(request: Request) {
         }
         textoReescrito = guardaOpcoesReescrita.texto;
 
-        const promptCriticaPosReescrita = construirCritica(rascunho.promptCompleto, textoReescrito);
-        const { texto: textoCriticaPos, truncado } = await gerarTexto(client, promptCriticaPosReescrita, MAX_TOKENS_CRITICA);
+        const blocosCriticaPosReescrita = construirBlocosCritica(rascunho.promptCompleto, textoReescrito);
+        const { texto: textoCriticaPos, truncado } = await gerarTexto(client, blocosCriticaPosReescrita, MAX_TOKENS_CRITICA, `criticar-pos-reescrita-${tentativas}`, intakeId);
         algumaCriticaTruncada = algumaCriticaTruncada || truncado;
         ultimaCriticaLlm = textoCriticaPos;
         resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCriticaPos, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoReescrito), ...verificarPalavraCarta(textoReescrito), ...verificarPrimeiraPessoaPlural(textoReescrito)]);

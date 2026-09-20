@@ -8,7 +8,7 @@ import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTempl
 import { calcularDadosAstrologicos, reconstruirHTMLRelatorio, GeocodeError } from "@/lib/relatorioAdultoCompute";
 import { SITUACOES } from "@/lib/validation";
 import { construirPromptAdulto } from "@naveya/method-engine";
-import { construirPromptCritica, parseCritica, construirPromptReescrita, TOTAL_CRITERIOS_ADULTO, verificarProfundidadeLeituraPorOpcao, combinarFalhasComGuardas, verificarPalavraCarta, verificarPrimeiraPessoaPlural } from "@/lib/criticaRelatorio";
+import { construirPromptCritica, construirBlocosPromptCritica, parseCritica, construirPromptReescrita, TOTAL_CRITERIOS_ADULTO, verificarProfundidadeLeituraPorOpcao, combinarFalhasComGuardas, verificarPalavraCarta, verificarPrimeiraPessoaPlural } from "@/lib/criticaRelatorio";
 
 // Motor de geração do relatório VocationIQ Adulto — ramo "trabalho-quero-
 // mudar" (VOCATIONIQ-ADULTO-metodologia.md, secção 6: os outros ramos
@@ -76,13 +76,44 @@ const SITUACAO_LABEL = Object.fromEntries(SITUACOES.map((s) => [s.valor, s.label
  * devolver `truncado` explicitamente, para cada rota decidir o que fazer
  * (tipicamente: avisar no admin — ver `SeccaoRascunho.tsx`).
  */
-async function gerarTexto(client: Anthropic, prompt: string, maxTokens: number): Promise<{ texto: string; truncado: boolean }> {
+type ConteudoPrompt = string | { cacheavel: string; resto: string };
+
+/**
+ * PROMPT CACHING + LOG DE CUSTO REAL (correcção do especialista, pedido
+ * do Rui — ronda "regeneração Alexandra 10"): quando `prompt` vem como
+ * `{ cacheavel, resto }` (ver construirBlocosPromptCritica em
+ * criticaRelatorio.ts), o bloco `cacheavel` leva `cache_control`
+ * ephemeral (TTL de 5 min, sobra de longe para os ~150s do ciclo inteiro
+ * de reescrita — ver LIMITE_TEMPO_REESCRITA_MS abaixo). Isto NÃO muda
+ * nada do que o modelo lê — dividir uma string em vários blocos de texto
+ * na mesma mensagem é idêntico, para o modelo, a mandar a string inteira
+ * de uma vez só; é só uma fronteira de cache do lado da Anthropic. Só se
+ * aplica às chamadas de crítica (o mesmo `promptTecnico` completo repete-
+ * se, byte a byte, em todas as críticas do mesmo ciclo — original e
+ * pós-reescrita); a chamada de reescrita fica de fora por agora, porque
+ * lá a lista de falhas muda a cada tentativa e vem ANTES do prompt
+ * técnico no texto — cachear exigiria reordenar esse prompt (pôr o
+ * prompt técnico primeiro), uma mudança de ORDEM do que o modelo lê que
+ * ainda não foi testada contra geração real; fica documentado aqui como
+ * próximo passo, não implementado às cegas.
+ */
+async function gerarTexto(client: Anthropic, prompt: ConteudoPrompt, maxTokens: number, rotulo: string, intakeId: string): Promise<{ texto: string; truncado: boolean }> {
+  const content = typeof prompt === "string" ? prompt : [
+    { type: "text" as const, text: prompt.cacheavel, cache_control: { type: "ephemeral" as const } },
+    { type: "text" as const, text: prompt.resto },
+  ];
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: maxTokens,
     thinking: { type: "disabled" },
-    messages: [{ role: "user", content: prompt }],
+    messages: [{ role: "user", content }],
   });
+  const uso = response.usage;
+  console.log(
+    `[custo-tokens][intake=${intakeId}][chamada=${rotulo}] input=${uso.input_tokens} output=${uso.output_tokens}` +
+      (uso.cache_creation_input_tokens ? ` cache_escrita=${uso.cache_creation_input_tokens}` : "") +
+      (uso.cache_read_input_tokens ? ` cache_leitura=${uso.cache_read_input_tokens}` : ""),
+  );
   const textBlock = response.content.find((b) => b.type === "text");
   if (!textBlock || textBlock.type !== "text") {
     const tiposDeBloco = response.content.map((b) => b.type).join(", ") || "(nenhum bloco)";
@@ -166,12 +197,12 @@ export async function POST(request: Request) {
     // omissão e pode gastar TODO o max_tokens em blocos de "thinking" sem
     // nunca chegar a escrever texto (stop_reason "max_tokens", blocos=
     // [thinking]). "disabled" força a resposta directa, sem essa camada.
-    const { texto: textoOriginal, truncado: geracaoTruncada } = await gerarTexto(client, prompt, MAX_TOKENS);
+    const { texto: textoOriginal, truncado: geracaoTruncada } = await gerarTexto(client, prompt, MAX_TOKENS, "gerar", intakeId);
 
     // Passo 3 — criticar. Segunda chamada, sempre (nunca opcional) — o
     // resultado fica guardado mesmo quando tudo passa, para auditoria.
-    const promptCritica = construirPromptCritica(prompt, textoOriginal);
-    const { texto: textoCritica, truncado: criticaTruncada } = await gerarTexto(client, promptCritica, MAX_TOKENS_CRITICA);
+    const blocosCritica = construirBlocosPromptCritica(prompt, textoOriginal);
+    const { texto: textoCritica, truncado: criticaTruncada } = await gerarTexto(client, blocosCritica, MAX_TOKENS_CRITICA, "criticar-inicial", intakeId);
     // GUARDA DETERMINÍSTICA (critério 33 — profundidade da leitura por
     // opção): corre sempre sobre o texto REALMENTE gerado, nunca depende
     // só do juízo da crítica LLM sobre si mesma nesta chamada em
@@ -384,13 +415,13 @@ export async function PATCH(request: Request) {
       while (resultadoCritica.falhas.length > 0 && tentativas < MAX_TENTATIVAS_REESCRITA && Date.now() - inicioReescrita < LIMITE_TEMPO_REESCRITA_MS) {
         tentativas += 1;
         const promptReescrita = construirPromptReescrita(rascunho.promptCompleto, textoBase, resultadoCritica.falhas);
-        const { texto: novoTexto } = await gerarTexto(client, promptReescrita, MAX_TOKENS);
+        const { texto: novoTexto } = await gerarTexto(client, promptReescrita, MAX_TOKENS, `reescrever-${tentativas}`, intakeId);
         textoReescrito = novoTexto;
 
         // Fecha o ciclo: volta a criticar o que acabou de ser reescrito,
         // nunca aceita a reescrita às cegas.
-        const promptCriticaPosReescrita = construirPromptCritica(rascunho.promptCompleto, textoReescrito);
-        const { texto: textoCriticaPos, truncado } = await gerarTexto(client, promptCriticaPosReescrita, MAX_TOKENS_CRITICA);
+        const blocosCriticaPosReescrita = construirBlocosPromptCritica(rascunho.promptCompleto, textoReescrito);
+        const { texto: textoCriticaPos, truncado } = await gerarTexto(client, blocosCriticaPosReescrita, MAX_TOKENS_CRITICA, `criticar-pos-reescrita-${tentativas}`, intakeId);
         algumaCriticaTruncada = algumaCriticaTruncada || truncado;
         ultimaCriticaLlm = textoCriticaPos;
         resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCriticaPos, TOTAL_CRITERIOS_ADULTO), [...verificarProfundidadeLeituraPorOpcao(textoReescrito), ...verificarPalavraCarta(textoReescrito), ...verificarPrimeiraPessoaPlural(textoReescrito)]);
