@@ -985,15 +985,32 @@ function contarFrases(pontoComMarcador: string): number {
 export function verificarProfundidadeLeituraPorOpcao(texto: string): string[] {
   const falhasExtra: string[] = [];
   const MIN_FRASES_POR_PONTO = 3;
-  // Teste contra o caso real (Alexandra) mostrou falsos positivos em pontos
-  // com apenas 2 frases MAS muito densas (economia, pontos 1 e 2: 128 e 96
-  // palavras em 2 frases compostas, com várias orações ligadas por vírgulas
-  // — desenvolvimento real, só que sem separar em frases curtas). Por isso
-  // só conta como falha quando as DUAS condições se verificam: poucas
-  // frases E poucas palavras. Um ponto com poucas frases mas muitas
-  // palavras não é o defeito que o critério 33 aponta (que é sempre um
-  // ponto reduzido a resumo curto, nunca um ponto longo mal pontuado).
-  const MAX_PALAVRAS_SE_POUCAS_FRASES = 65;
+  // HISTÓRICO DO LIMIAR (ronda "Alexandra 7"): a primeira versão desta
+  // guarda com contagem de frases deu 2 falsos positivos contra o texto
+  // real de então (economia, pontos 1 e 2: 128 e 96 palavras em 2 frases
+  // compostas, não marcados como falha pela crítica). Corrigido então com
+  // um tecto de palavras (65) para só falhar quando havia poucas frases E
+  // poucas palavras.
+  //
+  // REVERTIDO (ronda "Alexandra 8", root cause confirmada com dados reais
+  // novos): a MESMA estrutura (2 frases densas, ~90-111 palavras) voltou a
+  // aparecer — desta vez marcada como FALHA pela própria crítica LLM
+  // ("gestão" ponto 2: ~90 palavras/2 frases; "economia" pontos 1 e 2:
+  // ~111 e ~90 palavras/2 frases, todos com o tecto de 65 a bloqueá-los
+  // silenciosamente). Ou seja, a mesma estrutura de texto foi considerada
+  // aceitável numa ronda e falha noutra — confirma o que já estava
+  // documentado nesta base de código (a crítica julga o mesmo tipo de
+  // texto de forma inconsistente entre chamadas) e prova que um tecto de
+  // palavras não separa fiavelmente "frase composta bem desenvolvida" de
+  // "ponto insuficiente" — não existe esse sinal no texto. A instrução
+  // original do critério 33 exige sempre "pelo menos 3-4 frases", nunca
+  // menciona palavras — por isso a guarda volta a essa definição literal.
+  // O custo de um falso positivo ocasional (um ponto de 2 frases genuinamente
+  // bem desenvolvido a ganhar mais uma frase na reescrita) é baixo — a
+  // secção já é suposta ser "a mais desenvolvida do relatório inteiro"; o
+  // custo de um falso negativo (o defeito real a passar sem ser apanhado
+  // por nenhuma das duas camadas) é o próprio bug que esta guarda existe
+  // para eliminar.
 
   const inicioSeccao = texto.indexOf(`## ${SECCAO_TITULOS.leituraPorOpcao}`);
   if (inicioSeccao === -1) return falhasExtra;
@@ -1012,10 +1029,8 @@ export function verificarProfundidadeLeituraPorOpcao(texto: string): string[] {
       if (numero === 6) continue; // conclusão-molde de formato fixo, não sujeita ao mínimo de desenvolvimento dos pontos 1-5
       const frases = contarFrases(ponto);
       if (frases >= MIN_FRASES_POR_PONTO) continue;
-      const palavras = ponto.trim().split(/\s+/).filter(Boolean).length;
-      if (palavras > MAX_PALAVRAS_SE_POUCAS_FRASES) continue;
       falhasExtra.push(
-        `33. PROFUNDIDADE DA LEITURA POR OPÇÃO (guarda determinística, contagem automática): o ponto ${numero} do bloco "### ${nomeOpcao}" tem só ${frases} frase(s) e ${palavras} palavras — abaixo do mínimo de ${MIN_FRASES_POR_PONTO} frases reais exigido. Expande com conteúdo real e específico desta pessoa, nunca frases de enchimento.`,
+        `33. PROFUNDIDADE DA LEITURA POR OPÇÃO (guarda determinística, contagem automática): o ponto ${numero} do bloco "### ${nomeOpcao}" tem só ${frases} frase(s) — abaixo do mínimo de ${MIN_FRASES_POR_PONTO} frases reais exigido. Expande com conteúdo real e específico desta pessoa, nunca frases de enchimento.`,
       );
     }
   }
