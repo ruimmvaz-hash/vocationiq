@@ -1064,6 +1064,87 @@ export function verificarContagemBlocosOpcao(texto: string, opcoesPermitidas: st
   return [];
 }
 
+/**
+ * GUARDA DETERMINÍSTICA — YOGA DE GRUPO: TODAS OU NENHUMA (critério 15,
+ * "YOGAS POR CANDIDATA") — correcção do especialista, ronda "relatório
+ * Nádia". A instrução técnica já documentava este exacto defeito como
+ * bug recorrente (`promptAdulto.ts`, "YOGA DE GRUPO — TODAS OU NENHUMA"):
+ * quando um yoga se aplica como reforço geral a um GRUPO inteiro de
+ * candidatas (bloco "GRUPO:" partilhado), o LLM tende a escrever a
+ * frase do yoga só no parágrafo partilhado do grupo — nunca repetida em
+ * cada bloco "CANDIDATA:" individual dentro desse grupo, apesar da
+ * instrução exigir isso explicitamente. Confirmado de novo em produção
+ * real (relatório da Nádia, Set/2026): "SELECÇÃO_CANDIDATAS" concluiu
+ * correctamente que um Raja Yoga reforça geral 13 candidatas do
+ * "Grupo 1", o parágrafo partilhado do bloco "GRUPO:" mencionou o yoga
+ * uma vez — mas nenhum dos 13 blocos "CANDIDATA:" individuais dentro
+ * desse grupo repetiu a menção, exactamente o padrão já documentado.
+ *
+ * O critério 15 já pede à crítica LLM para verificar isto — mas é só
+ * julgamento do LLM sobre o mesmo texto que gerou o defeito, com a
+ * mesma inconsistência já confirmada nos critérios 9/20/33/34 (ver
+ * `verificarContagemBlocosOpcao`): no mesmo relatório da Nádia, a
+ * própria crítica LLM que apanhou esta falha real também reprovou o
+ * critério 6 de outro relatório por engano no passado — não é fiável
+ * sozinha. Por isso sai da responsabilidade exclusiva da crítica e é
+ * verificado directamente em código, sempre, sobre o texto realmente
+ * entregue, mesmo padrão das outras guardas desta secção do ficheiro.
+ *
+ * Verifica só grupos cujo parágrafo partilhado mencione "yoga" — um
+ * grupo sem yoga aplicável não exige nada dos seus membros. Para cada
+ * grupo com yoga, cada nome listado em "GRUPO:" tem de ter a palavra
+ * "yoga" algures no seu próprio bloco "CANDIDATA:" — não valida o
+ * conteúdo exacto da frase (isso continua a cargo da crítica LLM), só
+ * a presença mínima que a instrução técnica exige.
+ */
+export function verificarYogaDeGrupo(texto: string): string[] {
+  const falhasExtra: string[] = [];
+  const marcadorGrupo = /^GRUPO: (.+)$/gm;
+  let match: RegExpExecArray | null;
+
+  while ((match = marcadorGrupo.exec(texto))) {
+    const nomesGrupo = match[1]
+      .split(";")
+      .map((n) => n.trim())
+      .filter(Boolean);
+    const inicioGrupo = match.index;
+
+    // O parágrafo partilhado do grupo vai desta linha até ao primeiro
+    // "CANDIDATA:" a seguir (ou até ao próximo "GRUPO:"/fim do texto,
+    // no caso raro de um grupo sem nenhum bloco "CANDIDATA:" a seguir).
+    const buscaPrimeiraCandidata = texto.indexOf("\nCANDIDATA:", inicioGrupo);
+    const buscaProximoGrupo = texto.indexOf("\nGRUPO:", inicioGrupo + 1);
+    const candidatos = [buscaPrimeiraCandidata, buscaProximoGrupo].filter((i) => i !== -1);
+    const fimParagrafoGrupo = candidatos.length ? Math.min(...candidatos) : texto.length;
+    const paragrafoGrupo = texto.slice(inicioGrupo, fimParagrafoGrupo);
+
+    if (!/yoga/i.test(paragrafoGrupo)) continue; // este grupo não invoca nenhum yoga — nada a verificar
+
+    const semMencao: string[] = [];
+    for (const nome of nomesGrupo) {
+      const marcadorCandidata = `CANDIDATA: ${nome}`;
+      const inicioCandidata = texto.indexOf(marcadorCandidata, fimParagrafoGrupo);
+      if (inicioCandidata === -1) continue; // bloco próprio não encontrado — outro critério (22) já cobre isso
+
+      const buscaFimCandidata = texto.indexOf("\nCANDIDATA:", inicioCandidata + 1);
+      const buscaFimGrupo = texto.indexOf("\nGRUPO:", inicioCandidata + 1);
+      const fimCandidatos = [buscaFimCandidata, buscaFimGrupo].filter((i) => i !== -1);
+      const fimBloco = fimCandidatos.length ? Math.min(...fimCandidatos) : texto.length;
+      const blocoCandidata = texto.slice(inicioCandidata, fimBloco);
+
+      if (!/yoga/i.test(blocoCandidata)) semMencao.push(nome);
+    }
+
+    if (semMencao.length) {
+      falhasExtra.push(
+        `15. YOGAS POR CANDIDATA (guarda determinística — yoga de grupo): o grupo "${nomesGrupo.join("; ")}" invoca um yoga no parágrafo partilhado de "GRUPO:", mas falta a frase "Existe também..." (ou equivalente, mencionando o yoga) no bloco "CANDIDATA:" individual de: ${semMencao.join("; ")}. A regra é todas ou nenhuma — se o yoga se aplica ao grupo, tem de aparecer no bloco de CADA membro, nunca só no parágrafo partilhado.`,
+      );
+    }
+  }
+
+  return falhasExtra;
+}
+
 export function construirPromptReescrita(promptTecnico: string, rascunhoOriginal: string, falhas: string[]): string {
   return `${INSTRUCAO_REESCRITA}\nFalhas a corrigir:\n${falhas.map((f) => `- ${f}`).join("\n")}\n\n=== A) PROMPT TÉCNICO ORIGINAL ===\n${promptTecnico}\n\n=== B) RELATÓRIO ORIGINAL ===\n${rascunhoOriginal}`;
 }
