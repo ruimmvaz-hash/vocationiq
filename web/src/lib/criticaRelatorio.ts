@@ -1251,6 +1251,144 @@ export function verificarYogasReforcoGeralNomeados(texto: string, candidatasPool
 }
 
 /**
+ * GUARDA DETERMINÍSTICA — LINGUAGEM DE RESERVA PARA CANDIDATAS NÍVEL 2
+ * (critério 21) — correcção do especialista, ronda "regeneração Marta
+ * 2". INSTRUCAO_NIVEL_CANDIDATAS (promptAdulto.ts) exige que toda
+ * candidata Nível 2 (âncora pessoal — Atmakaraka/Amatyakaraka/Stellium/
+ * Regente dignificado, mas SEM o planeta de maior peso) seja escrita
+ * com um qualificador de reserva audível ("não é o sinal mais forte,
+ * mas é genuíno e específico" / "há aqui um fio que vale a pena puxar"
+ * / "vale explorar, sem ser ainda uma certeza estrutural") — nunca com
+ * a mesma confiança plena de uma candidata Nível 1. Bug real
+ * confirmado no relatório da Marta: três candidatas Nível 2 (Ciência
+ * Política, História da Arte, Música) escritas sem nenhum destes
+ * qualificadores.
+ *
+ * `candidatasPool` já traz `nivelConfianca` por candidata (mesmos
+ * dados de `catalogoResultados.candidatasForaDaLista` já usados nas
+ * guardas de critério 22 e 15) — nunca precisa de inferir o nível a
+ * partir do texto. A verificação em si é um sinal POSITIVO (a lista de
+ * marcadores abaixo cobre as três formulações exactas da instrução
+ * mais variações já observadas em produção) — nunca tenta enumerar
+ * todas as frases válidas possíveis, porque a instrução pede
+ * explicitamente variação de redacção. Prefere, tal como as guardas
+ * anteriores, um falso negativo (uma reserva genuína escrita de forma
+ * ainda não coberta pelos marcadores, que a guarda deixa passar) a
+ * arriscar interromper uma candidata já correcta com um falso
+ * positivo — mas, ao contrário de `verificarCandidatasElegiveisPresentes`
+ * e `verificarYogasReforcoGeralNomeados`, esta guarda depende de
+ * reconhecer uma CLASSE de linguagem, não uma correspondência exacta
+ * de nome — se em produção aparecer uma reserva genuína com uma
+ * redacção nova, o correcto é alargar a lista de marcadores abaixo,
+ * nunca desligar a guarda.
+ *
+ * Candidatas cujo bloco "CANDIDATA:" é só um reencaminhamento para
+ * "Leitura por opção" ("ver leitura completa acima") ficam de fora —
+ * a exigência de reserva aplica-se ao texto que a candidata realmente
+ * tem, nunca a um resumo que remete para outro sítio.
+ */
+const MARCADORES_RESERVA_NIVEL2 = [
+  "não é o sinal mais forte",
+  "vale a pena puxar",
+  "vale explorar",
+  "sem ser ainda uma certeza",
+  "genuíno e específico",
+  "fio que vale a pena",
+  "menos robusto",
+  "sinal real, mas",
+];
+
+export function verificarLinguagemReservaNivel2(texto: string, candidatasPool: CandidataForaDaLista[]): string[] {
+  const candidatasNivel2 = candidatasPool.filter((c) => c.nivelConfianca === 2);
+  if (!candidatasNivel2.length) return [];
+
+  const inicioSeccao = texto.indexOf(`## ${SECCAO_TITULOS.candidataForaDaLista}`);
+  if (inicioSeccao === -1) return []; // secção ausente já reportado por `verificarCandidatasElegiveisPresentes`
+
+  const buscaFimSeccao = texto.indexOf("\n## ", inicioSeccao + 1);
+  const fimSeccao = buscaFimSeccao === -1 ? texto.length : buscaFimSeccao;
+
+  const normalizar = (s: string) =>
+    s
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  const marcadoresNormalizados = MARCADORES_RESERVA_NIVEL2.map(normalizar);
+
+  const semReserva: string[] = [];
+  for (const c of candidatasNivel2) {
+    const bloco = extrairBlocoCandidataNaSeccao(texto, c.nome, inicioSeccao, fimSeccao);
+    if (!bloco) continue; // não localizável — já reportado por `verificarCandidatasElegiveisPresentes`
+    if (/ver leitura completa acima/i.test(bloco)) continue; // reencaminhamento — regra não se aplica aqui
+    const blocoNormalizado = normalizar(bloco);
+    const temReserva = marcadoresNormalizados.some((m) => blocoNormalizado.includes(m));
+    if (!temReserva) semReserva.push(c.nome);
+  }
+
+  if (semReserva.length) {
+    return [
+      `21. LINGUAGEM DE CONFIANÇA POR NÍVEL (guarda determinística): ${semReserva.join("; ")} ${semReserva.length > 1 ? "são candidatas Nível 2" : "é candidata Nível 2"} (âncora pessoal, sem o planeta de maior peso), mas o(s) respectivo(s) bloco(s) "CANDIDATA:" não contêm nenhum qualificador de reserva (ex.: "não é o sinal mais forte, mas é genuíno e específico" / "há aqui um fio que vale a pena puxar" / "vale explorar, sem ser ainda uma certeza estrutural"). Nível 2 nunca pode ser escrito com a mesma confiança plena de Nível 1 — a reserva tem de ser audível na frase.`,
+    ];
+  }
+  return [];
+}
+
+/**
+ * GUARDA DETERMINÍSTICA — FRASE-PADRÃO DE VARGOTTAMA (critério 16) —
+ * correcção do especialista, ronda "regeneração Marta 2". A crítica LLM
+ * mostrou-se especificamente pouco fiável neste critério: numa ronda
+ * apanhou correctamente uma falta real, na ronda seguinte — já com o
+ * texto corrigido — voltou a acusar a mesma coisa, sem razão. Padrão
+ * consistente com a crítica a verificar a presença literal da palavra
+ * "Vargottama" (que o sistema está desenhado para NUNCA usar no texto
+ * do cliente — ver INSTRUCAO_VARGOTTAMA) em vez da frase-paráfrase que
+ * a instrução realmente exige. Substituir este critério por código
+ * elimina o falso positivo recorrente, não só apanha mais bugs.
+ *
+ * `planetasVargottama` vem de `blocoVargottama(d1)` (`@naveya/method-
+ * engine`) já parseado para uma lista de nomes — a MESMA função
+ * determinística que o prompt usa para listar os planetas Vargottama
+ * nos dados técnicos, nunca uma segunda derivação a divergir dela.
+ *
+ * A verificação procura, dentro da secção "Quem é", uma frase que
+ * mencione o planeta E contenha o fragmento "duas dimensões" —
+ * distintivo do padrão exacto exigido pela instrução ("aparece com a
+ * mesma força em duas dimensões independentes do perfil") e não usado,
+ * em nenhum relatório revisto nesta sessão, para nenhum outro fim.
+ * Aceita variações de redacção (ex.: "nessas duas dimensões" para um
+ * segundo planeta Vargottama, para nunca repetir a frase ipsis verbis)
+ * — nunca exige o template literal palavra por palavra, porque a
+ * variação de redacção entre candidatas/planetas é uma exigência geral
+ * do próprio prompt (ver INSTRUCAO_ABERTURA_CANDIDATAS).
+ */
+export function verificarFraseVargottama(texto: string, planetasVargottama: string[]): string[] {
+  if (!planetasVargottama.length) return [];
+
+  const inicioSeccao = texto.indexOf(`## ${SECCAO_TITULOS.quemE}`);
+  if (inicioSeccao === -1) return []; // secção ausente é outra falha, não desta guarda
+
+  const buscaFimSeccao = texto.indexOf("\n## ", inicioSeccao + 1);
+  const fimSeccao = buscaFimSeccao === -1 ? texto.length : buscaFimSeccao;
+  const seccao = texto.slice(inicioSeccao, fimSeccao);
+
+  const PADRAO_VARGOTTAMA = /duas dimens(õ|o)es/i;
+  const frases = seccao.split(/(?<=[.!?])\s+/);
+
+  const semFrase: string[] = [];
+  for (const planeta of planetasVargottama) {
+    const temFrase = frases.some((f) => f.includes(planeta) && PADRAO_VARGOTTAMA.test(f));
+    if (!temFrase) semFrase.push(planeta);
+  }
+
+  if (semFrase.length) {
+    return [
+      `16. VARGOTTAMA (guarda determinística): ${semFrase.join("; ")} ${semFrase.length > 1 ? "são planetas Vargottama" : "é planeta Vargottama"} nos dados técnicos, mas a secção "${SECCAO_TITULOS.quemE}" não contém, para ${semFrase.length > 1 ? "eles" : "ele"}, a frase-padrão obrigatória (INSTRUCAO_VARGOTTAMA): "[Planeta] é o traço mais estável deste perfil — aparece com a mesma força em duas dimensões independentes do perfil, o que significa que não muda com as circunstâncias nem depende de esforço para existir" (ou uma variação clara do mesmo padrão). NUNCA usar a palavra "Vargottama" no texto — só esta paráfrase.`,
+    ];
+  }
+  return [];
+}
+
+/**
  * GUARDA DETERMINÍSTICA — CANDIDATAS ELEGÍVEIS SEM RASTO NENHUM NO TEXTO
  * (critério 22, "candidata fora da lista em falta") — correcção do
 

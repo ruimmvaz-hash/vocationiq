@@ -7,8 +7,8 @@ import { guardarRascunho, obterRascunho, apagarRascunho, usarVersaoLlmRascunho, 
 import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTemplate";
 import { calcularDadosAstrologicos, reconstruirHTMLRelatorio, GeocodeError } from "@/lib/relatorioAdultoCompute";
 import { SITUACOES } from "@/lib/validation";
-import { construirPromptAdulto } from "@naveya/method-engine";
-import { construirPromptCritica, construirBlocosPromptCritica, parseCritica, construirPromptReescrita, TOTAL_CRITERIOS_ADULTO, verificarProfundidadeLeituraPorOpcao, combinarFalhasComGuardas, verificarPalavraCarta, verificarPrimeiraPessoaPlural, verificarYogaDeGrupo, verificarCandidatasElegiveisPresentes, verificarYogasReforcoGeralNomeados } from "@/lib/criticaRelatorio";
+import { construirPromptAdulto, blocoVargottama } from "@naveya/method-engine";
+import { construirPromptCritica, construirBlocosPromptCritica, parseCritica, construirPromptReescrita, TOTAL_CRITERIOS_ADULTO, verificarProfundidadeLeituraPorOpcao, combinarFalhasComGuardas, verificarPalavraCarta, verificarPrimeiraPessoaPlural, verificarYogaDeGrupo, verificarCandidatasElegiveisPresentes, verificarYogasReforcoGeralNomeados, verificarLinguagemReservaNivel2, verificarFraseVargottama } from "@/lib/criticaRelatorio";
 
 // Motor de geração do relatório VocationIQ Adulto — ramo "trabalho-quero-
 // mudar" (VOCATIONIQ-ADULTO-metodologia.md, secção 6: os outros ramos
@@ -188,6 +188,15 @@ export async function POST(request: Request) {
       yogas,
     } = await calcularDadosAstrologicos(intake);
 
+    // Critério 16 (verificarFraseVargottama): lista de planetas Vargottama
+    // desta carta, derivada da MESMA função determinística que o prompt
+    // usa para os listar nos dados técnicos (blocoVargottama) — nunca uma
+    // segunda derivação a divergir dela.
+    const nomesVargottama = blocoVargottama(d1)
+      .split("\n")
+      .filter((linha) => linha.includes(": Vargottama"))
+      .map((linha) => linha.split(":")[0].trim());
+
     const prompt = construirPromptAdulto(intakeAdulto, axes, pesosPlanetas, datas, !horaAproximada, catalogoResultados, savPorCasa, elementosModalidades, aspectosPessoais, cursosPorDestino, d1, yogas);
 
     const client = new Anthropic({ apiKey });
@@ -208,7 +217,7 @@ export async function POST(request: Request) {
     // só do juízo da crítica LLM sobre si mesma nesta chamada em
     // particular (ver doc comment de `verificarProfundidadeLeituraPorOpcao`
     // em criticaRelatorio.ts).
-    const resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCritica, TOTAL_CRITERIOS_ADULTO), [...verificarProfundidadeLeituraPorOpcao(textoOriginal), ...verificarPalavraCarta(textoOriginal), ...verificarPrimeiraPessoaPlural(textoOriginal), ...verificarYogaDeGrupo(textoOriginal), ...verificarCandidatasElegiveisPresentes(textoOriginal, catalogoResultados.candidatasForaDaLista), ...verificarYogasReforcoGeralNomeados(textoOriginal, catalogoResultados.candidatasForaDaLista)]);
+    const resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCritica, TOTAL_CRITERIOS_ADULTO), [...verificarProfundidadeLeituraPorOpcao(textoOriginal), ...verificarPalavraCarta(textoOriginal), ...verificarPrimeiraPessoaPlural(textoOriginal), ...verificarYogaDeGrupo(textoOriginal), ...verificarCandidatasElegiveisPresentes(textoOriginal, catalogoResultados.candidatasForaDaLista), ...verificarYogasReforcoGeralNomeados(textoOriginal, catalogoResultados.candidatasForaDaLista), ...verificarLinguagemReservaNivel2(textoOriginal, catalogoResultados.candidatasForaDaLista), ...verificarFraseVargottama(textoOriginal, nomesVargottama)]);
 
     // Correcção do especialista ("provar que o critério corre de
     // facto") — log estruturado, por geração, do que a crítica avaliou
@@ -370,7 +379,13 @@ export async function PATCH(request: Request) {
       // Repete-se aqui o cálculo determinístico (sem chamada à
       // Anthropic), mesmo padrão já usado para `opcoesAdolescente` no
       // PATCH de /api/relatorio-adolescente.
-      const { catalogoResultados } = await calcularDadosAstrologicos(intake);
+      const { catalogoResultados, d1: d1Recalculado } = await calcularDadosAstrologicos(intake);
+      // Critério 16 (verificarFraseVargottama) — mesma lógica do POST,
+      // aplicada ao `d1` recalculado aqui.
+      const nomesVargottama = blocoVargottama(d1Recalculado)
+        .split("\n")
+        .filter((linha) => linha.includes(": Vargottama"))
+        .map((linha) => linha.split(":")[0].trim());
 
       const rascunho = await obterRascunho(intakeId);
       if (!rascunho || !rascunho.promptCompleto || !rascunho.criticaLlm) {
@@ -378,7 +393,7 @@ export async function PATCH(request: Request) {
       }
 
       const textoAvaliarInicialmente = rascunho.textoLlm ?? rascunho.texto;
-      let resultadoCritica = combinarFalhasComGuardas(parseCritica(rascunho.criticaLlm, TOTAL_CRITERIOS_ADULTO), [...verificarProfundidadeLeituraPorOpcao(textoAvaliarInicialmente), ...verificarPalavraCarta(textoAvaliarInicialmente), ...verificarPrimeiraPessoaPlural(textoAvaliarInicialmente), ...verificarYogaDeGrupo(textoAvaliarInicialmente), ...verificarCandidatasElegiveisPresentes(textoAvaliarInicialmente, catalogoResultados.candidatasForaDaLista), ...verificarYogasReforcoGeralNomeados(textoAvaliarInicialmente, catalogoResultados.candidatasForaDaLista)]);
+      let resultadoCritica = combinarFalhasComGuardas(parseCritica(rascunho.criticaLlm, TOTAL_CRITERIOS_ADULTO), [...verificarProfundidadeLeituraPorOpcao(textoAvaliarInicialmente), ...verificarPalavraCarta(textoAvaliarInicialmente), ...verificarPrimeiraPessoaPlural(textoAvaliarInicialmente), ...verificarYogaDeGrupo(textoAvaliarInicialmente), ...verificarCandidatasElegiveisPresentes(textoAvaliarInicialmente, catalogoResultados.candidatasForaDaLista), ...verificarYogasReforcoGeralNomeados(textoAvaliarInicialmente, catalogoResultados.candidatasForaDaLista), ...verificarLinguagemReservaNivel2(textoAvaliarInicialmente, catalogoResultados.candidatasForaDaLista), ...verificarFraseVargottama(textoAvaliarInicialmente, nomesVargottama)]);
       if (resultadoCritica.falhas.length === 0) {
         // Nada a corrigir (ou a crítica guardada não seguiu o formato
         // esperado — nunca se força uma reescrita sobre dados não
@@ -433,7 +448,7 @@ export async function PATCH(request: Request) {
         const { texto: textoCriticaPos, truncado } = await gerarTexto(client, blocosCriticaPosReescrita, MAX_TOKENS_CRITICA, `criticar-pos-reescrita-${tentativas}`, intakeId);
         algumaCriticaTruncada = algumaCriticaTruncada || truncado;
         ultimaCriticaLlm = textoCriticaPos;
-        resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCriticaPos, TOTAL_CRITERIOS_ADULTO), [...verificarProfundidadeLeituraPorOpcao(textoReescrito), ...verificarPalavraCarta(textoReescrito), ...verificarPrimeiraPessoaPlural(textoReescrito), ...verificarYogaDeGrupo(textoReescrito), ...verificarCandidatasElegiveisPresentes(textoReescrito, catalogoResultados.candidatasForaDaLista), ...verificarYogasReforcoGeralNomeados(textoReescrito, catalogoResultados.candidatasForaDaLista)]);
+        resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCriticaPos, TOTAL_CRITERIOS_ADULTO), [...verificarProfundidadeLeituraPorOpcao(textoReescrito), ...verificarPalavraCarta(textoReescrito), ...verificarPrimeiraPessoaPlural(textoReescrito), ...verificarYogaDeGrupo(textoReescrito), ...verificarCandidatasElegiveisPresentes(textoReescrito, catalogoResultados.candidatasForaDaLista), ...verificarYogasReforcoGeralNomeados(textoReescrito, catalogoResultados.candidatasForaDaLista), ...verificarLinguagemReservaNivel2(textoReescrito, catalogoResultados.candidatasForaDaLista), ...verificarFraseVargottama(textoReescrito, nomesVargottama)]);
         textoBase = textoReescrito;
 
         console.log(
