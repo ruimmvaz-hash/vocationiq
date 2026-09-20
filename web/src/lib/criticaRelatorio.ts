@@ -1,4 +1,4 @@
-import { SECCAO_TITULOS } from "@naveya/method-engine";
+import { SECCAO_TITULOS, type CandidataForaDaLista } from "@naveya/method-engine";
 
 // Redesenho do motor VocationIQ, Parte 3 — arquitectura de 3 passos.
 // Gerar (já existente) → Criticar (2ª chamada, 20 critérios — 12
@@ -1143,6 +1143,80 @@ export function verificarYogaDeGrupo(texto: string): string[] {
   }
 
   return falhasExtra;
+}
+
+/**
+ * GUARDA DETERMINÍSTICA — CANDIDATAS ELEGÍVEIS SEM RASTO NENHUM NO TEXTO
+ * (critério 22, "candidata fora da lista em falta") — correcção do
+ * especialista, ronda "regeneração Nádia 2". Caso real confirmado: a
+ * pool completa (TAREFA #40, `catalogarDestinos()`) trazia "Ciências da
+ * Educação" com a soma de pesos MAIS ALTA de toda a pool — e essa
+ * candidata não apareceu em lado nenhum do texto final: nem bloco
+ * "CANDIDATA:"/"GRUPO:", nem sequer nomeada no bloco interno
+ * "SELECÇÃO_CANDIDATAS:" como tendo reprovado o Passo 1. Silêncio
+ * total sobre a candidata de maior peso da pool.
+ *
+ * Esta guarda NUNCA verifica se a exclusão de uma candidata foi
+ * "correcta" — isso é um juízo de ligação narrativa (INSTRUCAO_
+ * SELECCAO_CANDIDATAS, Passo 1) que só o LLM pode fazer, e uma
+ * candidata pode legitimamente reprovar esse filtro. O que a guarda
+ * verifica é mais estreito e 100% mecânico: o próprio prompt TORNA
+ * OBRIGATÓRIO nomear, no bloco "SELECÇÃO_CANDIDATAS:", TODA candidata
+ * da pool que reprova o Passo 1 ("quais candidatas da pool completa
+ * (nomeia-as pelo nome...) reprovaram o Passo 1 e porquê" — ver
+ * INSTRUCAO_SELECCAO_CANDIDATAS em promptAdulto.ts). Ou seja: toda
+ * candidata da pool tem de aparecer OU como "CANDIDATA:"/"GRUPO:" OU
+ * nomeada (aceite ou rejeitada) dentro da secção "Candidata fora da
+ * lista" — nunca ausente das duas coisas ao mesmo tempo. É essa
+ * ausência total, nunca a decisão de incluir ou não, que esta guarda
+ * apanha — por isso não arrisca nenhum falso positivo sobre uma
+ * exclusão legítima do Passo 1 (essa fica sempre registada, por
+ * exigência do próprio prompt), e nunca força uma reescrita que possa
+ * alterar uma selecção de candidatas já correcta — prioridade absoluta
+ * confirmada pelo especialista: a direcção vocacional apresentada
+ * nunca pode ser posta em causa por uma guarda a corrigir de mais.
+ *
+ * `candidatasPool` vem de `catalogoResultados.candidatasForaDaLista`
+ * (`ResultadoCatalogoVocacional`, `@naveya/method-engine`) — já
+ * calculado deterministicamente antes do prompt ser construído, e por
+ * isso disponível no mesmo request sem nenhuma chamada extra à
+ * Anthropic (no PATCH "reescrever", onde o rascunho guardado não traz
+ * o catálogo, o mesmo padrão já usado para `opcoesAdolescente` em
+ * `verificarContagemBlocosOpcao` aplica-se aqui: repetir a chamada,
+ * puramente determinística, a `calcularDadosAstrologicos(Adolescente)`
+ * só para obter de novo `catalogoResultados`).
+ */
+export function verificarCandidatasElegiveisPresentes(texto: string, candidatasPool: CandidataForaDaLista[]): string[] {
+  if (!candidatasPool.length) return [];
+
+  const normalizar = (s: string) =>
+    s
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase();
+
+  const inicioSeccao = texto.indexOf(`## ${SECCAO_TITULOS.candidataForaDaLista}`);
+  if (inicioSeccao === -1) {
+    return [
+      `22. CANDIDATAS ELEGÍVEIS SEM RASTO NENHUM (guarda determinística): a secção "${SECCAO_TITULOS.candidataForaDaLista}" não foi encontrada no texto, mas a pool tem ${candidatasPool.length} candidata(s) elegível(is) (${candidatasPool.map((c) => c.nome).join("; ")}) — pelo menos o cabeçalho da secção, com a frase de ausência ou as candidatas, tem de estar presente.`,
+    ];
+  }
+  const buscaFim = texto.indexOf("\n## ", inicioSeccao + 1);
+  const fimSeccao = buscaFim === -1 ? texto.length : buscaFim;
+  const seccao = normalizar(texto.slice(inicioSeccao, fimSeccao));
+
+  const semRasto = candidatasPool.filter((c) => !seccao.includes(normalizar(c.nome)));
+  if (semRasto.length) {
+    const detalhe = semRasto
+      .sort((a, b) => b.somaPesoCamadas - a.somaPesoCamadas)
+      .map((c) => `${c.nome} (soma de pesos ${c.somaPesoCamadas.toFixed(2)}, Nível ${c.nivelConfianca})`)
+      .join("; ");
+    return [
+      `22. CANDIDATAS ELEGÍVEIS SEM RASTO NENHUM (guarda determinística): a pool completa tinha estas candidatas sem NENHUMA menção na secção "${SECCAO_TITULOS.candidataForaDaLista}" — nem bloco "CANDIDATA:"/"GRUPO:", nem sequer nomeadas como reprovadas no bloco "SELECÇÃO_CANDIDATAS:": ${detalhe}. O prompt exige que toda candidata da pool completa seja nomeada nesse bloco, aceite ou rejeitada — silêncio total sobre uma candidata (em especial a de maior soma de pesos) é sempre uma falha a corrigir, nunca uma omissão aceitável.`,
+    ];
+  }
+  return [];
 }
 
 export function construirPromptReescrita(promptTecnico: string, rascunhoOriginal: string, falhas: string[]): string {

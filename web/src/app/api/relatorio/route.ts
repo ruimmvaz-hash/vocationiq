@@ -8,7 +8,7 @@ import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTempl
 import { calcularDadosAstrologicos, reconstruirHTMLRelatorio, GeocodeError } from "@/lib/relatorioAdultoCompute";
 import { SITUACOES } from "@/lib/validation";
 import { construirPromptAdulto } from "@naveya/method-engine";
-import { construirPromptCritica, construirBlocosPromptCritica, parseCritica, construirPromptReescrita, TOTAL_CRITERIOS_ADULTO, verificarProfundidadeLeituraPorOpcao, combinarFalhasComGuardas, verificarPalavraCarta, verificarPrimeiraPessoaPlural, verificarYogaDeGrupo } from "@/lib/criticaRelatorio";
+import { construirPromptCritica, construirBlocosPromptCritica, parseCritica, construirPromptReescrita, TOTAL_CRITERIOS_ADULTO, verificarProfundidadeLeituraPorOpcao, combinarFalhasComGuardas, verificarPalavraCarta, verificarPrimeiraPessoaPlural, verificarYogaDeGrupo, verificarCandidatasElegiveisPresentes } from "@/lib/criticaRelatorio";
 
 // Motor de geração do relatório VocationIQ Adulto — ramo "trabalho-quero-
 // mudar" (VOCATIONIQ-ADULTO-metodologia.md, secção 6: os outros ramos
@@ -208,7 +208,7 @@ export async function POST(request: Request) {
     // só do juízo da crítica LLM sobre si mesma nesta chamada em
     // particular (ver doc comment de `verificarProfundidadeLeituraPorOpcao`
     // em criticaRelatorio.ts).
-    const resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCritica, TOTAL_CRITERIOS_ADULTO), [...verificarProfundidadeLeituraPorOpcao(textoOriginal), ...verificarPalavraCarta(textoOriginal), ...verificarPrimeiraPessoaPlural(textoOriginal), ...verificarYogaDeGrupo(textoOriginal)]);
+    const resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCritica, TOTAL_CRITERIOS_ADULTO), [...verificarProfundidadeLeituraPorOpcao(textoOriginal), ...verificarPalavraCarta(textoOriginal), ...verificarPrimeiraPessoaPlural(textoOriginal), ...verificarYogaDeGrupo(textoOriginal), ...verificarCandidatasElegiveisPresentes(textoOriginal, catalogoResultados.candidatasForaDaLista)]);
 
     // Correcção do especialista ("provar que o critério corre de
     // facto") — log estruturado, por geração, do que a crítica avaliou
@@ -363,13 +363,22 @@ export async function PATCH(request: Request) {
       const intake = await obterIntake(intakeId);
       if (!intake) return NextResponse.json({ error: "Pedido não encontrado." }, { status: 404 });
 
+      // Critério 22 (verificarCandidatasElegiveisPresentes) precisa da
+      // pool completa (`catalogoResultados.candidatasForaDaLista`), que
+      // não fica guardada no rascunho (só os dados técnicos de
+      // apresentação — ver `dadosTecnicosParaGuardar` no POST acima).
+      // Repete-se aqui o cálculo determinístico (sem chamada à
+      // Anthropic), mesmo padrão já usado para `opcoesAdolescente` no
+      // PATCH de /api/relatorio-adolescente.
+      const { catalogoResultados } = await calcularDadosAstrologicos(intake);
+
       const rascunho = await obterRascunho(intakeId);
       if (!rascunho || !rascunho.promptCompleto || !rascunho.criticaLlm) {
         return NextResponse.json({ error: "Não há uma crítica associada a este rascunho — gera o rascunho primeiro." }, { status: 400 });
       }
 
       const textoAvaliarInicialmente = rascunho.textoLlm ?? rascunho.texto;
-      let resultadoCritica = combinarFalhasComGuardas(parseCritica(rascunho.criticaLlm, TOTAL_CRITERIOS_ADULTO), [...verificarProfundidadeLeituraPorOpcao(textoAvaliarInicialmente), ...verificarPalavraCarta(textoAvaliarInicialmente), ...verificarPrimeiraPessoaPlural(textoAvaliarInicialmente), ...verificarYogaDeGrupo(textoAvaliarInicialmente)]);
+      let resultadoCritica = combinarFalhasComGuardas(parseCritica(rascunho.criticaLlm, TOTAL_CRITERIOS_ADULTO), [...verificarProfundidadeLeituraPorOpcao(textoAvaliarInicialmente), ...verificarPalavraCarta(textoAvaliarInicialmente), ...verificarPrimeiraPessoaPlural(textoAvaliarInicialmente), ...verificarYogaDeGrupo(textoAvaliarInicialmente), ...verificarCandidatasElegiveisPresentes(textoAvaliarInicialmente, catalogoResultados.candidatasForaDaLista)]);
       if (resultadoCritica.falhas.length === 0) {
         // Nada a corrigir (ou a crítica guardada não seguiu o formato
         // esperado — nunca se força uma reescrita sobre dados não
@@ -424,7 +433,7 @@ export async function PATCH(request: Request) {
         const { texto: textoCriticaPos, truncado } = await gerarTexto(client, blocosCriticaPosReescrita, MAX_TOKENS_CRITICA, `criticar-pos-reescrita-${tentativas}`, intakeId);
         algumaCriticaTruncada = algumaCriticaTruncada || truncado;
         ultimaCriticaLlm = textoCriticaPos;
-        resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCriticaPos, TOTAL_CRITERIOS_ADULTO), [...verificarProfundidadeLeituraPorOpcao(textoReescrito), ...verificarPalavraCarta(textoReescrito), ...verificarPrimeiraPessoaPlural(textoReescrito), ...verificarYogaDeGrupo(textoReescrito)]);
+        resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCriticaPos, TOTAL_CRITERIOS_ADULTO), [...verificarProfundidadeLeituraPorOpcao(textoReescrito), ...verificarPalavraCarta(textoReescrito), ...verificarPrimeiraPessoaPlural(textoReescrito), ...verificarYogaDeGrupo(textoReescrito), ...verificarCandidatasElegiveisPresentes(textoReescrito, catalogoResultados.candidatasForaDaLista)]);
         textoBase = textoReescrito;
 
         console.log(

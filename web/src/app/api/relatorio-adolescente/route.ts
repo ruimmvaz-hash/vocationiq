@@ -7,7 +7,7 @@ import { guardarRascunho, obterRascunho, apagarRascunho, usarVersaoLlmRascunho, 
 import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTemplate";
 import { calcularDadosAstrologicosAdolescente, reconstruirHTMLRelatorio, GeocodeError, ANO_ESCOLARIDADE_LABEL } from "@/lib/relatorioAdultoCompute";
 import { construirPromptAdolescente, construirPromptAdulto, type VocationiqIntakeAdulto } from "@naveya/method-engine";
-import { construirPromptCritica, construirPromptCriticaAdolescente, construirBlocosPromptCritica, construirBlocosPromptCriticaAdolescente, parseCritica, construirPromptReescrita, removerBlocosOpcaoNaoAutorizados, verificarContagemBlocosOpcao, TOTAL_CRITERIOS_ADULTO, TOTAL_CRITERIOS_ADOLESCENTE, verificarProfundidadeLeituraPorOpcao, combinarFalhasComGuardas, verificarPalavraCarta, verificarPrimeiraPessoaPlural, verificarYogaDeGrupo } from "@/lib/criticaRelatorio";
+import { construirPromptCritica, construirPromptCriticaAdolescente, construirBlocosPromptCritica, construirBlocosPromptCriticaAdolescente, parseCritica, construirPromptReescrita, removerBlocosOpcaoNaoAutorizados, verificarContagemBlocosOpcao, TOTAL_CRITERIOS_ADULTO, TOTAL_CRITERIOS_ADOLESCENTE, verificarProfundidadeLeituraPorOpcao, combinarFalhasComGuardas, verificarPalavraCarta, verificarPrimeiraPessoaPlural, verificarYogaDeGrupo, verificarCandidatasElegiveisPresentes } from "@/lib/criticaRelatorio";
 
 // TAREFA 1A (correcção do especialista, ronda de produção do motor
 // adolescente) — equivalente de api/relatorio/route.ts para o ramo
@@ -218,7 +218,7 @@ export async function POST(request: Request) {
     // GUARDA DETERMINÍSTICA (critério 33 — profundidade da leitura por
     // opção): mesma guarda do ramo adulto, ver route.ts e o doc comment
     // de `verificarProfundidadeLeituraPorOpcao` em criticaRelatorio.ts.
-    const resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCritica, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoOriginal), ...verificarPalavraCarta(textoOriginal), ...verificarPrimeiraPessoaPlural(textoOriginal), ...verificarYogaDeGrupo(textoOriginal), ...(!ehPos12 ? verificarContagemBlocosOpcao(textoOriginal, intakeAdolescente.opcoesAdolescente) : [])]);
+    const resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCritica, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoOriginal), ...verificarPalavraCarta(textoOriginal), ...verificarPrimeiraPessoaPlural(textoOriginal), ...verificarYogaDeGrupo(textoOriginal), ...(!ehPos12 ? verificarContagemBlocosOpcao(textoOriginal, intakeAdolescente.opcoesAdolescente) : []), ...verificarCandidatasElegiveisPresentes(textoOriginal, catalogoResultados.candidatasForaDaLista)]);
 
     // Correcção do especialista ("provar que o critério corre de facto")
     // — mesmo log estruturado do ramo adulto, ver route.ts.
@@ -381,13 +381,17 @@ export async function PATCH(request: Request) {
       // é só cálculo astrológico determinístico (sem chamada à
       // Anthropic) — não reintroduz o risco de timeout que motivou tirar
       // a reescrita deste pedido (ver comentário em `maxDuration`).
-      const { intakeAdolescente } = await calcularDadosAstrologicosAdolescente(intake);
+      const { intakeAdolescente, catalogoResultados } = await calcularDadosAstrologicosAdolescente(intake);
+      // Critério 22 (verificarCandidatasElegiveisPresentes) precisa da
+      // pool completa `catalogoResultados.candidatasForaDaLista`, que
+      // não fica guardada no rascunho — mesmo padrão já usado aqui para
+      // `intakeAdolescente.opcoesAdolescente` (critério 34).
       const ehPos12 = intakeAdolescente.anoEscolaridade === "pos-12";
       const totalCriteriosEsperado = ehPos12 ? TOTAL_CRITERIOS_ADULTO : TOTAL_CRITERIOS_ADOLESCENTE;
       const construirBlocosCritica = ehPos12 ? construirBlocosPromptCritica : construirBlocosPromptCriticaAdolescente;
 
       const textoAvaliarInicialmente = rascunho.textoLlm ?? rascunho.texto;
-      let resultadoCritica = combinarFalhasComGuardas(parseCritica(rascunho.criticaLlm, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoAvaliarInicialmente), ...verificarPalavraCarta(textoAvaliarInicialmente), ...verificarPrimeiraPessoaPlural(textoAvaliarInicialmente), ...verificarYogaDeGrupo(textoAvaliarInicialmente), ...(!ehPos12 ? verificarContagemBlocosOpcao(textoAvaliarInicialmente, intakeAdolescente.opcoesAdolescente) : [])]);
+      let resultadoCritica = combinarFalhasComGuardas(parseCritica(rascunho.criticaLlm, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoAvaliarInicialmente), ...verificarPalavraCarta(textoAvaliarInicialmente), ...verificarPrimeiraPessoaPlural(textoAvaliarInicialmente), ...verificarYogaDeGrupo(textoAvaliarInicialmente), ...(!ehPos12 ? verificarContagemBlocosOpcao(textoAvaliarInicialmente, intakeAdolescente.opcoesAdolescente) : []), ...verificarCandidatasElegiveisPresentes(textoAvaliarInicialmente, catalogoResultados.candidatasForaDaLista)]);
       if (resultadoCritica.falhas.length === 0) {
         // Nada a corrigir (ou a crítica guardada não seguiu o formato
         // esperado — nunca se força uma reescrita sobre dados não
@@ -444,7 +448,7 @@ export async function PATCH(request: Request) {
         const { texto: textoCriticaPos, truncado } = await gerarTexto(client, blocosCriticaPosReescrita, MAX_TOKENS_CRITICA, `criticar-pos-reescrita-${tentativas}`, intakeId);
         algumaCriticaTruncada = algumaCriticaTruncada || truncado;
         ultimaCriticaLlm = textoCriticaPos;
-        resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCriticaPos, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoReescrito), ...verificarPalavraCarta(textoReescrito), ...verificarPrimeiraPessoaPlural(textoReescrito), ...verificarYogaDeGrupo(textoReescrito), ...(!ehPos12 ? verificarContagemBlocosOpcao(textoReescrito, intakeAdolescente.opcoesAdolescente) : [])]);
+        resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCriticaPos, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoReescrito), ...verificarPalavraCarta(textoReescrito), ...verificarPrimeiraPessoaPlural(textoReescrito), ...verificarYogaDeGrupo(textoReescrito), ...(!ehPos12 ? verificarContagemBlocosOpcao(textoReescrito, intakeAdolescente.opcoesAdolescente) : []), ...verificarCandidatasElegiveisPresentes(textoReescrito, catalogoResultados.candidatasForaDaLista)]);
         textoBase = textoReescrito;
 
         console.log(
