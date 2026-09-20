@@ -7,7 +7,7 @@ import { guardarRascunho, obterRascunho, apagarRascunho, usarVersaoLlmRascunho, 
 import { gerarHTMLRelatorio, type DadosParaTemplate } from "@/lib/relatorioTemplate";
 import { calcularDadosAstrologicosAdolescente, reconstruirHTMLRelatorio, GeocodeError, ANO_ESCOLARIDADE_LABEL } from "@/lib/relatorioAdultoCompute";
 import { construirPromptAdolescente, construirPromptAdulto, type VocationiqIntakeAdulto } from "@naveya/method-engine";
-import { construirPromptCritica, construirPromptCriticaAdolescente, construirBlocosPromptCritica, construirBlocosPromptCriticaAdolescente, parseCritica, construirPromptReescrita, removerBlocosOpcaoNaoAutorizados, verificarContagemBlocosOpcao, TOTAL_CRITERIOS_ADULTO, TOTAL_CRITERIOS_ADOLESCENTE, verificarProfundidadeLeituraPorOpcao, combinarFalhasComGuardas, verificarPalavraCarta, verificarPrimeiraPessoaPlural, verificarYogaDeGrupo, verificarCandidatasElegiveisPresentes } from "@/lib/criticaRelatorio";
+import { construirPromptCritica, construirPromptCriticaAdolescente, construirBlocosPromptCritica, construirBlocosPromptCriticaAdolescente, parseCritica, construirPromptReescrita, removerBlocosOpcaoNaoAutorizados, verificarContagemBlocosOpcao, TOTAL_CRITERIOS_ADULTO, TOTAL_CRITERIOS_ADOLESCENTE, verificarProfundidadeLeituraPorOpcao, combinarFalhasComGuardas, verificarPalavraCarta, verificarPrimeiraPessoaPlural, verificarYogaDeGrupo, verificarCandidatasElegiveisPresentes, verificarYogasReforcoGeralNomeados } from "@/lib/criticaRelatorio";
 
 // TAREFA 1A (correcção do especialista, ronda de produção do motor
 // adolescente) — equivalente de api/relatorio/route.ts para o ramo
@@ -218,7 +218,7 @@ export async function POST(request: Request) {
     // GUARDA DETERMINÍSTICA (critério 33 — profundidade da leitura por
     // opção): mesma guarda do ramo adulto, ver route.ts e o doc comment
     // de `verificarProfundidadeLeituraPorOpcao` em criticaRelatorio.ts.
-    const resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCritica, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoOriginal), ...verificarPalavraCarta(textoOriginal), ...verificarPrimeiraPessoaPlural(textoOriginal), ...verificarYogaDeGrupo(textoOriginal), ...(!ehPos12 ? verificarContagemBlocosOpcao(textoOriginal, intakeAdolescente.opcoesAdolescente) : []), ...verificarCandidatasElegiveisPresentes(textoOriginal, catalogoResultados.candidatasForaDaLista)]);
+    const resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCritica, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoOriginal), ...verificarPalavraCarta(textoOriginal), ...verificarPrimeiraPessoaPlural(textoOriginal), ...verificarYogaDeGrupo(textoOriginal), ...(!ehPos12 ? verificarContagemBlocosOpcao(textoOriginal, intakeAdolescente.opcoesAdolescente) : []), ...verificarCandidatasElegiveisPresentes(textoOriginal, catalogoResultados.candidatasForaDaLista), ...verificarYogasReforcoGeralNomeados(textoOriginal, catalogoResultados.candidatasForaDaLista)]);
 
     // Correcção do especialista ("provar que o critério corre de facto")
     // — mesmo log estruturado do ramo adulto, ver route.ts.
@@ -391,7 +391,7 @@ export async function PATCH(request: Request) {
       const construirBlocosCritica = ehPos12 ? construirBlocosPromptCritica : construirBlocosPromptCriticaAdolescente;
 
       const textoAvaliarInicialmente = rascunho.textoLlm ?? rascunho.texto;
-      let resultadoCritica = combinarFalhasComGuardas(parseCritica(rascunho.criticaLlm, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoAvaliarInicialmente), ...verificarPalavraCarta(textoAvaliarInicialmente), ...verificarPrimeiraPessoaPlural(textoAvaliarInicialmente), ...verificarYogaDeGrupo(textoAvaliarInicialmente), ...(!ehPos12 ? verificarContagemBlocosOpcao(textoAvaliarInicialmente, intakeAdolescente.opcoesAdolescente) : []), ...verificarCandidatasElegiveisPresentes(textoAvaliarInicialmente, catalogoResultados.candidatasForaDaLista)]);
+      let resultadoCritica = combinarFalhasComGuardas(parseCritica(rascunho.criticaLlm, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoAvaliarInicialmente), ...verificarPalavraCarta(textoAvaliarInicialmente), ...verificarPrimeiraPessoaPlural(textoAvaliarInicialmente), ...verificarYogaDeGrupo(textoAvaliarInicialmente), ...(!ehPos12 ? verificarContagemBlocosOpcao(textoAvaliarInicialmente, intakeAdolescente.opcoesAdolescente) : []), ...verificarCandidatasElegiveisPresentes(textoAvaliarInicialmente, catalogoResultados.candidatasForaDaLista), ...verificarYogasReforcoGeralNomeados(textoAvaliarInicialmente, catalogoResultados.candidatasForaDaLista)]);
       if (resultadoCritica.falhas.length === 0) {
         // Nada a corrigir (ou a crítica guardada não seguiu o formato
         // esperado — nunca se força uma reescrita sobre dados não
@@ -448,7 +448,7 @@ export async function PATCH(request: Request) {
         const { texto: textoCriticaPos, truncado } = await gerarTexto(client, blocosCriticaPosReescrita, MAX_TOKENS_CRITICA, `criticar-pos-reescrita-${tentativas}`, intakeId);
         algumaCriticaTruncada = algumaCriticaTruncada || truncado;
         ultimaCriticaLlm = textoCriticaPos;
-        resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCriticaPos, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoReescrito), ...verificarPalavraCarta(textoReescrito), ...verificarPrimeiraPessoaPlural(textoReescrito), ...verificarYogaDeGrupo(textoReescrito), ...(!ehPos12 ? verificarContagemBlocosOpcao(textoReescrito, intakeAdolescente.opcoesAdolescente) : []), ...verificarCandidatasElegiveisPresentes(textoReescrito, catalogoResultados.candidatasForaDaLista)]);
+        resultadoCritica = combinarFalhasComGuardas(parseCritica(textoCriticaPos, totalCriteriosEsperado), [...verificarProfundidadeLeituraPorOpcao(textoReescrito), ...verificarPalavraCarta(textoReescrito), ...verificarPrimeiraPessoaPlural(textoReescrito), ...verificarYogaDeGrupo(textoReescrito), ...(!ehPos12 ? verificarContagemBlocosOpcao(textoReescrito, intakeAdolescente.opcoesAdolescente) : []), ...verificarCandidatasElegiveisPresentes(textoReescrito, catalogoResultados.candidatasForaDaLista), ...verificarYogasReforcoGeralNomeados(textoReescrito, catalogoResultados.candidatasForaDaLista)]);
         textoBase = textoReescrito;
 
         console.log(

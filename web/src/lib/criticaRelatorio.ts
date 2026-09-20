@@ -1146,7 +1146,114 @@ export function verificarYogaDeGrupo(texto: string): string[] {
 }
 
 /**
+ * GUARDA DETERMINÍSTICA — YOGA DE "REFORÇO GERAL" NOMEADO EM
+ * SELECÇÃO_CANDIDATAS, FORA DE UM BLOCO "GRUPO:" FORMAL (critério 15,
+ * segunda forma) — correcção do especialista, ronda "regeneração Marta".
+ * Caso real confirmado: `verificarYogaDeGrupo` (acima) só apanha a regra
+ * "YOGA DE GRUPO — TODAS OU NENHUMA" quando o yoga é invocado no
+ * parágrafo PARTILHADO de um bloco "GRUPO:" formal — mas a própria
+ * instrução (INSTRUCAO_YOGAS, promptAdulto.ts) define "grupo" de forma
+ * mais larga: qualquer conjunto de candidatas que o raciocínio em
+ * "SELECÇÃO_CANDIDATAS:" identifique como partilhando um yoga como
+ * reforço geral, mesmo quando essas candidatas nunca chegam a formar um
+ * bloco "GRUPO:" (podem estar espalhadas como candidatas individuais).
+ * No relatório real da Marta: "SELECÇÃO_CANDIDATAS:" afirmou
+ * explicitamente que tanto o Raja Yoga como o Dhana Yoga se aplicam,
+ * como reforço geral, a três candidatas (uma delas — Técnico de Design
+ * Gráfico — apresentada como candidata INDIVIDUAL, nunca dentro de um
+ * bloco "GRUPO:") — mas cada candidata acabou por citar só um dos dois
+ * yogas, nunca os dois, violando a regra "todas ou nenhuma" em ambas as
+ * direcções.
+ *
+ * Esta guarda nunca tenta resolver referências anafóricas ("aplica-se
+ * também a estas três", "a ambas") — só actua quando a própria frase em
+ * "SELECÇÃO_CANDIDATAS:" nomeia EXPLICITAMENTE 2 ou mais candidatas da
+ * pool ao lado do nome do yoga. Preferir um falso negativo (uma frase
+ * anafórica que a guarda não consegue interpretar com segurança fica
+ * sem verificação) a um falso positivo (adivinhar mal a que candidatas
+ * uma referência anafórica se refere, e forçar uma reescrita sobre uma
+ * selecção de candidatas já correcta) — mesma prioridade absoluta já
+ * aplicada em `verificarCandidatasElegiveisPresentes` (critério 22):
+ * nunca pôr em causa a direcção vocacional já correcta por excesso de
+ * zelo automático.
+ *
+ * Também nunca marca falha para uma candidata cujo bloco "CANDIDATA:"
+ * é só um reencaminhamento para "Leitura por opção" (candidatas que já
+ * eram opções declaradas — ver "ver leitura completa acima" nesses
+ * blocos, TAREFA #40/INSTRUCAO_SELECCAO_CANDIDATAS): a ausência da
+ * frase de yoga nesse bloco resumido é esperada por desenho, nunca uma
+ * omissão real.
+ */
+function extrairBlocoCandidataNaSeccao(texto: string, nome: string, inicioBusca: number, fimSeccao: number): string | null {
+  const marcador = `CANDIDATA: ${nome}`;
+  const inicio = texto.indexOf(marcador, inicioBusca);
+  if (inicio === -1 || inicio >= fimSeccao) return null;
+  const buscaFimCandidata = texto.indexOf("\nCANDIDATA:", inicio + 1);
+  const buscaFimGrupo = texto.indexOf("\nGRUPO:", inicio + 1);
+  const candidatosFim = [buscaFimCandidata, buscaFimGrupo, fimSeccao].filter((i) => i !== -1 && i <= fimSeccao);
+  const fim = candidatosFim.length ? Math.min(...candidatosFim) : fimSeccao;
+  return texto.slice(inicio, fim);
+}
+
+const NOMES_YOGA_CONHECIDOS = ["Raja Yoga", "Dhana Yoga", "Viparita Raja Yoga"];
+const PADRAO_ANAFORA_CANDIDATAS = /^\s*(estas?|esses?|ambas?|ambos|todas|todos|tais)\b/i;
+
+export function verificarYogasReforcoGeralNomeados(texto: string, candidatasPool: CandidataForaDaLista[]): string[] {
+  if (candidatasPool.length < 2) return [];
+
+  const inicioSeccao = texto.indexOf(`## ${SECCAO_TITULOS.candidataForaDaLista}`);
+  if (inicioSeccao === -1) return []; // secção ausente já é apanhado por `verificarCandidatasElegiveisPresentes`
+
+  const buscaFimSeccao = texto.indexOf("\n## ", inicioSeccao + 1);
+  const fimSeccao = buscaFimSeccao === -1 ? texto.length : buscaFimSeccao;
+
+  const marcadorSeleccao = "SELECÇÃO_CANDIDATAS:";
+  const inicioSeleccao = texto.indexOf(marcadorSeleccao, inicioSeccao);
+  if (inicioSeleccao === -1 || inicioSeleccao >= fimSeccao) return [];
+
+  const fimBlocoSeleccaoBusca = [texto.indexOf("\nCANDIDATA:", inicioSeleccao), texto.indexOf("\nGRUPO:", inicioSeleccao)].filter((i) => i !== -1 && i < fimSeccao);
+  const fimBlocoSeleccao = fimBlocoSeleccaoBusca.length ? Math.min(...fimBlocoSeleccaoBusca) : fimSeccao;
+  const blocoSeleccao = texto.slice(inicioSeleccao, fimBlocoSeleccao);
+
+  const falhasExtra: string[] = [];
+  // Cada frase (cortada por ponto final ou ponto-e-vírgula) é avaliada
+  // isoladamente — nunca cruza informação com a frase seguinte, para
+  // nunca associar um yoga a candidatas nomeadas noutra frase.
+  const frases = blocoSeleccao.split(/(?<=[.;])\s+/);
+
+  for (const frase of frases) {
+    for (const nomeYoga of NOMES_YOGA_CONHECIDOS) {
+      if (!frase.includes(nomeYoga)) continue;
+      const matchAplicaSe = frase.match(/aplica-se(?:\s+também)?\s+a\s+(.+)/i);
+      if (!matchAplicaSe) continue;
+      const clausula = matchAplicaSe[1];
+      if (PADRAO_ANAFORA_CANDIDATAS.test(clausula)) continue; // referência anafórica — nunca adivinhar
+
+      const candidatasNaFrase = candidatasPool.filter((c) => clausula.includes(c.nome));
+      if (candidatasNaFrase.length < 2) continue; // "todas ou nenhuma" só se aplica a um yoga partilhado por 2+
+
+      const semCitacao: string[] = [];
+      for (const c of candidatasNaFrase) {
+        const bloco = extrairBlocoCandidataNaSeccao(texto, c.nome, inicioSeccao, fimSeccao);
+        if (!bloco) continue; // candidata não localizável no texto — já reportado por `verificarCandidatasElegiveisPresentes`
+        if (/ver leitura completa acima/i.test(bloco)) continue; // opção declarada, reencaminhada — nunca é omissão real
+        if (!bloco.includes(nomeYoga)) semCitacao.push(c.nome);
+      }
+      if (semCitacao.length) {
+        falhasExtra.push(
+          `15. YOGAS POR CANDIDATA (guarda determinística — reforço geral nomeado em SELECÇÃO_CANDIDATAS): o raciocínio interno afirma que o "${nomeYoga}" se aplica, como reforço geral, a ${candidatasNaFrase.map((c) => c.nome).join("; ")} — mas falta a frase "Existe também..." (citando este yoga pelo nome) no bloco "CANDIDATA:" de: ${semCitacao.join("; ")}. A regra é todas ou nenhuma — se SELECÇÃO_CANDIDATAS já decidiu que este yoga reforça o conjunto inteiro, tem de aparecer no bloco de CADA candidata nomeada, nunca só nalgumas.`,
+        );
+      }
+    }
+  }
+
+  return falhasExtra;
+}
+
+/**
  * GUARDA DETERMINÍSTICA — CANDIDATAS ELEGÍVEIS SEM RASTO NENHUM NO TEXTO
+ * (critério 22, "candidata fora da lista em falta") — correcção do
+
  * (critério 22, "candidata fora da lista em falta") — correcção do
  * especialista, ronda "regeneração Nádia 2". Caso real confirmado: a
  * pool completa (TAREFA #40, `catalogarDestinos()`) trazia "Ciências da
