@@ -933,3 +933,111 @@ export function removerBlocosOpcaoNaoAutorizados(texto: string, opcoesPermitidas
 export function construirPromptReescrita(promptTecnico: string, rascunhoOriginal: string, falhas: string[]): string {
   return `${INSTRUCAO_REESCRITA}\nFalhas a corrigir:\n${falhas.map((f) => `- ${f}`).join("\n")}\n\n=== A) PROMPT TÉCNICO ORIGINAL ===\n${promptTecnico}\n\n=== B) RELATÓRIO ORIGINAL ===\n${rascunhoOriginal}`;
 }
+
+/**
+ * GUARDA DETERMINÍSTICA — PROFUNDIDADE DA LEITURA POR OPÇÃO (correcção do
+ * especialista — critério 33 falhou em rondas reais sucessivas, com pontos
+ * DIFERENTES a ficar curtos de cada vez (2/3/5, depois 1/2/3/5, depois só
+ * 3/5), apesar de reforço de prompt a cada ronda ("VERIFICAÇÃO OBRIGATÓRIA,
+ * PONTO A PONTO" já existe nos dois motores desde a ronda 3/4). Mesmo
+ * padrão de esgotamento de prompt já visto com EXPLICAÇÃO_GRÁFICO e o
+ * bloco "Direito" não autorizado: sai da responsabilidade exclusiva da
+ * crítica (que julga o mesmo texto de forma inconsistente entre chamadas —
+ * já se viu o critério 33 dado como PASSA numa ronda com o mesmo tipo de
+ * défice que outra ronda apanhou) e passa a ser verificado directamente em
+ * código, sempre, sobre o texto realmente gerado.
+ *
+ * CORRECÇÃO DE ROOT CAUSE (ronda seguinte): a primeira versão desta guarda
+ * usava um mínimo de PALAVRAS por ponto (35). Testada contra o caso real
+ * que a motivou (Alexandra, pontos 3 e 5 de "gestão" e "economia", que a
+ * crítica LLM apanhou correctamente como "1-2 frases, abaixo do mínimo de
+ * 3"), essa guarda deu ZERO falhas — o ponto 3 tinha 54/47 palavras e o
+ * ponto 5 tinha 43/43, ambos acima do limiar de 35. A contagem de palavras
+ * mede a dimensão errada: o defeito real não é "pouco texto", é "poucas
+ * frases" — o mesmo conteúdo pode ser uma única frase longa (muitas
+ * palavras, zero desenvolvimento em frases distintas) ou três frases
+ * curtas bem separadas. O critério 33 exige explicitamente um mínimo de
+ * FRASES por ponto, não de palavras.
+ *
+ * Por isso a guarda conta frases, não palavras — com um cuidado técnico
+ * específico: o próprio marcador do ponto ("3. ", "5. ") tem de ser
+ * removido do início do texto antes de contar, senão o ponto final desse
+ * marcador é contado como um falso terminador de frase e infla a
+ * contagem em +1 sempre. Continua a ser uma heurística, não um parser de
+ * português real — números decimais ("0.890") não geram falso positivo
+ * porque a regra exige espaço a seguir ao ponto antes de aceitar como fim
+ * de frase, e abreviaturas seguidas de maiúscula ("Prof. Silva") continuam
+ * a ser o caso residual não coberto, tal como seria com qualquer heurística
+ * de fronteira de frase em português corrido.
+ *
+ * Não reescreve nada — só um LLM escreve prosa nova, boa. Só GARANTE que a
+ * falha, quando existe, entra sempre na lista de falhas que alimenta a
+ * reescrita, com a contagem exacta de frases — mesmo que a crítica desta
+ * chamada em particular a tenha deixado passar.
+ */
+function contarFrases(pontoComMarcador: string): number {
+  const semMarcador = pontoComMarcador.replace(/^\s*\d+\.\s*/, "").trim();
+  if (!semMarcador) return 0;
+  const terminadores = semMarcador.match(/[.!?](?=\s+[A-ZÀ-ÖØ-Ý0-9"«]|\s*$)/g);
+  return terminadores ? terminadores.length : 0;
+}
+
+export function verificarProfundidadeLeituraPorOpcao(texto: string): string[] {
+  const falhasExtra: string[] = [];
+  const MIN_FRASES_POR_PONTO = 3;
+  // Teste contra o caso real (Alexandra) mostrou falsos positivos em pontos
+  // com apenas 2 frases MAS muito densas (economia, pontos 1 e 2: 128 e 96
+  // palavras em 2 frases compostas, com várias orações ligadas por vírgulas
+  // — desenvolvimento real, só que sem separar em frases curtas). Por isso
+  // só conta como falha quando as DUAS condições se verificam: poucas
+  // frases E poucas palavras. Um ponto com poucas frases mas muitas
+  // palavras não é o defeito que o critério 33 aponta (que é sempre um
+  // ponto reduzido a resumo curto, nunca um ponto longo mal pontuado).
+  const MAX_PALAVRAS_SE_POUCAS_FRASES = 65;
+
+  const inicioSeccao = texto.indexOf(`## ${SECCAO_TITULOS.leituraPorOpcao}`);
+  if (inicioSeccao === -1) return falhasExtra;
+  const buscaFim = texto.indexOf("\n## ", inicioSeccao + 1);
+  const fimSeccao = buscaFim === -1 ? texto.length : buscaFim;
+  const seccao = texto.slice(inicioSeccao, fimSeccao);
+
+  const blocos = seccao.split(/\n(?=### )/).slice(1);
+  for (const bloco of blocos) {
+    const nomeOpcao = bloco.split("\n", 1)[0].replace(/^###\s*/, "").trim();
+    const pontos = bloco.split(/\n(?=\d\.\s)/).filter((p) => /^\d\.\s/.test(p.trim()));
+    for (const ponto of pontos) {
+      const numeroMatch = ponto.match(/^(\d)\./);
+      if (!numeroMatch) continue;
+      const numero = Number(numeroMatch[1]);
+      if (numero === 6) continue; // conclusão-molde de formato fixo, não sujeita ao mínimo de desenvolvimento dos pontos 1-5
+      const frases = contarFrases(ponto);
+      if (frases >= MIN_FRASES_POR_PONTO) continue;
+      const palavras = ponto.trim().split(/\s+/).filter(Boolean).length;
+      if (palavras > MAX_PALAVRAS_SE_POUCAS_FRASES) continue;
+      falhasExtra.push(
+        `33. PROFUNDIDADE DA LEITURA POR OPÇÃO (guarda determinística, contagem automática): o ponto ${numero} do bloco "### ${nomeOpcao}" tem só ${frases} frase(s) e ${palavras} palavras — abaixo do mínimo de ${MIN_FRASES_POR_PONTO} frases reais exigido. Expande com conteúdo real e específico desta pessoa, nunca frases de enchimento.`,
+      );
+    }
+  }
+  return falhasExtra;
+}
+
+/**
+ * Junta as falhas encontradas pela crítica LLM (`parseCritica`) com as que
+ * uma guarda determinística tenha encontrado por conta própria (ver
+ * `verificarProfundidadeLeituraPorOpcao`) — usada sempre que uma guarda
+ * deste tipo corre a par da crítica, para nenhuma das duas fontes ficar
+ * calada por a outra ter, nesta chamada em particular, dado o critério
+ * como PASSA. Nunca duplica: se a crítica já falhou o critério 33 (ou
+ * outro que uma guarda determinística venha a cobrir no futuro), as falhas
+ * extra da guarda somam-se às da crítica em vez de as substituir — mais
+ * detalhe accionável para a reescrita, nunca menos.
+ */
+export function combinarFalhasComGuardas(resultadoCritica: ResultadoCritica, falhasExtra: string[]): ResultadoCritica {
+  if (!falhasExtra.length) return resultadoCritica;
+  return {
+    ...resultadoCritica,
+    falhas: [...resultadoCritica.falhas, ...falhasExtra],
+    todosPassaram: false,
+  };
+}
