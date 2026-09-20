@@ -713,8 +713,26 @@ export const TOTAL_CRITERIOS_ADOLESCENTE = 34;
 export function parseCritica(textoCritica: string, totalEsperado?: number): ResultadoCritica {
   const criterios: CriterioCritica[] = [];
   let match: RegExpExecArray | null;
+  // CORRECAO (ronda "regeneracao Alexandra 7", bug real confirmado por teste
+  // isolado): a critica costuma escrever a linha de resumo como
+  // "N. NOME: **FALHA** -- detalhe" (negrito so no veredicto quando e FALHA,
+  // nunca em PASSA -- enfase natural do LLM no que precisa de accao). A regex
+  // abaixo exige "PASSA"/"FALHA" logo a seguir aos dois pontos, sem nada pelo
+  // meio -- "**" antes do veredicto quebra o match. Resultado real observado:
+  // TODAS as linhas FALHA da seccao de resumo falhavam o parse (por causa do
+  // negrito), entravam em `criteriosEmFalta` com o detalhe generico "Nao
+  // avaliado nesta chamada... possivelmente truncada" em vez do motivo real
+  // e especifico escrito pela propria critica -- e essa versao generica, sem
+  // nenhuma accao concreta, e o que ia parar a `falhas` e alimentar o prompt
+  // de reescrita. O resultado PASSA/FALHA final calhava a estar certo (uma
+  // falha "perdida" ainda conta como falha forcada), mas a reescrita nunca
+  // recebia o motivo verdadeiro -- so um aviso generico de "pode estar
+  // truncado". Corrigido removendo toda a marcacao de negrito markdown ("**"
+  // e "__") do texto ANTES de aplicar a regex -- nao muda nada semanticamente,
+  // so a formatacao visual que a propria critica acrescenta.
+  const textoLimpo = textoCritica.replace(/(\*\*|__)/g, "");
   REGEX_LINHA_CRITERIO.lastIndex = 0;
-  while ((match = REGEX_LINHA_CRITERIO.exec(textoCritica))) {
+  while ((match = REGEX_LINHA_CRITERIO.exec(textoLimpo))) {
     criterios.push({
       numero: Number(match[1]),
       nome: match[2].trim(),

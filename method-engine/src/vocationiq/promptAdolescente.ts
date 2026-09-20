@@ -432,7 +432,7 @@ RODA DA VIDA — LEMBRETE À PARTE (correcção do especialista — esta secçã
 Termina com "${MARCADORES.sinteseQuemE} <frase>" — uma frase compacta que resume: quem és agora, o que te move, onde tens mais facilidade natural, onde vais precisar de mais esforço. NUNCA "quem és profissionalmente" — ainda não há profissão.
 
 ## ${SECCAO_TITULOS.oQueACartaSustenta}
-Traduz o Eixo da Missão e o Modo de Ganho dominante para linguagem humana, sem ainda nomear nenhuma das opções em cima da mesa.
+Traduz o Eixo da Missão e o Modo de Ganho dominante para linguagem humana, sem ainda nomear nenhuma das opções em cima da mesa. NUNCA REPETE A MESMA COMPARACAO DE FORCA JA FEITA NA ABERTURA (correccao do especialista -- bug real: a conclusao "o modo de ganho X e mais forte que Y e Z" apareceu quase palavra por palavra em "${SECCAO_TITULOS.abertura}" e outra vez aqui, com quase os mesmos termos, sem trazer nada novo): se a "${SECCAO_TITULOS.abertura}" ja comparou a forca relativa dos modos de ganho ou eixos, esta seccao tem de trazer um ANGULO DIFERENTE -- o MECANISMO por tras dessa forca (que planetas/factores a sustentam e porque), nunca reafirmar o mesmo ranking com palavras parecidas. A unica repeticao permitida no relatorio inteiro e a resposta directa entre "${SECCAO_TITULOS.abertura}" e "${SECCAO_TITULOS.leituraPorOpcao}" (ver INSTRUCAO_PERGUNTA_ESPECIFICA) -- em mais nenhum par de seccoes.
 
 ## ${SECCAO_TITULOS.leituraPorOpcao}
 ${instrucaoLeituraPorOpcao}

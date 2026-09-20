@@ -381,11 +381,30 @@ export async function PATCH(request: Request) {
 
       // AUDITORIA — mesmo ciclo fechado do ramo adulto: reescreve,
       // critica outra vez, repete até passar ou esgotar tentativas.
+      // CORRECAO (ronda "regeneracao Alexandra 7", bug real em producao:
+      // "a correccao automatica falhou -- o texto original ja esta
+      // guardado" apareceu no admin sem nenhum detalhe -- prova de que a
+      // resposta nunca chegou a ser JSON valido, ver SeccaoRascunho.tsx
+      // `.json().catch(() => ({}))`, o mesmo sinal ja diagnosticado uma
+      // vez para este mesmo maxDuration=280, ver o comentario no topo
+      // deste ficheiro): este ciclo faz ate MAX_TENTATIVAS_REESCRITA=2
+      // iteracoes, cada uma com 2 chamadas grandes a Anthropic (reescrita
+      // ate MAX_TOKENS + critica ate MAX_TOKENS_CRITICA) -- 4 chamadas
+      // sequenciais no pior caso, facilmente acima dos 280s da Vercel, e
+      // esse limite nunca foi revisto depois de MAX_TENTATIVAS_REESCRITA
+      // ter subido para 2. Corrigido com um orcamento de tempo: antes de
+      // COMECAR uma nova iteracao, verifica quanto tempo passou desde o
+      // inicio deste pedido -- se ja estiver perto do limite, para agora
+      // e devolve o que tiver (sempre uma resposta JSON valida e
+      // completa, nunca um kill silencioso da plataforma), marcado para
+      // revisao manual como qualquer outra tentativa esgotada.
+      const inicioReescrita = Date.now();
+      const LIMITE_TEMPO_REESCRITA_MS = 150_000; // 150s -- deixa margem para a iteracao em curso + guardarRascunho + reconstrucao do HTML, dentro dos 280s totais
       let textoReescrito = textoBase;
       let ultimaCriticaLlm = rascunho.criticaLlm;
       let tentativas = 0;
       let algumaCriticaTruncada = false;
-      while (resultadoCritica.falhas.length > 0 && tentativas < MAX_TENTATIVAS_REESCRITA) {
+      while (resultadoCritica.falhas.length > 0 && tentativas < MAX_TENTATIVAS_REESCRITA && Date.now() - inicioReescrita < LIMITE_TEMPO_REESCRITA_MS) {
         tentativas += 1;
         const promptReescrita = construirPromptReescrita(rascunho.promptCompleto, textoBase, resultadoCritica.falhas);
         const { texto: novoTextoGerado } = await gerarTexto(client, promptReescrita, MAX_TOKENS);
