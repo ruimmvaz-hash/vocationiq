@@ -182,16 +182,41 @@ export function ChatWidget() {
   if (pathname?.startsWith("/admin")) return null;
 
   return (
-    <div className="fixed bottom-5 right-5 z-50">
-      {open && <div className="mb-3">{<ChatPanel />}</div>}
-      <button
-        onClick={() => setOpen((o) => !o)}
-        aria-label="Chat"
-        className="flex h-14 w-14 items-center justify-center rounded-full text-2xl text-white shadow-lg transition-transform hover:scale-105"
-        style={{ background: NAVY }}
+    <>
+      {/* Botão flutuante do WhatsApp (pedido do Rui, 21 Set) — só
+          mensagens (wa.me abre sempre a conversa de chat, nunca a
+          chamada). Empilhado por cima do bot de chat, mesmo eixo. */}
+      <a
+        href="https://wa.me/351928376182"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="WhatsApp"
+        title="Fala connosco no WhatsApp"
+        className="fixed bottom-24 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition-transform hover:scale-105"
+        style={{ background: "#25D366" }}
       >
-        {open ? "×" : "?"}
-      </button>
-    </div>
+        <IconWhatsApp className="h-7 w-7" />
+      </a>
+      <div className="fixed bottom-5 right-5 z-50">
+        {open && <div className="mb-3">{<ChatPanel />}</div>}
+        <button
+          onClick={() => setOpen((o) => !o)}
+          aria-label="Chat"
+          className="flex h-14 w-14 items-center justify-center rounded-full text-2xl text-white shadow-lg transition-transform hover:scale-105"
+          style={{ background: NAVY }}
+        >
+          {open ? "×" : "?"}
+        </button>
+      </div>
+    </>
+  );
+}
+
+function IconWhatsApp({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+      <path d="M12.001 2C6.478 2 2 6.477 2 12c0 1.86.505 3.641 1.459 5.19L2 22l4.943-1.436A9.94 9.94 0 0 0 12.001 22C17.523 22 22 17.523 22 12S17.523 2 12.001 2zm0 18.111a8.09 8.09 0 0 1-4.13-1.132l-.296-.176-3.086.896.907-3.05-.192-.31a8.086 8.086 0 0 1-1.29-4.34c0-4.478 3.643-8.11 8.087-8.11 4.443 0 8.086 3.632 8.086 8.11 0 4.478-3.643 8.112-8.086 8.112z" />
+    </svg>
   );
 }
