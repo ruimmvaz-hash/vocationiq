@@ -145,7 +145,7 @@ export interface IntakePayload {
   areasConsideradas?: AreaConsiderada[];
   areasConsideradasOutra?: string;
   preferenciaFamilia?: string;
-  /** TAREFA 3 (correcção do especialista) — SPEC-vocacional.md, "O que isto exige da recolha": 2-4 opções em texto livre, com a via se souberem. Nunca obrigatório — ver `validarIntake`. */
+  /** TAREFA 3 (correcção do especialista) — SPEC-vocacional.md, "O que isto exige da recolha": opções em texto livre, com a via se souberem. Recalibrado a 21 Set (pedido do fundador — caso real: o motor lê uma hipótese declarada com muito mais força/especificidade do que o mesmo sinal inferido só do catálogo em "sem opções", ver Passo 1B/1C em promptAdulto.ts) — passou a ser OBRIGATÓRIO pelo menos 1, até um máximo de 10 — ver `validarIntake`. */
   opcoesAdolescente?: string[];
   /** TAREFA 3 — "qual delas te parece a mais provável hoje?" Nunca decide nada, mas permite tratar essa como a hipótese em teste. */
   opcaoMaisProvavel?: string;
@@ -230,7 +230,7 @@ export function validarIntake(body: unknown): { ok: true; dados: IntakePayload }
 
     dados.preferenciaFamilia = textoOpcional(b.preferenciaFamilia);
 
-    // TAREFA 3 (correcção do especialista) — "2 a 4, em texto livre" (SPEC-vocacional.md); nunca obrigatório, por isso aceita 0 sem bloquear.
+    // TAREFA 3 (correcção do especialista, recalibrado 21 Set) — texto livre, até 10; OBRIGATÓRIO pelo menos 1 (ver bloqueio mais abaixo, depois de deduplicar).
     //
     // Correcção do especialista (caso real: Alexandra, "gestão, economia
     // e gestão" — a mesma opção repetida duas vezes na lista, uma delas
@@ -262,8 +262,16 @@ export function validarIntake(body: unknown): { ok: true; dados: IntakePayload }
         opcoesVistas.add(chave);
         return true;
       })
-      .slice(0, 4);
-    if (opcoesAdolescente.length > 0) dados.opcoesAdolescente = opcoesAdolescente;
+      .slice(0, 10);
+    // Recalibrado a 21 Set (pedido do fundador) — deixou de ser opcional: sem
+    // pelo menos uma hipótese nomeada, o relatório fica inteiramente
+    // dependente da inferência do catálogo (Passo 1B/1C), que aplica
+    // deliberadamente uma barra de especificidade mais alta do que a leitura
+    // directa de uma opção declarada (Leitura por opção) — ver histórico do
+    // caso Bruno/Engenharia. Pedir pelo menos uma hipótese, mesmo que seja só
+    // um palpite, garante que a leitura mais forte é sempre tentada primeiro.
+    if (opcoesAdolescente.length === 0) return { ok: false, erro: "Falta indicar pelo menos uma hipótese (área, curso ou profissão) que queiras ver analisada — mesmo que seja só um palpite." };
+    dados.opcoesAdolescente = opcoesAdolescente;
     dados.opcaoMaisProvavel = textoOpcional(b.opcaoMaisProvavel);
 
     // TAREFA 2 (correcção do especialista, ronda seguinte) — opcional, nunca bloqueia (rascunhos antigos/pessoa que não respondeu).

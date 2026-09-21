@@ -137,7 +137,14 @@ const ESTADO_INICIAL: FormState = {
 
 function passo2Valido(f: FormState): boolean {
   if (!f.situacao) return false;
-  if (f.situacao === "9-ou-menos" || f.situacao === "10-11-12" || f.situacao === "universidade") return !!f.clarezaIdeia;
+  if (f.situacao === "9-ou-menos" || f.situacao === "10-11-12" || f.situacao === "universidade") {
+    // Recalibrado a 21 Set (pedido do fundador) — deixou de bastar responder
+    // à confiança (clarezaIdeia); é preciso nomear pelo menos uma hipótese
+    // concreta, mesmo que seja só um palpite (ver validation.ts para o
+    // porquê: uma opção declarada recebe sempre a leitura mais forte).
+    if (!f.clarezaIdeia) return false;
+    return f.opcoesAdolescente.some((o) => o.trim().length > 0);
+  }
   if (f.situacao === "trabalho-quero-mudar") {
     if (!f.areaTrabalhoActual.trim() || !f.anosExperiencia) return false;
     if (f.areasDestino.includes("outra") && !f.areasDestinoOutra.trim()) return false;
@@ -181,7 +188,7 @@ export function IntakeForm() {
     }));
   }
 
-  const MAX_OPCOES_ADOLESCENTE = 4;
+  const MAX_OPCOES_ADOLESCENTE = 10;
 
   function definirOpcaoAdolescente(indice: number, valor: string) {
     setF((prev) => ({ ...prev, opcoesAdolescente: prev.opcoesAdolescente.map((o, i) => (i === indice ? valor : o)) }));
@@ -248,7 +255,7 @@ export function IntakeForm() {
       opcoesAdolescente: f.opcoesAdolescente
         .map((o) => o.trim())
         .filter(Boolean)
-        .slice(0, 4),
+        .slice(0, 10),
       opcaoMaisProvavel: f.opcaoMaisProvavel,
       // Correcção do especialista — quem escolhe "Estou na universidade
       // ou já terminei o secundário" nunca responde a esta pergunta (o
@@ -441,7 +448,7 @@ export function IntakeForm() {
                 nome real de destino pode legitimamente conter " e "
                 (ex.: "Engenharia e Gestão Industrial").
               */}
-              <Campo label="Opções em cima da mesa" hint="Opcional. Uma opção por campo — 2 a 4 chegam.">
+              <Campo label="Opções em cima da mesa" hint="Obrigatório pelo menos uma — mesmo que seja só um palpite. Uma opção por campo, até 10.">
                 <div className="space-y-2">
                   {f.opcoesAdolescente.map((opcao, i) => (
                     <div key={i}>
