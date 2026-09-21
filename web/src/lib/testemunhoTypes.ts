@@ -8,7 +8,7 @@
 export const SITUACAO_TESTEMUNHO = [
   { valor: "estudante", label: "Estudante (9º-12º ano)" },
   { valor: "jovem-adulto", label: "Jovem adulto" },
-  { valor: "adulto-transicao", label: "Adulto em transição" },
+  { valor: "adulto-transicao", label: "Adulto em busca de nova carreira" },
   { valor: "prefiro-nao-dizer", label: "Prefiro não dizer" },
 ] as const;
 

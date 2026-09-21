@@ -30,7 +30,7 @@ const PUBLICOS = [
     icon: IconCompass,
   },
   {
-    titulo: "Adultos em transição",
+    titulo: "Adultos em busca de nova carreira",
     texto: "Queres mudar de área? Descobre onde realmente encaixas.",
     icon: IconSwitch,
   },
@@ -126,7 +126,7 @@ export default async function HomePage() {
               </h1>
               <p className="mt-6 max-w-lg text-[20px] font-normal leading-relaxed text-white/85">
                 Uma análise personalizada que descobre os teus talentos naturais, como aprendes e as áreas onde podes
-                crescer mais — para adolescentes, jovens e adultos em transição de carreira.
+                crescer mais — para adolescentes, jovens e adultos em busca de nova carreira.
               </p>
               <div className="mt-9 flex flex-wrap items-center gap-5">
                 <TrackedCtaLink
