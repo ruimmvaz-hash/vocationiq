@@ -7,6 +7,7 @@ import type { VocationIQAxes, EarningModeHouse } from "../lifeReport/vocationIQ"
 import type { PesoPlaneta, SavPorCasa } from "./pesosPlanetas";
 import type { ClassicalGraha } from "../lifeReport/types";
 import type { ResultadoCatalogoVocacional } from "./catalogoVocacional";
+import { nivelDeConfianca } from "./catalogoVocacional";
 import { computeRodaDaVida } from "./rodaDaVida";
 import type { PerfilElementosModalidades, AspectoPessoal } from "./elementosEAspectos";
 import type { CursosSugeridos } from "./catalogoCursos";
@@ -462,6 +463,26 @@ export function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional, c
   const listar = (destinos: ResultadoCatalogoVocacional["destinosDeAreaActual"]) =>
     destinos.length ? destinos.map((d) => `- ${d.nome}: convergência ${d.convergencia} (${d.camadas.join("; ") || "sem camada identificada"})${formatarViaConcreta(cursosPorDestino[d.id])}`).join("\n") : "(nenhum destino do catálogo corresponde)";
 
+  // TAREFA "Alternativas como candidatas de excepção" (21 Set, pedido do
+  // Rui — ver PASSO 1B em INSTRUCAO_SELECCAO_CANDIDATAS abaixo para o
+  // porquê): marca aqui, deterministicamente, o Nível de cada alternativa
+  // (mesmo cálculo `nivelDeConfianca` que já decide o Nível da pool
+  // garantida — nunca um segundo critério). "sem indicador pessoal" quer
+  // dizer literalmente isso: só camadas genéricas (Eixo do rendimento,
+  // Regente do Modo de Ganho, Casa temática, Sinais estruturados) — o
+  // LLM NUNCA promove uma destas a candidata, mesmo com ligação
+  // narrativa aparente (ver PASSO 1B).
+  const listarAlternativas = (destinos: ResultadoCatalogoVocacional["destinosAlternativos"]) =>
+    destinos.length
+      ? destinos
+          .map((d) => {
+            const nivel = nivelDeConfianca(d.camadas);
+            const rotuloNivel = nivel === 1 ? "Nível 1 (planeta de maior peso)" : nivel === 2 ? "Nível 2 (âncora pessoal)" : "sem indicador pessoal — NUNCA promover a candidata";
+            return `- ${d.nome}: convergência ${d.convergencia}, ${rotuloNivel} (${d.camadas.join("; ") || "sem camada identificada"})`;
+          })
+          .join("\n")
+      : "(nenhuma alternativa)";
+
   // TAREFA #40 (mudança de arquitectura — substitui a TAREFA 1 e a TAREFA
   // #39) — `catalogarDestinos()` já não escolhe as 3 finais; entrega a
   // POOL COMPLETA de candidatas que atingem ≥4 camadas (Nível 1 ou 2, sem
@@ -512,7 +533,7 @@ export function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional, c
   return [
     catalogo.notaAreaGenerica ? `NOTA: ${catalogo.notaAreaGenerica}.` : null,
     `Derivadas da área actual:\n${listar(catalogo.destinosDeAreaActual)}`,
-    `Alternativas pelo perfil (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações, eixo do rendimento):\n${listar(catalogo.destinosAlternativos)}`,
+    `Alternativas pelo perfil — convergência 2-3, ABAIXO do piso da pool garantida (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações, eixo do rendimento). Nunca tratar como pool — ver PASSO 1B em INSTRUCAO_SELECCAO_CANDIDATAS para a única forma admissível de usar isto:\n${listarAlternativas(catalogo.destinosAlternativos)}`,
     `Candidatas do catálogo — pool completa (≥4 convergências, Nível 1 ou 2 conforme indicado, SEM LIMITE nenhum — apresentam-se TODAS as que passam o filtro de ligação narrativa, ver INSTRUCAO_SELECCAO_CANDIDATAS):\n${candidatasTexto}`,
     `Grupos de candidatas (assinatura de camadas idêntica ou quase idêntica — usar para agrupar a apresentação, ver INSTRUCAO_SELECCAO_CANDIDATAS):\n${gruposTexto}`,
     viasConcretasCandidatas || null,
@@ -843,11 +864,16 @@ Sempre que o texto descrever uma conjunção (dois traços "fundidos" ou "quase 
 export const INSTRUCAO_SELECCAO_CANDIDATAS = `APRESENTAÇÃO DAS CANDIDATAS FORA DA LISTA — SEM TECTO DE 3: a secção "Candidatas do catálogo" traz a pool completa (Nível 1 ou 2), sem limite nenhum. A tua tarefa NÃO é escolher até 3 — é decidir quais passam o filtro de ligação narrativa (Passo 1) e apresentar TODAS as que passam, agrupando as que partilham convergência de base quase idêntica (Passo 3). Nunca inventar nenhuma candidata fora da pool; nunca omitir uma candidata elegível só para manter a secção curta.
 Processo em TRÊS PASSOS, nesta ordem exacta:
 PASSO 1 — FILTRO DE ELEGIBILIDADE (ligação narrativa, único filtro que existe): de toda a pool, elimina qualquer candidata cujas camadas NÃO consigas ligar com clareza a um dom ou traço JÁ NOMEADO na secção "${SECCAO_TITULOS.quemE}" — essa ligação é a mesma que vais citar na frase de abertura obrigatória (ver INSTRUCAO_ABERTURA_CANDIDATAS). Filtro binário (liga-se genuinamente, ou não) — nunca uma escala de "liga-se melhor/pior" entre candidatas que já se ligam, e nunca um segundo filtro de "quantas quero mostrar". TODAS as que passam ficam, sem limite.
+PASSO 1B — EXCEPÇÃO CONTROLADA A PARTIR DE "ALTERNATIVAS PELO PERFIL" (correcção do especialista, 21 Set — caso real: convergência 3 de "Engenharia Civil"/"Engenharia de Minas", com Nível 1, ficava de fora inteiramente por estar 1 abaixo do piso de 4, mesmo sendo o sinal mais forte do perfil dessa pessoa; testámos primeiro baixar o piso globalmente e testámos contar tipos de camada distintos — as duas regras numéricas admitiram ruído claro, ex.: "Ciências Militares" e "Técnico de Ourivesaria" tinham exactamente a mesma forma que a Engenharia genuína. Não há atalho numérico — por isso esta excepção pede o MESMO julgamento narrativo do Passo 1, com uma barra mais alta, nunca um número): podes promover um destino de "Alternativas pelo perfil" a candidata SÓ SE, TODAS estas três condições:
+(a) tiver Nível 1 ou 2 marcado explicitamente nos dados técnicos ("sem indicador pessoal" = nunca promover, sem excepção nenhuma, mesmo que a ligação narrativa pareça óbvia);
+(b) a ligação ao dom já nomeado em "${SECCAO_TITULOS.quemE}" for tão específica quanto a exigida no Passo 1 — nunca uma ligação que serviria igualmente bem para metade dos destinos do catálogo (isso é o sinal de ruído, não de convergência genuína);
+(c) na dúvida, NÃO promove — esta excepção existe para os casos claros que o piso deixa de fora por estarem a 1 camada de distância, nunca para encher a secção. Esperado: 0 ou 1 promoções por relatório, raramente mais.
+Cada promoção por esta via é OBRIGATORIAMENTE citada, pelo nome, no bloco "${MARCADORES.seleccaoCandidatas}" (ver mais abaixo), com a frase "promovida de Alternativas pelo perfil (Passo 1B)" e a razão específica — nunca silenciosa, nunca indistinguível de uma candidata da pool garantida nesse bloco de raciocínio.
 PASSO 2 — ORDEM DE APRESENTAÇÃO (soma de pesos, nunca ranking): entre as candidatas que passaram o Passo 1, ordena a apresentação (grupos e candidatas individuais) pela soma de pesos mais alta primeiro — serve só para dar uma ordem estável ao texto, nunca como hierarquia de importância (ver a regra "SEM RANKING" na secção "${SECCAO_TITULOS.candidataForaDaLista}"). O Nível (1 ou 2) nunca decide inclusão nem ordem — só a linguagem de confiança de cada candidata (INSTRUCAO_NIVEL_CANDIDATAS).
 PASSO 3 — AGRUPAMENTO POR ASSINATURA (apresentação, nunca qualificação): os dados técnicos trazem "Grupos de candidatas" — listas de nomes já calculadas deterministicamente cuja convergência de base (o CONJUNTO de tipos de camada, não o texto exacto) é idêntica ou quase idêntica. Para cada grupo em que 2 ou mais membros passaram o Passo 1: escreve a convergência astrológica de base UMA SÓ VEZ para o grupo inteiro num bloco "${MARCADORES.grupo}" (que camadas partilham, o que isso significa em conjunto) — depois, para CADA membro desse grupo que passou o Passo 1, um bloco "${MARCADORES.candidata}" curto (2-4 linhas): porquê esta e não as outras do mesmo grupo, a via concreta dela, prós e contras específicos. NUNCA repetir a convergência de base dentro do bloco de cada candidata — já foi escrita uma vez, no bloco "${MARCADORES.grupo}". Se um grupo, depois do Passo 1, fica com só 1 membro sobrevivente, essa candidata deixa de ser "grupo" — escreve-a no formato individual completo (ver formato exacto na secção "${SECCAO_TITULOS.candidataForaDaLista}"), sem bloco "${MARCADORES.grupo}". Candidatas sem grupo (assinatura própria, nenhuma outra a ≤1 tipo de distância) mantêm sempre o formato individual completo.
 REPETIÇÃO ENTRE CANDIDATAS SEM GRUPO FORMAL (correcção do especialista — bug real: duas candidatas sem grupo calculado, mas com o MESMO conjunto de planetas na base da convergência, saíram com a explicação astrológica de base escrita quase palavra por palavra duas vezes seguidas — exactamente a repetição que o agrupamento existe para evitar, só que sem grupo formal para a apanhar): mesmo sem bloco "${MARCADORES.grupo}", se a candidata que vais escrever agora partilha o MESMO conjunto de planetas-base já explicado numa candidata anterior desta secção, NÃO reescrevas essa explicação — refere-a directamente ("a mesma [força/ligação] que já sustenta [nome da candidata anterior]...") e usa o espaço da frase para o que É diferente nesta candidata (a via concreta, o ângulo específico, o que a distingue na prática). Só reescreve a explicação de base por inteiro quando ela usa planetas ou camadas genuinamente diferentes da candidata anterior.
 Nunca escolhas só pela contagem de camadas (convergência) — usa sempre a soma de pesos para ordenar.
-Antes de qualquer bloco "${MARCADORES.grupo}" ou "${MARCADORES.candidata}", escreve OBRIGATORIAMENTE um bloco único "${MARCADORES.seleccaoCandidatas}" (machine-readable, nunca omitido), explicando em prosa curta: (a) a que dom já nomeado em "${SECCAO_TITULOS.quemE}" cada candidata que passou o Passo 1 se liga, (b) quais candidatas da pool completa (nomeia-as pelo nome, com a sua soma de pesos) reprovaram o Passo 1 e porquê, (c) como as que passaram ficaram agrupadas — que grupos, com que nomes, e quais ficaram individuais. Este bloco nunca aparece no relatório entregue ao cliente — é só para auditoria interna do raciocínio.
+Antes de qualquer bloco "${MARCADORES.grupo}" ou "${MARCADORES.candidata}", escreve OBRIGATORIAMENTE um bloco único "${MARCADORES.seleccaoCandidatas}" (machine-readable, nunca omitido), explicando em prosa curta: (a) a que dom já nomeado em "${SECCAO_TITULOS.quemE}" cada candidata que passou o Passo 1 se liga, (b) quais candidatas da pool completa (nomeia-as pelo nome, com a sua soma de pesos) reprovaram o Passo 1 e porquê, (c) como as que passaram ficaram agrupadas — que grupos, com que nomes, e quais ficaram individuais, (d) se consideraste alguma "Alternativa pelo perfil" para o Passo 1B — nomeia-a mesmo quando a resposta é não promover (ex.: "considerei X, tem Nível 2, mas a ligação a QUALQUER dom nomeado seria genérica demais, não promovo"); se não havia nenhuma alternativa com Nível 1/2 sequer, di-lo também, numa frase. Este bloco nunca aparece no relatório entregue ao cliente — é só para auditoria interna do raciocínio.
 ERRO CONFIRMADO EM GERAÇÕES REAIS (correcção do especialista — nunca repetir isto): candidatas fora de um grupo explícito saíram, por 4 vezes seguidas, formatadas como título markdown em vez do marcador — e mesmo o cabeçalho de um grupo saiu em bold em vez de "${MARCADORES.grupo}". Isto faz a candidata (ou o grupo inteiro) desaparecer do relatório final — o parser só reconhece o marcador literal, nunca markdown como substituto, por mais parecido que pareça a um humano.
 ERRADO (nunca escrever assim, para nenhuma candidata, agrupada ou não):
 **Ciências da Educação** — Nível 2, liga-se ao dom de ensinar já nomeado acima...

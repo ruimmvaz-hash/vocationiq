@@ -1442,6 +1442,36 @@ function escolherParOpcoesContraste(candidatas: CandidataForaDaLista[], grupos: 
   return melhorPar;
 }
 
+/**
+ * Movida para módulo (era local a `catalogarDestinos`) — TAREFA
+ * "Alternativas como candidatas de excepção" (21 Set, pedido do Rui:
+ * testar Passo 1 narrativo em destinos de convergência 2-3, nunca um
+ * piso numérico mais baixo aplicado a todos por igual — ver
+ * docs/teste-diversidade-tipos-camada). Exportada para
+ * `blocoCatalogoVocacional` (promptAdulto.ts) poder marcar, nos dados
+ * técnicos de "Alternativas pelo perfil", quais têm indicador pessoal —
+ * o MESMO cálculo que já decide o Nível da pool garantida, nunca uma
+ * segunda versão a divergir dela. Comportamento idêntico ao de sempre,
+ * só o âmbito (module-level em vez de closure) mudou.
+ */
+export const temPlanetaDeMaiorPeso = (camadas: string[]) => camadas.some((c) => c.startsWith("Planeta de maior peso"));
+// DESVIO (correcção do especialista, trabalho a completar — mesma
+// tarefa dos 2 sinais novos, não uma regra nova) — Stellium e Regente
+// da casa dignificado são âncoras de Nível 2 tão válidas quanto
+// Atmakaraka/Amatyakaraka: dignidade de regente de casa (exaltação/
+// signo próprio/Moolatrikona) é um sinal clássico específico da carta,
+// não um sinal genérico — o mesmo princípio que já justificava
+// Atmakaraka/Amatyakaraka como âncoras (indicadores pessoais, não peso
+// numérico bruto). Nunca Nível 1 — só o planeta de maior peso dá Nível
+// 1, isso não muda.
+export const temIndicadorPessoalFraco = (camadas: string[]) =>
+  camadas.some((c) => c.startsWith("Atmakaraka") || c.startsWith("Amatyakaraka") || c.startsWith("Stellium na casa") || (c.startsWith("Regente da casa") && c.includes("dignificado")));
+export const nivelDeConfianca = (camadas: string[]): 1 | 2 | null => {
+  if (temPlanetaDeMaiorPeso(camadas)) return 1;
+  if (temIndicadorPessoalFraco(camadas)) return 2;
+  return null;
+};
+
 export function catalogarDestinos(
   axes: VocationIQAxes,
   pesos: PesoPlaneta[],
@@ -1594,23 +1624,8 @@ export function catalogarDestinos(
   // pessoal). Aplica-se por igual à Alice (Nível 2) e ao Rui/Melina
   // (Nível 2) — a diferença nunca esteve em bloquear uns e passar outros,
   // está em como o texto fala de cada nível.
-  const temPlanetaDeMaiorPeso = (camadas: string[]) => camadas.some((c) => c.startsWith("Planeta de maior peso"));
-  // DESVIO (correcção do especialista, trabalho a completar — mesma
-  // tarefa dos 2 sinais novos, não uma regra nova) — Stellium e Regente
-  // da casa dignificado são âncoras de Nível 2 tão válidas quanto
-  // Atmakaraka/Amatyakaraka: dignidade de regente de casa (exaltação/
-  // signo próprio/Moolatrikona) é um sinal clássico específico da carta,
-  // não um sinal genérico — o mesmo princípio que já justificava
-  // Atmakaraka/Amatyakaraka como âncoras (indicadores pessoais, não peso
-  // numérico bruto). Nunca Nível 1 — só o planeta de maior peso dá Nível
-  // 1, isso não muda.
-  const temIndicadorPessoalFraco = (camadas: string[]) =>
-    camadas.some((c) => c.startsWith("Atmakaraka") || c.startsWith("Amatyakaraka") || c.startsWith("Stellium na casa") || (c.startsWith("Regente da casa") && c.includes("dignificado")));
-  const nivelDeConfianca = (camadas: string[]): 1 | 2 | null => {
-    if (temPlanetaDeMaiorPeso(camadas)) return 1;
-    if (temIndicadorPessoalFraco(camadas)) return 2;
-    return null;
-  };
+  // nivelDeConfianca movida para o topo do ficheiro (agora exportada) —
+  // ver ali para o histórico completo da regra.
   // TAREFA #40 (correcção do especialista — MUDANÇA DE ARQUITECTURA,
   // substitui a TAREFA #39) — quatro rondas seguidas de gates/limiares/
   // desempates diferentes (Correcção 2 original; "aceitar Atmakaraka/
