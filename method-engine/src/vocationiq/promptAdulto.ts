@@ -7,7 +7,7 @@ import type { VocationIQAxes, EarningModeHouse } from "../lifeReport/vocationIQ"
 import type { PesoPlaneta, SavPorCasa } from "./pesosPlanetas";
 import type { ClassicalGraha } from "../lifeReport/types";
 import type { ResultadoCatalogoVocacional } from "./catalogoVocacional";
-import { nivelDeConfianca } from "./catalogoVocacional";
+import { nivelDeConfianca, yogasAplicaveisParaCandidata } from "./catalogoVocacional";
 import { computeRodaDaVida } from "./rodaDaVida";
 import type { PerfilElementosModalidades, AspectoPessoal } from "./elementosEAspectos";
 import type { CursosSugeridos } from "./catalogoCursos";
@@ -459,7 +459,24 @@ function formatarViaConcreta(cursos: CursosSugeridos | undefined): string {
 }
 
 /** Redesenho do motor (Parte 2C) — traduz o resultado de `catalogarDestinos()` para o formato de dados técnicos pedido. Nunca lista mais do que o catálogo devolveu, nunca ordena por "força" (SPEC-vocacional.md: o catálogo descreve, não escolhe). */
-export function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional, cursosPorDestino: Record<string, CursosSugeridos>): string {
+export function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional, cursosPorDestino: Record<string, CursosSugeridos>, yogas: YogaHit[]): string {
+  // TAREFA "Yogas por candidata, pré-calculados" (21 Set, correcção do
+  // especialista — bug real, confirmado com dados reais do Bruno: o
+  // SELECÇÃO_CANDIDATAS concluiu "nenhuma camada válida bate" para
+  // Marketing/Psicologia apesar de ambas terem "Amatyakaraka (Venus)" na
+  // própria lista de camadas — o LLM estava a fazer, de memória, uma
+  // intersecção de conjuntos sobre texto livre (INSTRUCAO_YOGAS pedia-lhe
+  // para comparar planeta a planeta à mão). Isto deixa de ser um cálculo
+  // pedido ao LLM — `yogasAplicaveisParaCandidata` (catalogoVocacional.ts)
+  // já aplica o mesmo filtro de camadas (Atmakaraka/Amatyakaraka/Planeta
+  // de maior peso/Combinação) e devolve os yogas que realmente batem; o
+  // LLM só narra o resultado já dado (ver INSTRUCAO_YOGAS).
+  const formatarYogasAplicaveis = (camadas: string[]) => {
+    const aplicaveis = yogasAplicaveisParaCandidata(camadas, yogas);
+    if (aplicaveis.length === 0) return "nenhum yoga aplicável (já verificado — não voltes a calcular)";
+    return aplicaveis.map((a) => `${a.yoga.label}, formado por ${a.planetasComuns.join("+")} (id interno: ${a.yoga.id})`).join("; ");
+  };
+
   const listar = (destinos: ResultadoCatalogoVocacional["destinosDeAreaActual"]) =>
     destinos.length ? destinos.map((d) => `- ${d.nome}: convergência ${d.convergencia} (${d.camadas.join("; ") || "sem camada identificada"})${formatarViaConcreta(cursosPorDestino[d.id])}`).join("\n") : "(nenhum destino do catálogo corresponde)";
 
@@ -496,7 +513,7 @@ export function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional, c
     ? catalogo.candidatasForaDaLista
         .map(
           (c) =>
-            `- ${c.nome}: convergência ${c.convergencia}, Nível ${c.nivelConfianca} (${c.nivelConfianca === 1 ? "inclui o planeta de maior peso — confiança plena" : "âncora pessoal (Atmakaraka/Amatyakaraka/Stellium/Regente de casa dignificado), sem o planeta de maior peso — confiança reduzida"}), soma de pesos das camadas ${c.somaPesoCamadas.toFixed(2)} (${c.camadas.join("; ")}). FACTOR DE DOM (já traduzido para linguagem humana, usa isto — nunca inventes outro): "${c.fatorDeDom}".`,
+            `- ${c.nome}: convergência ${c.convergencia}, Nível ${c.nivelConfianca} (${c.nivelConfianca === 1 ? "inclui o planeta de maior peso — confiança plena" : "âncora pessoal (Atmakaraka/Amatyakaraka/Stellium/Regente de casa dignificado), sem o planeta de maior peso — confiança reduzida"}), soma de pesos das camadas ${c.somaPesoCamadas.toFixed(2)} (${c.camadas.join("; ")}). FACTOR DE DOM (já traduzido para linguagem humana, usa isto — nunca inventes outro): "${c.fatorDeDom}". YOGAS APLICÁVEIS (já verificados deterministicamente, ver INSTRUCAO_YOGAS): ${formatarYogasAplicaveis(c.camadas)}.`,
         )
         .join("\n")
     : "nenhuma — nenhum destino reuniu 4 camadas independentes incluindo um indicador pessoal (planeta de maior peso, Atmakaraka ou Amatyakaraka).";
@@ -512,6 +529,16 @@ export function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional, c
   const gruposTexto = catalogo.gruposCandidatas.length
     ? catalogo.gruposCandidatas.map((g, i) => `Grupo ${i + 1} (${g.length} candidatas, convergência de base quase idêntica): ${g.join(", ")}.`).join("\n")
     : "nenhum — todas as candidatas da pool têm assinatura de camadas própria (sem par a ≤1 tipo de distância).";
+
+  // TAREFA "Grupo de Alternativas, TODAS OU NENHUMA" (21 Set — ver
+  // PASSO 1C em INSTRUCAO_SELECCAO_CANDIDATAS): mesmo mecanismo de
+  // `gruposTexto` acima, aplicado a `catalogo.gruposAlternativas`
+  // (destinos de "Alternativas pelo perfil" com Nível 1/2, agrupados por
+  // assinatura de camadas — nunca um destino "sem indicador pessoal",
+  // esse continua vetado em qualquer via).
+  const gruposAlternativasTexto = catalogo.gruposAlternativas.length
+    ? catalogo.gruposAlternativas.map((g, i) => `Grupo de Alternativas ${i + 1} (${g.length} destinos, convergência de base quase idêntica, abaixo do piso da pool): ${g.join(", ")}.`).join("\n")
+    : "nenhum — nenhum destino de Alternativas pelo perfil partilha assinatura de camadas com outro (sem par a ≤1 tipo de distância).";
 
   // TAREFA 3 (correcção do especialista, ronda seguinte) — cada candidata
   // da pool ganha o seu próprio bloco "-- Via concreta para [destino] --",
@@ -534,6 +561,7 @@ export function blocoCatalogoVocacional(catalogo: ResultadoCatalogoVocacional, c
     catalogo.notaAreaGenerica ? `NOTA: ${catalogo.notaAreaGenerica}.` : null,
     `Derivadas da área actual:\n${listar(catalogo.destinosDeAreaActual)}`,
     `Alternativas pelo perfil — convergência 2-3, ABAIXO do piso da pool garantida (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações, eixo do rendimento). Nunca tratar como pool — ver PASSO 1B em INSTRUCAO_SELECCAO_CANDIDATAS para a única forma admissível de usar isto:\n${listarAlternativas(catalogo.destinosAlternativos)}`,
+    `Grupos de Alternativas (assinatura de camadas idêntica ou quase idêntica dentro de "Alternativas pelo perfil" — usar só para promoção em grupo, ver PASSO 1C em INSTRUCAO_SELECCAO_CANDIDATAS):\n${gruposAlternativasTexto}`,
     `Candidatas do catálogo — pool completa (≥4 convergências, Nível 1 ou 2 conforme indicado, SEM LIMITE nenhum — apresentam-se TODAS as que passam o filtro de ligação narrativa, ver INSTRUCAO_SELECCAO_CANDIDATAS):\n${candidatasTexto}`,
     `Grupos de candidatas (assinatura de camadas idêntica ou quase idêntica — usar para agrupar a apresentação, ver INSTRUCAO_SELECCAO_CANDIDATAS):\n${gruposTexto}`,
     viasConcretasCandidatas || null,
@@ -719,30 +747,20 @@ NUNCA ignorar conjunções activas — incluindo as neutras.
 // Efeito nomeado ("configuração técnica"/"capacidade estrutural"), nunca
 // o mecanismo (qual yoga, formado por que planetas). Corrigido: só o
 // nome real do yoga é aceite, nunca uma paráfrase genérica.
-export const INSTRUCAO_YOGAS = `YOGAS — INSTRUÇÃO OBRIGATÓRIA PARA CANDIDATAS: para CADA candidata fora da lista apresentada, verifica se algum yoga activo (Raja Yoga, Dhana Yoga, Viparita Raja Yoga) cita pelo menos um dos planetas que fazem parte das camadas de convergência dessa candidata.
+export const INSTRUCAO_YOGAS = `YOGAS — INSTRUÇÃO OBRIGATÓRIA PARA CANDIDATAS: os dados técnicos de cada candidata da pool ("Candidatas do catálogo") já trazem, na própria linha, "YOGAS APLICÁVEIS: ..." — um facto já calculado deterministicamente. A tua única tarefa é NARRAR esse facto tal como está, nunca verificá-lo, recalculá-lo ou substituí-lo por uma impressão própria.
 
-VERIFICAÇÃO OBRIGATÓRIA, PLANETA A PLANETA (correcção do especialista —
-bug real: uma geração concluiu "não encontrei nenhum yoga aplicável"
-para uma candidata cujo próprio Sol era o mesmo planeta central de um
-Raja Yoga activo listado nos dados técnicos — a verificação tinha sido
-feita "de memória"/por impressão geral, não planeta a planeta). Antes de
-escreveres "não encontrei yoga aplicável" para qualquer candidata, faz
-esta comparação explícita: lista os planetas de CADA yoga activo (dados
-técnicos, secção de yogas) lado a lado com os planetas nas camadas de
-convergência desta candidata (dados técnicos, secção desta candidata) —
-se houver pelo menos um planeta em comum entre as duas listas, o yoga
-APLICA-SE, mesmo que a ligação não seja óbvia à primeira leitura.
+CORRECÇÃO DO ESPECIALISTA, 21 Set — bug real: pedir ao LLM que fizesse a intersecção "planeta a planeta" de memória, sobre texto livre, falhava — confirmado com dados reais do Bruno, onde o "${MARCADORES.seleccaoCandidatas}" concluiu "nenhuma camada válida bate" para Marketing e Psicologia apesar de ambas terem "Amatyakaraka (Venus)" na própria lista de camadas, e um Raja Yoga de Vénus activo nos dados técnicos. Este cálculo deixou de ser pedido ao LLM — está pronto em "YOGAS APLICÁVEIS" em cada linha de candidata.
 
-QUAIS CAMADAS CONTAM PARA ESTE TESTE (correcção do especialista — bug real, confirmado com dados reais da Nádia: 20 de 22 candidatas citavam o MESMO Raja Yoga, porque os planetas desse yoga só apareciam nelas via camadas genéricas partilhadas por dezenas de destinos ao mesmo tempo — "Eixo do rendimento", "Casa temática forte", "Regente da casa dignificado", "Parivartana entre regentes de casa", "Sinais estruturados da área" — nunca por uma ligação própria desta candidata específica): para o teste "planeta a planeta" acima, só contam os planetas citados nas camadas "Atmakaraka", "Amatyakaraka", "Planeta de maior peso" e "Combinação" desta candidata (as únicas camadas ligadas a um planeta através de uma lista de destinos própria e estreita desse planeta) — NUNCA planetas que só aparecem via "Eixo do rendimento", "Casa temática forte", "Regente da casa dignificado", "Parivartana entre regentes de casa" ou "Sinais estruturados da área" (camadas ligadas a uma CASA ou ÁREA inteira, partilhadas por muitos destinos ao mesmo tempo — um planeta que só aparece por aí não é um sinal específico desta candidata, é um sinal do grupo inteiro). Se, depois de aplicar este filtro, já não sobrar nenhum planeta em comum, o yoga NÃO se aplica a esta candidata — mesmo que apareça na lista completa de camadas dela.
+Para cada candidata:
+· "YOGAS APLICÁVEIS: nenhum yoga aplicável (já verificado — não voltes a calcular)" → não menciones yogas nessa candidata. PROIBIDO inventar uma ligação para preencher espaço, e PROIBIDO "recalcular" e concluir o contrário do que os dados dizem.
+· "YOGAS APLICÁVEIS: [Nome do Yoga], formado por [Planeta(s)] (id interno: ...)" → a leitura desta candidata DEVE incluir uma frase com este padrão exacto: "Existe também, [de forma independente desta convergência / reforçando esta convergência], um [nome REAL do yoga, exactamente como aparece em YOGAS APLICÁVEIS, nunca outro] neste perfil, formado por [os planetas/casas que o formam, em linguagem simples] que [confirma directamente esta opção / reforça o teu/seu potencial nesta área de forma mais geral]". Se houver mais de um yoga aplicável na mesma linha, cita todos, cada um com a sua frase.
 
-Se sim, a leitura desta candidata DEVE incluir uma frase com este padrão exacto: "Existe também, [de forma independente desta convergência / reforçando esta convergência], um [Raja Yoga / Dhana Yoga / Viparita Raja Yoga — o nome REAL do yoga activo, nunca outro] neste perfil, formado por [os planetas/casas que o formam, em linguagem simples] que [confirma directamente esta opção / reforça o teu/seu potencial nesta área de forma mais geral]"
-PROIBIDO ABSOLUTO: substituir o nome do yoga por uma paráfrase vaga — "configuração técnica", "capacidade estrutural", "sinal estruturado próprio", "configuração de autoridade" e qualquer equivalente que nomeie um efeito sem nomear QUAL yoga e QUE planetas o formam. Se não souberes/não houver yoga aplicável, não escrevas esta frase — nunca a uses como fórmula genérica de reforço.
+PROIBIDO ABSOLUTO: substituir o nome do yoga por uma paráfrase vaga — "configuração técnica", "capacidade estrutural", "sinal estruturado próprio", "configuração de autoridade" e qualquer equivalente que nomeie um efeito sem nomear QUAL yoga (o nome real) e QUE planetas o formam.
 Distingue sempre:
-· Yoga cujos planetas coincidem com os desta candidata: "confirmação directa" — usa "confirma directamente esta opção".
-· Yoga que reforça capacidade geral sem ligação aos planetas desta candidata: "reforço geral" — usa "reforça o teu/seu potencial nesta área de forma mais geral".
-Se, depois da verificação planeta a planeta acima, NÃO houver mesmo nenhum yoga cujos planetas coincidam com os planetas da candidata, não menciones yogas nessa candidata — PROIBIDO inventar ligação para preencher espaço.
-Esta verificação é obrigatória para TODAS as candidatas apresentadas (a pool completa, sem tecto de 3 — ver INSTRUCAO_SELECCAO_CANDIDATAS), não só a primeira. Se todas tiverem yogas aplicáveis, todas devem citá-los.
-YOGA DE GRUPO — TODAS OU NENHUMA (correcção do especialista — bug real: o próprio bloco "${MARCADORES.seleccaoCandidatas}" concluiu correctamente que um yoga se aplica como reforço geral a um grupo de 3 candidatas, mas o texto final só incluiu a frase "Existe também..." em 2 delas — a 3ª ficou sem, apesar de o raciocínio a incluir explicitamente no mesmo grupo): quando o teu próprio raciocínio em "${MARCADORES.seleccaoCandidatas}" identificar um yoga como aplicável a um GRUPO de candidatas (reforço geral partilhado por várias, não só confirmação directa de uma), a frase "Existe também..." tem de aparecer no bloco de CADA uma dessas candidatas individualmente — nunca só nalgumas do grupo. Antes de dares a secção por terminada, volta a "${MARCADORES.seleccaoCandidatas}" e confirma, candidata a candidata, que todas as que lá ficaram marcadas com yoga aplicável têm mesmo a frase no seu próprio bloco de texto — não só no raciocínio.`;
+· Quando o(s) planeta(s) comuns citados em "YOGAS APLICÁVEIS" são a âncora ÚNICA desta candidata (Atmakaraka, Amatyakaraka ou Planeta de maior peso, sozinho): "confirmação directa" — usa "confirma directamente esta opção".
+· Quando a coincidência vem de uma camada de "Combinação" (2 planetas) ou há mais do que uma âncora em jogo: "reforço geral" — usa "reforça o teu/seu potencial nesta área de forma mais geral".
+Esta instrução é obrigatória para TODAS as candidatas apresentadas (a pool completa, sem tecto de 3 — ver INSTRUCAO_SELECCAO_CANDIDATAS), não só a primeira. Se todas tiverem yogas aplicáveis, todas devem citá-los.
+YOGA DE GRUPO — TODAS OU NENHUMA (correcção do especialista — bug real: o próprio bloco "${MARCADORES.seleccaoCandidatas}" concluiu correctamente que um yoga se aplica como reforço geral a um grupo de 3 candidatas, mas o texto final só incluiu a frase "Existe também..." em 2 delas — a 3ª ficou sem, apesar de o raciocínio a incluir explicitamente no mesmo grupo): quando "YOGAS APLICÁVEIS" marcar o mesmo yoga em várias candidatas de um GRUPO, a frase "Existe também..." tem de aparecer no bloco de CADA uma dessas candidatas individualmente — nunca só nalgumas do grupo. Antes de dares a secção por terminada, confirma, candidata a candidata, que todas as que têm "YOGAS APLICÁVEIS" preenchido (diferente de "nenhum yoga aplicável") têm mesmo a frase no seu próprio bloco de texto.`;
 
 // BUG REAL, corrigido (ronda "Miguel/Alexandra — discurso vago", pedido
 // do especialista) — o mesmo padrão do INSTRUCAO_YOGAS acima (nomear um
@@ -869,6 +887,7 @@ PASSO 1B — EXCEPÇÃO CONTROLADA A PARTIR DE "ALTERNATIVAS PELO PERFIL" (corre
 (b) a ligação ao dom já nomeado em "${SECCAO_TITULOS.quemE}" for tão específica quanto a exigida no Passo 1. Partilhar a MESMA força de base (o mesmo planeta de maior peso, a mesma combinação) com outra candidata já seleccionada NÃO chumba, por si só, a promoção — forças centrais fortes tocam legitimamente em várias áreas da mesma carta, e recusar sempre que há partilha elimina praticamente todos os casos genuínos numa carta com um planeta de maior peso muito dominante. O que chumba é a AUSÊNCIA de qualquer camada própria desta candidata que aponte para ESTE domínio de forma mais específica do que aponta para as outras candidatas que partilham a mesma força de base — pergunta a fazer: tirando a força partilhada, sobra alguma leitura específica desta área que não sobraria igualmente para as outras? Se não sobrar nada, é ruído e não promove; se sobrar, promove;
 (c) na dúvida, NÃO promove — esta excepção existe para os casos claros que o piso deixa de fora por estarem a 1 camada de distância, nunca para encher a secção. Esperado: 0 ou 1 promoções por relatório, raramente mais.
 Cada promoção por esta via é OBRIGATORIAMENTE citada, pelo nome, no bloco "${MARCADORES.seleccaoCandidatas}" (ver mais abaixo), com a frase "promovida de Alternativas pelo perfil (Passo 1B)" e a razão específica — nunca silenciosa, nunca indistinguível de uma candidata da pool garantida nesse bloco de raciocínio.
+PASSO 1C — PROMOÇÃO EM GRUPO A PARTIR DE "ALTERNATIVAS PELO PERFIL" (correcção do especialista, 21 Set — caso real: Engenharia Civil, Técnico de Construção Civil e Técnico de Manutenção Industrial do Bruno partilhavam exactamente a mesma assinatura (Marte+Saturno na mesma casa) dentro de "Alternativas pelo perfil" — nenhuma tinha algo de próprio que a distinguisse das outras duas, por isso o Passo 1B individual recusava sempre as três, correctamente segundo a condição (b) acima — mas isso descartava por completo um sinal real e partilhado do perfil só porque nenhum membro do grupo se destacava sozinho dos outros): os dados técnicos trazem "Grupos de Alternativas" — grupos já calculados deterministicamente (mesmo mecanismo do Passo 3 abaixo, aplicado a "Alternativas pelo perfil" em vez da pool) de destinos com Nível 1/2 e assinatura de camadas idêntica ou quase idêntica. Quando nenhum membro de um desses grupos qualificar individualmente pelo Passo 1B, mas a assinatura PARTILHADA do grupo inteiro (nunca a de um membro isolado) se ligar, com a mesma especificidade exigida no Passo 1, a um dom já nomeado em "${SECCAO_TITULOS.quemE}", podes promover o GRUPO INTEIRO — nunca escolher um só membro à mão (se nenhum se distingue dos outros, também não há razão astrológica para preferir um em vez dos outros). Apresenta-o com o mesmo formato de grupo do Passo 3 (bloco "${MARCADORES.grupo}" seguido de um "${MARCADORES.candidata}" por membro), mas sê honesto sobre a origem: a frase que descreve a convergência de base do grupo tem de deixar claro que é um sinal partilhado, ainda abaixo do piso da pool garantida (convergência 2-3) — nunca apresentado com a mesma confiança de um grupo da pool. Mantém-se (c) do Passo 1B: na dúvida, não promove. NUNCA combines Passo 1B individual e Passo 1C do mesmo grupo — escolhe uma via só, por grupo. Cada promoção por esta via é OBRIGATORIAMENTE citada no bloco "${MARCADORES.seleccaoCandidatas}", com a frase "grupo promovido de Alternativas pelo perfil (Passo 1C)" e a razão específica.
 PASSO 2 — ORDEM DE APRESENTAÇÃO (soma de pesos, nunca ranking): entre as candidatas que passaram o Passo 1, ordena a apresentação (grupos e candidatas individuais) pela soma de pesos mais alta primeiro — serve só para dar uma ordem estável ao texto, nunca como hierarquia de importância (ver a regra "SEM RANKING" na secção "${SECCAO_TITULOS.candidataForaDaLista}"). O Nível (1 ou 2) nunca decide inclusão nem ordem — só a linguagem de confiança de cada candidata (INSTRUCAO_NIVEL_CANDIDATAS).
 PASSO 3 — AGRUPAMENTO POR ASSINATURA (apresentação, nunca qualificação): os dados técnicos trazem "Grupos de candidatas" — listas de nomes já calculadas deterministicamente cuja convergência de base (o CONJUNTO de tipos de camada, não o texto exacto) é idêntica ou quase idêntica. Para cada grupo em que 2 ou mais membros passaram o Passo 1: escreve a convergência astrológica de base UMA SÓ VEZ para o grupo inteiro num bloco "${MARCADORES.grupo}" (que camadas partilham, o que isso significa em conjunto) — depois, para CADA membro desse grupo que passou o Passo 1, um bloco "${MARCADORES.candidata}" curto (2-4 linhas): porquê esta e não as outras do mesmo grupo, a via concreta dela, prós e contras específicos. NUNCA repetir a convergência de base dentro do bloco de cada candidata — já foi escrita uma vez, no bloco "${MARCADORES.grupo}". Se um grupo, depois do Passo 1, fica com só 1 membro sobrevivente, essa candidata deixa de ser "grupo" — escreve-a no formato individual completo (ver formato exacto na secção "${SECCAO_TITULOS.candidataForaDaLista}"), sem bloco "${MARCADORES.grupo}". Candidatas sem grupo (assinatura própria, nenhuma outra a ≤1 tipo de distância) mantêm sempre o formato individual completo.
 REPETIÇÃO ENTRE CANDIDATAS SEM GRUPO FORMAL (correcção do especialista — bug real: duas candidatas sem grupo calculado, mas com o MESMO conjunto de planetas na base da convergência, saíram com a explicação astrológica de base escrita quase palavra por palavra duas vezes seguidas — exactamente a repetição que o agrupamento existe para evitar, só que sem grupo formal para a apanhar): mesmo sem bloco "${MARCADORES.grupo}", se a candidata que vais escrever agora partilha o MESMO conjunto de planetas-base já explicado numa candidata anterior desta secção, NÃO reescrevas essa explicação — refere-a directamente ("a mesma [força/ligação] que já sustenta [nome da candidata anterior]...") e usa o espaço da frase para o que É diferente nesta candidata (a via concreta, o ângulo específico, o que a distingue na prática). Só reescreve a explicação de base por inteiro quando ela usa planetas ou camadas genuinamente diferentes da candidata anterior.
@@ -1258,7 +1277,7 @@ ${blocoVargottama(d1)}
 ${blocoDatas(datas)}
 
 -- Candidatas do catálogo --
-${blocoCatalogoVocacional(catalogo, cursosPorDestino)}
+${blocoCatalogoVocacional(catalogo, cursosPorDestino, yogas)}
 
 -- Roda da Vida (8 dimensões, 0-10) --
 ${blocoRodaDaVida(savPorCasa, pesosPlanetas, axes.regentesCasas)}

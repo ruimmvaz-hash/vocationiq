@@ -60,6 +60,7 @@ function detectarRajaYoga(d1: D1TableResult, rulerships: Record<ClassicalGraha, 
         id: `raja_vocacional_kendra_em_trikona_${kLord}`,
         label: "Raja Yoga",
         detail: `Regente de kendra (${kLord}) colocado em casa trikona (${row.house}) — capacidade estrutural real para posições de destaque, não é apenas potencial abstracto.`,
+        planetas: [kLord],
       });
     }
   }
@@ -70,6 +71,7 @@ function detectarRajaYoga(d1: D1TableResult, rulerships: Record<ClassicalGraha, 
         id: `raja_vocacional_trikona_em_kendra_${tLord}`,
         label: "Raja Yoga",
         detail: `Regente de trikona (${tLord}) colocado em casa kendra (${row.house}) — capacidade estrutural real para posições de destaque, não é apenas potencial abstracto.`,
+        planetas: [tLord],
       });
     }
   }
@@ -92,6 +94,7 @@ function detectarRajaYoga(d1: D1TableResult, rulerships: Record<ClassicalGraha, 
           id: `raja_vocacional_aspecto_${kLord}_${tLord}`,
           label: "Raja Yoga",
           detail: `Regentes de kendra (${kLord}) e trikona (${tLord}) em aspecto mútuo — capacidade estrutural real para posições de destaque, não é apenas potencial abstracto.`,
+          planetas: [kLord, tLord],
         });
       }
     }
@@ -113,6 +116,7 @@ function detectarDhanaYoga(d1: D1TableResult, rulerships: Record<ClassicalGraha,
         id: `dhana_vocacional_${lord2}`,
         label: "Dhana Yoga",
         detail: `O mesmo planeta (${lord2}) rege recursos (casa 2) e ganhos (casa 11) — facilidade natural de acumular pelo trabalho.`,
+        planetas: [lord2],
       },
     ];
   }
@@ -126,6 +130,7 @@ function detectarDhanaYoga(d1: D1TableResult, rulerships: Record<ClassicalGraha,
       id: `dhana_vocacional_${lord2}_${lord11}`,
       label: "Dhana Yoga",
       detail: `Regente de recursos (${lord2}) e regente de ganhos (${lord11}) ${mesmaCasa ? "na mesma casa" : "em aspecto mútuo"} — facilidade natural de acumular pelo trabalho.`,
+      planetas: [lord2, lord11],
     },
   ];
 }
@@ -151,6 +156,7 @@ function detectarViparitaRajaYoga(d1: D1TableResult, rulerships: Record<Classica
         id: `vry_vocacional_${casa}_${row.house}`,
         label: `Viparita Raja Yoga — ${label}`,
         detail: `Regente da Casa ${casa} (${lord}) está noutra casa difícil (${row.house}) — ${significado}.`,
+        planetas: [lord],
       });
     }
   }

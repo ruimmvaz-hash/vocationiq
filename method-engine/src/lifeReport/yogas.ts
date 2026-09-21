@@ -13,6 +13,8 @@ export interface YogaHit {
   id: string;
   label: string;
   detail: string;
+  /** Planetas que formam este yoga — usado deterministicamente para o teste "planeta a planeta" do INSTRUCAO_YOGAS (nunca calculado pelo LLM de memória). */
+  planetas: ClassicalGraha[];
 }
 
 const ANGULAR_HOUSES = [1, 4, 7, 10];
@@ -52,6 +54,7 @@ export function detectYogas(d1: D1TableResult): YogaHit[] {
       id: "gaja_kesari",
       label: "Gaja Kesari Yoga",
       detail: `Júpiter em casa angular (${jupiter.house === 1 || jupiter.house === 4 || jupiter.house === 7 || jupiter.house === 10 ? "do Ascendente" : "da Lua"}), dignidade ${jupiter.dignity} — dom de elevação por presença.`,
+      planetas: ["Jupiter", "Moon"],
     });
   }
 
@@ -63,9 +66,9 @@ export function detectYogas(d1: D1TableResult): YogaHit[] {
     return h < houseFrom(rahuHouse, ketuHouse);
   });
   if (onRahuSide.length === 7) {
-    hits.push({ id: "kala_sarpa_full", label: "Kala Sarpa Yoga (completo)", detail: "Todos os 7 grahas clássicos de um só lado do eixo Rahu-Ketu — amplitude de ciclos acima da média." });
+    hits.push({ id: "kala_sarpa_full", label: "Kala Sarpa Yoga (completo)", detail: "Todos os 7 grahas clássicos de um só lado do eixo Rahu-Ketu — amplitude de ciclos acima da média.", planetas: [...CLASSICAL_GRAHAS] });
   } else if (onRahuSide.length >= 5) {
-    hits.push({ id: "kala_sarpa_partial", label: "Kala Sarpa Yoga (parcial)", detail: `${onRahuSide.length} de 7 grahas clássicos do mesmo lado do eixo Rahu-Ketu — efeito atenuado mas presente.` });
+    hits.push({ id: "kala_sarpa_partial", label: "Kala Sarpa Yoga (parcial)", detail: `${onRahuSide.length} de 7 grahas clássicos do mesmo lado do eixo Rahu-Ketu — efeito atenuado mas presente.`, planetas: onRahuSide });
   }
 
   // ── Parivartana Yoga (troca mútua de signos) ────────────────────────
@@ -79,14 +82,14 @@ export function detectYogas(d1: D1TableResult): YogaHit[] {
       const key = [a, b].sort().join("-");
       if (!seen.has(key)) {
         seen.add(key);
-        hits.push({ id: `parivartana_${key}`, label: `Parivartana Yoga (${a} ↔ ${b})`, detail: `${a} está no signo de ${b} e ${b} está no signo de ${a} — fusão de temas entre as duas casas envolvidas.` });
+        hits.push({ id: `parivartana_${key}`, label: `Parivartana Yoga (${a} ↔ ${b})`, detail: `${a} está no signo de ${b} e ${b} está no signo de ${a} — fusão de temas entre as duas casas envolvidas.`, planetas: [a, b] });
       }
     }
   }
 
   // ── Budhaditya Yoga ──────────────────────────────────────────────────
   if (rows.Sun.sign === rows.Mercury.sign) {
-    hits.push({ id: "budhaditya", label: "Budhaditya Yoga", detail: "Sol e Mercúrio no mesmo signo — mente e identidade fundidas, intelecto afiado." });
+    hits.push({ id: "budhaditya", label: "Budhaditya Yoga", detail: "Sol e Mercúrio no mesmo signo — mente e identidade fundidas, intelecto afiado.", planetas: ["Sun", "Mercury"] });
   }
 
   // ── Pancha Mahapurusha (4 dos 5 clássicos usados no Naveya) ─────────
@@ -103,7 +106,7 @@ export function detectYogas(d1: D1TableResult): YogaHit[] {
     // sobre se Moolatrikona qualifica para Pancha Mahapurusha em BPHS).
     if (ANGULAR_HOUSES.includes(row.house) && (row.dignity === "Own" || row.dignity === "Exalted" || row.dignity === "Moolatrikona")) {
       const dignityLabel = row.dignity === "Own" ? "signo próprio" : row.dignity === "Moolatrikona" ? "Moolatrikona" : "exaltação";
-      hits.push({ id: `mahapurusha_${graha.toLowerCase()}`, label, detail: `${graha} em ${dignityLabel}, em casa angular (${row.house}) — voltagem extraordinária nesta função.` });
+      hits.push({ id: `mahapurusha_${graha.toLowerCase()}`, label, detail: `${graha} em ${dignityLabel}, em casa angular (${row.house}) — voltagem extraordinária nesta função.`, planetas: [graha] });
     }
   }
 
@@ -113,7 +116,7 @@ export function detectYogas(d1: D1TableResult): YogaHit[] {
   for (let i = 0; i < dhanaLords.length; i++) {
     for (let j = i + 1; j < dhanaLords.length; j++) {
       if (lordsAreLinked(rows, dhanaLords[i], dhanaLords[j])) {
-        hits.push({ id: `dhana_${dhanaLords[i]}_${dhanaLords[j]}`, label: "Dhana Yoga", detail: `Regentes de casas de riqueza ligados (${dhanaLords[i]} ↔ ${dhanaLords[j]}) — potencial financeiro activável.` });
+        hits.push({ id: `dhana_${dhanaLords[i]}_${dhanaLords[j]}`, label: "Dhana Yoga", detail: `Regentes de casas de riqueza ligados (${dhanaLords[i]} ↔ ${dhanaLords[j]}) — potencial financeiro activável.`, planetas: [dhanaLords[i], dhanaLords[j]] });
       }
     }
   }
@@ -124,7 +127,7 @@ export function detectYogas(d1: D1TableResult): YogaHit[] {
   for (const t of trikonaLords) {
     for (const k of kendraLords) {
       if (t !== k && lordsAreLinked(rows, t, k)) {
-        hits.push({ id: `raja_${t}_${k}`, label: "Raja Yoga", detail: `Regente de casa de dharma ligado a regente de casa de acção (${t} ↔ ${k}) — sucesso reconhecido publicamente.` });
+        hits.push({ id: `raja_${t}_${k}`, label: "Raja Yoga", detail: `Regente de casa de dharma ligado a regente de casa de acção (${t} ↔ ${k}) — sucesso reconhecido publicamente.`, planetas: [t, k] });
       }
     }
   }
@@ -138,7 +141,7 @@ export function detectYogas(d1: D1TableResult): YogaHit[] {
   for (const [house, label, meaning] of viparita) {
     const lord = ruledBy(rulerships, house);
     if ([6, 8, 12].includes(rows[lord].house)) {
-      hits.push({ id: `vry_${house}`, label: `Viparita Raja Yoga — ${label}`, detail: `Regente da Casa ${house} está em casa difícil (${rows[lord].house}) — ${meaning}.` });
+      hits.push({ id: `vry_${house}`, label: `Viparita Raja Yoga — ${label}`, detail: `Regente da Casa ${house} está em casa difícil (${rows[lord].house}) — ${meaning}.`, planetas: [lord] });
     }
   }
 
@@ -153,6 +156,7 @@ export function detectYogas(d1: D1TableResult): YogaHit[] {
         id: `neechabhanga_${g.toLowerCase()}`,
         label: `Neechabhanga (${g})`,
         detail: `${g} está debilitado, mas o regente do signo (${signRuler}) está ${rulerRow.dignity === "Exalted" ? "exaltado" : "em casa angular"} — o bloqueio converte-se em força que nasce da adversidade.`,
+        planetas: [g],
       });
     }
   }

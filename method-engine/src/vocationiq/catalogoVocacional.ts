@@ -39,6 +39,7 @@ import type { SavPorCasa } from "./pesosPlanetas";
 import { SIGN_RULERS } from "../lifeReport/signRulers";
 import { CLASSICAL_GRAHAS, type ClassicalGraha, type Graha } from "../lifeReport/types";
 import type { NakshatraName } from "../astrology/nakshatra";
+import type { YogaHit } from "../lifeReport/yogas";
 
 // ---------- Formas mínimas do catálogo (só os campos que este módulo lê) ----------
 
@@ -1111,6 +1112,24 @@ export interface ResultadoCatalogoVocacional {
   destinosDeAreaActual: DestinoConvergente[];
   destinosAlternativos: DestinoConvergente[];
   /**
+   * TAREFA "Grupo de Alternativas, TODAS OU NENHUMA" (21 Set, correcção
+   * do especialista — caso real: para o Bruno, Engenharia Civil, Técnico
+   * de Construção Civil e Técnico de Manutenção Industrial partilhavam
+   * exactamente a mesma assinatura (Marte+Saturno na mesma casa) dentro
+   * de "Alternativas pelo perfil" — nenhuma tinha algo de próprio que a
+   * distinguisse das outras duas, por isso o Passo 1B (promoção
+   * individual) recusava sempre as três, correctamente, mas isso deixava
+   * de fora um sinal real e partilhado do perfil. MESMO mecanismo que já
+   * agrupa `candidatasForaDaLista` acima (`agruparCandidatasPorAssinatura`,
+   * nunca uma segunda noção de "convergência partilhada"), aplicado só
+   * ao subconjunto de `destinosAlternativos` com Nível 1 ou 2 (nunca
+   * "sem indicador pessoal" — esse continua vetado em qualquer via, ver
+   * PASSO 1B em INSTRUCAO_SELECCAO_CANDIDATAS). Cada sub-array tem ≥2
+   * nomes; um destino de Alternativas sem par continua a depender só da
+   * promoção individual do Passo 1B, nunca aparece aqui.
+   */
+  gruposAlternativas: string[][];
+  /**
    * TAREFA #40 (mudança de arquitectura) — a POOL COMPLETA de candidatas
    * que atingem a fasquia (≥4 camadas independentes incluindo um
    * indicador pessoal — Planeta de maior peso, Atmakaraka ou
@@ -1335,7 +1354,7 @@ function camadaDeAncora(camadas: string[]): string | null {
  * apresentação de um grupo é sempre defensável face à âncora, mesmo que
  * dois near-miss extremos do mesmo grupo não sejam idênticos entre si.
  */
-function agruparCandidatasPorAssinatura(candidatas: CandidataForaDaLista[]): string[][] {
+function agruparCandidatasPorAssinatura(candidatas: { nome: string; camadas: string[] }[], incluirNearMiss = true): string[][] {
   const comAssinatura = candidatas.map((c) => ({ nome: c.nome, sig: assinaturaTiposDeCamada(c.camadas) }));
 
   const porChaveExacta = new Map<string, { nome: string; sig: Set<string> }[]>();
@@ -1349,11 +1368,23 @@ function agruparCandidatasPorAssinatura(candidatas: CandidataForaDaLista[]): str
   const isoladas = comAssinatura.filter((c) => !nomesAgrupados.has(c.nome));
 
   const grupos = gruposExactos.map((membros) => membros.map((m) => m.nome));
-  for (const grupo of grupos) {
-    const ancora = comAssinatura.find((c) => c.nome === grupo[0])!.sig;
-    for (const iso of isoladas) {
-      if (grupo.includes(iso.nome)) continue;
-      if (diferencaSimetrica(ancora, iso.sig) <= 1) grupo.push(iso.nome);
+  // `incluirNearMiss = false` (usado por `gruposAlternativas`, 21 Set —
+  // ver PASSO 1C em INSTRUCAO_SELECCAO_CANDIDATAS) desliga o passo de
+  // near-miss (≤1 tipo de distância) abaixo, ficando só com cliques de
+  // assinatura EXACTAMENTE IGUAL. "Alternativas pelo perfil" é uma pool
+  // maior e mais ruidosa do que a pool garantida (LIMIAR_MINIMO_ALTERNATIVA
+  // = 2, contra ≥4) — o mesmo near-miss que já era arriscado ali (ver
+  // DESVIO da Melina acima) fica ainda mais solto aqui, e promover um
+  // grupo INTEIRO (Passo 1C) é uma acção mais forte do que só agrupar a
+  // apresentação (Passo 3) — por isso a barra para "é o mesmo sinal" tem
+  // de ser mais rígida quando o resultado é promoção, não só arrumação.
+  if (incluirNearMiss) {
+    for (const grupo of grupos) {
+      const ancora = comAssinatura.find((c) => c.nome === grupo[0])!.sig;
+      for (const iso of isoladas) {
+        if (grupo.includes(iso.nome)) continue;
+        if (diferencaSimetrica(ancora, iso.sig) <= 1) grupo.push(iso.nome);
+      }
     }
   }
   return grupos;
@@ -1471,6 +1502,68 @@ export const nivelDeConfianca = (camadas: string[]): 1 | 2 | null => {
   if (temIndicadorPessoalFraco(camadas)) return 2;
   return null;
 };
+
+/**
+ * Extrai, deterministicamente, os planetas de uma candidata que CONTAM
+ * para o teste "planeta a planeta" do INSTRUCAO_YOGAS (promptAdulto.ts)
+ * — só as camadas "Atmakaraka", "Amatyakaraka", "Planeta de maior peso"
+ * e "Combinação" (as únicas ligadas a um planeta através de uma lista de
+ * destinos própria e estreita desse planeta, nunca uma camada genérica
+ * partilhada por dezenas de destinos ao mesmo tempo — ver a mesma regra,
+ * em prosa, dentro de INSTRUCAO_YOGAS). Movida para o motor (21 Set,
+ * correcção do especialista — caso real: o LLM concluiu "nenhuma camada
+ * válida bate" para Marketing/Psicologia do Bruno apesar de ambas terem
+ * "Amatyakaraka (Venus)" na própria lista de camadas — o teste "planeta
+ * a planeta" pedia ao LLM para fazer, de memória, uma intersecção de
+ * conjuntos sobre texto livre; isto já não é um facto que se peça ao LLM
+ * para calcular, é um facto que se dá pronto, tal como `nivelDeConfianca`
+ * acima). Formatos exactos de camada reconhecidos (ver onde são
+ * construídas, mais acima neste ficheiro): "Atmakaraka (Planeta)...",
+ * "Amatyakaraka (Planeta)...", "Planeta de maior peso (Planeta, peso
+ * X.XX)...", "Planeta de maior peso — também o Atmakaraka (Planeta, peso
+ * X.XX)...", "Combinação planetaA+planetaB (mesma casa)...".
+ */
+export function planetasValidosParaTesteDeYoga(camadas: string[]): ClassicalGraha[] {
+  const planetas = new Set<ClassicalGraha>();
+  for (const camada of camadas) {
+    let m: RegExpMatchArray | null;
+    if ((m = camada.match(/^Planeta de maior peso — também o Atmakaraka \(([A-Za-z]+)/))) {
+      planetas.add(m[1] as ClassicalGraha);
+    } else if ((m = camada.match(/^Atmakaraka \(([A-Za-z]+)\)/))) {
+      planetas.add(m[1] as ClassicalGraha);
+    } else if ((m = camada.match(/^Amatyakaraka \(([A-Za-z]+)\)/))) {
+      planetas.add(m[1] as ClassicalGraha);
+    } else if ((m = camada.match(/^Planeta de maior peso \(([A-Za-z]+),/))) {
+      planetas.add(m[1] as ClassicalGraha);
+    } else if ((m = camada.match(/^Combinação ([a-z]+)\+([a-z]+) /))) {
+      const a = (PLANETA_PT_PARA_GRAHA[m[1]] ?? m[1]) as ClassicalGraha;
+      const b = (PLANETA_PT_PARA_GRAHA[m[2]] ?? m[2]) as ClassicalGraha;
+      planetas.add(a);
+      planetas.add(b);
+    }
+  }
+  return [...planetas];
+}
+
+/**
+ * Aplica deterministicamente o teste "planeta a planeta" completo do
+ * INSTRUCAO_YOGAS a uma candidata: intersecta os planetas válidos dela
+ * (função acima) com os planetas de cada yoga activo. Devolve só os
+ * yogas cuja intersecção não é vazia — o LLM deixa de ter de "lembrar-se"
+ * de fazer esta verificação para cada candidata, só narra o resultado já
+ * calculado (padrão exacto exigido por INSTRUCAO_YOGAS: "Existe também
+ * ... formado por ... que confirma/reforça ...").
+ */
+export function yogasAplicaveisParaCandidata(camadas: string[], yogas: YogaHit[]): { yoga: YogaHit; planetasComuns: ClassicalGraha[] }[] {
+  const validos = new Set(planetasValidosParaTesteDeYoga(camadas));
+  if (validos.size === 0) return [];
+  const out: { yoga: YogaHit; planetasComuns: ClassicalGraha[] }[] = [];
+  for (const yoga of yogas) {
+    const comuns = yoga.planetas.filter((p) => validos.has(p));
+    if (comuns.length > 0) out.push({ yoga, planetasComuns: comuns });
+  }
+  return out;
+}
 
 export function catalogarDestinos(
   axes: VocationIQAxes,
@@ -1693,12 +1786,17 @@ export function catalogarDestinos(
   const notaCondicao5 = eixoDoRendimentoActivo.find((a) => a.planetas.length === 0);
   const gruposCandidatas = agruparCandidatasPorAssinatura(candidatasForaDaLista);
   const parOpcoesContraste = escolherParOpcoesContraste(candidatasForaDaLista, gruposCandidatas);
+  const gruposAlternativas = agruparCandidatasPorAssinatura(
+    destinosAlternativos.filter((d) => nivelDeConfianca(d.camadas) !== null),
+    false,
+  );
 
   return {
     destinosDeAreaActual,
     destinosAlternativos,
     candidatasForaDaLista,
     gruposCandidatas,
+    gruposAlternativas,
     notaAreaGenerica: areaGenerica ? `área actual não tem sector específico ("${intake.areaActual}") — candidatas derivadas só do perfil (Atmakaraka, Amatyakaraka, Nakshatra, Modo de Ganho, combinações activas)` : null,
     notaEixoDoRendimento: notaCondicao5 ? notaCondicao5.nota : null,
     parOpcoesContraste,
