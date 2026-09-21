@@ -4,7 +4,7 @@ Item 7 do plano da auditoria de erros (Set 2026). Objectivo: nunca mais corrigir
 
 ## O que faz
 
-Recalcula as candidatas do catálogo vocacional (motor real, sem chamar a Anthropic) para 4 clientes reais — Rui, Melina, Nádia (ramo adulto) e Alexandra (ramo adolescente) — e compara contra uma baseline gravada (`web/scripts/regressao/baseline.json`). Falha alto (código de saída ≠0, lista exactamente o quê) se alguma candidata que estava na baseline **desaparecer** ou **perder nível de confiança**. Uma candidata nova a aparecer, ou a subir de confiança, nunca é falha — só perder é.
+Recalcula as candidatas do catálogo vocacional (motor real, sem chamar a Anthropic) para 5 clientes reais — Rui, Melina, Nádia (ramo adulto) e Alexandra, Miguel (ramo adolescente) — e compara contra uma baseline gravada (`web/scripts/regressao/baseline.json`). Falha alto (código de saída ≠0, lista exactamente o quê) se alguma candidata que estava na baseline **desaparecer** ou **perder nível de confiança**. Uma candidata nova a aparecer, ou a subir de confiança, nunca é falha — só perder é.
 
 ## Quando correr
 
@@ -16,6 +16,12 @@ npm run regressao
 ```
 
 Sai limpo (código 0) = nada da baseline se perdeu, seguro para commitar. Sai com erro = lê a lista, decide se é uma correcção deliberada (ex.: "Melina deixa de ter Direito, decisão do especialista" — like a47a8f7) ou um efeito colateral não intencional.
+
+## Gate automático (CI)
+
+Desde 21 Set corre também sozinho, sem intervenção, em `.github/workflows/regressao.yml` — em cada push e cada pull request para `master` (e manualmente via "Run workflow" no GitHub Actions). Não precisa de nenhum segredo/API key: nunca geocodifica (coordenadas fixas por fixture) nem chama a Anthropic. Um push que faça a suite falhar aparece como check vermelho no GitHub antes de chegar a `master` — mas **não bloqueia sozinho** um merge feito localmente (isso exigiria activar "branch protection" no GitHub, decisão separada do Rui).
+
+**Nota honesta:** ao activar isto, o workflow começa vermelho — não por bug novo, mas porque a baseline actual já tem os diffs conhecidos e deliberadamente não resolvidos da Melina e da Nádia (ver secção acima e o pedido explícito do Rui de não recapturar a baseline até validar o PDF da Nádia). Isto é esperado; o gate fica verde assim que essa baseline for revista e recapturada.
 
 ## Quando actualizar a baseline
 
@@ -30,10 +36,10 @@ Isto sobrescreve `baseline.json` com o estado actual. Commita o `baseline.json` 
 
 ## Lacunas conhecidas — não preencher com dados inventados
 
-- **Miguel** — dados reais usados numa ronda anterior (commit `a47a8f7`), nunca commitados num script permanente. Falta adicionar `web/scripts/regressao/fixtures.ts` com o birth data real dele.
+- **Miguel** — adicionado a `web/scripts/regressao/fixtures.ts` em 21 Set, com dados de nascimento reais (07/09/2010, 18:00, Lisboa). Só o nascimento é real e conhecido nesta ronda — sem clareza_ideia/áreas consideradas/preferência da família reais disponíveis, por isso esses campos ficam por preencher. Ainda **sem baseline capturada** (`npm run regressao` mostra "SEM BASELINE — a saltar" para ele) — falta correr `npm run regressao:baseline` e reveres o resultado como correcto antes de ele entrar no gate a sério. Como `capturar-baseline.ts` recaptura TODOS os clientes de uma vez, isso só pode ser feito depois de resolvida a baseline pendente da Melina/Nádia (ou adaptando o script para recapturar só um cliente).
 - **João** — nunca teve dados de nascimento reais disponíveis neste repositório (confirmado no próprio commit `a47a8f7`: "sem dados de nascimento disponíveis, marcado como pendente"). O script `test-relatorio-joao-adolescente.ts` usa dados sintéticos — não serve para esta suite.
 
-Adicionar qualquer um dos dois só com birth data real pedido directamente ao Rui — nunca com uma data inventada só para ter mais uma linha na suite.
+Adicionar dados de nascimento reais do João só com birth data real pedido directamente ao Rui — nunca com uma data inventada só para ter mais uma linha na suite.
 
 ## Porque as coordenadas estão fixas no código (`fixtures.ts`)
 

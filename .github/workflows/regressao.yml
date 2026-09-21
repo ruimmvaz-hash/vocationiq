@@ -1,0 +1,36 @@
+name: Regressao candidatas (item 7)
+
+# GATE automático pedido pelo Rui (auditoria de 19 Set, item 7: "cobertura +
+# automação"). Corre a suite de regressão (web/scripts/regressao/verificar.ts)
+# em cada push/PR para master e falha o workflow se alguma candidata da
+# baseline aprovada desaparecer ou perder nível de confiança — nunca requer
+# segredos/API keys, porque o script nunca geocodifica (usa sempre as
+# coordenadas fixas de cada fixture) nem chama a Anthropic (só recalcula o
+# catálogo determinístico, nunca gera texto). Ver docs/REGRESSAO.md e
+# web/scripts/regressao/fixtures.ts para o porquê de cada cliente real estar
+# ou não coberto.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  regressao:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Instalar dependências (workspaces)
+        run: npm ci
+
+      - name: Verificar regressão de candidatas
+        run: npm run regressao
+        working-directory: web

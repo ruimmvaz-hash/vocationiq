@@ -15,11 +15,15 @@
 // técnica, não por escolha.
 //
 // LACUNAS CONHECIDAS, deixadas explícitas em vez de escondidas com dados
-// inventados: Miguel (dados reais usados numa ronda anterior num script
-// descartável, nunca commitado) e João (nunca teve dados de nascimento
-// reais disponíveis neste repositório, ver commit a47a8f7) NÃO estão
-// aqui. Adicionar qualquer um dos dois nunca deve ser feito com dados
-// inventados — só com o birth data real, pedido ao Rui.
+// inventados: João (nunca teve dados de nascimento reais disponíveis
+// neste repositório, ver commit a47a8f7) NÃO está aqui. Adicionar os
+// dados dele nunca deve ser feito com dados inventados — só com o birth
+// data real, pedido ao Rui.
+//
+// Miguel foi adicionado (item 7, 21 Set) com dados de nascimento reais.
+// Só o nascimento é real e conhecido nesta ronda — sem clareza_ideia/
+// áreas consideradas/preferência da família reais disponíveis, por isso
+// esses campos ficam por preencher (nunca inventados).
 
 import type { IntakeRow } from "../../src/lib/store";
 import type { CoordenadasNascimento } from "../../src/lib/relatorioAdultoCompute";
@@ -140,6 +144,27 @@ export const FIXTURES: FixtureClienteReal[] = [
       opcao_mais_provavel: "gestao",
       ano_escolaridade: "10-a-12",
       pergunta_especifica: "devo seguir economia, gestão ou direito?",
+    }),
+  },
+  {
+    // Dados de nascimento reais (item 7 — cobertura pedida pelo Rui,
+    // "avança", 21 Set). Só os dados de nascimento são reais e conhecidos
+    // nesta ronda — sem clareza_idea/areas_consideradas/preferencia_familia
+    // reais disponíveis neste repositório, por isso ficam por preencher
+    // (nunca inventados) em vez de com valores a fingir ser declarações
+    // reais dele. Isto basta para o snapshot de candidatas (o que esta
+    // suite verifica); não valida guardas que dependem de contexto
+    // declarado (ex. critério 36, pergunta específica).
+    chave: "miguel",
+    ramo: "adolescente",
+    coordenadas: { latitude: 38.7223, longitude: -9.1393, timezone: "Europe/Lisbon", localNormalizado: "Lisboa, Portugal" },
+    intake: intakeBase({
+      id: "regressao-miguel",
+      nome: "Miguel (fixture real)",
+      data_nascimento: "2010-09-07",
+      hora_nascimento: "18:00",
+      local_nascimento: "Lisboa, Portugal",
+      situacao: "10-11-12",
     }),
   },
 ];
