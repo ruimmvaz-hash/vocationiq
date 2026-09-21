@@ -9,14 +9,20 @@ export function Footer() {
             Vocation<span className="text-amber-dark">IQ</span>
           </p>
           <p className="mt-2 text-ink/60">Descobre a tua área. Antes de escolheres.</p>
-          {/* Sem contas Instagram/TikTok próprias ainda — por isso os
-              ícones não têm link real (nenhum href), só o glifo com
-              title="Em breve". Assim que as contas existirem, troca o
-              <span> por <a href="https://instagram.com/..."> etc. */}
+          {/* TikTok ainda sem conta própria — ícone sem link real, só o
+              glifo com title="Em breve". Assim que existir, troca o <span>
+              por <a href="https://tiktok.com/..."> como o Instagram abaixo. */}
           <div className="mt-4 flex gap-3">
-            <span title="Instagram — em breve" className="text-ink/30">
+            <a
+              href="https://www.instagram.com/vocationiq/"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="VocationIQ no Instagram"
+              aria-label="VocationIQ no Instagram"
+              className="text-ink/60 hover:text-navy"
+            >
               <IconInstagram className="h-5 w-5" />
-            </span>
+            </a>
             <span title="TikTok — em breve" className="text-ink/30">
               <IconTikTok className="h-5 w-5" />
             </span>
