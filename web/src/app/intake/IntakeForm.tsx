@@ -306,7 +306,7 @@ export function IntakeForm() {
             <Campo label="Data de nascimento" required>
               <input type="date" value={f.dataNascimento} onChange={(e) => set("dataNascimento", e.target.value)} className={inputClass} />
             </Campo>
-            <Campo label="Hora de nascimento" hint="Aproximada — se não souberes, deixa em branco.">
+            <Campo label="Hora de nascimento" hint="Se não souberes a hora exacta, coloca a mais aproximada possível (ex.: se foi de manhã, tenta 09:00) — ajuda muito mais do que deixar em branco. Só deixa em branco se não fizeres mesmo nenhuma ideia.">
               {/* Em mobile o picker nativo de <input type="time"> é desenhado
                   pelo sistema operativo, fora da página — nenhum CSS consegue
                   garantir que os seus botões ficam dentro do ecrã. Dois
