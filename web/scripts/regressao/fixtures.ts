@@ -24,6 +24,15 @@
 // Só o nascimento é real e conhecido nesta ronda — sem clareza_ideia/
 // áreas consideradas/preferência da família reais disponíveis, por isso
 // esses campos ficam por preencher (nunca inventados).
+//
+// Bruno foi adicionado (21 Set) — não é cliente pago (relatório de
+// família, €0.00 no admin), mas é o caso real que motivou a investigação
+// do piso LIMIAR_MINIMO_CANDIDATA: "Engenharia" sai forte quando declarada
+// como opção, mas não aparece de todo sem opções declaradas. Duas
+// fixtures da mesma pessoa (bruno-sem-opcoes/bruno-com-opcoes) porque o
+// bug É a diferença de comportamento entre as duas — uma só fixture não
+// o capturava. Hora de nascimento confirmada a 14:52 (não 14:02, correcção
+// feita depois de validar a reprodução contra o relatório real do admin).
 
 import type { IntakeRow } from "../../src/lib/store";
 import type { CoordenadasNascimento } from "../../src/lib/relatorioAdultoCompute";
@@ -165,6 +174,46 @@ export const FIXTURES: FixtureClienteReal[] = [
       hora_nascimento: "18:00",
       local_nascimento: "Lisboa, Portugal",
       situacao: "10-11-12",
+    }),
+  },
+  // Bruno adicionado (21 Set, caso real do bug "Engenharia desaparece sem
+  // opções declaradas" — motivou a investigação do piso LIMIAR_MINIMO_CANDIDATA
+  // e o teste de tipos de camada, docs/ na mesma ronda). Dados de nascimento
+  // e os dois inputs (com/sem opções) confirmados pelo Rui, hora corrigida de
+  // 14:02 para 14:52 depois de validar contra o relatório real admin — a
+  // reprodução com 14:52 bate 100% com os 4 candidatos do relatório real
+  // ("Opções que ainda não consideraste": Ciências da Educação, Marketing,
+  // Psicologia, Finanças/Banca/Seguros). Duas fixtures da MESMA pessoa,
+  // porque o bug é precisamente a diferença de comportamento entre as duas.
+  {
+    chave: "bruno-sem-opcoes",
+    ramo: "adolescente",
+    coordenadas: { latitude: -8.8368, longitude: 13.2343, timezone: "Africa/Luanda", localNormalizado: "Luanda, Angola" },
+    intake: intakeBase({
+      id: "regressao-bruno-sem-opcoes",
+      nome: "Bruno (fixture real, sem opções)",
+      data_nascimento: "2014-02-17",
+      hora_nascimento: "14:52",
+      local_nascimento: "Luanda, Angola",
+      situacao: "9-ou-menos",
+      ano_escolaridade: "7-a-9",
+      opcoes_adolescente: [],
+      clareza_ideia: "nao-sei",
+    }),
+  },
+  {
+    chave: "bruno-com-opcoes",
+    ramo: "adolescente",
+    coordenadas: { latitude: -8.8368, longitude: 13.2343, timezone: "Africa/Luanda", localNormalizado: "Luanda, Angola" },
+    intake: intakeBase({
+      id: "regressao-bruno-com-opcoes",
+      nome: "Bruno (fixture real, com opções)",
+      data_nascimento: "2014-02-17",
+      hora_nascimento: "14:52",
+      local_nascimento: "Luanda, Angola",
+      situacao: "9-ou-menos",
+      ano_escolaridade: "7-a-9",
+      opcoes_adolescente: ["Medicina", "Engenharia", "arquitetura"],
     }),
   },
 ];
