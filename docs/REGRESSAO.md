@@ -19,9 +19,9 @@ Sai limpo (código 0) = nada da baseline se perdeu, seguro para commitar. Sai co
 
 ## Gate automático (CI)
 
-Desde 21 Set corre também sozinho, sem intervenção, em `.github/workflows/regressao.yml` — em cada push e cada pull request para `master` (e manualmente via "Run workflow" no GitHub Actions). Não precisa de nenhum segredo/API key: nunca geocodifica (coordenadas fixas por fixture) nem chama a Anthropic. Um push que faça a suite falhar aparece como check vermelho no GitHub antes de chegar a `master` — mas **não bloqueia sozinho** um merge feito localmente (isso exigiria activar "branch protection" no GitHub, decisão separada do Rui).
+Desde 21 Set corre também sozinho, sem intervenção, em `.github/workflows/regressao.yml` — em cada push e cada pull request para `master` (e manualmente via "Run workflow" no GitHub Actions). Não precisa de nenhum segredo/API key: nunca geocodifica (coordenadas fixas por fixture) nem chama a Anthropic.
 
-**Nota honesta:** ao activar isto, o workflow começa vermelho — não por bug novo, mas porque a baseline actual já tem os diffs conhecidos e deliberadamente não resolvidos da Melina e da Nádia (ver secção acima e o pedido explícito do Rui de não recapturar a baseline até validar o PDF da Nádia). Isto é esperado; o gate fica verde assim que essa baseline for revista e recapturada.
+**Ajustado no mesmo dia (2ª ronda) — deixou de bloquear/notificar por email:** a baseline actual já tem os diffs conhecidos e deliberadamente não resolvidos da Melina e da Nádia (pedido explícito do Rui de não recapturar até validar o PDF da Nádia), o que fazia a suite falhar em TODO o push — e cada falha disparava um email do GitHub Actions por run (2 emails em 2 horas, reportado pelo Rui). O passo tem agora `continue-on-error: true`: a run aparece na aba Actions com um aviso (`::warning::`) sempre que a suite falhar, mas já não marca o workflow como falhado nem dispara email. **Isto é temporário** — assim que a baseline da Melina/Nádia for revista e recapturada (e o Miguel tiver a sua própria), remover o `continue-on-error` do workflow para voltar a ser um gate a sério (bloqueia + notifica).
 
 ## Quando actualizar a baseline
 
