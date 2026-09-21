@@ -47,6 +47,11 @@ export function Footer() {
             <a href="mailto:hello@vocationiq.app" className="text-ink/70 hover:text-navy">
               Contacto
             </a>
+            {/* Só para mensagens (pedido do Rui, 21 Set) — wa.me abre sempre
+                a conversa de chat, nunca a chamada. */}
+            <a href="https://wa.me/351928376182" target="_blank" rel="noopener noreferrer" className="text-ink/70 hover:text-navy">
+              WhatsApp
+            </a>
           </nav>
         </div>
 
