@@ -70,7 +70,8 @@
       "destinos": {
         "superior": ["design_moda", "design_interiores", "design_industrial", "design_grafico", "belas_artes", "arquitetura", "urbanismo", "musica", "artes_espetaculo", "artesanato_superior", "medicina_dentaria", "marketing", "turismo", "cabeleireiro_estetica_superior", "historia_arte", "enologia"],
         "superior_condicionado": [
-          { "id": "psicologia", "condicao": "vertente de aconselhamento e relação", "vertente": "aconselhamento" }
+          { "id": "psicologia", "condicao": "vertente de aconselhamento e relação", "vertente": "aconselhamento" },
+          { "id": "direito", "condicao": "requer signo Libra", "vertente": "justica" }
         ],
         "tecnico": ["t_cabeleireiro", "t_estetica", "t_design_grafico", "t_joalharia", "t_costura", "t_decoracao", "t_fotografia", "t_pastelaria", "t_paisagismo", "t_som_imagem", "t_massagem"],
         "fora": ["f_atelier", "f_consultoria_imagem", "f_eventos", "f_mediacao_relacional", "f_curadoria"]
