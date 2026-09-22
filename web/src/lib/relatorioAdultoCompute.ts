@@ -386,6 +386,21 @@ function deduplicarOpcoesAdolescente(opcoes: string[]): string[] {
 }
 
 /**
+ * Recalibrado 22 Set (pedido do fundador) — traduz a clareza declarada
+ * (`clareza_ideia`) no tecto de apresentação da secção "Candidata fora da
+ * lista" (ver PASSO 3B em INSTRUCAO_SELECCAO_CANDIDATAS, promptAdulto.ts).
+ * Calculado aqui, deterministicamente — nunca deixado ao critério do LLM.
+ * `undefined` (sem `clareza_ideia`, ou valor desconhecido) mantém o
+ * comportamento antigo: sem tecto.
+ */
+function tectoCatalogoParaClareza(clarezaIdeia: string | null): number | undefined {
+  if (clarezaIdeia === "clara") return 3;
+  if (clarezaIdeia === "duas-tres-opcoes") return 4;
+  if (clarezaIdeia === "nao-faco-ideia") return 6;
+  return undefined;
+}
+
+/**
  * TAREFA 1B (correcção do especialista) — constrói o intake do adolescente
  * a partir dos campos da migração 0019 (opcoes_adolescente,
  * opcao_mais_provavel) mais os campos partilhados (nome, situacao,
@@ -399,6 +414,7 @@ export function construirIntakeAdolescente(intake: IntakeRow): VocationiqIntakeA
     situacaoDeclarada: SITUACAO_LABEL[intake.situacao] ?? intake.situacao,
     opcoesAdolescente: deduplicarOpcoesAdolescente(intake.opcoes_adolescente ?? []),
     opcaoMaisProvavel: intake.opcao_mais_provavel ?? undefined,
+    tectoCandidatasCatalogo: tectoCatalogoParaClareza(intake.clareza_ideia),
     preferenciaFamilia: intake.preferencia_familia ? normalizarTextoLivre(intake.preferencia_familia) : undefined,
     // BUG REAL, corrigido (auditoria de hoje — caso real: Alexandra) —
     // este campo existe na base de dados desde sempre (mesma coluna do

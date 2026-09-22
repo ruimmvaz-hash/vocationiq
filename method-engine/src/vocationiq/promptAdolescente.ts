@@ -119,6 +119,17 @@ export interface VocationiqIntakeAdolescente {
   opcoesAdolescente: string[];
   /** SPEC-vocacional.md — "qual delas te parece a mais provável hoje?". Não decide nada, é a hipótese em teste. */
   opcaoMaisProvavel?: string;
+  /**
+   * Recalibrado 22 Set (pedido do fundador — caso real: a secção "Candidata
+   * fora da lista", sem tecto, somava-se à "Leitura por opção" (agora
+   * sempre com pelo menos 1 hipótese) e produzia relatórios longos demais,
+   * sobrecarga real para quem está indeciso. Pré-calculado deterministicamente
+   * em `construirIntakeAdolescente` a partir de `clareza_ideia` (nunca pelo
+   * LLM) — ver PASSO 3B em INSTRUCAO_SELECCAO_CANDIDATAS: "clara" -> 3,
+   * "duas-tres-opcoes" -> 4, "nao-faco-ideia" -> 6, sem dado -> undefined
+   * (sem tecto, comportamento antigo).
+   */
+  tectoCandidatasCatalogo?: number;
   preferenciaFamilia?: string;
   /**
    * BUG REAL, corrigido (auditoria de hoje — caso real: Alexandra, campo
@@ -356,6 +367,7 @@ VOLUME: cada secção deve ser tão longa quanto os dados sustentam — nunca ma
 -- Quem é --
 Nome: ${intake.nome}
 Situação declarada: ${intake.situacaoDeclarada}
+Tecto de apresentação em Candidata fora da lista (ver PASSO 3B em INSTRUCAO_SELECCAO_CANDIDATAS — nunca calcules este número tu próprio): ${intake.tectoCandidatasCatalogo ?? "sem tecto"}
 ${intake.preferenciaFamilia ? `Preferência da família (contexto para a abertura, NUNCA uma opção em cima da mesa — proibido escrever um bloco "### " na secção "${SECCAO_TITULOS.leituraPorOpcao}" com um nome que só apareça aqui e não na lista "Opções em cima da mesa" acima): "${intake.preferenciaFamilia}"` : ""}
 ${perguntaImplicita ? `Pergunta específica (implícita — ver INSTRUCAO_PERGUNTA_ESPECIFICA/INSTRUCAO_ABERTURA_RESPONDE): ${perguntaImplicita}` : ""}
 
