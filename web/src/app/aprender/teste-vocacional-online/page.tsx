@@ -57,7 +57,7 @@ export default function TesteVocacionalOnlinePage() {
         <div className="prose prose-slate mt-10 max-w-none prose-headings:text-navy prose-headings:font-extrabold">
           <h2>O problema dos testes de escolha múltipla</h2>
           <p>
-            A maioria dos testes vocacionais gratuitos funciona da mesma forma: um conjunto de perguntas de "concordo/discordo"
+            A maioria dos testes vocacionais gratuitos funciona da mesma forma: um conjunto de perguntas de &quot;concordo/discordo&quot;
             sobre o que gostas de fazer, seguido de um resultado que te encaixa numa de seis ou oito categorias genéricas
             (&quot;tipo social&quot;, &quot;tipo investigativo&quot;, e por aí fora). É um ponto de partida honesto, mas tem um
             limite estrutural: mede o que respondes <em>hoje</em>, num certo estado de espírito, com uma certa quantidade de
