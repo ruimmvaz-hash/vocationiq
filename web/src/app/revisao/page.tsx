@@ -5,7 +5,8 @@ import { Footer } from "@/components/Footer";
 import { TrackedCtaLink } from "@/components/TrackedCtaLink";
 import { obterIntake } from "@/lib/store";
 
-export const metadata: Metadata = { title: "VocationIQ Revisão" };
+// SEO (22 Set) — página pessoal, atada a um id de cliente real — nunca indexável.
+export const metadata: Metadata = { title: "VocationIQ Revisão", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 const INCLUI = [

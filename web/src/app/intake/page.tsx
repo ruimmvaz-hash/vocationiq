@@ -3,7 +3,10 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { IntakeForm } from "./IntakeForm";
 
-export const metadata: Metadata = { title: "Começar a minha análise — VocationIQ" };
+export const metadata: Metadata = {
+  title: "Começar a minha análise — VocationIQ",
+  description: "Preenche os teus dados e recebe, em 72h, uma análise vocacional personalizada com talentos naturais, forma de aprender e áreas de maior crescimento.",
+};
 
 export default function IntakePage() {
   return (

@@ -4,7 +4,10 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { TrackedCtaLink } from "@/components/TrackedCtaLink";
 
-export const metadata: Metadata = { title: "Exemplo de análise — VocationIQ" };
+export const metadata: Metadata = {
+  title: "Exemplo de análise — VocationIQ",
+  description: "Vê um relatório VocationIQ real e completo antes de comprares — descobre exactamente o que recebes na tua análise vocacional personalizada.",
+};
 
 const PAGINAS = [
   {

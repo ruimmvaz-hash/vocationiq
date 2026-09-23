@@ -1,2 +1,10 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /comercial
+Disallow: /avaliacao
+Disallow: /obrigado
+Disallow: /revisao
+
+Sitemap: https://vocationiq.app/sitemap.xml

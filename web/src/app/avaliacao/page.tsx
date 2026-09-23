@@ -5,7 +5,8 @@ import { Footer } from "@/components/Footer";
 import { obterIntake } from "@/lib/store";
 import { AvaliacaoForm } from "./AvaliacaoForm";
 
-export const metadata: Metadata = { title: "A tua avaliação — VocationIQ" };
+// SEO (22 Set) — página pessoal, atada a um id de cliente real (obterIntake) — nunca indexável.
+export const metadata: Metadata = { title: "A tua avaliação — VocationIQ", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 export default async function AvaliacaoPage({ searchParams }: { searchParams: Promise<{ id?: string; nota?: string }> }) {

@@ -14,13 +14,53 @@ const inter = Inter({
   display: "swap",
 });
 
+const TITULO_SITE = "VocationIQ — Descobre a tua área. Antes de escolheres.";
+const DESCRICAO_SITE =
+  "Uma análise personalizada que descobre os teus talentos naturais, como aprendes e as áreas onde podes crescer mais — para adolescentes, jovens e adultos em busca de nova carreira. €99 · Entrega em 72h.";
+
+// SEO (22 Set, pedido do fundador) — Open Graph + Twitter Card, para os
+// links partilhados (redes sociais, WhatsApp) mostrarem título/descrição/
+// imagem em vez de um link nu. Sem imagem 1200x630 dedicada ainda — usa
+// o icon-512.png como fallback (funcional, não ideal; substituir quando
+// houver uma imagem OG própria).
 export const metadata: Metadata = {
-  title: "VocationIQ — Descobre a tua área. Antes de escolheres.",
-  description: "Uma análise personalizada que descobre os teus talentos naturais, como aprendes e as áreas onde podes crescer mais — para adolescentes, jovens e adultos em busca de nova carreira. €99 · Entrega em 72h.",
+  title: TITULO_SITE,
+  description: DESCRICAO_SITE,
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://vocationiq.app"),
   manifest: "/manifest.json",
   icons: { icon: "/favicon.ico", apple: "/icon-192.png" },
   appleWebApp: { capable: true, title: "VocationIQ" },
+  alternates: { canonical: "/" },
+  robots: { index: true, follow: true },
+  openGraph: {
+    title: TITULO_SITE,
+    description: DESCRICAO_SITE,
+    url: "/",
+    siteName: "VocationIQ",
+    locale: "pt_PT",
+    type: "website",
+    images: [{ url: "/icon-512.png", width: 512, height: 512, alt: "VocationIQ" }],
+  },
+  twitter: {
+    card: "summary",
+    title: TITULO_SITE,
+    description: DESCRICAO_SITE,
+    images: ["/icon-512.png"],
+  },
+};
+
+// SEO (22 Set, pedido do fundador) — JSON-LD Organization, site-wide.
+// Só factos reais (nome, url, logo, área de actuação) — nunca
+// aggregateRating/review inventados, isso é penalizado pelo Google e
+// contra a política de nunca fabricar dados.
+const JSON_LD_ORGANIZATION = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "VocationIQ",
+  url: "https://vocationiq.app",
+  logo: "https://vocationiq.app/icon-512.png",
+  description: DESCRICAO_SITE,
+  areaServed: ["PT", "AO"],
 };
 
 export const viewport: Viewport = {
@@ -31,6 +71,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt">
       <body className={`${inter.variable} antialiased`}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD_ORGANIZATION) }}
+        />
         <ReferralCapture />
         <ClarityInit />
         {children}
