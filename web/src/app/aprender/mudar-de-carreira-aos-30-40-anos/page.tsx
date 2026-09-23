@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { TrackedCtaLink } from "@/components/TrackedCtaLink";
@@ -93,7 +94,7 @@ export default function MudarDeCarreiraPage() {
           Quero a minha análise → €99
         </TrackedCtaLink>
         <p className="mt-3 text-sm text-ink/60">
-          Não sabes se vale a pena? <a href="/exemplo" className="underline">Vê um exemplo real de relatório primeiro</a>.
+          Não sabes se vale a pena? <Link href="/exemplo" className="underline">Vê um exemplo real de relatório primeiro</Link>.
         </p>
 
         <h2 className="mt-16 text-xl font-extrabold text-navy">Perguntas frequentes</h2>
