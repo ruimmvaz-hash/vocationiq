@@ -32,6 +32,9 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "VocationIQ" },
   alternates: { canonical: "/" },
   robots: { index: true, follow: true },
+  // SEO (22 Set) — verificação de propriedade no Google Search Console
+  // (método "HTML tag"). Nunca remover — perde-se a verificação.
+  verification: { google: "umq3qaVWC4ifNI38yT1hgMb4Ijl1_07q00GvXk6XHXQ" },
   openGraph: {
     title: TITULO_SITE,
     description: DESCRICAO_SITE,
