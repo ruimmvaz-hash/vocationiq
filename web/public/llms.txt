@@ -1,0 +1,24 @@
+# VocationIQ
+
+> Análise de orientação vocacional que cruza dados de nascimento (astrologia
+> psicológica védica + ocidental) com o perfil declarado da pessoa, para
+> mapear talentos naturais, forma de aprender e áreas de maior potencial —
+> para adolescentes a escolher curso e adultos a considerar mudar de
+> carreira. Serviço pago (€99), entregue por email em até 72 horas. Não é
+> um horóscopo nem uma previsão; a análise é explícita sobre o grau de
+> confiança de cada indicação (forte / moderado).
+
+## Páginas principais
+
+- [Página inicial](https://vocationiq.app/): o que é o VocationIQ e como funciona
+- [Exemplo de relatório](https://vocationiq.app/exemplo): relatório real, para quem quer ver antes de comprar
+- [Pedir análise](https://vocationiq.app/intake): formulário de encomenda
+
+## Guias
+
+- [Teste vocacional online](https://vocationiq.app/aprender/teste-vocacional-online)
+- [Que curso escolher depois do 12º ano](https://vocationiq.app/aprender/que-curso-escolher-depois-do-12-ano)
+- [Orientação vocacional para adolescentes](https://vocationiq.app/aprender/orientacao-vocacional-adolescentes)
+- [Mudar de carreira aos 30 ou 40 anos](https://vocationiq.app/aprender/mudar-de-carreira-aos-30-40-anos)
+- [Mapa astral e escolha de carreira](https://vocationiq.app/aprender/mapa-astral-e-escolha-de-carreira)
+- [Saídas profissionais de cada curso do secundário](https://vocationiq.app/aprender/saidas-profissionais-cada-curso-secundario)

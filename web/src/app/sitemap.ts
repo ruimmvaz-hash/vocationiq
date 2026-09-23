@@ -14,6 +14,7 @@ const PAGINAS_CONTEUDO: string[] = [
   "orientacao-vocacional-adolescentes",
   "mudar-de-carreira-aos-30-40-anos",
   "mapa-astral-e-escolha-de-carreira",
+  "saidas-profissionais-cada-curso-secundario",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

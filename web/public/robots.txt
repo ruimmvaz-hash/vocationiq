@@ -7,4 +7,46 @@ Disallow: /avaliacao
 Disallow: /obrigado
 Disallow: /revisao
 
+# Crawlers de IA (ChatGPT, Claude, Gemini, Perplexity) — permitidos
+# explicitamente para o site poder ser referenciado em respostas de IA.
+# 23 Set 2026, pedido do fundador.
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: DuckAssistBot
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
 Sitemap: https://vocationiq.app/sitemap.xml
