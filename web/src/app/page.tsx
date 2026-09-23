@@ -92,6 +92,11 @@ const FAQ = [
     resposta: "Sim — podes responder directamente ao email de entrega com dúvidas sobre o teu relatório.",
   },
   {
+    pergunta: "Porque custa €99?",
+    resposta:
+      "Uma sessão única com um psicólogo especializado em orientação vocacional custa tipicamente entre €45 e €50; um acompanhamento com várias sessões custa entre €150 e €370. O VocationIQ entrega uma análise equivalente ao trabalho de 1 a 2 sessões, sem agendamento nem deslocação, em 72 horas — e podes ver um exemplo real do relatório antes de decidires.",
+  },
+  {
     pergunta: "Isto substitui um psicólogo de orientação vocacional?",
     resposta:
       "Não. O VocationIQ é uma ferramenta de autoconhecimento que complementa — não substitui — o acompanhamento profissional. Se precisares de apoio psicológico, recomendamos que procures um profissional.",
