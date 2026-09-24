@@ -91,7 +91,7 @@ export default function OrientacaoVocacionalAdolescentesPage() {
           location="aprender-orientacao-vocacional-adolescentes"
           className="mt-10 inline-block rounded-md bg-amber px-7 py-3.5 text-base font-bold text-navy-dark shadow-sm transition hover:bg-amber-dark"
         >
-          Começar a análise → €99
+          Começar a análise → €49
         </TrackedCtaLink>
         <p className="mt-3 text-sm text-ink/60">
           Não sabes se vale a pena? <Link href="/exemplo" className="underline">Vê um exemplo real de relatório primeiro</Link>.

@@ -27,7 +27,7 @@ export default function ComercialPage() {
           <h2 className="mt-10 text-xl font-extrabold text-navy">Como funciona o link</h2>
           <p className="mt-3 text-ink/80">
             Regista-te abaixo e recebes um link único (<code className="rounded bg-fog px-1.5 py-0.5 text-sm">vocationiq.app?ref=OTEUCODIGO</code>).
-            Quem comprar através dele paga o preço normal — €99, sem desconto — e a venda fica automaticamente atribuída a ti.
+            Quem comprar através dele paga o preço actual — €49 (oferta de lançamento), sem desconto adicional — e a venda fica automaticamente atribuída a ti. A tua comissão é sempre calculada sobre o valor real de cada venda, por isso acompanha o preço se este mudar.
           </p>
 
           <h2 className="mt-10 text-xl font-extrabold text-navy">Como és pago</h2>
@@ -36,25 +36,25 @@ export default function ComercialPage() {
             fundador paga-te directamente e marca o valor como liquidado.
           </p>
 
-          <h2 className="mt-10 text-xl font-extrabold text-navy">Exemplos de comissão (com €99 por venda)</h2>
+          <h2 className="mt-10 text-xl font-extrabold text-navy">Exemplos de comissão (com €49 por venda, preço actual)</h2>
           <div className="mt-4 overflow-x-auto rounded-lg border border-border">
             <table className="w-full min-w-[420px] border-collapse text-sm">
               <tbody className="divide-y divide-border">
                 <tr>
                   <td className="px-4 py-3 text-ink/75">Vendas 1–4</td>
-                  <td className="px-4 py-3 font-semibold text-navy">20% = €19,80 cada</td>
+                  <td className="px-4 py-3 font-semibold text-navy">20% = €9,80 cada</td>
                 </tr>
                 <tr>
                   <td className="px-4 py-3 text-ink/75">Venda 5 em diante</td>
-                  <td className="px-4 py-3 font-semibold text-navy">25% = €24,75 cada</td>
+                  <td className="px-4 py-3 font-semibold text-navy">25% = €12,25 cada</td>
                 </tr>
                 <tr>
                   <td className="px-4 py-3 text-ink/75">10 vendas</td>
-                  <td className="px-4 py-3 font-semibold text-navy">4×€19,80 + 6×€24,75 = €79,20 + €148,50 = €227,70</td>
+                  <td className="px-4 py-3 font-semibold text-navy">4×€9,80 + 6×€12,25 = €39,20 + €73,50 = €112,70</td>
                 </tr>
                 <tr>
                   <td className="px-4 py-3 text-ink/75">20 vendas</td>
-                  <td className="px-4 py-3 font-semibold text-navy">4×€19,80 + 16×€24,75 = €79,20 + €396,00 = €475,20</td>
+                  <td className="px-4 py-3 font-semibold text-navy">4×€9,80 + 16×€12,25 = €39,20 + €196,00 = €235,20</td>
                 </tr>
               </tbody>
             </table>

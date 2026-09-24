@@ -650,7 +650,7 @@ export function IntakeForm() {
               {loading ? "A preparar o pagamento…" : "Continuar para o pagamento →"}
             </button>
           </div>
-          <p className="text-center text-sm font-semibold text-ink/60">Análise VocationIQ · €99 · 72h</p>
+          <p className="text-center text-sm font-semibold text-ink/60">Análise VocationIQ · €49 · 72h</p>
         </div>
       )}
     </div>

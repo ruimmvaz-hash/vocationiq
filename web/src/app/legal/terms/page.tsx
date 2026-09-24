@@ -16,7 +16,7 @@ export default function TermsPage() {
             prazo de 72 horas após a confirmação do pagamento.
           </p>
           <p>
-            O preço é de €99 por análise, cobrado através da Stripe no momento do pedido. Não é uma subscrição — não há
+            O preço é de €49 por análise (preço de lançamento), cobrado através da Stripe no momento do pedido. Não é uma subscrição — não há
             cobranças recorrentes.
           </p>
           <p>

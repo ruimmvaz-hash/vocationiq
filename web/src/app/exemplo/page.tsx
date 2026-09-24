@@ -61,7 +61,7 @@ export default function ExemploPage() {
           location="exemplo"
           className="mt-12 inline-block rounded-md bg-amber px-7 py-3.5 text-base font-bold text-navy-dark shadow-sm transition hover:bg-amber-dark"
         >
-          Quero a minha análise → €99
+          Quero a minha análise → €49
         </TrackedCtaLink>
       </main>
       <Footer />

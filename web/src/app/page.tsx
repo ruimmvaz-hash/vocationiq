@@ -92,9 +92,9 @@ const FAQ = [
     resposta: "Sim — podes responder directamente ao email de entrega com dúvidas sobre o teu relatório.",
   },
   {
-    pergunta: "Porque custa €99?",
+    pergunta: "Porque €49 e não €99?",
     resposta:
-      "Uma sessão única com um psicólogo especializado em orientação vocacional custa tipicamente entre €45 e €50; um acompanhamento com várias sessões custa entre €150 e €370. O VocationIQ entrega uma análise equivalente ao trabalho de 1 a 2 sessões, sem agendamento nem deslocação, em 72 horas — e podes ver um exemplo real do relatório antes de decidires.",
+      "€49 é o preço de lançamento — fica assim até decidirmos mudar. Mesmo assim, uma sessão única com um psicólogo especializado em orientação vocacional custa tipicamente entre €45 e €50, e um acompanhamento com várias sessões custa entre €150 e €370. O VocationIQ entrega uma análise equivalente ao trabalho de 1 a 2 sessões, sem agendamento nem deslocação, em 72 horas — e podes ver um exemplo real do relatório antes de decidires.",
   },
   {
     pergunta: "Isto substitui um psicólogo de orientação vocacional?",
@@ -142,7 +142,7 @@ export default async function HomePage() {
                   Começar a minha análise
                 </TrackedCtaLink>
               </div>
-              <p className="mt-4 text-sm font-semibold text-white/70">€99 · Entrega em 72h</p>
+              <p className="mt-4 text-sm font-semibold text-white/70"><span className="line-through opacity-60">€99</span> €49 · oferta de lançamento · Entrega em 72h</p>
             </div>
           </div>
         </section>
@@ -213,7 +213,9 @@ export default async function HomePage() {
         {/* 5. PREÇO */}
         <section className="bg-navy">
           <div className="mx-auto max-w-5xl px-6 py-16 text-center sm:py-24">
-            <p className="text-5xl font-extrabold tracking-tight text-amber">€99</p>
+            <p className="text-sm font-semibold text-ink/50 line-through">€99</p>
+            <p className="text-5xl font-extrabold tracking-tight text-amber">€49</p>
+            <p className="mt-1 text-sm font-semibold text-navy/70">Oferta de lançamento</p>
             <p className="mt-3 text-white/80">Análise personalizada · 72h</p>
             <TrackedCtaLink
               href="/intake"

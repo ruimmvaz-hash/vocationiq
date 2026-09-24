@@ -10,6 +10,6 @@ export function getStripe(): Stripe {
   return cached;
 }
 
-export const PRECO_CENTIMOS = 9900; // €99
+export const PRECO_CENTIMOS = 4900; // €49 (preço de lançamento, 25 Set 2026 — antes €99)
 export const PRECO_REVISAO_CENTIMOS = 4900; // €49
 export const MOEDA = "eur";

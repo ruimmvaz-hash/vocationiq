@@ -16,7 +16,7 @@ const inter = Inter({
 
 const TITULO_SITE = "VocationIQ — Descobre a tua área. Antes de escolheres.";
 const DESCRICAO_SITE =
-  "Uma análise personalizada que descobre os teus talentos naturais, como aprendes e as áreas onde podes crescer mais — para adolescentes, jovens e adultos em busca de nova carreira. €99 · Entrega em 72h.";
+  "Uma análise personalizada que descobre os teus talentos naturais, como aprendes e as áreas onde podes crescer mais — para adolescentes, jovens e adultos em busca de nova carreira. €49 · Entrega em 72h.";
 
 // SEO (22 Set, pedido do fundador) — Open Graph + Twitter Card, para os
 // links partilhados (redes sociais, WhatsApp) mostrarem título/descrição/

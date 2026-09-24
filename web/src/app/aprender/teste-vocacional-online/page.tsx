@@ -91,7 +91,7 @@ export default function TesteVocacionalOnlinePage() {
           location="aprender-teste-vocacional-online"
           className="mt-10 inline-block rounded-md bg-amber px-7 py-3.5 text-base font-bold text-navy-dark shadow-sm transition hover:bg-amber-dark"
         >
-          Quero a minha análise → €99
+          Quero a minha análise → €49
         </TrackedCtaLink>
         <p className="mt-3 text-sm text-ink/60">
           Não sabes se vale a pena? <Link href="/exemplo" className="underline">Vê um exemplo real de relatório primeiro</Link>.
